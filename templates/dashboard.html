@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Fitness OS{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<section class="card">
+  <h2>Goal</h2>
+  <p>Target: <strong>{{ profile.goal_weight_low_kg }}–{{ profile.goal_weight_high_kg }} kg</strong> by {{ profile.goal_date }}</p>
+  {% if profile.due_date %}<p>Baby due: <strong>{{ profile.due_date }}</strong> ({{ days_to_due }} days)</p>{% endif %}
+  <p class="muted">{{ profile.activity_notes }}</p>
+</section>
+
+<section class="card">
+  <h2>Latest weigh-in</h2>
+  {% if latest_weight %}
+    <p><strong>{{ latest_weight.weight_kg }} kg</strong> on {{ latest_weight.log_date }}</p>
+  {% else %}
+    <p class="muted">No weight logged yet.</p>
+  {% endif %}
+</section>
+
+<section class="card muted-card">
+  <h2>Coming soon</h2>
+  <p class="muted">Body log, gym/padel tracking, meal plan, and email reminders are built in the next phases. This skeleton confirms the app is live and reachable from your phone.</p>
+</section>
+{% endblock %}

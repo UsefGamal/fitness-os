@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Log in — Fitness OS{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <h1>Fitness OS</h1>
+  <form method="post" action="/login" class="login-form">
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <input type="password" name="password" placeholder="Password" autofocus required>
+    <button type="submit">Log in</button>
+  </form>
+</div>
+{% endblock %}

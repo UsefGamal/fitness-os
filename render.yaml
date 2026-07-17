@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: fitness-os
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: DIGEST_EMAIL_TO
+        sync: false
+      - key: CRON_SECRET
+        sync: false
