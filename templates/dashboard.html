@@ -19,8 +19,15 @@
   {% endif %}
 </section>
 
+<section class="card">
+  <h2>This week</h2>
+  <p>Gym sessions: <strong>{{ gym_count }}</strong></p>
+  <p>Padel sessions: <strong>{{ padel_count }}</strong></p>
+  <p class="muted"><a href="/body" style="color:var(--accent)">Log weight</a> · <a href="/gym" style="color:var(--accent)">Log gym</a> · <a href="/padel" style="color:var(--accent)">Log padel</a></p>
+</section>
+
 <section class="card muted-card">
   <h2>Coming soon</h2>
-  <p class="muted">Body log, gym/padel tracking, meal plan, and email reminders are built in the next phases. This skeleton confirms the app is live and reachable from your phone.</p>
+  <p class="muted">Meal plan and email reminders are built in the next phases.</p>
 </section>
 {% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Padel — Fitness OS{% endblock %}
+{% block content %}
+<h1>Padel</h1>
+
+<section class="card">
+  <h2>Log a session</h2>
+  <form method="post" action="/padel" class="stack-form">
+    <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
+    <label>Duration (min) <input type="number" name="duration_min" value="90"></label>
+    <label>Notes <input type="text" name="notes"></label>
+    <button type="submit">Save</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>History</h2>
+  {% if sessions %}
+  <table class="log-table">
+    <thead><tr><th>Date</th><th>Duration</th><th>Notes</th></tr></thead>
+    <tbody>
+    {% for s in sessions %}
+      <tr>
+        <td>{{ s.log_date }}</td>
+        <td>{{ s.duration_min }} min</td>
+        <td>{{ s.notes or "" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No padel sessions logged yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

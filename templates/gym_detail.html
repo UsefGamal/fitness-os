@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Gym Session — Fitness OS{% endblock %}
+{% block content %}
+<h1>Gym — {{ workout.log_date }}</h1>
+<p class="muted">{{ workout.notes or "" }}{% if workout.duration_min %} · {{ workout.duration_min }} min{% endif %}</p>
+
+<section class="card">
+  <h2>Log a set (#{{ next_set_number }})</h2>
+  <form method="post" action="/gym/{{ workout.id }}/sets" class="stack-form">
+    <label>Exercise
+      <select name="exercise_id" required>
+        {% for group, items in exercises | groupby("muscle_group") %}
+        <optgroup label="{{ group }}">
+          {% for ex in items %}
+          <option value="{{ ex.id }}">{{ ex.name }}{% if last_performance.get(ex.id) %} (last: {{ last_performance[ex.id] }}){% endif %}</option>
+          {% endfor %}
+        </optgroup>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Reps <input type="number" name="reps" required></label>
+    <label>Weight (kg) <input type="number" step="0.5" name="weight_kg" required></label>
+    <button type="submit">Add set</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Sets this session</h2>
+  {% if sets_view %}
+  <table class="log-table">
+    <thead><tr><th>#</th><th>Exercise</th><th>Reps</th><th>Weight</th></tr></thead>
+    <tbody>
+    {% for s in sets_view %}
+      <tr>
+        <td>{{ s.set_number }}</td>
+        <td>{{ s.exercise_name }}</td>
+        <td>{{ s.reps }}</td>
+        <td>{{ s.weight_kg }} kg</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No sets logged yet.</p>
+  {% endif %}
+</section>
+
+<a class="back-link" href="/gym">← Back to gym log</a>
+{% endblock %}

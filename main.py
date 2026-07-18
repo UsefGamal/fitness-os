@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import date, timedelta
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, Request
@@ -10,8 +10,10 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, select
 
 from auth import APP_PASSWORD, is_logged_in
+from content.gym_exercises import SEED_EXERCISES
 from database import get_session, init_db
-from models import BodyLog, Profile
+from models import BodyLog, Exercise, Profile, Workout
+from routers import body, gym, padel
 
 load_dotenv()
 
@@ -20,11 +22,16 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "de
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+app.include_router(body.router)
+app.include_router(gym.router)
+app.include_router(padel.router)
+
 
 @app.on_event("startup")
 def on_startup():
     init_db()
     _seed_profile()
+    _seed_exercises()
 
 
 def _seed_profile():
@@ -34,6 +41,17 @@ def _seed_profile():
         existing = session.exec(select(Profile)).first()
         if not existing:
             session.add(Profile())
+            session.commit()
+
+
+def _seed_exercises():
+    from database import engine
+
+    with Session(engine) as session:
+        existing = session.exec(select(Exercise)).first()
+        if not existing:
+            for muscle_group, name, equipment in SEED_EXERCISES:
+                session.add(Exercise(name=name, muscle_group=muscle_group, equipment=equipment))
             session.commit()
 
 
@@ -72,6 +90,13 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
 
     days_to_due = (profile.due_date - date.today()).days if profile.due_date else None
 
+    week_start = date.today() - timedelta(days=date.today().weekday())
+    week_workouts = session.exec(
+        select(Workout).where(Workout.log_date >= week_start)
+    ).all()
+    gym_count = len([w for w in week_workouts if w.workout_type == "gym"])
+    padel_count = len([w for w in week_workouts if w.workout_type == "padel"])
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -80,6 +105,8 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "profile": profile,
             "latest_weight": latest_weight,
             "days_to_due": days_to_due,
+            "gym_count": gym_count,
+            "padel_count": padel_count,
         },
     )
 
