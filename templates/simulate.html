@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}What-If Simulator — Fitness OS{% endblock %}
+{% block content %}
+<h1>What-If Simulator</h1>
+<p class="muted" style="font-size:13px;margin-bottom:16px">Rough estimates, not medical advice — a quick way to see how adherence changes shift your timeline.</p>
+
+<section class="card">
+  <h2>Scenario inputs</h2>
+  <form method="get" action="/simulate" class="stack-form">
+    <label>Missed gym/padel sessions per week
+      <input type="number" step="1" min="0" max="7" name="missed_sessions_per_week" value="{{ missed_sessions_per_week }}">
+    </label>
+    <label>Meal plan adherence (%)
+      <input type="number" step="5" min="0" max="100" name="meal_adherence_pct" value="{{ meal_adherence_pct }}">
+    </label>
+    <label>Pause / break (weeks, e.g. illness or travel)
+      <input type="number" step="1" min="0" name="pause_weeks" value="{{ pause_weeks }}">
+    </label>
+    <label>Or directly override weekly rate (kg/week, optional — overrides the two adherence inputs above)
+      <input type="number" step="0.05" name="rate_override" value="{{ rate_override or '' }}">
+    </label>
+    <button type="submit">Recalculate</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Result</h2>
+  {% if not has_data %}
+    <p class="muted">Not enough weight-log data yet to simulate — log a couple of weigh-ins first.</p>
+  {% else %}
+    <p class="muted" style="font-size:13px">Baseline pace: {{ base_rate }} kg/week &middot; Scenario pace: {{ effective_rate }} kg/week</p>
+    {% if baseline_date %}<p style="margin-top:8px">Baseline projected goal date: <strong>{{ baseline_date }}</strong></p>{% endif %}
+    {% if scenario_date %}
+      <p>Scenario projected goal date: <strong style="color:var(--accent)">{{ scenario_date }}</strong></p>
+      {% if delta_days is not none %}
+        {% if delta_days > 0 %}
+          <p class="muted" style="font-size:13px">That's <strong>{{ delta_days }} days later</strong> than your current pace.</p>
+        {% elif delta_days < 0 %}
+          <p class="muted" style="font-size:13px">That's <strong>{{ -delta_days }} days earlier</strong> than your current pace.</p>
+        {% else %}
+          <p class="muted" style="font-size:13px">Same timeline as your current pace.</p>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      <p class="muted">At this scenario's pace, you wouldn't be making forward progress — try less extreme inputs.</p>
+    {% endif %}
+  {% endif %}
+</section>
+
+<a class="back-link" href="/">← Back to dashboard</a>
+{% endblock %}
