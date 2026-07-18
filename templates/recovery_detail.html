@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Recovery Session — Fitness OS{% endblock %}
 {% block content %}
-<h1>Recovery — {{ workout.log_date }}</h1>
+<h1>🧘 Recovery — {{ workout.log_date }}</h1>
 <p class="muted">{{ workout.notes or "" }}</p>
 
-<section class="card">
-  <h2>Checklist</h2>
+<section class="card card-glow">
+  <h2>✅ Checklist</h2>
   {% for item in checklist %}
-  <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
-    <span>{{ item.name }}</span>
-    <form method="post" action="/recovery/{{ workout.id }}/log">
+  <div class="quest-card{% if item.done %} quest-done{% endif %}">
+    <span class="quest-icon">🧘</span>
+    <div class="quest-body"><span class="quest-label">{{ item.name }}</span></div>
+    <form method="post" action="/recovery/{{ workout.id }}/log" class="js-toggle">
       <input type="hidden" name="item_name" value="{{ item.name }}">
-      <button type="submit" class="meal-check-btn{% if item.done %} done{% endif %}">{% if item.done %}✓ Done{% else %}Mark done{% endif %}</button>
+      <button type="submit" class="meal-check-btn{% if item.done %} done{% endif %}" data-done-label="✓ Done" data-undone-label="Mark done">{% if item.done %}✓ Done{% else %}Mark done{% endif %}</button>
     </form>
   </div>
   {% endfor %}

@@ -23,6 +23,14 @@ SLOT_LABELS = {
     "dinner": "Dinner",
 }
 
+SLOT_ICONS = {
+    "breakfast": "🌅",
+    "snack1": "🍎",
+    "lunch": "🍽️",
+    "snack2": "🥜",
+    "dinner": "🌙",
+}
+
 
 def _day_number_for(d: date) -> int:
     return (d - PLAN_START_DATE).days + 1
@@ -39,6 +47,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
 
     for meal in plan["meals"]:
         meal["label"] = SLOT_LABELS.get(meal["slot"], meal["slot"])
+        meal["icon"] = SLOT_ICONS.get(meal["slot"], "🍽️")
         meal["done"] = meal["slot"] in completed_slots
 
     return templates.TemplateResponse(

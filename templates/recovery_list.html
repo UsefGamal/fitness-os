@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Active Recovery — Fitness OS{% endblock %}
 {% block content %}
-<h1>Active Recovery</h1>
+<h1>🧘 Active Recovery</h1>
 
 <section class="card">
-  <h2>Start a recovery session</h2>
+  <h2>▶️ Start a recovery session</h2>
   <form method="post" action="/recovery/new" class="stack-form">
     <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
     <label>Notes <input type="text" name="notes"></label>
@@ -13,7 +13,7 @@
 </section>
 
 <section class="card">
-  <h2>Past sessions</h2>
+  <h2>📋 Past sessions</h2>
   {% if workouts %}
   <div class="table-scroll">
   <table class="log-table">

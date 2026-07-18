@@ -7,30 +7,30 @@
 <link rel="manifest" href="/static/manifest.json">
 <link rel="icon" href="/static/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#090c14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 {% if logged_in %}
 <header class="topbar">
-  <a class="brand" href="/">Fitness OS</a>
-  <nav>
-    <a href="/">Dashboard</a>
-    <a href="/body">Body</a>
-    <a href="/gym">Gym</a>
-    <a href="/home">Home</a>
-    <a href="/recovery">Recovery</a>
-    <a href="/padel">Padel</a>
-    <a href="/meals">Meals</a>
-    <a href="/bonus">Bonus</a>
-    <a href="/simulate">Simulate</a>
-    <a href="/settings">Settings</a>
-    <a href="/logout">Log out</a>
-  </nav>
+  <a class="brand" href="/"><span class="brand-mark">⚡</span> Fitness OS</a>
 </header>
 {% endif %}
-<main class="content">
+<main class="content{% if logged_in %} has-tabbar{% endif %}">
 {% block content %}{% endblock %}
 </main>
+{% if logged_in %}
+<nav class="tabbar">
+  <a href="/" class="{% if request.url.path == '/' %}active{% endif %}"><span class="tab-icon">🏠</span><span>Home</span></a>
+  <a href="/meals" class="{% if request.url.path.startswith('/meals') %}active{% endif %}"><span class="tab-icon">🍽️</span><span>Meals</span></a>
+  <a href="/bonus" class="{% if request.url.path.startswith('/bonus') %}active{% endif %}"><span class="tab-icon">⭐</span><span>Quests</span></a>
+  <a href="/body" class="{% if request.url.path.startswith('/body') %}active{% endif %}"><span class="tab-icon">⚖️</span><span>Body</span></a>
+  <a href="/more" class="{% if request.url.path.startswith('/more') %}active{% endif %}"><span class="tab-icon">☰</span><span>More</span></a>
+</nav>
+{% endif %}
+<script src="/static/app.js"></script>
 </body>
 </html>

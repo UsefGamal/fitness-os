@@ -67,6 +67,18 @@ def meal_adherence_pct(completed_count: int, possible_count: int) -> float:
     return round(min(100, (completed_count / possible_count) * 100), 1)
 
 
+def compute_streak(logged_dates: set, today: date) -> int:
+    """Consecutive days with at least one workout logged, walking backward
+    from today. If today has nothing logged yet, doesn't break the streak
+    until the day is actually over — counts from yesterday instead."""
+    streak = 0
+    cursor = today if today in logged_dates else today - timedelta(days=1)
+    while cursor in logged_dates:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
+
+
 def confidence_score(actual_rate: Optional[float], target_rate: Optional[float], adherence_pct: float):
     """Returns (score_0_100_or_None, label). Blends pace-vs-target (60%) and
     adherence (40%). None score means not enough data yet to judge pace."""

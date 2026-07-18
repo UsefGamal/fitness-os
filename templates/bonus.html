@@ -1,35 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Bonus Tasks — Fitness OS{% endblock %}
+{% block title %}Quests — Fitness OS{% endblock %}
 {% block content %}
-<h1>Bonus Tasks</h1>
+<h1>Daily Quests</h1>
 
-<section class="card">
+<section class="card card-gold">
   <h2>Points</h2>
-  <div class="macro-pill" style="display:inline-block">
-    <div class="mv">{{ total_points }}</div>
-    <div class="ml">TOTAL POINTS</div>
+  <div class="stat-row">
+    <div class="stat-tile points">
+      <div class="sv">{{ total_points }}</div>
+      <div class="sl">Points</div>
+    </div>
   </div>
   {% if current_badge %}
-    <p style="margin-top:10px">Current badge: <strong style="color:var(--accent)">{{ current_badge[1] }}</strong> ({{ current_badge[0] }}+ pts)</p>
+    <p style="margin-top:12px"><span class="badge-medal"><span class="icon">{{ current_badge[2] }}</span>{{ current_badge[1] }}</span></p>
   {% else %}
-    <p style="margin-top:10px" class="muted">No badge yet — keep going.</p>
+    <p style="margin-top:12px" class="muted">No badge yet — complete a few quests to earn one.</p>
   {% endif %}
   {% if next_milestone %}
-    <p class="muted" style="font-size:13px;margin-bottom:6px">Next: {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
-    <div class="progress-bar"><div class="progress-fill" style="width:{{ progress_pct }}%"></div></div>
+    <p class="muted" style="font-size:13px;margin:10px 0 6px">Next: {{ next_milestone[2] }} {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
+    <div class="progress-bar"><div class="progress-fill gold" style="width:{{ progress_pct }}%"></div></div>
   {% else %}
     <p class="muted" style="font-size:13px">You've hit every milestone. Legendary.</p>
   {% endif %}
 </section>
 
 <section class="card">
-  <h2>Today's bonus tasks</h2>
+  <h2>Today's quests</h2>
   {% for task in tasks %}
-  <div style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
-    <span>{{ task.label }} <span class="muted" style="font-size:12px">(+{{ task.points }} pts)</span></span>
-    <form method="post" action="/bonus/toggle">
+  <div class="quest-card{% if task.done %} quest-done{% endif %}">
+    <span class="quest-icon">{{ task.icon }}</span>
+    <div class="quest-body">
+      <div class="quest-label">{{ task.label }}</div>
+      <div class="quest-points">+{{ task.points }} pts</div>
+    </div>
+    <form method="post" action="/bonus/toggle" class="js-toggle">
       <input type="hidden" name="task_key" value="{{ task.key }}">
-      <button type="submit" class="meal-check-btn{% if task.done %} done{% endif %}">{% if task.done %}✓ Done{% else %}Mark done{% endif %}</button>
+      <button type="submit" class="meal-check-btn{% if task.done %} done{% endif %}" data-done-label="✓ Done" data-undone-label="Mark done">{% if task.done %}✓ Done{% else %}Mark done{% endif %}</button>
     </form>
   </div>
   {% endfor %}

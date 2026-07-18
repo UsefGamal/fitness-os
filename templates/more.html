@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}More — Fitness OS{% endblock %}
+{% block content %}
+<h1>☰ More</h1>
+
+<section class="card">
+  <h2>💪 Train</h2>
+  <div class="link-list">
+    <a href="/gym" class="link-row"><span class="link-icon">🏋️</span><span>Gym</span><span class="link-arrow">›</span></a>
+    <a href="/home" class="link-row"><span class="link-icon">🤸</span><span>Home Session</span><span class="link-arrow">›</span></a>
+    <a href="/recovery" class="link-row"><span class="link-icon">🧘</span><span>Active Recovery</span><span class="link-arrow">›</span></a>
+    <a href="/padel" class="link-row"><span class="link-icon">🎾</span><span>Padel</span><span class="link-arrow">›</span></a>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🛠️ Plan & Tools</h2>
+  <div class="link-list">
+    <a href="/simulate" class="link-row"><span class="link-icon">🔮</span><span>What-If Simulator</span><span class="link-arrow">›</span></a>
+    <a href="/settings" class="link-row"><span class="link-icon">⚙️</span><span>Settings</span><span class="link-arrow">›</span></a>
+  </div>
+</section>
+
+<section class="card">
+  <div class="link-list">
+    <a href="/logout" class="link-row"><span class="link-icon">🚪</span><span>Log out</span><span class="link-arrow">›</span></a>
+  </div>
+</section>
+{% endblock %}

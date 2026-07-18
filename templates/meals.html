@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Meals — Fitness OS{% endblock %}
 {% block content %}
-<h1>Meals</h1>
+<h1>🍽️ Meals</h1>
 
 <section class="card">
   <div class="day-nav">
@@ -21,11 +21,11 @@
 {% for meal in plan.meals %}
 <section class="card meal-card{% if meal.done %} meal-done{% endif %}">
   <div class="meal-header">
-    <h2>{{ meal.label }}</h2>
-    <form method="post" action="/meals/toggle">
+    <h2>{{ meal.icon }} {{ meal.label }}</h2>
+    <form method="post" action="/meals/toggle" class="js-toggle">
       <input type="hidden" name="log_date" value="{{ current_date }}">
       <input type="hidden" name="meal_slot" value="{{ meal.slot }}">
-      <button type="submit" class="meal-check-btn{% if meal.done %} done{% endif %}">
+      <button type="submit" class="meal-check-btn{% if meal.done %} done{% endif %}" data-done-label="✓ Eaten" data-undone-label="Mark eaten">
         {% if meal.done %}✓ Eaten{% else %}Mark eaten{% endif %}
       </button>
     </form>

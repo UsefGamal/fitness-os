@@ -13,8 +13,14 @@ from auth import APP_PASSWORD, is_logged_in
 from baseline import get_baseline
 from content.gym_exercises import SEED_EXERCISES
 from content.meal_plan import get_day
-from content.milestones import badge_progress
-from content.projections import confidence_score, meal_adherence_pct, slack_impact_date, training_adherence_pct
+from content.milestones import badge_progress, level_for_points
+from content.projections import (
+    compute_streak,
+    confidence_score,
+    meal_adherence_pct,
+    slack_impact_date,
+    training_adherence_pct,
+)
 from database import get_session, init_db
 from models import BonusLog, Exercise, MealLog, Profile, Workout
 from routers import body, bonus, gym, home, meals, padel, recovery, reminders, settings, simulate
@@ -93,7 +99,15 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
+@app.get("/more")
+def more_page(request: Request):
+    if not is_logged_in(request):
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse("more.html", {"request": request, "logged_in": True})
+
+
 WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel"}
+WORKOUT_TYPE_ICONS = {"gym": "🏋️", "home": "🤸", "recovery": "🧘", "padel": "🎾"}
 MEAL_SLOTS_PER_DAY = 5
 
 
@@ -136,14 +150,19 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     confidence, confidence_label = confidence_score(actual_rate, target_rate, combined_adherence)
     slack_date = slack_impact_date(predicted_date, missed_weeks=2)
 
-    # ── Points & badge ──────────────────────────────────────────
+    # ── Points, level & badge ────────────────────────────────────
     total_points = session.exec(select(func.sum(BonusLog.points))).first() or 0
     current_badge, next_milestone = badge_progress(total_points)
+    level = level_for_points(total_points)
     badge_progress_pct = None
     if next_milestone:
         floor = current_badge[0] if current_badge else 0
         span = next_milestone[0] - floor
         badge_progress_pct = round(((total_points - floor) / span) * 100) if span else 100
+
+    # ── Streak ────────────────────────────────────────────────────
+    all_workout_dates = set(session.exec(select(Workout.log_date)).all())
+    streak = compute_streak(all_workout_dates, today)
 
     # ── This week ────────────────────────────────────────────────
     week_start = today - timedelta(days=today.weekday())
@@ -167,7 +186,11 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
                 "meal_label": meal_day["label"],
                 "meal_kcal": meal_day["totals"]["kcal"],
                 "workouts": [
-                    {"type_label": WORKOUT_TYPE_LABELS.get(w.workout_type, w.workout_type), "notes": w.notes}
+                    {
+                        "type_label": WORKOUT_TYPE_LABELS.get(w.workout_type, w.workout_type),
+                        "icon": WORKOUT_TYPE_ICONS.get(w.workout_type, "✅"),
+                        "notes": w.notes,
+                    }
                     for w in workouts_by_date.get(day_date, [])
                 ],
             }
@@ -193,6 +216,8 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "predicted_date": predicted_date,
             "slack_date": slack_date,
             "total_points": total_points,
+            "level": level,
+            "streak": streak,
             "current_badge": current_badge,
             "next_milestone": next_milestone,
             "badge_progress_pct": badge_progress_pct,
