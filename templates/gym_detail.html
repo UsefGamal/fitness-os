@@ -8,6 +8,7 @@
 <section class="card">
   <h2>{{ program_checklist.label }} checklist</h2>
   <p class="muted">{{ program_checklist.focus }}</p>
+  <div class="table-scroll">
   <table class="log-table">
     <thead><tr><th>Exercise</th><th>Target</th><th>Rest</th><th>Suggestion</th></tr></thead>
     <tbody>
@@ -16,6 +17,7 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
   <p class="muted" style="margin-top:8px">{{ progression_note }}</p>
 </section>
 {% endif %}
@@ -43,6 +45,7 @@
 <section class="card">
   <h2>Sets this session</h2>
   {% if sets_view %}
+  <div class="table-scroll">
   <table class="log-table">
     <thead><tr><th>#</th><th>Exercise</th><th>Reps</th><th>Weight</th></tr></thead>
     <tbody>
@@ -56,6 +59,7 @@
     {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <p class="muted">No sets logged yet.</p>
   {% endif %}

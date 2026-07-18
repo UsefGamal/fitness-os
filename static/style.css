@@ -133,8 +133,14 @@ h2 { font-size: 16px; color: var(--muted); text-transform: uppercase; letter-spa
   cursor: pointer;
 }
 
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .log-table {
   width: 100%;
+  min-width: 420px;
   border-collapse: collapse;
   font-size: 14px;
 }
