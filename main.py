@@ -13,7 +13,7 @@ from auth import APP_PASSWORD, is_logged_in
 from content.gym_exercises import SEED_EXERCISES
 from database import get_session, init_db
 from models import BodyLog, Exercise, Profile, Workout
-from routers import body, gym, padel
+from routers import body, gym, meals, padel
 
 load_dotenv()
 
@@ -25,6 +25,7 @@ templates = Jinja2Templates(directory="templates")
 app.include_router(body.router)
 app.include_router(gym.router)
 app.include_router(padel.router)
+app.include_router(meals.router)
 
 
 @app.on_event("startup")

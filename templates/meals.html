@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Meals — Fitness OS{% endblock %}
+{% block content %}
+<h1>Meals</h1>
+
+<section class="card">
+  <div class="day-nav">
+    <a href="/meals?view_date={{ prev_date }}">← Prev</a>
+    <strong>{{ current_date }}{% if is_today %} (Today){% endif %}</strong>
+    <a href="/meals?view_date={{ next_date }}">Next →</a>
+  </div>
+  <h2>{{ plan.label }}</h2>
+  <div class="day-macros">
+    <div class="macro-pill"><div class="mv">{{ plan.totals.kcal }}</div><div class="ml">KCAL</div></div>
+    <div class="macro-pill"><div class="mv">{{ plan.totals.protein }}g</div><div class="ml">PROTEIN</div></div>
+    <div class="macro-pill"><div class="mv">{{ plan.totals.carbs }}g</div><div class="ml">CARBS</div></div>
+    <div class="macro-pill"><div class="mv">{{ plan.totals.fat }}g</div><div class="ml">FAT</div></div>
+  </div>
+</section>
+
+{% for meal in plan.meals %}
+<section class="card meal-card{% if meal.done %} meal-done{% endif %}">
+  <div class="meal-header">
+    <h2>{{ meal.label }}</h2>
+    <form method="post" action="/meals/toggle">
+      <input type="hidden" name="log_date" value="{{ current_date }}">
+      <input type="hidden" name="meal_slot" value="{{ meal.slot }}">
+      <button type="submit" class="meal-check-btn{% if meal.done %} done{% endif %}">
+        {% if meal.done %}✓ Eaten{% else %}Mark eaten{% endif %}
+      </button>
+    </form>
+  </div>
+  <div class="meal-items">
+    {% for item in meal.ingredients %}<span class="ingredient-chip">{{ item }}</span>{% endfor %}
+  </div>
+  <div class="meal-macros-row">
+    <span>{{ meal.kcal }} kcal</span> · <span>{{ meal.protein }}g protein</span> · <span>{{ meal.carbs }}g carbs</span> · <span>{{ meal.fat }}g fat</span>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}
