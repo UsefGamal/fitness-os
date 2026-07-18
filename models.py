@@ -15,6 +15,8 @@ class Profile(SQLModel, table=True):
     goal_date: date = date(2027, 1, 18)
     due_date: Optional[date] = date(2026, 11, 18)
     activity_notes: str = "Data engineer, desk job. Padel 2x/week (1.5h)."
+    fitness_level: str = "intermediate"
+    start_weight_kg: Optional[float] = None
 
 
 class BodyLog(SQLModel, table=True):

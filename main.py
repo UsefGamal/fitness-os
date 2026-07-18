@@ -13,7 +13,7 @@ from auth import APP_PASSWORD, is_logged_in
 from content.gym_exercises import SEED_EXERCISES
 from database import get_session, init_db
 from models import BodyLog, Exercise, Profile, Workout
-from routers import body, gym, meals, padel, reminders
+from routers import body, gym, meals, padel, reminders, settings
 
 load_dotenv()
 
@@ -27,6 +27,7 @@ app.include_router(gym.router)
 app.include_router(padel.router)
 app.include_router(meals.router)
 app.include_router(reminders.router)
+app.include_router(settings.router)
 
 
 @app.on_event("startup")
