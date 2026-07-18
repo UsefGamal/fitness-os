@@ -13,7 +13,7 @@ from models import MealLog
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-PLAN_START_DATE = date(2026, 7, 18)  # day 1 of the rotation
+PLAN_START_DATE = date(2026, 8, 1)  # day 1 of the rotation — real program start date
 
 SLOT_LABELS = {
     "breakfast": "Breakfast",

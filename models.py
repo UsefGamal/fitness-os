@@ -51,6 +51,18 @@ class WorkoutSet(SQLModel, table=True):
     weight_kg: float
 
 
+class ChecklistItemLog(SQLModel, table=True):
+    """Used by Home (bodyweight) and Recovery sessions — lighter-weight than
+    WorkoutSet since there's no external load to log, just completion and
+    (for Home) reps achieved for progression suggestions."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    workout_id: int = Field(foreign_key="workout.id")
+    item_name: str
+    completed: bool = False
+    reps_achieved: Optional[int] = None
+
+
 class MealLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     log_date: date

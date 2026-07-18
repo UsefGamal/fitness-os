@@ -11,6 +11,7 @@ from auth import require_login
 from content.gym_program import PROGRAM, PROGRESSION_NOTE, next_program_day
 from database import get_session
 from models import Exercise, Workout, WorkoutSet
+from training_counter import count_training_sessions
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -28,7 +29,7 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
         set_count = len(session.exec(select(WorkoutSet).where(WorkoutSet.workout_id == w.id)).all())
         summaries.append({"workout": w, "set_count": set_count})
 
-    next_day = next_program_day(len(workouts))
+    next_day = next_program_day(count_training_sessions(session))
 
     return templates.TemplateResponse(
         "gym_list.html",
@@ -50,10 +51,7 @@ def create_gym_session(
     session: Session = Depends(get_session),
 ):
     if not notes:
-        existing_count = len(
-            session.exec(select(Workout).where(Workout.workout_type == "gym")).all()
-        )
-        notes = next_program_day(existing_count)["label"]
+        notes = next_program_day(count_training_sessions(session))["label"]
 
     workout = Workout(log_date=log_date, workout_type="gym", duration_min=duration_min, notes=notes)
     session.add(workout)

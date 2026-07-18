@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Active Recovery — Fitness OS{% endblock %}
+{% block content %}
+<h1>Active Recovery</h1>
+
+<section class="card">
+  <h2>Start a recovery session</h2>
+  <form method="post" action="/recovery/new" class="stack-form">
+    <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
+    <label>Notes <input type="text" name="notes"></label>
+    <button type="submit">Start session</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Past sessions</h2>
+  {% if workouts %}
+  <div class="table-scroll">
+  <table class="log-table">
+    <thead><tr><th>Date</th><th>Notes</th></tr></thead>
+    <tbody>
+    {% for w in workouts %}
+      <tr>
+        <td><a href="/recovery/{{ w.id }}">{{ w.log_date }}</a></td>
+        <td>{{ w.notes or "" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No recovery sessions yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

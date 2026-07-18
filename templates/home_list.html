@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Home Session — Fitness OS{% endblock %}
+{% block content %}
+<h1>Home Session</h1>
+
+<section class="card">
+  <h2>Next up: {{ next_day.label }}</h2>
+  <p class="muted">{{ next_day.focus }}</p>
+  <div class="table-scroll">
+  <table class="log-table">
+    <thead><tr><th>Exercise</th><th>Target</th></tr></thead>
+    <tbody>
+    {% for ex in next_day.exercises %}
+      <tr><td>{{ ex.name }}</td><td>{{ ex.reps }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Start a session</h2>
+  <form method="post" action="/home/new" class="stack-form">
+    <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
+    <label>Planned duration (min) <input type="number" name="duration_min" value="35"></label>
+    <label>Notes <input type="text" name="notes" value="{{ next_day.label }}"></label>
+    <button type="submit">Start session</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Past sessions</h2>
+  {% if summaries %}
+  <div class="table-scroll">
+  <table class="log-table">
+    <thead><tr><th>Date</th><th>Items logged</th><th>Notes</th></tr></thead>
+    <tbody>
+    {% for s in summaries %}
+      <tr>
+        <td><a href="/home/{{ s.workout.id }}">{{ s.workout.log_date }}</a></td>
+        <td>{{ s.item_count }}</td>
+        <td>{{ s.workout.notes or "" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No home sessions yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
