@@ -51,10 +51,13 @@ def _seed_exercises():
     from database import engine
 
     with Session(engine) as session:
-        existing = session.exec(select(Exercise)).first()
-        if not existing:
-            for muscle_group, name, equipment in SEED_EXERCISES:
+        existing_names = set(session.exec(select(Exercise.name)).all())
+        added = False
+        for muscle_group, name, equipment in SEED_EXERCISES:
+            if name not in existing_names:
                 session.add(Exercise(name=name, muscle_group=muscle_group, equipment=equipment))
+                added = True
+        if added:
             session.commit()
 
 
