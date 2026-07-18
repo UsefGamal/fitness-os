@@ -70,6 +70,13 @@ class MealLog(SQLModel, table=True):
     completed: bool = False
 
 
+class BonusLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    log_date: date
+    task_key: str
+    points: int
+
+
 class ReminderLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     log_date: date
