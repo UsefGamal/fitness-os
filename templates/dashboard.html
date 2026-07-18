@@ -4,30 +4,76 @@
 <h1>Dashboard</h1>
 
 <section class="card">
-  <h2>Goal</h2>
-  <p>Target: <strong>{{ profile.goal_weight_low_kg }}–{{ profile.goal_weight_high_kg }} kg</strong> by {{ profile.goal_date }}</p>
-  {% if profile.due_date %}<p>Baby due: <strong>{{ profile.due_date }}</strong> ({{ days_to_due }} days)</p>{% endif %}
-  <p class="muted">{{ profile.activity_notes }}</p>
+  <h2>Goal Progress</h2>
+  {% if start_weight and current_weight %}
+    <p>
+      <strong>{{ current_weight }} kg</strong>
+      <span class="muted">→ target {{ profile.goal_weight_low_kg }}–{{ profile.goal_weight_high_kg }} kg</span>
+    </p>
+    <div class="progress-bar"><div class="progress-fill" style="width:{{ goal_progress_pct }}%"></div></div>
+    <p class="muted" style="font-size:13px;margin-top:6px">{{ goal_progress_pct }}% of the way from {{ start_weight }} kg to goal</p>
+  {% else %}
+    <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
+  {% endif %}
+  {% if profile.due_date %}<p class="muted" style="font-size:13px;margin-top:8px">Baby due {{ profile.due_date }} ({{ days_to_due }} days)</p>{% endif %}
 </section>
 
 <section class="card">
-  <h2>Latest weigh-in</h2>
-  {% if latest_weight %}
-    <p><strong>{{ latest_weight.weight_kg }} kg</strong> on {{ latest_weight.log_date }}</p>
+  <h2>Confidence & Prediction</h2>
+  {% if confidence is not none %}
+    <p><strong style="color:var(--accent);font-size:22px">{{ confidence }}%</strong> <span class="muted">— {{ confidence_label }}</span></p>
+    <p class="muted" style="font-size:13px">Actual pace: {{ actual_rate }} kg/week &middot; Target pace: {{ target_rate }} kg/week</p>
+    {% if predicted_date %}
+      <p style="margin-top:8px">At this rate, projected goal date: <strong>{{ predicted_date }}</strong></p>
+      <p class="muted" style="font-size:13px">If you took 2 weeks off entirely: <strong>{{ slack_date }}</strong> &middot; <a href="/simulate" style="color:var(--accent)">try other scenarios →</a></p>
+    {% endif %}
   {% else %}
-    <p class="muted">No weight logged yet.</p>
+    <p class="muted">{{ confidence_label }} — log at least two weigh-ins a week or more apart to see your pace.</p>
   {% endif %}
 </section>
 
 <section class="card">
-  <h2>This week</h2>
-  <p>Gym sessions: <strong>{{ gym_count }}</strong></p>
-  <p>Padel sessions: <strong>{{ padel_count }}</strong></p>
-  <p class="muted"><a href="/body" style="color:var(--accent)">Log weight</a> · <a href="/gym" style="color:var(--accent)">Log gym</a> · <a href="/padel" style="color:var(--accent)">Log padel</a></p>
+  <h2>Points & Badge</h2>
+  <p><strong style="font-size:22px">{{ total_points }}</strong> <span class="muted">total points</span></p>
+  {% if current_badge %}<p class="muted" style="font-size:13px">Current badge: <strong style="color:var(--accent)">{{ current_badge[1] }}</strong></p>{% endif %}
+  {% if next_milestone %}
+    <p class="muted" style="font-size:12px;margin:6px 0">Next: {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
+    <div class="progress-bar"><div class="progress-fill" style="width:{{ badge_progress_pct }}%"></div></div>
+  {% endif %}
+  <p style="margin-top:8px"><a href="/bonus" style="color:var(--accent);font-size:13px">Log bonus tasks →</a></p>
 </section>
 
-<section class="card muted-card">
-  <h2>Coming soon</h2>
-  <p class="muted">Meal plan and email reminders are built in the next phases.</p>
+{% if not today_logged %}
+<section class="card" style="border-color:var(--accent)">
+  <h2>Log today's training</h2>
+  <p class="muted" style="font-size:13px;margin-bottom:10px">Nothing logged yet today — pick one:</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/gym" class="meal-check-btn" style="text-decoration:none">Gym</a>
+    <a href="/home" class="meal-check-btn" style="text-decoration:none">Home Session</a>
+    <a href="/recovery" class="meal-check-btn" style="text-decoration:none">Active Recovery</a>
+    <a href="/padel" class="meal-check-btn" style="text-decoration:none">Padel</a>
+  </div>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>This Week</h2>
+  {% for day in day_cards %}
+  <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px{% if day.is_today %};border-color:var(--accent){% endif %}">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <strong>{{ day.weekday }} {{ day.date }}{% if day.is_today %} <span class="muted" style="font-size:11px">(today)</span>{% endif %}</strong>
+    </div>
+    <div class="muted" style="font-size:13px;margin-top:4px">{{ day.meal_label }} · {{ day.meal_kcal }} kcal · <a href="/meals?view_date={{ day.date }}" style="color:var(--accent)">meals</a></div>
+    <div style="margin-top:6px">
+      {% if day.workouts %}
+        {% for w in day.workouts %}
+          <span class="ingredient-chip">✓ {{ w.type_label }}{% if w.notes %} — {{ w.notes }}{% endif %}</span>
+        {% endfor %}
+      {% else %}
+        <span class="muted" style="font-size:12px">Nothing logged</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </section>
 {% endblock %}

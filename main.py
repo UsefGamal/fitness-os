@@ -7,13 +7,25 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from auth import APP_PASSWORD, is_logged_in
 from content.gym_exercises import SEED_EXERCISES
+from content.meal_plan import get_day
+from content.milestones import badge_progress
+from content.projections import (
+    confidence_score,
+    linear_rate_kg_per_week,
+    meal_adherence_pct,
+    predicted_goal_date,
+    slack_impact_date,
+    target_rate_kg_per_week,
+    training_adherence_pct,
+)
 from database import get_session, init_db
-from models import BodyLog, Exercise, Profile, Workout
+from models import BodyLog, BonusLog, Exercise, MealLog, Profile, Workout
 from routers import body, bonus, gym, home, meals, padel, recovery, reminders, settings
+from routers.meals import PLAN_START_DATE
 
 load_dotenv()
 
@@ -87,24 +99,101 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
+WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel"}
+MEAL_SLOTS_PER_DAY = 5
+
+
 @app.get("/")
 def dashboard(request: Request, session: Session = Depends(get_session)):
     if not is_logged_in(request):
         return RedirectResponse(url="/login", status_code=303)
 
+    today = date.today()
     profile = session.exec(select(Profile)).first()
-    latest_weight = session.exec(
-        select(BodyLog).order_by(BodyLog.log_date.desc())
-    ).first()
+    days_to_due = (profile.due_date - today).days if profile.due_date else None
 
-    days_to_due = (profile.due_date - date.today()).days if profile.due_date else None
+    # ── Goal progress ────────────────────────────────────────────
+    body_logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
+    latest_weight = body_logs[-1] if body_logs else None
+    current_weight = latest_weight.weight_kg if latest_weight else None
+    start_weight = profile.start_weight_kg or (body_logs[0].weight_kg if body_logs else None)
+    goal_mid = (profile.goal_weight_low_kg + profile.goal_weight_high_kg) / 2
 
-    week_start = date.today() - timedelta(days=date.today().weekday())
-    week_workouts = session.exec(
-        select(Workout).where(Workout.log_date >= week_start)
+    goal_progress_pct = None
+    if start_weight is not None and current_weight is not None and start_weight != goal_mid:
+        raw = (start_weight - current_weight) / (start_weight - goal_mid) * 100
+        goal_progress_pct = round(min(100, max(0, raw)))
+
+    # ── Confidence & prediction ─────────────────────────────────
+    recent_logs = [log for log in body_logs if (today - log.log_date).days <= 90]
+    actual_rate = linear_rate_kg_per_week(recent_logs)
+    target_rate = (
+        target_rate_kg_per_week(start_weight, goal_mid, PLAN_START_DATE, profile.goal_date)
+        if start_weight is not None
+        else None
+    )
+
+    two_weeks_ago = today - timedelta(days=14)
+    recent_sessions = session.exec(
+        select(Workout).where(
+            Workout.log_date >= two_weeks_ago, Workout.workout_type.in_(["gym", "home", "padel"])
+        )
     ).all()
-    gym_count = len([w for w in week_workouts if w.workout_type == "gym"])
-    padel_count = len([w for w in week_workouts if w.workout_type == "padel"])
+    train_adherence = training_adherence_pct(len(recent_sessions))
+
+    meals_completed = session.exec(
+        select(MealLog).where(MealLog.log_date >= two_weeks_ago, MealLog.completed == True)  # noqa: E712
+    ).all()
+    meal_adherence = meal_adherence_pct(len(meals_completed), MEAL_SLOTS_PER_DAY * 14)
+
+    combined_adherence = round((train_adherence + meal_adherence) / 2, 1)
+    confidence, confidence_label = confidence_score(actual_rate, target_rate, combined_adherence)
+
+    predicted_date = (
+        predicted_goal_date(current_weight, goal_mid, actual_rate, today)
+        if current_weight is not None
+        else None
+    )
+    slack_date = slack_impact_date(predicted_date, missed_weeks=2)
+
+    # ── Points & badge ──────────────────────────────────────────
+    total_points = session.exec(select(func.sum(BonusLog.points))).first() or 0
+    current_badge, next_milestone = badge_progress(total_points)
+    badge_progress_pct = None
+    if next_milestone:
+        floor = current_badge[0] if current_badge else 0
+        span = next_milestone[0] - floor
+        badge_progress_pct = round(((total_points - floor) / span) * 100) if span else 100
+
+    # ── This week ────────────────────────────────────────────────
+    week_start = today - timedelta(days=today.weekday())
+    week_workouts = session.exec(
+        select(Workout).where(Workout.log_date >= week_start, Workout.log_date < week_start + timedelta(days=7))
+    ).all()
+    workouts_by_date = {}
+    for w in week_workouts:
+        workouts_by_date.setdefault(w.log_date, []).append(w)
+
+    day_cards = []
+    for i in range(7):
+        day_date = week_start + timedelta(days=i)
+        day_number = (day_date - PLAN_START_DATE).days + 1
+        meal_day = get_day(day_number)
+        day_cards.append(
+            {
+                "date": day_date,
+                "is_today": day_date == today,
+                "weekday": day_date.strftime("%a"),
+                "meal_label": meal_day["label"],
+                "meal_kcal": meal_day["totals"]["kcal"],
+                "workouts": [
+                    {"type_label": WORKOUT_TYPE_LABELS.get(w.workout_type, w.workout_type), "notes": w.notes}
+                    for w in workouts_by_date.get(day_date, [])
+                ],
+            }
+        )
+
+    today_logged = bool(workouts_by_date.get(today))
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -112,10 +201,23 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "logged_in": True,
             "profile": profile,
-            "latest_weight": latest_weight,
             "days_to_due": days_to_due,
-            "gym_count": gym_count,
-            "padel_count": padel_count,
+            "start_weight": start_weight,
+            "current_weight": current_weight,
+            "goal_mid": goal_mid,
+            "goal_progress_pct": goal_progress_pct,
+            "actual_rate": actual_rate,
+            "target_rate": target_rate,
+            "confidence": confidence,
+            "confidence_label": confidence_label,
+            "predicted_date": predicted_date,
+            "slack_date": slack_date,
+            "total_points": total_points,
+            "current_badge": current_badge,
+            "next_milestone": next_milestone,
+            "badge_progress_pct": badge_progress_pct,
+            "day_cards": day_cards,
+            "today_logged": today_logged,
         },
     )
 
