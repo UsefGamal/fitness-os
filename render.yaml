@@ -20,3 +20,5 @@ services:
         sync: false
       - key: CRON_SECRET
         sync: false
+      - key: APP_BASE_URL
+        value: https://fitness-os.onrender.com
