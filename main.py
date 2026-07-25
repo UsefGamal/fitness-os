@@ -23,7 +23,7 @@ from content.projections import (
 )
 from database import get_session, init_db
 from models import BonusLog, Exercise, MealLog, Profile, Workout
-from routers import body, bonus, gym, home, meals, padel, recovery, reminders, settings, simulate
+from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate
 from routers.meals import PLAN_START_DATE
 
 load_dotenv()
@@ -43,6 +43,7 @@ app.include_router(home.router)
 app.include_router(recovery.router)
 app.include_router(bonus.router)
 app.include_router(simulate.router)
+app.include_router(cardio.router)
 
 
 @app.on_event("startup")
@@ -106,8 +107,8 @@ def more_page(request: Request):
     return templates.TemplateResponse("more.html", {"request": request, "logged_in": True})
 
 
-WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel"}
-WORKOUT_TYPE_ICONS = {"gym": "🏋️", "home": "🤸", "recovery": "🧘", "padel": "🎾"}
+WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel", "cardio": "Cardio"}
+WORKOUT_TYPE_ICONS = {"gym": "🏋️", "home": "🤸", "recovery": "🧘", "padel": "🎾", "cardio": "🏃"}
 MEAL_SLOTS_PER_DAY = 5
 
 

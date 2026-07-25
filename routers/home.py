@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
-from content.home_program import PROGRAM, next_program_day
+from content.home_program import ALTERNATE_EXERCISES, HOME_MUSCLE_GROUPS, PROGRAM, next_program_day
 from database import get_session
 from models import ChecklistItemLog, Workout
 from training_counter import count_training_sessions
@@ -79,9 +79,11 @@ def home_detail(workout_id: int, request: Request, session: Session = Depends(ge
     done_items = {log.item_name for log in logs if log.completed}
 
     program_checklist = None
+    targeted_muscles = []
     if workout.notes in PROGRAM_LABELS:
         program_day = next(d for d in PROGRAM if d["label"] == workout.notes)
         checklist = []
+        muscle_set = set()
         for spec in program_day["exercises"]:
             prior = session.exec(
                 select(ChecklistItemLog, Workout)
@@ -97,15 +99,26 @@ def home_detail(workout_id: int, request: Request, session: Session = Depends(ge
             if prior:
                 log, w = prior
                 last_performance = f"{log.reps_achieved} on {w.log_date}"
+            muscle_group = HOME_MUSCLE_GROUPS.get(spec["name"])
+            if muscle_group:
+                muscle_set.add(muscle_group)
             checklist.append(
                 {
                     "name": spec["name"],
                     "reps": spec["reps"],
                     "done": spec["name"] in done_items,
                     "last_performance": last_performance,
+                    "alternatives": ALTERNATE_EXERCISES.get(spec["name"], []),
                 }
             )
-        program_checklist = {"label": program_day["label"], "focus": program_day["focus"], "exercises": checklist}
+        program_checklist = {
+            "label": program_day["label"],
+            "focus": program_day["focus"],
+            "warmup": program_day.get("warmup", []),
+            "cooldown": program_day.get("cooldown", []),
+            "exercises": checklist,
+        }
+        targeted_muscles = sorted(muscle_set)
 
     return templates.TemplateResponse(
         "home_detail.html",
@@ -115,6 +128,7 @@ def home_detail(workout_id: int, request: Request, session: Session = Depends(ge
             "workout": workout,
             "program_checklist": program_checklist,
             "progression_note": PROGRESSION_NOTE,
+            "targeted_muscles": targeted_muscles,
         },
     )
 

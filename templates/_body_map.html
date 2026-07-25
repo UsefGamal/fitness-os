@@ -1,0 +1,28 @@
+{% set tm = targeted_muscles or [] %}
+<div class="body-map">
+  <svg viewBox="0 0 210 140" class="body-map-svg" role="img" aria-label="Muscle groups targeted today">
+    <!-- Front view -->
+    <circle class="bm-outline" cx="45" cy="15" r="10" />
+    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="19" y="26" width="12" height="12" rx="6" />
+    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="59" y="26" width="12" height="12" rx="6" />
+    <rect class="bm-region{% if 'Chest' in tm %} bm-hit{% endif %}" x="32" y="28" width="26" height="22" rx="4" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="15" y="30" width="8" height="45" rx="4" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="63" y="30" width="8" height="45" rx="4" />
+    <rect class="bm-region{% if 'Core' in tm %} bm-hit{% endif %}" x="34" y="50" width="22" height="20" rx="4" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="28" y="70" width="12" height="55" rx="5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="50" y="70" width="12" height="55" rx="5" />
+    <text class="bm-label" x="45" y="136" text-anchor="middle">FRONT</text>
+
+    <!-- Back view -->
+    <circle class="bm-outline" cx="165" cy="15" r="10" />
+    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="139" y="26" width="12" height="12" rx="6" />
+    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="179" y="26" width="12" height="12" rx="6" />
+    <rect class="bm-region{% if 'Back' in tm %} bm-hit{% endif %}" x="152" y="28" width="26" height="22" rx="4" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="135" y="30" width="8" height="45" rx="4" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="183" y="30" width="8" height="45" rx="4" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="148" y="70" width="12" height="55" rx="5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="170" y="70" width="12" height="55" rx="5" />
+    <text class="bm-label" x="165" y="136" text-anchor="middle">BACK</text>
+  </svg>
+  <p class="muted" style="font-size:12px;margin-top:6px">Today's focus: {{ tm | join(", ") if tm else "—" }}</p>
+</div>

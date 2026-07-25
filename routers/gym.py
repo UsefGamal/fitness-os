@@ -117,15 +117,25 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
     next_set_number = len(sets) + 1
 
     program_checklist = None
+    targeted_muscles = []
     if workout.notes in PROGRAM_LABELS:
         program_day = next(d for d in PROGRAM if d["label"] == workout.notes)
         checklist = []
+        muscle_set = set()
         for spec in program_day["exercises"]:
             ex = exercise_by_name.get(spec["name"])
             suggestion = "no prior data yet — pick a comfortable starting weight"
             if ex and ex.id in last_performance_raw:
                 last_reps, last_weight = last_performance_raw[ex.id]
                 suggestion = _suggest_next_weight(ex, last_reps, last_weight, spec["reps"])
+            alternatives = []
+            if ex:
+                muscle_set.add(ex.muscle_group)
+                alternatives = [
+                    {"name": other.name, "equipment": other.equipment}
+                    for other in exercises
+                    if other.muscle_group == ex.muscle_group and other.name != ex.name
+                ]
             checklist.append(
                 {
                     "name": spec["name"],
@@ -133,9 +143,17 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
                     "reps": spec["reps"],
                     "rest": spec["rest"],
                     "suggestion": suggestion,
+                    "alternatives": alternatives,
                 }
             )
-        program_checklist = {"label": program_day["label"], "focus": program_day["focus"], "exercises": checklist}
+        program_checklist = {
+            "label": program_day["label"],
+            "focus": program_day["focus"],
+            "warmup": program_day.get("warmup", []),
+            "cooldown": program_day.get("cooldown", []),
+            "exercises": checklist,
+        }
+        targeted_muscles = sorted(muscle_set)
 
     return templates.TemplateResponse(
         "gym_detail.html",
@@ -149,6 +167,7 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             "next_set_number": next_set_number,
             "program_checklist": program_checklist,
             "progression_note": PROGRESSION_NOTE,
+            "targeted_muscles": targeted_muscles,
         },
     )
 
