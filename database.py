@@ -27,6 +27,7 @@ _LIGHT_MIGRATIONS = [
     "ALTER TABLE workout ADD COLUMN is_deload BOOLEAN DEFAULT false",
     "ALTER TABLE workout ADD COLUMN pain_note VARCHAR",
     "ALTER TABLE workoutset ADD COLUMN rpe FLOAT",
+    "ALTER TABLE workout ADD COLUMN result VARCHAR",
 ]
 
 

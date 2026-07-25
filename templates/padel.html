@@ -3,6 +3,23 @@
 {% block content %}
 <h1><svg class="icon"><use href="#icon-racket"/></svg> Padel</h1>
 
+{% if record_str %}
+<section class="card">
+  <div class="stat-row">
+    <div class="stat-tile">
+      <div class="sv" style="font-size:18px;color:var(--accent)">{{ record_str }}</div>
+      <div class="sl">Record</div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if pain_flag %}
+<section class="card" style="border-color:rgba(220,38,38,0.4);background:rgba(220,38,38,0.06)">
+  <p style="margin:0;display:flex;align-items:center;gap:8px;color:var(--chart-critical)"><svg class="icon"><use href="#icon-alert"/></svg> {{ pain_flag }}</p>
+</section>
+{% endif %}
+
 {% if duration_svg %}
 <section class="card">
   <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Duration trend</h2>
@@ -16,7 +33,16 @@
     <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
     <label>Duration (min) <input type="number" name="duration_min" value="90"></label>
     <label>RPE (optional, 1-10) <input type="number" min="1" max="10" name="session_rpe"></label>
-    <label>Notes (score, opponent, etc.) <input type="text" name="notes"></label>
+    <label>Result
+      <select name="result">
+        <option value="">—</option>
+        <option value="win">Win</option>
+        <option value="loss">Loss</option>
+        <option value="draw">Draw</option>
+      </select>
+    </label>
+    <label>Notes (opponent, score, etc.) <input type="text" name="notes"></label>
+    <label>Anything hurt today? (optional) <input type="text" name="pain_note"></label>
     <button type="submit">Save</button>
   </form>
 </section>
@@ -26,14 +52,15 @@
   {% if sessions %}
   <div class="table-scroll">
   <table class="log-table">
-    <thead><tr><th>Date</th><th>Duration</th><th>RPE</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Date</th><th>Duration</th><th>Result</th><th>RPE</th><th>Notes</th></tr></thead>
     <tbody>
     {% for s in sessions %}
       <tr>
         <td>{{ s.log_date }}</td>
         <td>{{ s.duration_min }} min</td>
+        <td>{{ result_labels.get(s.result, "—") }}</td>
         <td>{{ s.session_rpe if s.session_rpe is not none else "—" }}</td>
-        <td>{{ s.notes or "" }}</td>
+        <td>{{ s.notes or "" }}{% if s.pain_note %} <span style="color:var(--danger)" title="{{ s.pain_note }}">(hurt)</span>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>

@@ -47,6 +47,7 @@ class Workout(SQLModel, table=True):
     session_rpe: Optional[int] = None  # 1-10 session-level intensity/effort
     is_deload: bool = False
     pain_note: Optional[str] = None
+    result: Optional[str] = None  # "win" / "loss" / "draw" — used by padel
 
 
 class Exercise(SQLModel, table=True):

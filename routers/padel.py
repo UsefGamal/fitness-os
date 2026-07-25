@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import date
 from typing import Optional
 
@@ -14,6 +15,10 @@ from models import Workout
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+RESULT_LABELS = {"win": "Win", "loss": "Loss", "draw": "Draw"}
+PAIN_PATTERN_LOOKBACK = 5
+PAIN_PATTERN_THRESHOLD = 3
+
 
 @router.get("/padel", dependencies=[Depends(require_login)])
 def padel_list(request: Request, session: Session = Depends(get_session)):
@@ -21,6 +26,17 @@ def padel_list(request: Request, session: Session = Depends(get_session)):
         select(Workout).where(Workout.workout_type == "padel").order_by(Workout.log_date.desc())
     ).all()
     recent_durations = [s.duration_min for s in reversed(sessions[:12]) if s.duration_min]
+
+    record = Counter(s.result for s in sessions if s.result in RESULT_LABELS)
+    record_str = f"{record['win']}W – {record['loss']}L – {record['draw']}D" if record else None
+
+    recent_pain = [s for s in sessions[:PAIN_PATTERN_LOOKBACK] if s.pain_note]
+    pain_flag = (
+        f"You've noted discomfort in {len(recent_pain)} of your last {min(len(sessions), PAIN_PATTERN_LOOKBACK)} padel sessions — worth mentioning to someone if it keeps up."
+        if len(recent_pain) >= PAIN_PATTERN_THRESHOLD
+        else None
+    )
+
     return templates.TemplateResponse(
         "padel.html",
         {
@@ -29,6 +45,9 @@ def padel_list(request: Request, session: Session = Depends(get_session)):
             "sessions": sessions,
             "today": date.today().isoformat(),
             "duration_svg": build_sparkline_svg(recent_durations) if len(recent_durations) >= 2 else "",
+            "record_str": record_str,
+            "pain_flag": pain_flag,
+            "result_labels": RESULT_LABELS,
         },
     )
 
@@ -39,10 +58,20 @@ def add_padel_session(
     duration_min: Optional[int] = Form(90),
     notes: Optional[str] = Form(None),
     session_rpe: Optional[int] = Form(None),
+    result: Optional[str] = Form(None),
+    pain_note: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     session.add(
-        Workout(log_date=log_date, workout_type="padel", duration_min=duration_min, notes=notes, session_rpe=session_rpe)
+        Workout(
+            log_date=log_date,
+            workout_type="padel",
+            duration_min=duration_min,
+            notes=notes,
+            session_rpe=session_rpe,
+            result=result or None,
+            pain_note=pain_note or None,
+        )
     )
     session.commit()
     return RedirectResponse(url="/padel", status_code=303)

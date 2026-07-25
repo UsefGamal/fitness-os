@@ -3,6 +3,12 @@
 {% block content %}
 <h1>Dashboard</h1>
 
+{% if pain_pattern_flag %}
+<section class="card" style="border-color:rgba(220,38,38,0.4);background:rgba(220,38,38,0.06)">
+  <p style="margin:0;display:flex;align-items:center;gap:8px;color:var(--chart-critical)"><svg class="icon"><use href="#icon-alert"/></svg> {{ pain_pattern_flag }}</p>
+</section>
+{% endif %}
+
 <section class="card card-glow">
   <h2 style="margin-top:0"><svg class="icon"><use href="#icon-check"/></svg> Today's Checklist</h2>
   <div class="today-meals-row">

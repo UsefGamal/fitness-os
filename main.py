@@ -164,6 +164,16 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
         return RedirectResponse(url="/login", status_code=303)
 
     today = date.today()
+
+    # ── Pain-pattern flag (across every training type) ──────────────
+    recent_workouts_any = session.exec(select(Workout).order_by(Workout.log_date.desc())).all()[:5]
+    recent_pain_count = len([w for w in recent_workouts_any if w.pain_note])
+    pain_pattern_flag = (
+        f"You've noted discomfort in {recent_pain_count} of your last {len(recent_workouts_any)} sessions — worth keeping an eye on."
+        if recent_pain_count >= 3
+        else None
+    )
+
     baseline = get_baseline(session, today)
     profile = baseline["profile"]
     current_weight = baseline["current_weight"]
@@ -344,6 +354,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "quests_done_count": quests_done_count,
             "quests_total_count": quests_total_count,
             "hydration_meter_today": hydration_meter_today,
+            "pain_pattern_flag": pain_pattern_flag,
         },
     )
 
