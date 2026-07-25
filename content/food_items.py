@@ -1,4 +1,4 @@
-# Egyptian-cuisine food item library, no fish/seafood.
+# Food item library — Egyptian, Syrian/Levantine, and grilled dishes, no fish/seafood.
 # Each value: (kcal, protein_g, carbs_g, fat_g) per the stated portion.
 # Approximate structured-portion figures, not lab-precision macros.
 
@@ -40,4 +40,27 @@ FOODS = {
     "hummus_2tbsp": (70, 3, 6, 4),
     "whole_wheat_toast_2slices": (140, 6, 26, 2),
     "avocado_half": (120, 1.5, 6, 11),
+    # Syrian / Levantine / grilled additions
+    "shish_tawook_200g": (320, 55, 3, 9),  # marinated grilled chicken skewers
+    "grilled_kofta_skewer_150g": (300, 28, 2, 19),  # Syrian-spiced grilled beef kofta
+    "grilled_lamb_chops_180g": (380, 38, 0, 24),
+    "grilled_kebab_hindi_150g": (280, 30, 1, 17),  # grilled minced-beef kebab roll
+    "shawarma_plate_220g": (300, 48, 4, 10),  # grilled chicken shawarma spice, plate not sandwich
+    "grilled_halloumi_50g": (170, 11, 2, 13),
+    "fattoush_bowl": (150, 4, 20, 7),  # toasted pita, sumac, mixed veg
+    "tabbouleh_bowl": (140, 4, 20, 5),  # parsley & bulgur salad
+    "mutabbal_2tbsp": (70, 2, 4, 5),  # smoky grilled-eggplant dip
+    "toum_1tbsp": (90, 0.3, 2, 9),  # Levantine garlic sauce, small portion
+    "batata_harra_100g": (150, 2, 22, 6),  # spiced pan-roasted potatoes
+    "syrian_rice_vermicelli_150g": (210, 4, 42, 3),  # roz bi shaghria
+    "zaatar_manakish_half": (220, 6, 30, 9),  # baked thyme flatbread
+}
+
+# Zero/near-zero calorie drinks selectable per meal.
+DRINKS = {
+    "water": (0, 0, 0, 0),
+    "unsweetened_tea": (2, 0, 0, 0),
+    "unsweetened_coffee": (2, 0, 0, 0),
+    "diet_soda": (2, 0, 0.5, 0),
+    "flavored_sparkling_water": (0, 0, 0, 0),
 }

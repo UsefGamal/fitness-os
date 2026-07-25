@@ -6,7 +6,8 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
-from content.meal_plan import get_day
+from content.eating_out_guide import EATING_OUT_TIPS
+from content.meal_plan import DRINK_OPTIONS, display_name, get_day
 from database import get_session
 from models import MealLog
 
@@ -31,6 +32,17 @@ SLOT_ICONS = {
     "dinner": "🌙",
 }
 
+# Which eating-out tip bucket each slot pulls from.
+SLOT_EATING_OUT_KEY = {
+    "breakfast": "breakfast",
+    "snack1": "snack",
+    "lunch": "lunch",
+    "snack2": "snack",
+    "dinner": "dinner",
+}
+
+DRINK_LABELS = {key: display_name(key) for key in DRINK_OPTIONS}
+
 
 def _day_number_for(d: date) -> int:
     return (d - PLAN_START_DATE).days + 1
@@ -43,12 +55,21 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     plan = get_day(day_number)
 
     logs = session.exec(select(MealLog).where(MealLog.log_date == current)).all()
-    completed_slots = {log.meal_slot for log in logs if log.completed}
+    logs_by_slot = {log.meal_slot: log for log in logs}
 
     for meal in plan["meals"]:
+        log = logs_by_slot.get(meal["slot"])
         meal["label"] = SLOT_LABELS.get(meal["slot"], meal["slot"])
         meal["icon"] = SLOT_ICONS.get(meal["slot"], "🍽️")
-        meal["done"] = meal["slot"] in completed_slots
+        meal["done"] = bool(log and log.completed)
+        selected_option = log.option_key if (log and log.completed) else None
+        for option in meal["options"]:
+            option["selected"] = option["key"] == selected_option
+        meal["drinks"] = [
+            {"key": key, "label": DRINK_LABELS[key], "selected": bool(log and log.drink_key == key)}
+            for key in DRINK_OPTIONS
+        ]
+        meal["eating_out_tips"] = EATING_OUT_TIPS.get(SLOT_EATING_OUT_KEY[meal["slot"]], [])
 
     return templates.TemplateResponse(
         "meals.html",
@@ -60,6 +81,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
             "prev_date": (current - timedelta(days=1)).isoformat(),
             "next_date": (current + timedelta(days=1)).isoformat(),
             "is_today": current == date.today(),
+            "eating_out_general": EATING_OUT_TIPS["general"],
         },
     )
 
@@ -68,6 +90,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
 def toggle_meal(
     log_date: str = Form(...),
     meal_slot: str = Form(...),
+    option_key: str = Form(...),
     session: Session = Depends(get_session),
 ):
     d = date.fromisoformat(log_date)
@@ -75,9 +98,33 @@ def toggle_meal(
         select(MealLog).where(MealLog.log_date == d, MealLog.meal_slot == meal_slot)
     ).first()
     if existing:
-        existing.completed = not existing.completed
+        if existing.completed and existing.option_key == option_key:
+            existing.completed = False
+        else:
+            existing.completed = True
+            existing.option_key = option_key
         session.add(existing)
     else:
-        session.add(MealLog(log_date=d, meal_slot=meal_slot, completed=True))
+        session.add(MealLog(log_date=d, meal_slot=meal_slot, completed=True, option_key=option_key))
+    session.commit()
+    return RedirectResponse(url=f"/meals?view_date={log_date}", status_code=303)
+
+
+@router.post("/meals/drink", dependencies=[Depends(require_login)])
+def set_drink(
+    log_date: str = Form(...),
+    meal_slot: str = Form(...),
+    drink_key: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    d = date.fromisoformat(log_date)
+    existing = session.exec(
+        select(MealLog).where(MealLog.log_date == d, MealLog.meal_slot == meal_slot)
+    ).first()
+    if existing:
+        existing.drink_key = None if existing.drink_key == drink_key else drink_key
+        session.add(existing)
+    else:
+        session.add(MealLog(log_date=d, meal_slot=meal_slot, completed=False, drink_key=drink_key))
     session.commit()
     return RedirectResponse(url=f"/meals?view_date={log_date}", status_code=303)

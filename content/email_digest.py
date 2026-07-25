@@ -1,5 +1,6 @@
 from datetime import date
 
+from content.eating_out_guide import EATING_OUT_TIPS
 from content.gym_program import next_program_day
 from content.meal_plan import get_day
 from routers.meals import PLAN_START_DATE, SLOT_LABELS
@@ -15,13 +16,18 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
     day_number = (today - PLAN_START_DATE).days + 1
     meal_plan = get_day(day_number)
     gym_day = next_program_day(completed_gym_sessions)
+    general_tips = EATING_OUT_TIPS["general"]
+    eating_out_tip = general_tips[day_number % len(general_tips)]
 
     meal_rows = "".join(
         f"""
         <tr>
-          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};font-weight:600;color:{INK};white-space:nowrap">{SLOT_LABELS.get(m['slot'], m['slot'])}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};color:{MUTED};font-size:14px">{', '.join(m['ingredients'])}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};color:{ACCENT};font-weight:600;white-space:nowrap;text-align:right">{m['kcal']} kcal</td>
+          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};font-weight:600;color:{INK};white-space:nowrap">{SLOT_LABELS.get(m['slot'], m['slot'])}<br><span style="font-weight:400;color:{MUTED};font-size:11px">{m['time_window']}</span></td>
+          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};color:{MUTED};font-size:13px">
+            <strong>A ({m['options'][0]['cuisine']}):</strong> {', '.join(m['options'][0]['ingredients'])}<br>
+            <strong>B ({m['options'][1]['cuisine']}):</strong> {', '.join(m['options'][1]['ingredients'])}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};color:{ACCENT};font-weight:600;white-space:nowrap;text-align:right">{m['options'][0]['kcal']} kcal</td>
         </tr>"""
         for m in meal_plan["meals"]
     )
@@ -56,6 +62,7 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
             {meal_plan['totals']['kcal']} kcal &middot; {meal_plan['totals']['protein']}g protein &middot; {meal_plan['totals']['carbs']}g carbs &middot; {meal_plan['totals']['fat']}g fat
           </p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:8px">{meal_rows}</table>
+          <p style="color:{MUTED};font-size:12px;margin:8px 0 0;font-style:italic">Eating out? {eating_out_tip}</p>
           <p style="text-align:right;margin:8px 0 0">
             <a href="{app_base_url}/meals" style="color:{ACCENT};font-size:13px;font-weight:600;text-decoration:none">Open meal plan →</a>
           </p>

@@ -11,31 +11,67 @@
   </div>
   <h2>{{ plan.label }}</h2>
   <div class="day-macros">
-    <div class="macro-pill"><div class="mv">{{ plan.totals.kcal }}</div><div class="ml">KCAL</div></div>
+    <div class="macro-pill"><div class="mv">{{ plan.totals.kcal }}</div><div class="ml">KCAL (OPT A)</div></div>
     <div class="macro-pill"><div class="mv">{{ plan.totals.protein }}g</div><div class="ml">PROTEIN</div></div>
     <div class="macro-pill"><div class="mv">{{ plan.totals.carbs }}g</div><div class="ml">CARBS</div></div>
     <div class="macro-pill"><div class="mv">{{ plan.totals.fat }}g</div><div class="ml">FAT</div></div>
   </div>
 </section>
 
+<details class="card eating-out">
+  <summary>🥗 Eating out today? General rules</summary>
+  <ul>
+    {% for tip in eating_out_general %}<li>{{ tip }}</li>{% endfor %}
+  </ul>
+</details>
+
 {% for meal in plan.meals %}
 <section class="card meal-card{% if meal.done %} meal-done{% endif %}">
   <div class="meal-header">
     <h2>{{ meal.icon }} {{ meal.label }}</h2>
-    <form method="post" action="/meals/toggle" class="js-toggle">
+    <span class="time-window">{{ meal.time_window }}</span>
+  </div>
+
+  {% for option in meal.options %}
+  <div class="meal-option{% if option.selected %} meal-option-selected{% endif %}">
+    <div class="option-head">
+      <span class="cuisine-tag">{{ option.cuisine }}</span>
+      <form method="post" action="/meals/toggle" class="js-toggle">
+        <input type="hidden" name="log_date" value="{{ current_date }}">
+        <input type="hidden" name="meal_slot" value="{{ meal.slot }}">
+        <input type="hidden" name="option_key" value="{{ option.key }}">
+        <button type="submit" class="meal-check-btn{% if option.selected %} done{% endif %}" data-done-label="✓ Eaten" data-undone-label="Eat this">
+          {% if option.selected %}✓ Eaten{% else %}Eat this{% endif %}
+        </button>
+      </form>
+    </div>
+    <div class="meal-items">
+      {% for item in option.ingredients %}<span class="ingredient-chip">{{ item }}</span>{% endfor %}
+    </div>
+    <div class="meal-macros-row">
+      <span>{{ option.kcal }} kcal</span> · <span>{{ option.protein }}g protein</span> · <span>{{ option.carbs }}g carbs</span> · <span>{{ option.fat }}g fat</span>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="drinks-row">
+    <span class="drinks-label">Drink:</span>
+    {% for drink in meal.drinks %}
+    <form method="post" action="/meals/drink" style="display:inline">
       <input type="hidden" name="log_date" value="{{ current_date }}">
       <input type="hidden" name="meal_slot" value="{{ meal.slot }}">
-      <button type="submit" class="meal-check-btn{% if meal.done %} done{% endif %}" data-done-label="✓ Eaten" data-undone-label="Mark eaten">
-        {% if meal.done %}✓ Eaten{% else %}Mark eaten{% endif %}
-      </button>
+      <input type="hidden" name="drink_key" value="{{ drink.key }}">
+      <button type="submit" class="drink-chip{% if drink.selected %} drink-chip-selected{% endif %}">{{ drink.label }}</button>
     </form>
+    {% endfor %}
   </div>
-  <div class="meal-items">
-    {% for item in meal.ingredients %}<span class="ingredient-chip">{{ item }}</span>{% endfor %}
-  </div>
-  <div class="meal-macros-row">
-    <span>{{ meal.kcal }} kcal</span> · <span>{{ meal.protein }}g protein</span> · <span>{{ meal.carbs }}g carbs</span> · <span>{{ meal.fat }}g fat</span>
-  </div>
+
+  <details class="eating-out">
+    <summary>Eating out for this meal?</summary>
+    <ul>
+      {% for tip in meal.eating_out_tips %}<li>{{ tip }}</li>{% endfor %}
+    </ul>
+  </details>
 </section>
 {% endfor %}
 {% endblock %}

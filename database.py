@@ -16,6 +16,8 @@ engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 _LIGHT_MIGRATIONS = [
     "ALTER TABLE profile ADD COLUMN fitness_level VARCHAR DEFAULT 'intermediate'",
     "ALTER TABLE profile ADD COLUMN start_weight_kg FLOAT",
+    "ALTER TABLE meallog ADD COLUMN option_key VARCHAR",
+    "ALTER TABLE meallog ADD COLUMN drink_key VARCHAR",
 ]
 
 

@@ -68,6 +68,8 @@ class MealLog(SQLModel, table=True):
     log_date: date
     meal_slot: str
     completed: bool = False
+    option_key: Optional[str] = None  # "option_a" or "option_b" — which one was eaten
+    drink_key: Optional[str] = None  # which drink (see content/food_items.DRINKS) was chosen
 
 
 class BonusLog(SQLModel, table=True):
