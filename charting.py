@@ -35,6 +35,11 @@ def build_line_svg(
     if len(values) < 2:
         return ""
 
+    # Extra headroom above the plotted line so the endpoint's direct-value
+    # label (drawn above its point) never gets clipped by the viewBox when
+    # that point sits near the top of the range.
+    pad_top = pad + 16
+
     all_values = list(values) + ([reference_value] if reference_value is not None else [])
     min_v, max_v = min(all_values), max(all_values)
     span = (max_v - min_v) or 1
@@ -42,7 +47,7 @@ def build_line_svg(
 
     def xy(i, v):
         x = pad + (i / (n - 1)) * (width - 2 * pad)
-        y = pad + (1 - (v - min_v) / span) * (height - 2 * pad)
+        y = pad_top + (1 - (v - min_v) / span) * (height - pad_top - pad)
         return x, y
 
     points = [xy(i, v) for i, v in enumerate(values)]

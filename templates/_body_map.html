@@ -1,28 +1,47 @@
 {% set tm = targeted_muscles or [] %}
 <div class="body-map">
-  <svg viewBox="0 0 210 140" class="body-map-svg" role="img" aria-label="Muscle groups targeted today">
+  <svg viewBox="0 0 200 240" class="body-map-svg" role="img" aria-label="Muscle groups targeted today">
     <!-- Front view -->
-    <circle class="bm-outline" cx="45" cy="15" r="10" />
-    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="19" y="26" width="12" height="12" rx="6" />
-    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="59" y="26" width="12" height="12" rx="6" />
-    <rect class="bm-region{% if 'Chest' in tm %} bm-hit{% endif %}" x="32" y="28" width="26" height="22" rx="4" />
-    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="15" y="30" width="8" height="45" rx="4" />
-    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="63" y="30" width="8" height="45" rx="4" />
-    <rect class="bm-region{% if 'Core' in tm %} bm-hit{% endif %}" x="34" y="50" width="22" height="20" rx="4" />
-    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="28" y="70" width="12" height="55" rx="5" />
-    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="50" y="70" width="12" height="55" rx="5" />
-    <text class="bm-label" x="45" y="136" text-anchor="middle">FRONT</text>
+    <ellipse class="bm-outline" cx="50" cy="16" rx="12" ry="13" />
+    <rect class="bm-outline" x="44" y="27" width="12" height="7" />
+    <circle class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" cx="26" cy="39" r="10" />
+    <circle class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" cx="74" cy="39" r="10" />
+    <rect class="bm-region{% if 'Chest' in tm %} bm-hit{% endif %}" x="32" y="33" width="36" height="28" rx="12" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="14" y="40" width="12" height="34" rx="6" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="74" y="40" width="12" height="34" rx="6" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="15" y="74" width="10" height="32" rx="5" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="75" y="74" width="10" height="32" rx="5" />
+    <rect class="bm-region{% if 'Core' in tm %} bm-hit{% endif %}" x="35" y="61" width="30" height="34" rx="10" />
+    <line class="bm-decor" x1="45" y1="66" x2="45" y2="93" />
+    <line class="bm-decor" x1="55" y1="66" x2="55" y2="93" />
+    <line class="bm-decor" x1="39" y1="72" x2="61" y2="72" />
+    <line class="bm-decor" x1="39" y1="81" x2="61" y2="81" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="30" y="96" width="15" height="42" rx="7.5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="55" y="96" width="15" height="42" rx="7.5" />
+    <circle class="bm-joint" cx="37.5" cy="140" r="3" />
+    <circle class="bm-joint" cx="62.5" cy="140" r="3" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="32" y="142" width="11" height="42" rx="5.5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="57" y="142" width="11" height="42" rx="5.5" />
+    <text class="bm-label" x="50" y="228" text-anchor="middle">FRONT</text>
 
     <!-- Back view -->
-    <circle class="bm-outline" cx="165" cy="15" r="10" />
-    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="139" y="26" width="12" height="12" rx="6" />
-    <rect class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" x="179" y="26" width="12" height="12" rx="6" />
-    <rect class="bm-region{% if 'Back' in tm %} bm-hit{% endif %}" x="152" y="28" width="26" height="22" rx="4" />
-    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="135" y="30" width="8" height="45" rx="4" />
-    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="183" y="30" width="8" height="45" rx="4" />
-    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="148" y="70" width="12" height="55" rx="5" />
-    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="170" y="70" width="12" height="55" rx="5" />
-    <text class="bm-label" x="165" y="136" text-anchor="middle">BACK</text>
+    <ellipse class="bm-outline" cx="150" cy="16" rx="12" ry="13" />
+    <rect class="bm-outline" x="144" y="27" width="12" height="7" />
+    <circle class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" cx="126" cy="39" r="10" />
+    <circle class="bm-region{% if 'Shoulders' in tm %} bm-hit{% endif %}" cx="174" cy="39" r="10" />
+    <rect class="bm-region{% if 'Back' in tm %} bm-hit{% endif %}" x="130" y="33" width="40" height="42" rx="14" />
+    <line class="bm-decor" x1="150" y1="36" x2="150" y2="71" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="114" y="40" width="12" height="34" rx="6" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="174" y="40" width="12" height="34" rx="6" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="115" y="74" width="10" height="32" rx="5" />
+    <rect class="bm-region{% if 'Arms' in tm %} bm-hit{% endif %}" x="175" y="74" width="10" height="32" rx="5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="130" y="96" width="15" height="42" rx="7.5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="155" y="96" width="15" height="42" rx="7.5" />
+    <circle class="bm-joint" cx="137.5" cy="140" r="3" />
+    <circle class="bm-joint" cx="162.5" cy="140" r="3" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="132" y="142" width="11" height="42" rx="5.5" />
+    <rect class="bm-region{% if 'Legs' in tm %} bm-hit{% endif %}" x="157" y="142" width="11" height="42" rx="5.5" />
+    <text class="bm-label" x="150" y="228" text-anchor="middle">BACK</text>
   </svg>
   <p class="muted" style="font-size:12px;margin-top:6px">Today's focus: {{ tm | join(", ") if tm else "—" }}</p>
 </div>

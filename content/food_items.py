@@ -56,6 +56,70 @@ FOODS = {
     "zaatar_manakish_half": (220, 6, 30, 9, 2),  # baked thyme flatbread
 }
 
+# Grocery-aisle grouping for the shopping list — cosmetic only, doesn't
+# affect macros. Order here is the display order (roughly aisle order).
+CATEGORY_ORDER = [
+    "Protein & Mains",
+    "Dairy & Eggs",
+    "Grains & Bakery",
+    "Legumes",
+    "Produce & Salads",
+    "Nuts, Sauces & Extras",
+]
+
+FOOD_CATEGORIES = {
+    "ful_medames_bowl": "Legumes",
+    "boiled_egg": "Dairy & Eggs",
+    "whole_wheat_pita_half": "Grains & Bakery",
+    "whole_wheat_pita": "Grains & Bakery",
+    "greek_yogurt_lowfat_200g": "Dairy & Eggs",
+    "fruit_medium": "Produce & Salads",
+    "grilled_chicken_breast_200g": "Protein & Mains",
+    "grilled_chicken_breast_150g": "Protein & Mains",
+    "white_rice_150g": "Grains & Bakery",
+    "salad_tomato_cucumber": "Produce & Salads",
+    "mixed_nuts_25g": "Nuts, Sauces & Extras",
+    "lentil_soup_bowl": "Legumes",
+    "cottage_cheese_100g": "Dairy & Eggs",
+    "cottage_cheese_150g": "Dairy & Eggs",
+    "shakshuka_3eggs": "Dairy & Eggs",
+    "feta_50g": "Dairy & Eggs",
+    "beef_kofta_150g": "Protein & Mains",
+    "beef_kofta_100g": "Protein & Mains",
+    "molokhia_bowl": "Protein & Mains",
+    "bamia_chicken_bowl": "Protein & Mains",
+    "freekeh_150g": "Grains & Bakery",
+    "hawawshi_baked": "Protein & Mains",
+    "fattah_portion": "Protein & Mains",
+    "koshari_bowl_small": "Legumes",
+    "omelet_3egg_veg": "Dairy & Eggs",
+    "roasted_chickpeas_30g": "Legumes",
+    "labneh_2tbsp": "Dairy & Eggs",
+    "grilled_beef_steak_180g": "Protein & Mains",
+    "mahshi_zucchini_bowl": "Protein & Mains",
+    "turkey_breast_150g": "Protein & Mains",
+    "chicken_shawarma_home_200g": "Protein & Mains",
+    "grilled_chicken_thigh_200g": "Protein & Mains",
+    "rice_pudding_small": "Grains & Bakery",
+    "dates_3pc": "Produce & Salads",
+    "hummus_2tbsp": "Legumes",
+    "whole_wheat_toast_2slices": "Grains & Bakery",
+    "avocado_half": "Produce & Salads",
+    "shish_tawook_200g": "Protein & Mains",
+    "grilled_kofta_skewer_150g": "Protein & Mains",
+    "grilled_lamb_chops_180g": "Protein & Mains",
+    "grilled_kebab_hindi_150g": "Protein & Mains",
+    "shawarma_plate_220g": "Protein & Mains",
+    "grilled_halloumi_50g": "Dairy & Eggs",
+    "fattoush_bowl": "Produce & Salads",
+    "tabbouleh_bowl": "Produce & Salads",
+    "mutabbal_2tbsp": "Nuts, Sauces & Extras",
+    "toum_1tbsp": "Nuts, Sauces & Extras",
+    "batata_harra_100g": "Produce & Salads",
+    "syrian_rice_vermicelli_150g": "Grains & Bakery",
+    "zaatar_manakish_half": "Grains & Bakery",
+}
+
 # Zero/near-zero calorie drinks selectable per meal.
 DRINKS = {
     "water": (0, 0, 0, 0, 0),

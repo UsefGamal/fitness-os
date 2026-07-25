@@ -4,9 +4,11 @@
 <h1><svg class="icon"><use href="#icon-list"/></svg> Shopping List</h1>
 <p class="muted" style="font-size:13px;margin-bottom:16px">{{ start_date }} → {{ end_date }} — covers both meal options for each day, so you have what you need either way.</p>
 
+{% for cat in categories %}
 <section class="card">
+  <h2 style="font-size:14px;letter-spacing:0.3px">{{ cat.name }}</h2>
   <div class="link-list">
-    {% for item in items %}
+    {% for item in cat.foods %}
     <div class="link-row" style="cursor:default">
       <span>{{ item.name }}</span>
       <span class="muted" style="margin-left:auto;font-family:var(--font-mono)">×{{ item.count }}</span>
@@ -14,6 +16,7 @@
     {% endfor %}
   </div>
 </section>
+{% endfor %}
 
 <a class="back-link" href="/meals"><svg class="icon"><use href="#icon-chevron-left"/></svg> Back to meals</a>
 {% endblock %}

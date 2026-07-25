@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Quests — Fitness OS{% endblock %}
 {% block content %}
-<h1>Daily Quests</h1>
+<h1>Quests</h1>
 
 <section class="card card-gold">
   <h2>Points</h2>
@@ -24,8 +24,7 @@
   {% endif %}
 </section>
 
-<section class="card">
-  <h2>Today's quests</h2>
+{% macro quest_list(tasks) %}
   {% for task in tasks %}
   <div class="quest-card{% if task.done %} quest-done{% endif %}">
     <svg class="icon quest-icon"><use href="#icon-{{ task.icon }}"/></svg>
@@ -39,5 +38,20 @@
     </form>
   </div>
   {% endfor %}
+{% endmacro %}
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-star"/></svg> Milestones <span class="muted" style="font-weight:400;font-size:12px">— once, ever</span></h2>
+  {{ quest_list(once_tasks) }}
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-calendar"/></svg> This week's quests <span class="muted" style="font-weight:400;font-size:12px">— resets Monday</span></h2>
+  {{ quest_list(weekly_tasks) }}
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-sunrise"/></svg> Today's habits <span class="muted" style="font-weight:400;font-size:12px">— resets daily</span></h2>
+  {{ quest_list(daily_tasks) }}
 </section>
 {% endblock %}

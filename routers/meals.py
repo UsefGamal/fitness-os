@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from auth import require_login
 from charting import build_meter_html
 from content.eating_out_guide import EATING_OUT_TIPS
+from content.food_items import CATEGORY_ORDER, FOOD_CATEGORIES
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
 from database import get_session
@@ -208,17 +209,23 @@ def shopping_list_page(request: Request):
                 for item in day["meals"][slot][option_key]["items"]:
                     counts[item] += 1
 
-    items = sorted(
-        ({"name": display_name(key), "count": count} for key, count in counts.items()),
-        key=lambda x: x["name"],
-    )
+    by_category: dict[str, list[dict]] = {cat: [] for cat in CATEGORY_ORDER}
+    for key, count in counts.items():
+        category = FOOD_CATEGORIES.get(key, "Nuts, Sauces & Extras")
+        by_category[category].append({"name": display_name(key), "count": count})
+
+    categories = [
+        {"name": cat, "foods": sorted(items, key=lambda x: x["name"])}
+        for cat, items in by_category.items()
+        if items
+    ]
 
     return templates.TemplateResponse(
         "shopping_list.html",
         {
             "request": request,
             "logged_in": True,
-            "items": items,
+            "categories": categories,
             "start_date": today.isoformat(),
             "end_date": (today + timedelta(days=6)).isoformat(),
         },

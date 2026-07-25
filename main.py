@@ -189,7 +189,6 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     actual_rate = baseline["actual_rate"]
     target_rate = baseline["target_rate"]
     predicted_date = baseline["baseline_date"]
-    days_to_due = (profile.due_date - today).days if profile.due_date else None
 
     goal_progress_pct = None
     if start_weight is not None and current_weight is not None and start_weight != goal_mid:
@@ -210,9 +209,10 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     ]
     meals_done_count = len(completed_meal_slots)
 
+    daily_quest_keys = {t["key"] for t in BONUS_TASKS if t["frequency"] == "daily"}
     today_bonus_logs = session.exec(select(BonusLog).where(BonusLog.log_date == today)).all()
-    quests_done_count = len(today_bonus_logs)
-    quests_total_count = len(BONUS_TASKS)
+    quests_done_count = len({log.task_key for log in today_bonus_logs} & daily_quest_keys)
+    quests_total_count = len(daily_quest_keys)
 
     today_hydration_log = session.exec(select(HydrationLog).where(HydrationLog.log_date == today)).first()
     today_hydration_ml = today_hydration_log.ml if today_hydration_log else 0
@@ -330,7 +330,6 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "logged_in": True,
             "profile": profile,
-            "days_to_due": days_to_due,
             "start_weight": start_weight,
             "current_weight": current_weight,
             "goal_mid": goal_mid,

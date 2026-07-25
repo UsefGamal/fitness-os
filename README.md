@@ -29,7 +29,8 @@ A self-hosted, single-user fitness and nutrition tracker built for a 6-month bod
 - Weight-vs-goal trend chart (emphasis form: actual line + dashed goal reference)
 
 **Gamification**
-- Points, levels, tiered badges (bronze → diamond), daily streak, bonus "quest" tasks
+- Points, levels, tiered badges (bronze → diamond), daily streak
+- Quest board with three cadences — daily habits, weekly quests, one-time milestones — so it isn't just a checklist that zeroes out every midnight
 - Confidence score (blended pace-vs-target + adherence) shown as a status chip, predicted goal date, a what-if simulator (`/simulate`)
 
 **Dashboard**

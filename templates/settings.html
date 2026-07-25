@@ -16,7 +16,6 @@
     <label>Goal weight — low (kg) <input type="number" step="0.1" name="goal_weight_low_kg" value="{{ profile.goal_weight_low_kg }}" required></label>
     <label>Goal weight — high (kg) <input type="number" step="0.1" name="goal_weight_high_kg" value="{{ profile.goal_weight_high_kg }}" required></label>
     <label>Goal date <input type="date" name="goal_date" value="{{ profile.goal_date }}" required></label>
-    <label>Due date (optional) <input type="date" name="due_date" value="{{ profile.due_date or '' }}"></label>
     <label>Fitness level
       <select name="fitness_level">
         {% for level in fitness_levels %}

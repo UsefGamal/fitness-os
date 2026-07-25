@@ -93,7 +93,6 @@
   {% else %}
     <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
   {% endif %}
-  {% if profile.due_date %}<p class="muted" style="font-size:13px;margin-top:8px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart"/></svg> Baby due {{ profile.due_date }} ({{ days_to_due }} days)</p>{% endif %}
   {% if adherence_insight %}<p class="muted" style="font-size:13px;margin-top:10px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-trending-up"/></svg> {{ adherence_insight }}</p>{% endif %}
 </section>
 

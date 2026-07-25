@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -20,16 +20,45 @@ def _total_points(session: Session) -> int:
     return total or 0
 
 
+def _week_start(d: date) -> date:
+    return d - timedelta(days=d.weekday())
+
+
+def _done_keys(session: Session, today: date) -> set[str]:
+    """Which task keys currently count as 'done', per their own cadence."""
+    week_start = _week_start(today)
+    done = set()
+
+    daily_keys = {t["key"] for t in BONUS_TASKS if t["frequency"] == "daily"}
+    if daily_keys:
+        rows = session.exec(
+            select(BonusLog.task_key).where(BonusLog.log_date == today, BonusLog.task_key.in_(daily_keys))
+        ).all()
+        done.update(rows)
+
+    weekly_keys = {t["key"] for t in BONUS_TASKS if t["frequency"] == "weekly"}
+    if weekly_keys:
+        rows = session.exec(
+            select(BonusLog.task_key).where(BonusLog.log_date >= week_start, BonusLog.task_key.in_(weekly_keys))
+        ).all()
+        done.update(rows)
+
+    once_keys = {t["key"] for t in BONUS_TASKS if t["frequency"] == "once"}
+    if once_keys:
+        rows = session.exec(select(BonusLog.task_key).where(BonusLog.task_key.in_(once_keys))).all()
+        done.update(rows)
+
+    return done
+
+
 @router.get("/bonus", dependencies=[Depends(require_login)])
 def bonus_page(request: Request, session: Session = Depends(get_session)):
     today = date.today()
-    today_logs = session.exec(select(BonusLog).where(BonusLog.log_date == today)).all()
-    done_keys = {log.task_key for log in today_logs}
+    done_keys = _done_keys(session, today)
 
-    tasks = [
-        {**task, "done": task["key"] in done_keys}
-        for task in BONUS_TASKS
-    ]
+    tasks_by_frequency = {"daily": [], "weekly": [], "once": []}
+    for task in BONUS_TASKS:
+        tasks_by_frequency[task["frequency"]].append({**task, "done": task["key"] in done_keys})
 
     total_points = _total_points(session)
     current_badge, next_milestone = badge_progress(total_points)
@@ -45,7 +74,9 @@ def bonus_page(request: Request, session: Session = Depends(get_session)):
         {
             "request": request,
             "logged_in": True,
-            "tasks": tasks,
+            "daily_tasks": tasks_by_frequency["daily"],
+            "weekly_tasks": tasks_by_frequency["weekly"],
+            "once_tasks": tasks_by_frequency["once"],
             "total_points": total_points,
             "current_badge": current_badge,
             "next_milestone": next_milestone,
@@ -56,15 +87,28 @@ def bonus_page(request: Request, session: Session = Depends(get_session)):
 
 @router.post("/bonus/toggle", dependencies=[Depends(require_login)])
 def toggle_bonus(task_key: str = Form(...), session: Session = Depends(get_session)):
+    task = BONUS_TASKS_BY_KEY.get(task_key)
+    if not task:
+        return RedirectResponse(url="/bonus", status_code=303)
+
     today = date.today()
-    existing = session.exec(
-        select(BonusLog).where(BonusLog.log_date == today, BonusLog.task_key == task_key)
-    ).first()
+    frequency = task["frequency"]
+
+    if frequency == "daily":
+        existing = session.exec(
+            select(BonusLog).where(BonusLog.log_date == today, BonusLog.task_key == task_key)
+        ).first()
+    elif frequency == "weekly":
+        week_start = _week_start(today)
+        existing = session.exec(
+            select(BonusLog).where(BonusLog.log_date >= week_start, BonusLog.task_key == task_key)
+        ).first()
+    else:  # "once"
+        existing = session.exec(select(BonusLog).where(BonusLog.task_key == task_key)).first()
+
     if existing:
         session.delete(existing)
     else:
-        task = BONUS_TASKS_BY_KEY.get(task_key)
-        if task:
-            session.add(BonusLog(log_date=today, task_key=task_key, points=task["points"]))
+        session.add(BonusLog(log_date=today, task_key=task_key, points=task["points"]))
     session.commit()
     return RedirectResponse(url="/bonus", status_code=303)

@@ -26,7 +26,6 @@ Single-row table (seeded once at startup if empty) holding the user's current st
 | `goal_weight_low_kg` | `float` | `75` | required in Settings |
 | `goal_weight_high_kg` | `float` | `80` | required in Settings |
 | `goal_date` | `date` | `2027-01-18` | required in Settings |
-| `due_date` | `Optional[date]` | `2026-11-18` | baby due date, optional — informational only, not used in projection math |
 | `activity_notes` | `str` | "Data engineer, desk job..." | optional, no calculation impact |
 | `fitness_level` | `str` | `"intermediate"` | `beginner` / `intermediate` / `advanced` |
 | `start_weight_kg` | `Optional[float]` | `None` | **functionally required** — feeds `target_rate_kg_per_week()`; the Settings form marks it `required` even though the column is nullable (falls back to the first `BodyLog` entry if unset — see `baseline.py`) |

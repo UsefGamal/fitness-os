@@ -38,7 +38,6 @@ def update_settings(
     goal_weight_low_kg: float = Form(...),
     goal_weight_high_kg: float = Form(...),
     goal_date: date = Form(...),
-    due_date: Optional[str] = Form(None),
     activity_notes: str = Form(""),
     fitness_level: str = Form(...),
     start_weight_kg: Optional[float] = Form(None),
@@ -50,7 +49,6 @@ def update_settings(
     profile.goal_weight_low_kg = goal_weight_low_kg
     profile.goal_weight_high_kg = goal_weight_high_kg
     profile.goal_date = goal_date
-    profile.due_date = date.fromisoformat(due_date) if due_date else None
     profile.activity_notes = activity_notes
     profile.fitness_level = fitness_level
     profile.start_weight_kg = start_weight_kg
