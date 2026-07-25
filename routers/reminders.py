@@ -35,6 +35,14 @@ def _send_email(subject: str, html: str) -> None:
     response.raise_for_status()
 
 
+@router.get("/healthz-warm")
+def healthz_warm():
+    """Lightweight, no-DB endpoint a keep-alive cron can hit every ~10 min
+    to stop the Render free-tier instance from sleeping — so the real
+    daily-digest cron doesn't land on a cold start."""
+    return {"status": "ok"}
+
+
 @router.get("/cron/daily-digest")
 def daily_digest(secret: str = Query(...), session: Session = Depends(get_session)):
     if not CRON_SECRET or secret != CRON_SECRET:
@@ -42,22 +50,29 @@ def daily_digest(secret: str = Query(...), session: Session = Depends(get_sessio
 
     today = date.today()
 
-    already_sent = session.exec(
-        select(ReminderLog).where(
-            ReminderLog.log_date == today, ReminderLog.reminder_type == "daily_digest"
+    try:
+        already_sent = session.exec(
+            select(ReminderLog).where(
+                ReminderLog.log_date == today, ReminderLog.reminder_type == "daily_digest"
+            )
+        ).first()
+        if already_sent:
+            return {"status": "skipped", "reason": "already sent today"}
+
+        gym_session_count = len(
+            session.exec(select(Workout).where(Workout.workout_type == "gym")).all()
         )
-    ).first()
-    if already_sent:
-        return {"status": "skipped", "reason": "already sent today"}
 
-    gym_session_count = len(
-        session.exec(select(Workout).where(Workout.workout_type == "gym")).all()
-    )
+        subject, html = build_daily_digest_html(today, gym_session_count, APP_BASE_URL)
+        _send_email(subject, html)
 
-    subject, html = build_daily_digest_html(today, gym_session_count, APP_BASE_URL)
-    _send_email(subject, html)
+        session.add(ReminderLog(log_date=today, reminder_type="daily_digest"))
+        session.commit()
 
-    session.add(ReminderLog(log_date=today, reminder_type="daily_digest"))
-    session.commit()
-
-    return {"status": "sent"}
+        return {"status": "sent"}
+    except Exception as exc:
+        # Small, structured error body — a bare 500 with no detail is
+        # both unhelpful to debug and (per some cron monitors) can be
+        # reported in confusing ways. Never let this route's response
+        # grow large regardless of what failed.
+        return {"status": "error", "detail": str(exc)[:300]}
