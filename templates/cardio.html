@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Cardio — Fitness OS{% endblock %}
 {% block content %}
-<h1>🏃 Cardio</h1>
+<h1><svg class="icon"><use href="#icon-heart-pulse"/></svg> Cardio</h1>
 
 <section class="card card-glow">
-  <h2>🎯 {{ cardio_session.label }}</h2>
+  <h2><svg class="icon"><use href="#icon-target"/></svg> {{ cardio_session.label }}</h2>
   <p>{{ cardio_session.target }}</p>
   <p class="muted" style="font-size:13px">{{ cardio_session.frequency_note }}</p>
   <p class="muted" style="font-size:13px;margin-top:8px"><strong>Warm-up:</strong> {{ cardio_session.warmup | join(", ") }}</p>
@@ -18,7 +18,7 @@
 </section>
 
 <section class="card">
-  <h2>▶️ Log a session</h2>
+  <h2><svg class="icon"><use href="#icon-plus"/></svg> Log a session</h2>
   <form method="post" action="/cardio" class="stack-form">
     <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
     <label>Duration (min) <input type="number" name="duration_min" value="22"></label>
@@ -28,7 +28,7 @@
 </section>
 
 <section class="card">
-  <h2>📋 History</h2>
+  <h2><svg class="icon"><use href="#icon-list"/></svg> History</h2>
   {% if sessions %}
   <div class="table-scroll">
   <table class="log-table">

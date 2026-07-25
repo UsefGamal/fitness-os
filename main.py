@@ -108,7 +108,7 @@ def more_page(request: Request):
 
 
 WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel", "cardio": "Cardio"}
-WORKOUT_TYPE_ICONS = {"gym": "🏋️", "home": "🤸", "recovery": "🧘", "padel": "🎾", "cardio": "🏃"}
+WORKOUT_TYPE_ICONS = {"gym": "dumbbell", "home": "house", "recovery": "heart", "padel": "racket", "cardio": "heart-pulse"}
 MEAL_SLOTS_PER_DAY = 5
 
 
@@ -189,7 +189,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
                 "workouts": [
                     {
                         "type_label": WORKOUT_TYPE_LABELS.get(w.workout_type, w.workout_type),
-                        "icon": WORKOUT_TYPE_ICONS.get(w.workout_type, "✅"),
+                        "icon": WORKOUT_TYPE_ICONS.get(w.workout_type, "activity"),
                         "notes": w.notes,
                     }
                     for w in workouts_by_date.get(day_date, [])

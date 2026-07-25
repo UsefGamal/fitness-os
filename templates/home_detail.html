@@ -1,32 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Home Session — Fitness OS{% endblock %}
 {% block content %}
-<h1>🤸 Home — {{ workout.log_date }}</h1>
+<h1><svg class="icon"><use href="#icon-house"/></svg> Home — {{ workout.log_date }}</h1>
 <p class="muted">{{ workout.notes or "" }}{% if workout.duration_min %} · {{ workout.duration_min }} min{% endif %}</p>
 
 {% if program_checklist %}
 <section class="card card-glow">
-  <h2>🫀 Muscles targeted today</h2>
+  <h2><svg class="icon"><use href="#icon-heart-pulse"/></svg> Muscles targeted today</h2>
   {% include "_body_map.html" %}
 </section>
 
 <section class="card">
-  <h2>🔥 Warm-up</h2>
+  <h2><svg class="icon"><use href="#icon-flame"/></svg> Warm-up</h2>
   <ul style="margin:0;padding-left:18px;font-size:14px">
     {% for step in program_checklist.warmup %}<li>{{ step }}</li>{% endfor %}
   </ul>
 </section>
 
 <section class="card card-glow">
-  <h2>✅ {{ program_checklist.label }}</h2>
+  <h2><svg class="icon"><use href="#icon-check"/></svg> {{ program_checklist.label }}</h2>
   <p class="muted">{{ program_checklist.focus }}</p>
   {% for ex in program_checklist.exercises %}
   <div class="quest-card{% if ex.done %} quest-done{% endif %}" style="align-items:flex-start;flex-wrap:wrap">
-    <span class="quest-icon">🤸</span>
+    <svg class="icon quest-icon"><use href="#icon-house"/></svg>
     <div class="quest-body">
         <strong>{{ ex.name }}</strong>
         <div class="muted" style="font-size:13px">Target: {{ ex.reps }}{% if ex.last_performance %} · last: {{ ex.last_performance }}{% endif %}</div>
-        <a href="https://www.youtube.com/results?search_query={{ (ex.name ~ ' exercise form') | urlencode }}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:12px">▶ Watch form</a>
+        <a href="https://www.youtube.com/results?search_query={{ (ex.name ~ ' exercise form') | urlencode }}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:4px"><svg class="icon" style="width:13px;height:13px"><use href="#icon-external-link"/></svg> Watch form</a>
         {% if ex.alternatives %}
         <details style="margin-top:4px">
           <summary class="muted" style="font-size:12px;cursor:pointer">Alternatives</summary>
@@ -47,12 +47,12 @@
 </section>
 
 <section class="card">
-  <h2>🧊 Cool-down</h2>
+  <h2><svg class="icon"><use href="#icon-snowflake"/></svg> Cool-down</h2>
   <ul style="margin:0;padding-left:18px;font-size:14px">
     {% for step in program_checklist.cooldown %}<li>{{ step }}</li>{% endfor %}
   </ul>
 </section>
 {% endif %}
 
-<a class="back-link" href="/home">← Back to home sessions</a>
+<a class="back-link" href="/home"><svg class="icon"><use href="#icon-chevron-left"/></svg> Back to home sessions</a>
 {% endblock %}

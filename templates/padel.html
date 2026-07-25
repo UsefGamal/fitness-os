@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Padel — Fitness OS{% endblock %}
 {% block content %}
-<h1>🎾 Padel</h1>
+<h1><svg class="icon"><use href="#icon-racket"/></svg> Padel</h1>
 
 <section class="card">
-  <h2>▶️ Log a session</h2>
+  <h2><svg class="icon"><use href="#icon-plus"/></svg> Log a session</h2>
   <form method="post" action="/padel" class="stack-form">
     <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
     <label>Duration (min) <input type="number" name="duration_min" value="90"></label>
@@ -14,7 +14,7 @@
 </section>
 
 <section class="card">
-  <h2>📋 History</h2>
+  <h2><svg class="icon"><use href="#icon-list"/></svg> History</h2>
   {% if sessions %}
   <div class="table-scroll">
   <table class="log-table">

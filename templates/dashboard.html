@@ -10,7 +10,7 @@
       <div class="sl">Level</div>
     </div>
     <div class="stat-tile streak">
-      <span class="streak-flame">{% if streak > 0 %}🔥{% else %}💤{% endif %}</span>
+      <svg class="icon streak-flame{% if streak > 0 %} icon-fill{% endif %}"><use href="#icon-flame"/></svg>
       <div class="sv">{{ streak }}</div>
       <div class="sl">Day Streak</div>
     </div>
@@ -20,16 +20,16 @@
     </div>
   </div>
   {% if current_badge %}
-    <p style="margin-top:14px"><span class="badge-medal"><span class="icon">{{ current_badge[2] }}</span>{{ current_badge[1] }}</span></p>
+    <p style="margin-top:14px"><span class="badge-medal"><svg class="icon badge-tier-{{ current_badge[2] }}"><use href="#icon-medal"/></svg>{{ current_badge[1] }}</span></p>
   {% endif %}
   {% if next_milestone %}
-    <p class="muted" style="font-size:12px;margin:10px 0 6px">Next badge: {{ next_milestone[2] }} {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
+    <p class="muted" style="font-size:12px;margin:10px 0 6px;display:flex;align-items:center;gap:6px">Next badge: <svg class="icon badge-tier-{{ next_milestone[2] }}" style="width:14px;height:14px"><use href="#icon-medal"/></svg> {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
     <div class="progress-bar"><div class="progress-fill gold" style="width:{{ badge_progress_pct }}%"></div></div>
   {% endif %}
 </section>
 
 <section class="card">
-  <h2>🎯 Goal Progress</h2>
+  <h2><svg class="icon"><use href="#icon-target"/></svg> Goal Progress</h2>
   {% if start_weight and current_weight %}
     <p>
       <strong style="font-family:var(--font-mono);font-size:22px">{{ current_weight }} kg</strong>
@@ -40,11 +40,11 @@
   {% else %}
     <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
   {% endif %}
-  {% if profile.due_date %}<p class="muted" style="font-size:13px;margin-top:8px">👶 Baby due {{ profile.due_date }} ({{ days_to_due }} days)</p>{% endif %}
+  {% if profile.due_date %}<p class="muted" style="font-size:13px;margin-top:8px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart"/></svg> Baby due {{ profile.due_date }} ({{ days_to_due }} days)</p>{% endif %}
 </section>
 
 <section class="card">
-  <h2>🔮 Confidence & Prediction</h2>
+  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Confidence & Prediction</h2>
   {% if confidence is not none %}
     <p><strong style="color:var(--accent);font-size:26px;font-family:var(--font-mono)">{{ confidence }}%</strong> <span class="muted">— {{ confidence_label }}</span></p>
     <p class="muted" style="font-size:13px">Actual pace: {{ actual_rate }} kg/week &middot; Target pace: {{ target_rate }} kg/week</p>
@@ -59,30 +59,30 @@
 
 {% if not today_logged %}
 <section class="card card-glow">
-  <h2>⚡ Log today's training</h2>
+  <h2><svg class="icon"><use href="#icon-bolt"/></svg> Log today's training</h2>
   <p class="muted" style="font-size:13px;margin-bottom:10px">Nothing logged yet today — pick one:</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a href="/gym" class="meal-check-btn" style="text-decoration:none">🏋️ Gym</a>
-    <a href="/home" class="meal-check-btn" style="text-decoration:none">🤸 Home</a>
-    <a href="/recovery" class="meal-check-btn" style="text-decoration:none">🧘 Recovery</a>
-    <a href="/cardio" class="meal-check-btn" style="text-decoration:none">🏃 Cardio</a>
-    <a href="/padel" class="meal-check-btn" style="text-decoration:none">🎾 Padel</a>
+    <a href="/gym" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-dumbbell"/></svg> Gym</a>
+    <a href="/home" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-house"/></svg> Home</a>
+    <a href="/recovery" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart"/></svg> Recovery</a>
+    <a href="/cardio" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart-pulse"/></svg> Cardio</a>
+    <a href="/padel" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-racket"/></svg> Padel</a>
   </div>
 </section>
 {% endif %}
 
 <section class="card">
-  <h2>📅 This Week</h2>
+  <h2><svg class="icon"><use href="#icon-calendar"/></svg> This Week</h2>
   {% for day in day_cards %}
   <div class="day-card{% if day.is_today %} is-today{% endif %}">
     <div style="display:flex;justify-content:space-between;align-items:baseline">
       <strong>{{ day.weekday }} {{ day.date }}{% if day.is_today %} <span class="muted" style="font-size:11px">(today)</span>{% endif %}</strong>
     </div>
-    <div class="muted" style="font-size:13px;margin-top:4px">🍽️ {{ day.meal_label }} · {{ day.meal_kcal }} kcal · <a href="/meals?view_date={{ day.date }}" style="color:var(--accent)">meals</a></div>
+    <div class="muted" style="font-size:13px;margin-top:4px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-utensils"/></svg> {{ day.meal_label }} · {{ day.meal_kcal }} kcal · <a href="/meals?view_date={{ day.date }}" style="color:var(--accent)">meals</a></div>
     <div style="margin-top:6px">
       {% if day.workouts %}
         {% for w in day.workouts %}
-          <span class="workout-chip">{{ w.icon }} {{ w.type_label }}{% if w.notes %} — {{ w.notes }}{% endif %}</span>
+          <span class="workout-chip"><svg class="icon"><use href="#icon-{{ w.icon }}"/></svg> {{ w.type_label }}{% if w.notes %} — {{ w.notes }}{% endif %}</span>
         {% endfor %}
       {% else %}
         <span class="muted" style="font-size:12px">Nothing logged</span>

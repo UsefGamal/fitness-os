@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Gym — Fitness OS{% endblock %}
 {% block content %}
-<h1>🏋️ Gym</h1>
+<h1><svg class="icon"><use href="#icon-dumbbell"/></svg> Gym</h1>
 
 <section class="card card-glow">
-  <h2>🎯 Next up: {{ next_day.label }}</h2>
+  <h2><svg class="icon"><use href="#icon-target"/></svg> Next up: {{ next_day.label }}</h2>
   <p class="muted">{{ next_day.focus }}</p>
   <div class="table-scroll">
   <table class="log-table">
@@ -19,7 +19,7 @@
 </section>
 
 <section class="card">
-  <h2>Start a session</h2>
+  <h2><svg class="icon"><use href="#icon-plus"/></svg> Start a session</h2>
   <form method="post" action="/gym/new" class="stack-form">
     <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
     <label>Planned duration (min) <input type="number" name="duration_min" value="60"></label>
@@ -29,7 +29,7 @@
 </section>
 
 <section class="card">
-  <h2>📋 Past sessions</h2>
+  <h2><svg class="icon"><use href="#icon-list"/></svg> Past sessions</h2>
   {% if summaries %}
   <div class="table-scroll">
   <table class="log-table">

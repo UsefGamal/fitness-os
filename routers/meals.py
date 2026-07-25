@@ -25,11 +25,11 @@ SLOT_LABELS = {
 }
 
 SLOT_ICONS = {
-    "breakfast": "🌅",
-    "snack1": "🍎",
-    "lunch": "🍽️",
-    "snack2": "🥜",
-    "dinner": "🌙",
+    "breakfast": "sunrise",
+    "snack1": "apple",
+    "lunch": "plate",
+    "snack2": "nut",
+    "dinner": "moon",
 }
 
 # Which eating-out tip bucket each slot pulls from.
@@ -60,7 +60,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     for meal in plan["meals"]:
         log = logs_by_slot.get(meal["slot"])
         meal["label"] = SLOT_LABELS.get(meal["slot"], meal["slot"])
-        meal["icon"] = SLOT_ICONS.get(meal["slot"], "🍽️")
+        meal["icon"] = SLOT_ICONS.get(meal["slot"], "plate")
         meal["done"] = bool(log and log.completed)
         selected_option = log.option_key if (log and log.completed) else None
         for option in meal["options"]:

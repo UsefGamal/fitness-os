@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 {% block title %}More — Fitness OS{% endblock %}
 {% block content %}
-<h1>☰ More</h1>
+<h1><svg class="icon"><use href="#icon-dots"/></svg> More</h1>
 
 <section class="card">
-  <h2>💪 Train</h2>
+  <h2><svg class="icon"><use href="#icon-dumbbell"/></svg> Train</h2>
   <div class="link-list">
-    <a href="/gym" class="link-row"><span class="link-icon">🏋️</span><span>Gym</span><span class="link-arrow">›</span></a>
-    <a href="/home" class="link-row"><span class="link-icon">🤸</span><span>Home Session</span><span class="link-arrow">›</span></a>
-    <a href="/recovery" class="link-row"><span class="link-icon">🧘</span><span>Active Recovery</span><span class="link-arrow">›</span></a>
-    <a href="/cardio" class="link-row"><span class="link-icon">🏃</span><span>Cardio</span><span class="link-arrow">›</span></a>
-    <a href="/padel" class="link-row"><span class="link-icon">🎾</span><span>Padel</span><span class="link-arrow">›</span></a>
+    <a href="/gym" class="link-row"><svg class="icon link-icon"><use href="#icon-dumbbell"/></svg><span>Gym</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
+    <a href="/home" class="link-row"><svg class="icon link-icon"><use href="#icon-house"/></svg><span>Home Session</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
+    <a href="/recovery" class="link-row"><svg class="icon link-icon"><use href="#icon-heart"/></svg><span>Active Recovery</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
+    <a href="/cardio" class="link-row"><svg class="icon link-icon"><use href="#icon-heart-pulse"/></svg><span>Cardio</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
+    <a href="/padel" class="link-row"><svg class="icon link-icon"><use href="#icon-racket"/></svg><span>Padel</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
   </div>
 </section>
 
 <section class="card">
-  <h2>🛠️ Plan & Tools</h2>
+  <h2><svg class="icon"><use href="#icon-wrench"/></svg> Plan & Tools</h2>
   <div class="link-list">
-    <a href="/simulate" class="link-row"><span class="link-icon">🔮</span><span>What-If Simulator</span><span class="link-arrow">›</span></a>
-    <a href="/settings" class="link-row"><span class="link-icon">⚙️</span><span>Settings</span><span class="link-arrow">›</span></a>
+    <a href="/simulate" class="link-row"><svg class="icon link-icon"><use href="#icon-trending-up"/></svg><span>What-If Simulator</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
+    <a href="/settings" class="link-row"><svg class="icon link-icon"><use href="#icon-gear"/></svg><span>Settings</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
   </div>
 </section>
 
 <section class="card">
   <div class="link-list">
-    <a href="/logout" class="link-row"><span class="link-icon">🚪</span><span>Log out</span><span class="link-arrow">›</span></a>
+    <a href="/logout" class="link-row"><svg class="icon link-icon"><use href="#icon-door"/></svg><span>Log out</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
   </div>
 </section>
 {% endblock %}

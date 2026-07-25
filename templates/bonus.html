@@ -12,12 +12,12 @@
     </div>
   </div>
   {% if current_badge %}
-    <p style="margin-top:12px"><span class="badge-medal"><span class="icon">{{ current_badge[2] }}</span>{{ current_badge[1] }}</span></p>
+    <p style="margin-top:12px"><span class="badge-medal"><svg class="icon badge-tier-{{ current_badge[2] }}"><use href="#icon-medal"/></svg>{{ current_badge[1] }}</span></p>
   {% else %}
     <p style="margin-top:12px" class="muted">No badge yet — complete a few quests to earn one.</p>
   {% endif %}
   {% if next_milestone %}
-    <p class="muted" style="font-size:13px;margin:10px 0 6px">Next: {{ next_milestone[2] }} {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
+    <p class="muted" style="font-size:13px;margin:10px 0 6px;display:flex;align-items:center;gap:6px">Next: <svg class="icon badge-tier-{{ next_milestone[2] }}" style="width:14px;height:14px"><use href="#icon-medal"/></svg> {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
     <div class="progress-bar"><div class="progress-fill gold" style="width:{{ progress_pct }}%"></div></div>
   {% else %}
     <p class="muted" style="font-size:13px">You've hit every milestone. Legendary.</p>
@@ -28,7 +28,7 @@
   <h2>Today's quests</h2>
   {% for task in tasks %}
   <div class="quest-card{% if task.done %} quest-done{% endif %}">
-    <span class="quest-icon">{{ task.icon }}</span>
+    <svg class="icon quest-icon"><use href="#icon-{{ task.icon }}"/></svg>
     <div class="quest-body">
       <div class="quest-label">{{ task.label }}</div>
       <div class="quest-points">+{{ task.points }} pts</div>

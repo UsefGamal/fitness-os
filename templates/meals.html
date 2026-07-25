@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Meals — Fitness OS{% endblock %}
 {% block content %}
-<h1>🍽️ Meals</h1>
+<h1><svg class="icon"><use href="#icon-utensils"/></svg> Meals</h1>
 
 <section class="card">
   <div class="day-nav">
-    <a href="/meals?view_date={{ prev_date }}">← Prev</a>
+    <a href="/meals?view_date={{ prev_date }}"><svg class="icon"><use href="#icon-chevron-left"/></svg> Prev</a>
     <strong>{{ current_date }}{% if is_today %} (Today){% endif %}</strong>
-    <a href="/meals?view_date={{ next_date }}">Next →</a>
+    <a href="/meals?view_date={{ next_date }}">Next <svg class="icon"><use href="#icon-chevron-right"/></svg></a>
   </div>
   <h2>{{ plan.label }}</h2>
   <div class="day-macros">
@@ -19,7 +19,7 @@
 </section>
 
 <details class="card eating-out">
-  <summary>🥗 Eating out today? General rules</summary>
+  <summary><svg class="icon"><use href="#icon-salad"/></svg> Eating out today? General rules</summary>
   <ul>
     {% for tip in eating_out_general %}<li>{{ tip }}</li>{% endfor %}
   </ul>
@@ -28,7 +28,7 @@
 {% for meal in plan.meals %}
 <section class="card meal-card{% if meal.done %} meal-done{% endif %}">
   <div class="meal-header">
-    <h2>{{ meal.icon }} {{ meal.label }}</h2>
+    <h2><svg class="icon"><use href="#icon-{{ meal.icon }}"/></svg> {{ meal.label }}</h2>
     <span class="time-window">{{ meal.time_window }}</span>
   </div>
 

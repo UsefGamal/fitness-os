@@ -21,6 +21,24 @@
 
 * { box-sizing: border-box; }
 
+/* ── Icon system: minimalist mono-color line icons ─────────────
+   All icons are stroke-based (fill:none) so a single SVG sprite reads
+   consistently everywhere; color always comes from currentColor, so
+   an icon's color is whatever text color its container already has. */
+.icon {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
+.icon-fill { fill: currentColor; stroke: none; }
+
 body {
   margin: 0;
   background:
@@ -57,7 +75,7 @@ h1, h2, h3 { font-family: var(--font-display); }
   gap: 8px;
 }
 
-.brand-mark { filter: drop-shadow(0 0 6px var(--accent-glow)); }
+.brand-mark { width: 20px; height: 20px; filter: drop-shadow(0 0 6px var(--accent-glow)); }
 
 .content {
   max-width: 640px;
@@ -98,7 +116,7 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 }
 
 .tabbar a.active { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
-.tab-icon { font-size: 20px; line-height: 1; }
+.tab-icon { width: 20px; height: 20px; }
 
 /* ── Cards ──────────────────────────────────────────────────── */
 .card {
@@ -476,7 +494,8 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 .stat-tile.points .sv { color: var(--gold); }
 .stat-tile.level .sv { color: var(--purple); }
 
-.streak-flame { font-size: 26px; display: block; }
+.streak-flame { width: 26px; height: 26px; display: block; color: var(--muted); }
+.streak-flame.icon-fill { color: #fb923c; }
 
 /* ── Badges / medals ────────────────────────────────────────── */
 .badge-medal {
@@ -491,7 +510,13 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   font-size: 14px;
 }
 
-.badge-medal .icon { font-size: 20px; }
+.badge-medal .icon { width: 20px; height: 20px; }
+
+.badge-tier-bronze { color: #cd7f32; }
+.badge-tier-silver { color: #c0c0c0; }
+.badge-tier-gold { color: var(--gold); }
+.badge-tier-emerald { color: var(--accent); }
+.badge-tier-diamond { color: var(--purple); }
 
 /* ── Quest cards ────────────────────────────────────────────── */
 .quest-card {
@@ -511,7 +536,7 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), transparent);
 }
 
-.quest-icon { font-size: 22px; flex-shrink: 0; }
+.quest-icon { width: 22px; height: 22px; flex-shrink: 0; }
 .quest-body { flex: 1; min-width: 0; }
 .quest-label { font-weight: 600; font-size: 14px; }
 .quest-points { color: var(--gold); font-size: 12px; font-weight: 600; }
@@ -533,8 +558,8 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 }
 
 .link-row:hover { background: var(--surface2); }
-.link-icon { font-size: 20px; width: 24px; text-align: center; }
-.link-arrow { margin-left: auto; color: var(--muted); }
+.link-icon { width: 20px; height: 20px; flex-shrink: 0; }
+.link-arrow { margin-left: auto; color: var(--muted); width: 16px; height: 16px; }
 
 /* ── Day cards (dashboard weekly plan) ─────────────────────── */
 .day-card {
@@ -578,6 +603,6 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 }
 
 @media(max-width:640px){
-  .tab-icon { font-size: 19px; }
+  .tab-icon { width: 19px; height: 19px; }
   .stat-tile .sv { font-size: 20px; }
 }

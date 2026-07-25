@@ -1,15 +1,15 @@
 MILESTONES = [
-    (100, "Getting Started", "🌱"),
-    (250, "Consistency Builder", "🔥"),
-    (500, "Habit Master", "⚡"),
-    (1000, "Iron Will", "💎"),
-    (2000, "Transformation Elite", "👑"),
+    (100, "Getting Started", "bronze"),
+    (250, "Consistency Builder", "silver"),
+    (500, "Habit Master", "gold"),
+    (1000, "Iron Will", "emerald"),
+    (2000, "Transformation Elite", "diamond"),
 ]
 
 
 def badge_progress(total_points: int):
     """Returns (current_badge_or_None, next_milestone_or_None).
-    Each is (threshold, name, icon), or None if not yet reached / already maxed."""
+    Each is (threshold, name, tier), or None if not yet reached / already maxed."""
     current_badge = None
     next_milestone = None
     for threshold, name, icon in MILESTONES:

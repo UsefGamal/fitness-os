@@ -14,9 +14,10 @@
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+{% include "_icons.html" %}
 {% if logged_in %}
 <header class="topbar">
-  <a class="brand" href="/"><span class="brand-mark">⚡</span> Fitness OS</a>
+  <a class="brand" href="/"><svg class="icon brand-mark"><use href="#icon-bolt"/></svg> Fitness OS</a>
 </header>
 {% endif %}
 <main class="content{% if logged_in %} has-tabbar{% endif %}">
@@ -24,11 +25,11 @@
 </main>
 {% if logged_in %}
 <nav class="tabbar">
-  <a href="/" class="{% if request.url.path == '/' %}active{% endif %}"><span class="tab-icon">🏠</span><span>Home</span></a>
-  <a href="/meals" class="{% if request.url.path.startswith('/meals') %}active{% endif %}"><span class="tab-icon">🍽️</span><span>Meals</span></a>
-  <a href="/bonus" class="{% if request.url.path.startswith('/bonus') %}active{% endif %}"><span class="tab-icon">⭐</span><span>Quests</span></a>
-  <a href="/body" class="{% if request.url.path.startswith('/body') %}active{% endif %}"><span class="tab-icon">⚖️</span><span>Body</span></a>
-  <a href="/more" class="{% if request.url.path.startswith('/more') %}active{% endif %}"><span class="tab-icon">☰</span><span>More</span></a>
+  <a href="/" class="{% if request.url.path == '/' %}active{% endif %}"><svg class="icon tab-icon"><use href="#icon-home"/></svg><span>Home</span></a>
+  <a href="/meals" class="{% if request.url.path.startswith('/meals') %}active{% endif %}"><svg class="icon tab-icon"><use href="#icon-utensils"/></svg><span>Meals</span></a>
+  <a href="/bonus" class="{% if request.url.path.startswith('/bonus') %}active{% endif %}"><svg class="icon tab-icon"><use href="#icon-star"/></svg><span>Quests</span></a>
+  <a href="/body" class="{% if request.url.path.startswith('/body') %}active{% endif %}"><svg class="icon tab-icon"><use href="#icon-scale"/></svg><span>Body</span></a>
+  <a href="/more" class="{% if request.url.path.startswith('/more') %}active{% endif %}"><svg class="icon tab-icon"><use href="#icon-dots"/></svg><span>More</span></a>
 </nav>
 {% endif %}
 <script src="/static/app.js"></script>

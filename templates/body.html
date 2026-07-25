@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Body Log — Fitness OS{% endblock %}
 {% block content %}
-<h1>⚖️ Body Log</h1>
+<h1><svg class="icon"><use href="#icon-scale"/></svg> Body Log</h1>
 
 {% if chart_points %}
 <section class="card">
-  <h2>📈 Trend</h2>
+  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Trend</h2>
   <svg viewBox="0 0 600 160" class="trend-svg" preserveAspectRatio="none">
     <polyline points="{{ chart_points }}" fill="none" stroke="#22c55e" stroke-width="2.5" />
   </svg>
@@ -13,7 +13,7 @@
 {% endif %}
 
 <section class="card">
-  <h2>⚖️ Log today's weigh-in</h2>
+  <h2><svg class="icon"><use href="#icon-scale"/></svg> Log today's weigh-in</h2>
   <form method="post" action="/body" class="stack-form">
     <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
     <label>Weight (kg) <input type="number" step="0.1" name="weight_kg" required></label>
@@ -24,7 +24,7 @@
 </section>
 
 <section class="card">
-  <h2>📋 History</h2>
+  <h2><svg class="icon"><use href="#icon-list"/></svg> History</h2>
   {% if logs %}
   <div class="table-scroll">
   <table class="log-table">
