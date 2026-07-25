@@ -10,7 +10,8 @@ from auth import require_login
 from content.home_program import ALTERNATE_EXERCISES, HOME_MUSCLE_GROUPS, PROGRAM, next_program_day
 from database import get_session
 from models import ChecklistItemLog, Workout
-from training_counter import count_training_sessions
+from routers.meals import PLAN_START_DATE
+from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -46,6 +47,8 @@ def home_list(request: Request, session: Session = Depends(get_session)):
             "summaries": summaries,
             "today": date.today().isoformat(),
             "next_day": next_day,
+            "deload_due": deload_due(session, PLAN_START_DATE),
+            "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
         },
     )
 
@@ -55,12 +58,13 @@ def create_home_session(
     log_date: date = Form(...),
     duration_min: Optional[int] = Form(None),
     notes: Optional[str] = Form(None),
+    is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
     if not notes:
         notes = next_program_day(count_training_sessions(session))["label"]
 
-    workout = Workout(log_date=log_date, workout_type="home", duration_min=duration_min, notes=notes)
+    workout = Workout(log_date=log_date, workout_type="home", duration_min=duration_min, notes=notes, is_deload=is_deload)
     session.add(workout)
     session.commit()
     session.refresh(workout)
@@ -131,6 +135,23 @@ def home_detail(workout_id: int, request: Request, session: Session = Depends(ge
             "targeted_muscles": targeted_muscles,
         },
     )
+
+
+@router.post("/home/{workout_id}/notes", dependencies=[Depends(require_login)])
+def update_session_notes(
+    workout_id: int,
+    session_rpe: Optional[int] = Form(None),
+    pain_note: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404)
+    workout.session_rpe = session_rpe
+    workout.pain_note = pain_note or None
+    session.add(workout)
+    session.commit()
+    return RedirectResponse(url=f"/home/{workout_id}", status_code=303)
 
 
 @router.post("/home/{workout_id}/log", dependencies=[Depends(require_login)])

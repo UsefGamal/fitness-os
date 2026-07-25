@@ -11,7 +11,8 @@ from auth import require_login
 from content.gym_program import PROGRAM, PROGRESSION_NOTE, next_program_day
 from database import get_session
 from models import Exercise, Workout, WorkoutSet
-from training_counter import count_training_sessions
+from routers.meals import PLAN_START_DATE
+from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -39,6 +40,8 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
             "summaries": summaries,
             "today": date.today().isoformat(),
             "next_day": next_day,
+            "deload_due": deload_due(session, PLAN_START_DATE),
+            "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
         },
     )
 
@@ -48,12 +51,13 @@ def create_gym_session(
     log_date: date = Form(...),
     duration_min: Optional[int] = Form(None),
     notes: Optional[str] = Form(None),
+    is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
     if not notes:
         notes = next_program_day(count_training_sessions(session))["label"]
 
-    workout = Workout(log_date=log_date, workout_type="gym", duration_min=duration_min, notes=notes)
+    workout = Workout(log_date=log_date, workout_type="gym", duration_min=duration_min, notes=notes, is_deload=is_deload)
     session.add(workout)
     session.commit()
     session.refresh(workout)
@@ -67,13 +71,19 @@ def _rep_range_top(reps_str: str) -> Optional[int]:
     return None
 
 
-def _suggest_next_weight(exercise: Exercise, last_reps: int, last_weight: float, target_reps: str) -> str:
+def _suggest_next_weight(
+    exercise: Exercise, last_reps: int, last_weight: float, target_reps: str, last_rpe: Optional[float] = None
+) -> str:
     top = _rep_range_top(target_reps)
     if top is None:
         return f"same as last time ({last_weight}kg)"
     increment = 5 if exercise.muscle_group == "Legs" else 2.5
     if last_reps >= top:
+        if last_rpe is not None and last_rpe >= 9:
+            return f"repeat {last_weight}kg (hit {last_reps} reps but RPE {last_rpe:g} was maxed out — hold before adding more)"
         return f"try {last_weight + increment}kg (you hit {last_reps} reps last time)"
+    if last_rpe is not None and last_rpe <= 7:
+        return f"try {last_weight + increment}kg (missed the rep target but RPE {last_rpe:g} felt easy — push the weight)"
     return f"repeat {last_weight}kg (aim for {top} reps)"
 
 
@@ -96,9 +106,12 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             "set_number": s.set_number,
             "reps": s.reps,
             "weight_kg": s.weight_kg,
+            "rpe": s.rpe,
         }
         for s in sets
     ]
+
+    session_volume = sum(s.reps * s.weight_kg for s in sets)
 
     last_performance = {}
     last_performance_raw = {}
@@ -111,8 +124,9 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
         ).first()
         if prior:
             wset, w = prior
-            last_performance[ex.id] = f"{wset.reps} reps @ {wset.weight_kg}kg on {w.log_date}"
-            last_performance_raw[ex.id] = (wset.reps, wset.weight_kg)
+            rpe_note = f" @ RPE {wset.rpe:g}" if wset.rpe is not None else ""
+            last_performance[ex.id] = f"{wset.reps} reps @ {wset.weight_kg}kg{rpe_note} on {w.log_date}"
+            last_performance_raw[ex.id] = (wset.reps, wset.weight_kg, wset.rpe)
 
     next_set_number = len(sets) + 1
 
@@ -126,8 +140,8 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             ex = exercise_by_name.get(spec["name"])
             suggestion = "no prior data yet — pick a comfortable starting weight"
             if ex and ex.id in last_performance_raw:
-                last_reps, last_weight = last_performance_raw[ex.id]
-                suggestion = _suggest_next_weight(ex, last_reps, last_weight, spec["reps"])
+                last_reps, last_weight, last_rpe = last_performance_raw[ex.id]
+                suggestion = _suggest_next_weight(ex, last_reps, last_weight, spec["reps"], last_rpe)
             alternatives = []
             if ex:
                 muscle_set.add(ex.muscle_group)
@@ -168,6 +182,7 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             "program_checklist": program_checklist,
             "progression_note": PROGRESSION_NOTE,
             "targeted_muscles": targeted_muscles,
+            "session_volume": round(session_volume),
         },
     )
 
@@ -178,6 +193,7 @@ def add_set(
     exercise_id: int = Form(...),
     reps: int = Form(...),
     weight_kg: float = Form(...),
+    rpe: Optional[float] = Form(None),
     session: Session = Depends(get_session),
 ):
     workout = session.get(Workout, workout_id)
@@ -193,7 +209,25 @@ def add_set(
         set_number=existing_count + 1,
         reps=reps,
         weight_kg=weight_kg,
+        rpe=rpe,
     )
     session.add(workout_set)
+    session.commit()
+    return RedirectResponse(url=f"/gym/{workout_id}", status_code=303)
+
+
+@router.post("/gym/{workout_id}/notes", dependencies=[Depends(require_login)])
+def update_session_notes(
+    workout_id: int,
+    session_rpe: Optional[int] = Form(None),
+    pain_note: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404)
+    workout.session_rpe = session_rpe
+    workout.pain_note = pain_note or None
+    session.add(workout)
     session.commit()
     return RedirectResponse(url=f"/gym/{workout_id}", status_code=303)

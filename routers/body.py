@@ -50,6 +50,11 @@ def add_body_log(
     log_date: date = Form(...),
     weight_kg: float = Form(...),
     waist_cm: Optional[float] = Form(None),
+    chest_cm: Optional[float] = Form(None),
+    arm_cm: Optional[float] = Form(None),
+    hips_cm: Optional[float] = Form(None),
+    thigh_cm: Optional[float] = Form(None),
+    sleep_hours: Optional[float] = Form(None),
     notes: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
@@ -57,9 +62,26 @@ def add_body_log(
     if existing:
         existing.weight_kg = weight_kg
         existing.waist_cm = waist_cm
+        existing.chest_cm = chest_cm
+        existing.arm_cm = arm_cm
+        existing.hips_cm = hips_cm
+        existing.thigh_cm = thigh_cm
+        existing.sleep_hours = sleep_hours
         existing.notes = notes
         session.add(existing)
     else:
-        session.add(BodyLog(log_date=log_date, weight_kg=weight_kg, waist_cm=waist_cm, notes=notes))
+        session.add(
+            BodyLog(
+                log_date=log_date,
+                weight_kg=weight_kg,
+                waist_cm=waist_cm,
+                chest_cm=chest_cm,
+                arm_cm=arm_cm,
+                hips_cm=hips_cm,
+                thigh_cm=thigh_cm,
+                sleep_hours=sleep_hours,
+                notes=notes,
+            )
+        )
     session.commit()
     return RedirectResponse(url="/body", status_code=303)

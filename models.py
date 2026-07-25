@@ -44,6 +44,9 @@ class Workout(SQLModel, table=True):
     workout_type: str  # "gym" or "padel"
     duration_min: Optional[int] = None
     notes: Optional[str] = None
+    session_rpe: Optional[int] = None  # 1-10 session-level intensity/effort
+    is_deload: bool = False
+    pain_note: Optional[str] = None
 
 
 class Exercise(SQLModel, table=True):
@@ -60,6 +63,7 @@ class WorkoutSet(SQLModel, table=True):
     set_number: int
     reps: int
     weight_kg: float
+    rpe: Optional[float] = None  # 1-10 perceived effort for this set
 
 
 class ChecklistItemLog(SQLModel, table=True):

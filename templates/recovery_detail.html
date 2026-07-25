@@ -18,5 +18,14 @@
   {% endfor %}
 </section>
 
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-activity"/></svg> Session notes</h2>
+  <form method="post" action="/recovery/{{ workout.id }}/notes" class="stack-form">
+    <label>How did it feel? (optional, 1-10) <input type="number" min="1" max="10" name="session_rpe" value="{{ workout.session_rpe or '' }}"></label>
+    <label>Anything hurt today? (optional) <input type="text" name="pain_note" value="{{ workout.pain_note or '' }}"></label>
+    <button type="submit">Save notes</button>
+  </form>
+</section>
+
 <a class="back-link" href="/recovery"><svg class="icon"><use href="#icon-chevron-left"/></svg> Back to recovery sessions</a>
 {% endblock %}

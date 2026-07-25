@@ -38,8 +38,11 @@ def add_cardio_session(
     log_date: date = Form(...),
     duration_min: Optional[int] = Form(22),
     notes: Optional[str] = Form(None),
+    session_rpe: Optional[int] = Form(None),
     session: Session = Depends(get_session),
 ):
-    session.add(Workout(log_date=log_date, workout_type="cardio", duration_min=duration_min, notes=notes))
+    session.add(
+        Workout(log_date=log_date, workout_type="cardio", duration_min=duration_min, notes=notes, session_rpe=session_rpe)
+    )
     session.commit()
     return RedirectResponse(url="/cardio", status_code=303)

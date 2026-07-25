@@ -58,6 +58,23 @@ def recovery_detail(workout_id: int, request: Request, session: Session = Depend
     )
 
 
+@router.post("/recovery/{workout_id}/notes", dependencies=[Depends(require_login)])
+def update_session_notes(
+    workout_id: int,
+    session_rpe: Optional[int] = Form(None),
+    pain_note: Optional[str] = Form(None),
+    session: Session = Depends(get_session),
+):
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404)
+    workout.session_rpe = session_rpe
+    workout.pain_note = pain_note or None
+    session.add(workout)
+    session.commit()
+    return RedirectResponse(url=f"/recovery/{workout_id}", status_code=303)
+
+
 @router.post("/recovery/{workout_id}/log", dependencies=[Depends(require_login)])
 def log_item(
     workout_id: int,

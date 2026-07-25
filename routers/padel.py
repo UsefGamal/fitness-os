@@ -30,8 +30,11 @@ def add_padel_session(
     log_date: date = Form(...),
     duration_min: Optional[int] = Form(90),
     notes: Optional[str] = Form(None),
+    session_rpe: Optional[int] = Form(None),
     session: Session = Depends(get_session),
 ):
-    session.add(Workout(log_date=log_date, workout_type="padel", duration_min=duration_min, notes=notes))
+    session.add(
+        Workout(log_date=log_date, workout_type="padel", duration_min=duration_min, notes=notes, session_rpe=session_rpe)
+    )
     session.commit()
     return RedirectResponse(url="/padel", status_code=303)

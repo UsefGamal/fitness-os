@@ -23,6 +23,10 @@ _LIGHT_MIGRATIONS = [
     "ALTER TABLE bodylog ADD COLUMN arm_cm FLOAT",
     "ALTER TABLE bodylog ADD COLUMN hips_cm FLOAT",
     "ALTER TABLE bodylog ADD COLUMN thigh_cm FLOAT",
+    "ALTER TABLE workout ADD COLUMN session_rpe INTEGER",
+    "ALTER TABLE workout ADD COLUMN is_deload BOOLEAN DEFAULT 0",
+    "ALTER TABLE workout ADD COLUMN pain_note VARCHAR",
+    "ALTER TABLE workoutset ADD COLUMN rpe FLOAT",
 ]
 
 
