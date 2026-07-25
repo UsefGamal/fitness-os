@@ -46,7 +46,7 @@ def healthz_warm():
 
 
 @router.get("/cron/daily-digest")
-def daily_digest(secret: str = Query(...), session: Session = Depends(get_session)):
+def daily_digest(secret: str = Query(...), force: bool = Query(False), session: Session = Depends(get_session)):
     if not CRON_SECRET or secret != CRON_SECRET:
         raise HTTPException(status_code=403, detail="Invalid cron secret")
 
@@ -58,8 +58,8 @@ def daily_digest(secret: str = Query(...), session: Session = Depends(get_sessio
                 ReminderLog.log_date == today, ReminderLog.reminder_type == "daily_digest"
             )
         ).first()
-        if already_sent:
-            return {"status": "skipped", "reason": "already sent today"}
+        if already_sent and not force:
+            return {"status": "skipped", "reason": "already sent today — add &force=true to resend"}
 
         gym_session_count = len(
             session.exec(select(Workout).where(Workout.workout_type == "gym")).all()
@@ -68,10 +68,11 @@ def daily_digest(secret: str = Query(...), session: Session = Depends(get_sessio
         subject, html = build_daily_digest_html(today, gym_session_count, APP_BASE_URL)
         _send_email(subject, html)
 
-        session.add(ReminderLog(log_date=today, reminder_type="daily_digest"))
-        session.commit()
+        if not already_sent:
+            session.add(ReminderLog(log_date=today, reminder_type="daily_digest"))
+            session.commit()
 
-        return {"status": "sent"}
+        return {"status": "sent", "forced": force}
     except Exception as exc:
         # Small, structured error body — a bare 500 with no detail is
         # both unhelpful to debug and (per some cron monitors) can be
@@ -81,7 +82,7 @@ def daily_digest(secret: str = Query(...), session: Session = Depends(get_sessio
 
 
 @router.get("/cron/weekly-recap")
-def weekly_recap(secret: str = Query(...), session: Session = Depends(get_session)):
+def weekly_recap(secret: str = Query(...), force: bool = Query(False), session: Session = Depends(get_session)):
     if not CRON_SECRET or secret != CRON_SECRET:
         raise HTTPException(status_code=403, detail="Invalid cron secret")
 
@@ -93,8 +94,8 @@ def weekly_recap(secret: str = Query(...), session: Session = Depends(get_sessio
                 ReminderLog.log_date == today, ReminderLog.reminder_type == "weekly_recap"
             )
         ).first()
-        if already_sent:
-            return {"status": "skipped", "reason": "already sent today"}
+        if already_sent and not force:
+            return {"status": "skipped", "reason": "already sent today — add &force=true to resend"}
 
         week_start = today - timedelta(days=6)
 
@@ -137,9 +138,10 @@ def weekly_recap(secret: str = Query(...), session: Session = Depends(get_sessio
         )
         _send_email(subject, html)
 
-        session.add(ReminderLog(log_date=today, reminder_type="weekly_recap"))
-        session.commit()
+        if not already_sent:
+            session.add(ReminderLog(log_date=today, reminder_type="weekly_recap"))
+            session.commit()
 
-        return {"status": "sent"}
+        return {"status": "sent", "forced": force}
     except Exception as exc:
         return {"status": "error", "detail": str(exc)[:300]}
