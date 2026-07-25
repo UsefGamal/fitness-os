@@ -130,6 +130,12 @@ Key tables (`models.py`): `Profile` (single row — stats/goal), `BodyLog`, `Wor
 
 Charts use a validated subset of the app's palette (`--chart-*` tokens in `static/style.css`), not the raw UI accent colors — the bright accents (`--accent`, `--gold`, `--purple`) fail a standard categorical lightness-band check as data marks (they're tuned to pop as buttons, not sit as chart fills). Darker steps of the same hues pass instead. Green-vs-red is never used as a diverging pair (classic red-green colorblind failure); "ahead/behind target" uses a status chip (icon + label + color) instead of color alone.
 
+## Further documentation
+
+- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — every table, field, and relationship
+- [`docs/ROUTES.md`](docs/ROUTES.md) — every route, grouped by feature area
+- In-app: `/help` (linked from More) — a user-facing "how this works" reference
+
 ## Known gaps / deliberately out of scope
 
 - No Apple Health / Google Fit sync
