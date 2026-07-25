@@ -32,19 +32,21 @@
 {% endif %}
 
 <section class="card">
-  <h2><svg class="icon"><use href="#icon-scale"/></svg> Log today's weigh-in</h2>
+  <h2><svg class="icon"><use href="#icon-scale"/></svg> {% if edit_log %}Edit entry — {{ edit_log.log_date }}{% else %}Log today's weigh-in{% endif %}</h2>
   <form method="post" action="/body" class="stack-form">
-    <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
-    <label>Weight (kg) <input type="number" step="0.1" name="weight_kg" required></label>
-    <label>Waist (cm, optional) <input type="number" step="0.1" name="waist_cm"></label>
-    <label>Chest (cm, optional) <input type="number" step="0.1" name="chest_cm"></label>
-    <label>Arm (cm, optional) <input type="number" step="0.1" name="arm_cm"></label>
-    <label>Hips (cm, optional) <input type="number" step="0.1" name="hips_cm"></label>
-    <label>Thigh (cm, optional) <input type="number" step="0.1" name="thigh_cm"></label>
-    <label>Sleep (hours, optional) <input type="number" step="0.1" name="sleep_hours"></label>
-    <label>Notes <input type="text" name="notes"></label>
-    <button type="submit">Save</button>
+    <label>Date <input type="date" name="log_date" value="{{ edit_log.log_date if edit_log else today }}" required></label>
+    <label>Weight (kg) <input type="number" step="0.1" name="weight_kg" value="{{ edit_log.weight_kg if edit_log else '' }}" required></label>
+    <label>Waist (cm, optional) <input type="number" step="0.1" name="waist_cm" value="{{ edit_log.waist_cm if edit_log and edit_log.waist_cm is not none else '' }}"></label>
+    <label>Chest (cm, optional) <input type="number" step="0.1" name="chest_cm" value="{{ edit_log.chest_cm if edit_log and edit_log.chest_cm is not none else '' }}"></label>
+    <label>Arm (cm, optional) <input type="number" step="0.1" name="arm_cm" value="{{ edit_log.arm_cm if edit_log and edit_log.arm_cm is not none else '' }}"></label>
+    <label>Hips (cm, optional) <input type="number" step="0.1" name="hips_cm" value="{{ edit_log.hips_cm if edit_log and edit_log.hips_cm is not none else '' }}"></label>
+    <label>Thigh (cm, optional) <input type="number" step="0.1" name="thigh_cm" value="{{ edit_log.thigh_cm if edit_log and edit_log.thigh_cm is not none else '' }}"></label>
+    <label>Sleep (hours, optional) <input type="number" step="0.1" name="sleep_hours" value="{{ edit_log.sleep_hours if edit_log and edit_log.sleep_hours is not none else '' }}"></label>
+    <label>Notes <input type="text" name="notes" value="{{ edit_log.notes if edit_log else '' }}"></label>
+    <button type="submit">{% if edit_log %}Update{% else %}Save{% endif %}</button>
+    {% if edit_log %}<a href="/body" class="back-link" style="margin-top:0">Cancel edit</a>{% endif %}
   </form>
+  {% if not edit_log %}<p class="muted" style="font-size:12px;margin-top:8px">Logging a date that already has an entry updates it instead of adding a new one — or use Edit on any row below.</p>{% endif %}
 </section>
 
 <section class="card">
@@ -52,7 +54,7 @@
   {% if logs %}
   <div class="table-scroll">
   <table class="log-table">
-    <thead><tr><th>Date</th><th>Weight</th><th>Waist</th><th>Chest</th><th>Arm</th><th>Hips</th><th>Thigh</th><th>Sleep</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Date</th><th>Weight</th><th>Waist</th><th>Chest</th><th>Arm</th><th>Hips</th><th>Thigh</th><th>Sleep</th><th>Notes</th><th></th></tr></thead>
     <tbody>
     {% for log in logs %}
       <tr>
@@ -65,6 +67,14 @@
         <td>{{ log.thigh_cm or "—" }}</td>
         <td>{{ log.sleep_hours or "—" }}</td>
         <td>{{ log.notes or "" }}</td>
+        <td>
+          <div class="row-actions">
+            <a href="/body?edit={{ log.id }}" class="row-edit-btn" aria-label="Edit"><svg class="icon"><use href="#icon-edit"/></svg></a>
+            <form method="post" action="/body/{{ log.id }}/delete" onsubmit="return confirm('Delete this entry?')">
+              <button type="submit" class="row-delete-btn" aria-label="Delete"><svg class="icon"><use href="#icon-trash"/></svg></button>
+            </form>
+          </div>
+        </td>
       </tr>
     {% endfor %}
     </tbody>

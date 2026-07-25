@@ -26,7 +26,11 @@ A self-hosted, single-user fitness and nutrition tracker built for a 6-month bod
 
 **Body tracking**
 - Weight, waist, chest, arm, hips, thigh, sleep hours
-- Weight-vs-goal trend chart (emphasis form: actual line + dashed goal reference)
+- Weight-vs-goal trend chart (emphasis form: actual line + dashed goal reference) plus a weekly weight-change bar chart
+- Reached via More (not the bottom tab bar) since it's a weekly/biweekly check-in, not a daily one
+
+**Editing & deleting logged data**
+- Body log entries, and gym/home/recovery/cardio/padel sessions (including individual gym sets) can all be edited (cardio/padel/body via a prefilled form) or deleted — mistakes and duplicate logs don't have to stay forever
 
 **Gamification**
 - Points, levels, tiered badges (bronze → diamond), daily streak
@@ -64,7 +68,8 @@ training_counter.py          # shared gym/home rotation counter, deload helpers
 charting.py                   # line/sparkline/bar/meter/heatmap/status-chip builders
 
 routers/                       # one file per feature area (body, gym, home, recovery,
-                                # cardio, padel, meals, bonus, settings, simulate, reminders)
+                                # cardio, padel, meals, bonus, settings, simulate, reminders,
+                                # training — the /training hub page)
 content/                        # plain-Python content modules: meal plan, food macros,
                                  # gym/home/cardio/recovery programs, milestones, bonus
                                  # tasks, eating-out guide, maintenance plan, email HTML

@@ -75,6 +75,18 @@ def update_session_notes(
     return RedirectResponse(url=f"/recovery/{workout_id}", status_code=303)
 
 
+@router.post("/recovery/{workout_id}/delete", dependencies=[Depends(require_login)])
+def delete_recovery_session(workout_id: int, session: Session = Depends(get_session)):
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404)
+    for log in session.exec(select(ChecklistItemLog).where(ChecklistItemLog.workout_id == workout_id)).all():
+        session.delete(log)
+    session.delete(workout)
+    session.commit()
+    return RedirectResponse(url="/recovery", status_code=303)
+
+
 @router.post("/recovery/{workout_id}/log", dependencies=[Depends(require_login)])
 def log_item(
     workout_id: int,

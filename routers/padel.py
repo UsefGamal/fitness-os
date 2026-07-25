@@ -2,7 +2,7 @@ from collections import Counter
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -21,7 +21,7 @@ PAIN_PATTERN_THRESHOLD = 3
 
 
 @router.get("/padel", dependencies=[Depends(require_login)])
-def padel_list(request: Request, session: Session = Depends(get_session)):
+def padel_list(request: Request, edit: Optional[int] = None, session: Session = Depends(get_session)):
     sessions = session.exec(
         select(Workout).where(Workout.workout_type == "padel").order_by(Workout.log_date.desc())
     ).all()
@@ -37,6 +37,10 @@ def padel_list(request: Request, session: Session = Depends(get_session)):
         else None
     )
 
+    edit_workout = None
+    if edit:
+        edit_workout = next((s for s in sessions if s.id == edit), None)
+
     return templates.TemplateResponse(
         "padel.html",
         {
@@ -48,12 +52,14 @@ def padel_list(request: Request, session: Session = Depends(get_session)):
             "record_str": record_str,
             "pain_flag": pain_flag,
             "result_labels": RESULT_LABELS,
+            "edit_workout": edit_workout,
         },
     )
 
 
 @router.post("/padel", dependencies=[Depends(require_login)])
 def add_padel_session(
+    workout_id: Optional[int] = Form(None),
     log_date: date = Form(...),
     duration_min: Optional[int] = Form(90),
     notes: Optional[str] = Form(None),
@@ -62,16 +68,36 @@ def add_padel_session(
     pain_note: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
-    session.add(
-        Workout(
-            log_date=log_date,
-            workout_type="padel",
-            duration_min=duration_min,
-            notes=notes,
-            session_rpe=session_rpe,
-            result=result or None,
-            pain_note=pain_note or None,
+    existing = session.get(Workout, workout_id) if workout_id else None
+    if existing and existing.workout_type == "padel":
+        existing.log_date = log_date
+        existing.duration_min = duration_min
+        existing.notes = notes
+        existing.session_rpe = session_rpe
+        existing.result = result or None
+        existing.pain_note = pain_note or None
+        session.add(existing)
+    else:
+        session.add(
+            Workout(
+                log_date=log_date,
+                workout_type="padel",
+                duration_min=duration_min,
+                notes=notes,
+                session_rpe=session_rpe,
+                result=result or None,
+                pain_note=pain_note or None,
+            )
         )
-    )
+    session.commit()
+    return RedirectResponse(url="/padel", status_code=303)
+
+
+@router.post("/padel/{workout_id}/delete", dependencies=[Depends(require_login)])
+def delete_padel_session(workout_id: int, session: Session = Depends(get_session)):
+    workout = session.get(Workout, workout_id)
+    if not workout or workout.workout_type != "padel":
+        raise HTTPException(status_code=404)
+    session.delete(workout)
     session.commit()
     return RedirectResponse(url="/padel", status_code=303)

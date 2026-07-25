@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 from auth import require_login
 from charting import build_heatmap_html, build_meter_html, build_sparkline_svg
 from content.eating_out_guide import EATING_OUT_TIPS
-from content.food_items import CATEGORY_ORDER, FOOD_CATEGORIES
+from content.food_items import CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_ORDER, FOOD_CATEGORIES
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
 from database import get_session
@@ -272,7 +272,12 @@ def shopping_list_page(request: Request):
         by_category[category].append({"name": display_name(key), "count": count})
 
     categories = [
-        {"name": cat, "foods": sorted(items, key=lambda x: x["name"])}
+        {
+            "name": cat,
+            "foods": sorted(items, key=lambda x: x["name"]),
+            "color": CATEGORY_COLORS.get(cat, "var(--muted)"),
+            "icon": CATEGORY_ICONS.get(cat, "list"),
+        }
         for cat, items in by_category.items()
         if items
     ]

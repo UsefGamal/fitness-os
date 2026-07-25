@@ -67,6 +67,27 @@ CATEGORY_ORDER = [
     "Nuts, Sauces & Extras",
 ]
 
+# One accent color per category so the list is visually scannable at a
+# glance — decorative only (the category heading text is always the real
+# identifier), so this doesn't need to pass the dataviz skill's chart-mark
+# CVD validation the way an actual data-encoding chart color would.
+CATEGORY_COLORS = {
+    "Protein & Mains": "#f87171",
+    "Dairy & Eggs": "#60a5fa",
+    "Grains & Bakery": "#fbbf24",
+    "Legumes": "#34d399",
+    "Produce & Salads": "#a3e635",
+    "Nuts, Sauces & Extras": "#a78bfa",
+}
+CATEGORY_ICONS = {
+    "Protein & Mains": "utensils",
+    "Dairy & Eggs": "droplet",
+    "Grains & Bakery": "lunchbox",
+    "Legumes": "bean",
+    "Produce & Salads": "salad",
+    "Nuts, Sauces & Extras": "nut",
+}
+
 FOOD_CATEGORIES = {
     "ful_medames_bowl": "Legumes",
     "boiled_egg": "Dairy & Eggs",

@@ -17,12 +17,17 @@
   {% if workouts %}
   <div class="table-scroll">
   <table class="log-table">
-    <thead><tr><th>Date</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Date</th><th>Notes</th><th></th></tr></thead>
     <tbody>
     {% for w in workouts %}
       <tr>
         <td><a href="/recovery/{{ w.id }}">{{ w.log_date }}</a></td>
         <td>{{ w.notes or "" }}</td>
+        <td>
+          <form method="post" action="/recovery/{{ w.id }}/delete" onsubmit="return confirm('Delete this session?')">
+            <button type="submit" class="row-delete-btn" aria-label="Delete session"><svg class="icon"><use href="#icon-trash"/></svg></button>
+          </form>
+        </td>
       </tr>
     {% endfor %}
     </tbody>

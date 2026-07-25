@@ -5,8 +5,10 @@
 <p class="muted" style="font-size:13px;margin-bottom:16px">{{ start_date }} → {{ end_date }} — covers both meal options for each day, so you have what you need either way.</p>
 
 {% for cat in categories %}
-<section class="card">
-  <h2 style="font-size:14px;letter-spacing:0.3px">{{ cat.name }}</h2>
+<section class="card" style="border-left:3px solid {{ cat.color }}">
+  <h2 style="font-size:14px;letter-spacing:0.3px;display:flex;align-items:center;gap:8px;color:{{ cat.color }}">
+    <svg class="icon" style="width:16px;height:16px"><use href="#icon-{{ cat.icon }}"/></svg>{{ cat.name }}
+  </h2>
   <div class="link-list">
     {% for item in cat.foods %}
     <div class="link-row" style="cursor:default">

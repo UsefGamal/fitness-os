@@ -165,6 +165,7 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
     exercise_by_name = {e.name: e for e in exercises}
     sets_view = [
         {
+            "id": s.id,
             "exercise_name": exercise_by_id[s.exercise_id].name if s.exercise_id in exercise_by_id else "?",
             "set_number": s.set_number,
             "reps": s.reps,
@@ -294,3 +295,24 @@ def update_session_notes(
     session.add(workout)
     session.commit()
     return RedirectResponse(url=f"/gym/{workout_id}", status_code=303)
+
+
+@router.post("/gym/{workout_id}/sets/{set_id}/delete", dependencies=[Depends(require_login)])
+def delete_set(workout_id: int, set_id: int, session: Session = Depends(get_session)):
+    workout_set = session.get(WorkoutSet, set_id)
+    if workout_set and workout_set.workout_id == workout_id:
+        session.delete(workout_set)
+        session.commit()
+    return RedirectResponse(url=f"/gym/{workout_id}", status_code=303)
+
+
+@router.post("/gym/{workout_id}/delete", dependencies=[Depends(require_login)])
+def delete_gym_session(workout_id: int, session: Session = Depends(get_session)):
+    workout = session.get(Workout, workout_id)
+    if not workout:
+        raise HTTPException(status_code=404)
+    for workout_set in session.exec(select(WorkoutSet).where(WorkoutSet.workout_id == workout_id)).all():
+        session.delete(workout_set)
+    session.delete(workout)
+    session.commit()
+    return RedirectResponse(url="/gym", status_code=303)

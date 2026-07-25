@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -35,12 +35,14 @@ def _weekly_weight_deltas(logs: list[BodyLog]) -> tuple[list[float], list[str]]:
 
 
 @router.get("/body", dependencies=[Depends(require_login)])
-def body_log_page(request: Request, session: Session = Depends(get_session)):
+def body_log_page(request: Request, edit: Optional[int] = None, session: Session = Depends(get_session)):
     logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
     weights = [log.weight_kg for log in logs]
 
     weekly_deltas, weekly_labels = _weekly_weight_deltas(logs)
     weekly_rows = list(reversed(list(zip(weekly_labels, weekly_deltas))))
+
+    edit_log = next((log for log in logs if log.id == edit), None) if edit else None
 
     return templates.TemplateResponse(
         "body.html",
@@ -52,6 +54,7 @@ def body_log_page(request: Request, session: Session = Depends(get_session)):
             "weekly_delta_svg": build_diverging_bar_svg(weekly_deltas),
             "weekly_delta_rows": weekly_rows,
             "today": date.today().isoformat(),
+            "edit_log": edit_log,
         },
     )
 
@@ -94,5 +97,15 @@ def add_body_log(
                 notes=notes,
             )
         )
+    session.commit()
+    return RedirectResponse(url="/body", status_code=303)
+
+
+@router.post("/body/{log_id}/delete", dependencies=[Depends(require_login)])
+def delete_body_log(log_id: int, session: Session = Depends(get_session)):
+    log = session.get(BodyLog, log_id)
+    if not log:
+        raise HTTPException(status_code=404)
+    session.delete(log)
     session.commit()
     return RedirectResponse(url="/body", status_code=303)

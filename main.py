@@ -26,7 +26,7 @@ from content.projections import (
 )
 from database import get_session, init_db
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
-from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate
+from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate, training
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
 
 load_dotenv()
@@ -47,6 +47,7 @@ app.include_router(recovery.router)
 app.include_router(bonus.router)
 app.include_router(simulate.router)
 app.include_router(cardio.router)
+app.include_router(training.router)
 
 
 @app.on_event("startup")
