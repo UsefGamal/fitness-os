@@ -25,9 +25,8 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-droplet"/></svg> Hydration</h2>
-  <div class="progress-bar"><div class="progress-fill" style="width:{{ hydration_pct }}%"></div></div>
-  <p class="muted" style="font-size:13px;margin-top:6px">{{ hydration_ml }} / {{ hydration_target_ml }} ml</p>
-  <div class="drinks-row" style="margin-top:4px">
+  {{ hydration_meter | safe }}
+  <div class="drinks-row" style="margin-top:8px">
     {% for amount in hydration_quick_add %}
     <form method="post" action="/meals/hydration" style="display:inline">
       <input type="hidden" name="log_date" value="{{ current_date }}">
@@ -36,6 +35,11 @@
     </form>
     {% endfor %}
   </div>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-target"/></svg> Today's macros</h2>
+  {% for meter in macro_meters %}{{ meter | safe }}{% endfor %}
 </section>
 
 <details class="card eating-out">

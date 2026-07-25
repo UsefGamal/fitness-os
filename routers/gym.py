@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from charting import build_bar_svg, build_sparkline_svg
 from content.gym_program import PROGRAM, PROGRESSION_NOTE, next_program_day
 from database import get_session
 from models import Exercise, Workout, WorkoutSet
@@ -42,6 +43,68 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
             "next_day": next_day,
             "deload_due": deload_due(session, PLAN_START_DATE),
             "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
+        },
+    )
+
+
+@router.get("/gym/progress", dependencies=[Depends(require_login)])
+def gym_progress(request: Request, session: Session = Depends(get_session)):
+    exercises = session.exec(select(Exercise).order_by(Exercise.muscle_group, Exercise.name)).all()
+
+    strength_charts = []
+    for ex in exercises:
+        rows = session.exec(
+            select(Workout.log_date, WorkoutSet.weight_kg)
+            .join(WorkoutSet, WorkoutSet.workout_id == Workout.id)
+            .where(WorkoutSet.exercise_id == ex.id)
+            .order_by(Workout.log_date)
+        ).all()
+        # Top set (max weight) per session date.
+        top_by_date: dict = {}
+        for log_date_val, weight in rows:
+            top_by_date[log_date_val] = max(top_by_date.get(log_date_val, 0), weight)
+        dates = sorted(top_by_date)
+        if len(dates) < 2:
+            continue
+        weights = [top_by_date[d] for d in dates]
+        delta = weights[-1] - weights[0]
+        strength_charts.append(
+            {
+                "name": ex.name,
+                "muscle_group": ex.muscle_group,
+                "current": weights[-1],
+                "delta": delta,
+                "svg": build_sparkline_svg(weights),
+            }
+        )
+
+    gym_workouts = session.exec(
+        select(Workout).where(Workout.workout_type == "gym").order_by(Workout.log_date.desc())
+    ).all()[:12]
+    gym_workouts = list(reversed(gym_workouts))
+
+    volumes = []
+    rpes = []
+    for w in gym_workouts:
+        sets = session.exec(select(WorkoutSet).where(WorkoutSet.workout_id == w.id)).all()
+        volumes.append(sum(s.reps * s.weight_kg for s in sets))
+        set_rpes = [s.rpe for s in sets if s.rpe is not None]
+        rpes.append(sum(set_rpes) / len(set_rpes) if set_rpes else None)
+
+    volume_svg = build_bar_svg(volumes) if any(volumes) else ""
+    rpe_values = [r for r in rpes if r is not None]
+    rpe_svg = build_sparkline_svg(rpe_values) if len(rpe_values) >= 2 else ""
+
+    return templates.TemplateResponse(
+        "gym_progress.html",
+        {
+            "request": request,
+            "logged_in": True,
+            "strength_charts": strength_charts,
+            "volume_svg": volume_svg,
+            "session_count": len(gym_workouts),
+            "rpe_svg": rpe_svg,
+            "latest_rpe": rpe_values[-1] if rpe_values else None,
         },
     )
 

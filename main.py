@@ -1,5 +1,6 @@
 import os
 from datetime import date, timedelta
+from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, Request
@@ -11,6 +12,7 @@ from sqlmodel import Session, func, select
 
 from auth import APP_PASSWORD, is_logged_in
 from baseline import get_baseline
+from charting import build_heatmap_html, build_line_svg, status_chip_html
 from content.gym_exercises import SEED_EXERCISES
 from content.meal_plan import get_day
 from content.milestones import badge_progress, level_for_points
@@ -22,7 +24,7 @@ from content.projections import (
     training_adherence_pct,
 )
 from database import get_session, init_db
-from models import BonusLog, Exercise, MealLog, Profile, Workout
+from models import BodyLog, BonusLog, Exercise, MealLog, Profile, Workout, WorkoutSet
 from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate
 from routers.meals import PLAN_START_DATE
 
@@ -111,6 +113,49 @@ WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active
 WORKOUT_TYPE_ICONS = {"gym": "dumbbell", "home": "house", "recovery": "heart", "padel": "racket", "cardio": "heart-pulse"}
 MEAL_SLOTS_PER_DAY = 5
 
+CONFIDENCE_STATUS = {
+    "On Track": ("good", "check"),
+    "Slightly Behind": ("warning", "activity"),
+    "At Risk": ("critical", "alert"),
+    "Not enough data yet": ("warning", "activity"),
+}
+
+
+def _weekly_adherence_outcome_insight(session: Session, today: date, weeks: int = 8) -> Optional[str]:
+    """'Weeks you hit >=80% meal adherence, you lost X more' — or None if
+    there isn't enough history yet to say anything meaningful."""
+    high_changes = []
+    low_changes = []
+    for i in range(weeks):
+        week_end = today - timedelta(days=7 * i)
+        week_start = week_end - timedelta(days=6)
+        completed = len(
+            session.exec(
+                select(MealLog).where(
+                    MealLog.log_date >= week_start, MealLog.log_date <= week_end, MealLog.completed == True  # noqa: E712
+                )
+            ).all()
+        )
+        adherence = meal_adherence_pct(completed, MEAL_SLOTS_PER_DAY * 7)
+        week_logs = session.exec(
+            select(BodyLog)
+            .where(BodyLog.log_date >= week_start, BodyLog.log_date <= week_end)
+            .order_by(BodyLog.log_date)
+        ).all()
+        if len(week_logs) < 2:
+            continue
+        change = week_logs[0].weight_kg - week_logs[-1].weight_kg  # positive = lost weight
+        (high_changes if adherence >= 80 else low_changes).append(change)
+
+    if not high_changes or not low_changes:
+        return None
+    avg_high = sum(high_changes) / len(high_changes)
+    avg_low = sum(low_changes) / len(low_changes)
+    diff = round(avg_high - avg_low, 2)
+    if diff <= 0:
+        return None
+    return f"On weeks you hit 80%+ meal adherence, you lost {diff}kg more on average than lower-adherence weeks."
+
 
 @app.get("/")
 def dashboard(request: Request, session: Session = Depends(get_session)):
@@ -150,6 +195,37 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     combined_adherence = round((train_adherence + meal_adherence) / 2, 1)
     confidence, confidence_label = confidence_score(actual_rate, target_rate, combined_adherence)
     slack_date = slack_impact_date(predicted_date, missed_weeks=2)
+    status_kind, status_icon = CONFIDENCE_STATUS.get(confidence_label, ("warning", "activity"))
+    confidence_chip = status_chip_html(status_kind, confidence_label, status_icon)
+
+    # ── Weight vs goal chart (emphasis form: one line, dashed goal ref) ──
+    body_logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
+    weight_chart_svg = build_line_svg([log.weight_kg for log in body_logs], reference_value=goal_mid)
+
+    # ── Avg training RPE, last 14 days (session + per-set) ──────────
+    recent_gym_workouts = session.exec(
+        select(Workout).where(Workout.log_date >= two_weeks_ago, Workout.workout_type == "gym")
+    ).all()
+    rpe_pool = []
+    for w in recent_gym_workouts:
+        set_rpes = session.exec(
+            select(WorkoutSet.rpe).where(WorkoutSet.workout_id == w.id, WorkoutSet.rpe.is_not(None))
+        ).all()
+        rpe_pool.extend(set_rpes)
+    for w in recent_sessions:
+        if w.session_rpe is not None:
+            rpe_pool.append(w.session_rpe)
+    avg_rpe = round(sum(rpe_pool) / len(rpe_pool), 1) if rpe_pool else None
+
+    # ── Weekly weight delta ──────────────────────────────────────────
+    week_ago_logs = [log for log in body_logs if log.log_date <= today - timedelta(days=7)]
+    weekly_weight_delta = (
+        round(current_weight - week_ago_logs[-1].weight_kg, 1)
+        if current_weight is not None and week_ago_logs
+        else None
+    )
+
+    adherence_insight = _weekly_adherence_outcome_insight(session, today)
 
     # ── Points, level & badge ────────────────────────────────────
     total_points = session.exec(select(func.sum(BonusLog.points))).first() or 0
@@ -164,6 +240,15 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     # ── Streak ────────────────────────────────────────────────────
     all_workout_dates = set(session.exec(select(Workout.log_date)).all())
     streak = compute_streak(all_workout_dates, today)
+
+    # ── Streak heatmap (last 35 days, GitHub-contribution style) ────
+    heatmap_days = 35
+    heatmap_cells = []
+    for i in range(heatmap_days - 1, -1, -1):
+        d = today - timedelta(days=i)
+        level = 4 if d in all_workout_dates else 0
+        heatmap_cells.append({"date": d.isoformat(), "level": level, "title": f"{d.isoformat()}{' — trained' if level else ''}"})
+    streak_heatmap_html = build_heatmap_html(heatmap_cells)
 
     # ── This week ────────────────────────────────────────────────
     week_start = today - timedelta(days=today.weekday())
@@ -224,6 +309,13 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "badge_progress_pct": badge_progress_pct,
             "day_cards": day_cards,
             "today_logged": today_logged,
+            "confidence_chip": confidence_chip,
+            "weight_chart_svg": weight_chart_svg,
+            "streak_heatmap_html": streak_heatmap_html,
+            "avg_rpe": avg_rpe,
+            "weekly_weight_delta": weekly_weight_delta,
+            "meal_adherence": meal_adherence,
+            "adherence_insight": adherence_insight,
         },
     )
 

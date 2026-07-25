@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from charting import build_sparkline_svg
 from content.cardio_program import ALTERNATIVES, CARDIO_SESSION
 from database import get_session
 from models import Workout
@@ -20,6 +21,7 @@ def cardio_list(request: Request, session: Session = Depends(get_session)):
     sessions = session.exec(
         select(Workout).where(Workout.workout_type == "cardio").order_by(Workout.log_date.desc())
     ).all()
+    recent_durations = [s.duration_min for s in reversed(sessions[:12]) if s.duration_min]
     return templates.TemplateResponse(
         "cardio.html",
         {
@@ -29,6 +31,7 @@ def cardio_list(request: Request, session: Session = Depends(get_session)):
             "today": date.today().isoformat(),
             "cardio_session": CARDIO_SESSION,
             "alternatives": ALTERNATIVES,
+            "duration_svg": build_sparkline_svg(recent_durations) if len(recent_durations) >= 2 else "",
         },
     )
 

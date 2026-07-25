@@ -17,6 +17,13 @@
   </details>
 </section>
 
+{% if duration_svg %}
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Duration trend</h2>
+  <div class="sparkline-wrap"><div>{{ duration_svg | safe }}</div><div class="sparkline-meta muted" style="font-size:12px">last {{ sessions|length if sessions|length < 12 else 12 }} sessions, minutes</div></div>
+</section>
+{% endif %}
+
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> Log a session</h2>
   <form method="post" action="/cardio" class="stack-form">

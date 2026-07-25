@@ -7,9 +7,10 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from charting import build_meter_html
 from content.eating_out_guide import EATING_OUT_TIPS
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
-from content.meal_plan import DRINK_OPTIONS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
+from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
 from database import get_session
 from models import HydrationLog, MealLog, Workout
 
@@ -71,6 +72,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
         ).first()
     )
 
+    eaten_totals = {"protein": 0.0, "carbs": 0.0, "fat": 0.0, "fiber": 0.0}
     for meal in plan["meals"]:
         log = logs_by_slot.get(meal["slot"])
         meal["label"] = SLOT_LABELS.get(meal["slot"], meal["slot"])
@@ -79,6 +81,9 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
         selected_option = log.option_key if (log and log.completed) else None
         for option in meal["options"]:
             option["selected"] = option["key"] == selected_option
+            if option["selected"]:
+                for macro in eaten_totals:
+                    eaten_totals[macro] += option[macro]
         meal["drinks"] = [
             {"key": key, "label": DRINK_LABELS[key], "selected": bool(log and log.drink_key == key)}
             for key in DRINK_OPTIONS
@@ -88,6 +93,14 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
 
     hydration_log = session.exec(select(HydrationLog).where(HydrationLog.log_date == current)).first()
     hydration_ml = hydration_log.ml if hydration_log else 0
+
+    macro_meters = [
+        build_meter_html(eaten_totals["protein"], MACRO_TARGETS["protein"], "Protein", "g"),
+        build_meter_html(eaten_totals["carbs"], MACRO_TARGETS["carbs"], "Carbs", "g"),
+        build_meter_html(eaten_totals["fat"], MACRO_TARGETS["fat"], "Fat", "g"),
+        build_meter_html(eaten_totals["fiber"], MACRO_TARGETS["fiber"], "Fiber", "g"),
+    ]
+    hydration_meter = build_meter_html(hydration_ml, HYDRATION_TARGET_ML, "Water", "ml")
 
     return templates.TemplateResponse(
         "meals.html",
@@ -102,8 +115,9 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
             "eating_out_general": EATING_OUT_TIPS["general"],
             "hydration_ml": hydration_ml,
             "hydration_target_ml": HYDRATION_TARGET_ML,
-            "hydration_pct": min(100, round(hydration_ml / HYDRATION_TARGET_ML * 100)),
+            "hydration_meter": hydration_meter,
             "hydration_quick_add": HYDRATION_QUICK_ADD,
+            "macro_meters": macro_meters,
         },
     )
 

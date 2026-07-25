@@ -15,6 +15,10 @@ MEAL_SLOT_WINDOWS = {
 # Drinks selectable alongside any meal — all effectively zero-calorie.
 DRINK_OPTIONS = ["water", "unsweetened_tea", "unsweetened_coffee", "diet_soda", "flavored_sparkling_water"]
 
+# Daily macro targets (midpoints of the plan's structured-portion band) — used
+# by the meals-page progress meters, not a strict calorie-counting target.
+MACRO_TARGETS = {"protein": 185, "carbs": 150, "fat": 70, "fiber": 25}
+
 # 14-day (= 2-week) rotating meal plan. No fish/seafood. Structured portions,
 # not calorie-counted day to day — targets ~1900-2050 kcal / ~175-195g protein.
 # Each slot offers 2 selectable home-cooked options: A is Egyptian, B leans

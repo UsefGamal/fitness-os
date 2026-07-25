@@ -4,6 +4,27 @@
 <h1>Dashboard</h1>
 
 <section class="card card-glow">
+  <div class="kpi-row">
+    <div class="kpi-tile">
+      <div class="kpi-label">Weekly Δ</div>
+      <div class="kpi-value {% if weekly_weight_delta is not none %}{% if weekly_weight_delta < 0 %}kpi-delta up{% elif weekly_weight_delta > 0 %}kpi-delta down{% endif %}{% endif %}" style="font-size:18px">{% if weekly_weight_delta is not none %}{{ weekly_weight_delta }}kg{% else %}—{% endif %}</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Streak</div>
+      <div class="kpi-value" style="font-size:18px">{{ streak }}d</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Meal Adherence</div>
+      <div class="kpi-value" style="font-size:18px">{{ meal_adherence }}%</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Avg RPE</div>
+      <div class="kpi-value" style="font-size:18px">{{ avg_rpe if avg_rpe is not none else "—" }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="card card-glow">
   <div class="stat-row">
     <div class="stat-tile level">
       <div class="sv">Lv {{ level }}</div>
@@ -26,6 +47,8 @@
     <p class="muted" style="font-size:12px;margin:10px 0 6px;display:flex;align-items:center;gap:6px">Next badge: <svg class="icon badge-tier-{{ next_milestone[2] }}" style="width:14px;height:14px"><use href="#icon-medal"/></svg> {{ next_milestone[1] }} at {{ next_milestone[0] }} pts</p>
     <div class="progress-bar"><div class="progress-fill gold" style="width:{{ badge_progress_pct }}%"></div></div>
   {% endif %}
+  <p class="muted" style="font-size:11px;margin:12px 0 6px">Last 5 weeks</p>
+  {{ streak_heatmap_html | safe }}
 </section>
 
 <section class="card">
@@ -37,23 +60,32 @@
     </p>
     <div class="progress-bar"><div class="progress-fill" style="width:{{ goal_progress_pct }}%"></div></div>
     <p class="muted" style="font-size:13px;margin-top:6px">{{ goal_progress_pct }}% of the way from {{ start_weight }} kg to goal</p>
+    {% if weight_chart_svg %}
+    <div class="chart-wrap" style="margin-top:14px">{{ weight_chart_svg | safe }}</div>
+    <p class="muted" style="font-size:11px;text-align:center">solid = actual weight · dashed = goal</p>
+    {% endif %}
   {% else %}
     <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
   {% endif %}
   {% if profile.due_date %}<p class="muted" style="font-size:13px;margin-top:8px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart"/></svg> Baby due {{ profile.due_date }} ({{ days_to_due }} days)</p>{% endif %}
+  {% if adherence_insight %}<p class="muted" style="font-size:13px;margin-top:10px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-trending-up"/></svg> {{ adherence_insight }}</p>{% endif %}
 </section>
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Confidence & Prediction</h2>
   {% if confidence is not none %}
-    <p><strong style="color:var(--accent);font-size:26px;font-family:var(--font-mono)">{{ confidence }}%</strong> <span class="muted">— {{ confidence_label }}</span></p>
+    <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <strong style="color:var(--accent);font-size:26px;font-family:var(--font-mono)">{{ confidence }}%</strong>
+      {{ confidence_chip | safe }}
+    </p>
     <p class="muted" style="font-size:13px">Actual pace: {{ actual_rate }} kg/week &middot; Target pace: {{ target_rate }} kg/week</p>
     {% if predicted_date %}
       <p style="margin-top:8px">At this rate, projected goal date: <strong>{{ predicted_date }}</strong></p>
       <p class="muted" style="font-size:13px">If you took 2 weeks off entirely: <strong>{{ slack_date }}</strong> &middot; <a href="/simulate" style="color:var(--accent)">try other scenarios →</a></p>
     {% endif %}
   {% else %}
-    <p class="muted">{{ confidence_label }} — log at least two weigh-ins a week or more apart to see your pace.</p>
+    {{ confidence_chip | safe }}
+    <p class="muted" style="margin-top:8px">Log at least two weigh-ins a week or more apart to see your pace.</p>
   {% endif %}
 </section>
 
