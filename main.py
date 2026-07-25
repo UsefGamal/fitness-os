@@ -110,6 +110,13 @@ def more_page(request: Request):
     return templates.TemplateResponse("more.html", {"request": request, "logged_in": True})
 
 
+@app.get("/help")
+def help_page(request: Request):
+    if not is_logged_in(request):
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse("help.html", {"request": request, "logged_in": True})
+
+
 WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel", "cardio": "Cardio"}
 WORKOUT_TYPE_ICONS = {"gym": "dumbbell", "home": "house", "recovery": "heart", "padel": "racket", "cardio": "heart-pulse"}
 MEAL_SLOTS_PER_DAY = 5
