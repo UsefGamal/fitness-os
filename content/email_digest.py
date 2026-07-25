@@ -19,6 +19,23 @@ GOLD = "#fbbf24"
 FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
 
 
+def _wrap_document(body: str) -> str:
+    """A minimal responsive HTML document (viewport meta + fluid max-width
+    container) rather than a bare fragment — keeps rendering consistent
+    and correctly scaled across mail clients."""
+    return f"""<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark light">
+</head>
+<body style="margin:0;padding:0;background:{BG}">
+{body}
+</body>
+</html>"""
+
+
 def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_url: str) -> tuple[str, str]:
     day_number = (today - PLAN_START_DATE).days + 1
     meal_plan = get_day(day_number)
@@ -34,16 +51,26 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
         else ""
     )
 
+    # Each meal is a full-width stacked block, not a table cell — a narrow
+    # fixed-width table column was wrapping long ingredient lists to one
+    # word per line on mobile mail clients. The only table here is a
+    # 2-column header row (short label + short kcal figure), which is
+    # safe at any width.
     meal_rows = "".join(
         f"""
-        <tr>
-          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};font-weight:600;color:{TEXT};white-space:nowrap">{SLOT_LABELS.get(m['slot'], m['slot'])}<br><span style="font-weight:400;color:{MUTED};font-size:11px">{m['time_window']}</span></td>
-          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};color:{MUTED};font-size:13px">
+        <div style="padding:14px 0;border-bottom:1px solid {BORDER}">
+          <table role="presentation" style="width:100%;border-collapse:collapse"><tr>
+            <td style="padding:0;font-weight:600;color:{TEXT};font-size:14px;vertical-align:baseline">
+              {SLOT_LABELS.get(m['slot'], m['slot'])}
+              <span style="font-weight:400;color:{MUTED};font-size:11px">&nbsp;&middot; {m['time_window']}</span>
+            </td>
+            <td style="padding:0;color:{ACCENT};font-weight:700;font-size:14px;text-align:right;white-space:nowrap;vertical-align:baseline">{m['options'][0]['kcal']} kcal</td>
+          </tr></table>
+          <p style="color:{MUTED};font-size:13px;line-height:1.6;margin:8px 0 0;word-wrap:break-word">
             <strong style="color:{TEXT}">A ({m['options'][0]['cuisine']}):</strong> {', '.join(m['options'][0]['ingredients'])}<br>
             <strong style="color:{TEXT}">B ({m['options'][1]['cuisine']}):</strong> {', '.join(m['options'][1]['ingredients'])}
-          </td>
-          <td style="padding:10px 12px;border-bottom:1px solid {BORDER};color:{ACCENT};font-weight:600;white-space:nowrap;text-align:right">{m['options'][0]['kcal']} kcal</td>
-        </tr>"""
+          </p>
+        </div>"""
         for m in meal_plan["meals"]
     )
 
@@ -54,7 +81,7 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
     )
 
     subject = f"Fitness OS — {today.strftime('%a %b %d')} plan"
-    html = f"""
+    body = f"""
     <div style="background:{BG};padding:24px 12px;font-family:{FONT}">
       <div style="max-width:600px;margin:0 auto;background:{SURFACE};border:1px solid {BORDER};border-radius:14px;overflow:hidden">
 
@@ -73,10 +100,10 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
           <h2 style="color:{TEXT};font-size:16px;border-top:1px solid {BORDER};padding-top:18px;margin:0 0 4px">
             {meal_plan['label']}{refeed_badge}
           </h2>
-          <p style="color:{MUTED};font-size:13px;margin:0 0 12px">
+          <p style="color:{MUTED};font-size:13px;margin:0 0 4px">
             {meal_plan['totals']['kcal']} kcal &middot; {meal_plan['totals']['protein']}g protein &middot; {meal_plan['totals']['carbs']}g carbs &middot; {meal_plan['totals']['fat']}g fat &middot; {meal_plan['totals']['fiber']}g fiber
           </p>
-          <table style="width:100%;border-collapse:collapse;margin-bottom:8px">{meal_rows}</table>
+          <div style="margin-bottom:4px">{meal_rows}</div>
           <p style="color:{MUTED};font-size:12px;margin:8px 0 0;font-style:italic">Eating out? {eating_out_tip}</p>
           <p style="text-align:right;margin:8px 0 0">
             <a href="{app_base_url}/meals" style="color:{ACCENT};font-size:13px;font-weight:600;text-decoration:none">Open meal plan →</a>
@@ -98,4 +125,4 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
       </div>
     </div>
     """
-    return subject, html
+    return subject, _wrap_document(body)
