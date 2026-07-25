@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from charting import build_line_svg
 from database import get_session
 from models import BodyLog
 
@@ -14,32 +15,17 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-def _build_chart_points(logs) -> str:
-    if len(logs) < 2:
-        return ""
-    weights = [log.weight_kg for log in logs]
-    min_w, max_w = min(weights), max(weights)
-    span = max_w - min_w or 1
-    width, height, pad = 600, 160, 10
-    n = len(logs)
-    points = []
-    for i, log in enumerate(logs):
-        x = pad + (i / (n - 1)) * (width - 2 * pad)
-        y = pad + (1 - (log.weight_kg - min_w) / span) * (height - 2 * pad)
-        points.append(f"{x:.1f},{y:.1f}")
-    return " ".join(points)
-
-
 @router.get("/body", dependencies=[Depends(require_login)])
 def body_log_page(request: Request, session: Session = Depends(get_session)):
     logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
+    weights = [log.weight_kg for log in logs]
     return templates.TemplateResponse(
         "body.html",
         {
             "request": request,
             "logged_in": True,
             "logs": list(reversed(logs)),
-            "chart_points": _build_chart_points(logs),
+            "chart_svg": build_line_svg(weights),
             "today": date.today().isoformat(),
         },
     )
