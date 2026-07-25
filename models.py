@@ -25,6 +25,17 @@ class BodyLog(SQLModel, table=True):
     weight_kg: float
     waist_cm: Optional[float] = None
     notes: Optional[str] = None
+    sleep_hours: Optional[float] = None
+    chest_cm: Optional[float] = None
+    arm_cm: Optional[float] = None
+    hips_cm: Optional[float] = None
+    thigh_cm: Optional[float] = None
+
+
+class HydrationLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    log_date: date
+    ml: int = 0
 
 
 class Workout(SQLModel, table=True):

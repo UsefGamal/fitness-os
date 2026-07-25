@@ -9,12 +9,32 @@
     <strong>{{ current_date }}{% if is_today %} (Today){% endif %}</strong>
     <a href="/meals?view_date={{ next_date }}">Next <svg class="icon"><use href="#icon-chevron-right"/></svg></a>
   </div>
-  <h2>{{ plan.label }}</h2>
+  <h2>
+    {{ plan.label }}
+    {% if plan.is_refeed %}<span class="cuisine-tag" style="color:var(--gold);border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.1)">Refeed</span>{% endif %}
+  </h2>
   <div class="day-macros">
     <div class="macro-pill"><div class="mv">{{ plan.totals.kcal }}</div><div class="ml">KCAL (OPT A)</div></div>
     <div class="macro-pill"><div class="mv">{{ plan.totals.protein }}g</div><div class="ml">PROTEIN</div></div>
     <div class="macro-pill"><div class="mv">{{ plan.totals.carbs }}g</div><div class="ml">CARBS</div></div>
     <div class="macro-pill"><div class="mv">{{ plan.totals.fat }}g</div><div class="ml">FAT</div></div>
+    <div class="macro-pill"><div class="mv">{{ plan.totals.fiber }}g</div><div class="ml">FIBER</div></div>
+  </div>
+  <p style="margin-top:10px"><a href="/meals/shopping-list" style="color:var(--accent);font-size:13px;font-weight:600;text-decoration:none">Shopping list for this week →</a></p>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-droplet"/></svg> Hydration</h2>
+  <div class="progress-bar"><div class="progress-fill" style="width:{{ hydration_pct }}%"></div></div>
+  <p class="muted" style="font-size:13px;margin-top:6px">{{ hydration_ml }} / {{ hydration_target_ml }} ml</p>
+  <div class="drinks-row" style="margin-top:4px">
+    {% for amount in hydration_quick_add %}
+    <form method="post" action="/meals/hydration" style="display:inline">
+      <input type="hidden" name="log_date" value="{{ current_date }}">
+      <input type="hidden" name="ml" value="{{ amount }}">
+      <button type="submit" class="drink-chip">+{{ amount }}ml</button>
+    </form>
+    {% endfor %}
   </div>
 </section>
 
@@ -31,6 +51,10 @@
     <h2><svg class="icon"><use href="#icon-{{ meal.icon }}"/></svg> {{ meal.label }}</h2>
     <span class="time-window">{{ meal.time_window }}</span>
   </div>
+
+  {% if meal.training_note %}
+  <p class="muted" style="font-size:12px;margin:-4px 0 10px;display:flex;align-items:center;gap:6px"><svg class="icon" style="width:14px;height:14px;color:var(--accent)"><use href="#icon-bolt"/></svg> Training today — prioritize this meal's protein + carbs.</p>
+  {% endif %}
 
   {% for option in meal.options %}
   <div class="meal-option{% if option.selected %} meal-option-selected{% endif %}">
@@ -49,7 +73,7 @@
       {% for item in option.ingredients %}<span class="ingredient-chip">{{ item }}</span>{% endfor %}
     </div>
     <div class="meal-macros-row">
-      <span>{{ option.kcal }} kcal</span> · <span>{{ option.protein }}g protein</span> · <span>{{ option.carbs }}g carbs</span> · <span>{{ option.fat }}g fat</span>
+      <span>{{ option.kcal }} kcal</span> · <span>{{ option.protein }}g protein</span> · <span>{{ option.carbs }}g carbs</span> · <span>{{ option.fat }}g fat</span> · <span>{{ option.fiber }}g fiber</span>
     </div>
   </div>
   {% endfor %}

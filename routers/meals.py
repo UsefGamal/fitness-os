@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -7,14 +8,18 @@ from sqlmodel import Session, select
 
 from auth import require_login
 from content.eating_out_guide import EATING_OUT_TIPS
-from content.meal_plan import DRINK_OPTIONS, display_name, get_day
+from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
+from content.meal_plan import DRINK_OPTIONS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
 from database import get_session
-from models import MealLog
+from models import HydrationLog, MealLog, Workout
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 PLAN_START_DATE = date(2026, 8, 1)  # day 1 of the rotation — real program start date
+HYDRATION_TARGET_ML = 3000
+HYDRATION_QUICK_ADD = [250, 500, 1000]
+TRAINING_WORKOUT_TYPES = ("gym", "home", "cardio")
 
 SLOT_LABELS = {
     "breakfast": "Breakfast",
@@ -41,6 +46,9 @@ SLOT_EATING_OUT_KEY = {
     "dinner": "dinner",
 }
 
+# Meal slots that get the "training today" protein+carb callout.
+TRAINING_DAY_SLOTS = ("lunch", "dinner")
+
 DRINK_LABELS = {key: display_name(key) for key in DRINK_OPTIONS}
 
 
@@ -57,6 +65,12 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     logs = session.exec(select(MealLog).where(MealLog.log_date == current)).all()
     logs_by_slot = {log.meal_slot: log for log in logs}
 
+    trained_today = bool(
+        session.exec(
+            select(Workout).where(Workout.log_date == current, Workout.workout_type.in_(TRAINING_WORKOUT_TYPES))
+        ).first()
+    )
+
     for meal in plan["meals"]:
         log = logs_by_slot.get(meal["slot"])
         meal["label"] = SLOT_LABELS.get(meal["slot"], meal["slot"])
@@ -70,6 +84,10 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
             for key in DRINK_OPTIONS
         ]
         meal["eating_out_tips"] = EATING_OUT_TIPS.get(SLOT_EATING_OUT_KEY[meal["slot"]], [])
+        meal["training_note"] = trained_today and meal["slot"] in TRAINING_DAY_SLOTS
+
+    hydration_log = session.exec(select(HydrationLog).where(HydrationLog.log_date == current)).first()
+    hydration_ml = hydration_log.ml if hydration_log else 0
 
     return templates.TemplateResponse(
         "meals.html",
@@ -82,6 +100,10 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
             "next_date": (current + timedelta(days=1)).isoformat(),
             "is_today": current == date.today(),
             "eating_out_general": EATING_OUT_TIPS["general"],
+            "hydration_ml": hydration_ml,
+            "hydration_target_ml": HYDRATION_TARGET_ML,
+            "hydration_pct": min(100, round(hydration_ml / HYDRATION_TARGET_ML * 100)),
+            "hydration_quick_add": HYDRATION_QUICK_ADD,
         },
     )
 
@@ -128,3 +150,62 @@ def set_drink(
         session.add(MealLog(log_date=d, meal_slot=meal_slot, completed=False, drink_key=drink_key))
     session.commit()
     return RedirectResponse(url=f"/meals?view_date={log_date}", status_code=303)
+
+
+@router.post("/meals/hydration", dependencies=[Depends(require_login)])
+def add_hydration(
+    log_date: str = Form(...),
+    ml: int = Form(...),
+    session: Session = Depends(get_session),
+):
+    d = date.fromisoformat(log_date)
+    existing = session.exec(select(HydrationLog).where(HydrationLog.log_date == d)).first()
+    if existing:
+        existing.ml = max(0, existing.ml + ml)
+        session.add(existing)
+    else:
+        session.add(HydrationLog(log_date=d, ml=max(0, ml)))
+    session.commit()
+    return RedirectResponse(url=f"/meals?view_date={log_date}", status_code=303)
+
+
+@router.get("/meals/maintenance", dependencies=[Depends(require_login)])
+def maintenance_page(request: Request):
+    return templates.TemplateResponse(
+        "maintenance.html",
+        {
+            "request": request,
+            "logged_in": True,
+            "intro": MAINTENANCE_INTRO,
+            "steps": MAINTENANCE_STEPS,
+        },
+    )
+
+
+@router.get("/meals/shopping-list", dependencies=[Depends(require_login)])
+def shopping_list_page(request: Request):
+    today = date.today()
+    counts = Counter()
+    for offset in range(7):
+        d = today + timedelta(days=offset)
+        day = MEAL_PLAN_14_DAY[(_day_number_for(d) - 1) % 14]
+        for slot in MEAL_SLOTS:
+            for option_key in ("option_a", "option_b"):
+                for item in day["meals"][slot][option_key]["items"]:
+                    counts[item] += 1
+
+    items = sorted(
+        ({"name": display_name(key), "count": count} for key, count in counts.items()),
+        key=lambda x: x["name"],
+    )
+
+    return templates.TemplateResponse(
+        "shopping_list.html",
+        {
+            "request": request,
+            "logged_in": True,
+            "items": items,
+            "start_date": today.isoformat(),
+            "end_date": (today + timedelta(days=6)).isoformat(),
+        },
+    )

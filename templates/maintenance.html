@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Plan — Fitness OS{% endblock %}
+{% block content %}
+<h1><svg class="icon"><use href="#icon-target"/></svg> Post-Cut Maintenance</h1>
+
+<section class="card">
+  <p class="muted">{{ intro }}</p>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-list"/></svg> Reverse-diet steps</h2>
+  <ul style="margin:0;padding-left:18px;font-size:14px">
+    {% for step in steps %}<li style="margin-bottom:8px">{{ step }}</li>{% endfor %}
+  </ul>
+</section>
+
+<a class="back-link" href="/meals"><svg class="icon"><use href="#icon-chevron-left"/></svg> Back to meals</a>
+{% endblock %}

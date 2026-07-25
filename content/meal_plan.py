@@ -362,27 +362,28 @@ MEAL_PLAN_14_DAY = [
     },
     {
         "day_index": 14,
-        "label": "Steak / Mixed Grill Day",
+        "label": "Refeed Day — Steak & Mixed Grill",
+        "is_refeed": True,  # last day of every 2-week cycle: higher-carb maintenance-calorie day
         "meals": {
             "breakfast": {
-                "option_a": {"cuisine": "Egyptian", "items": ["omelet_3egg_veg", "whole_wheat_pita_half"]},
-                "option_b": {"cuisine": "Syrian", "items": ["cottage_cheese_150g", "whole_wheat_toast_2slices", "salad_tomato_cucumber"]},
+                "option_a": {"cuisine": "Egyptian", "items": ["ful_medames_bowl", "boiled_egg", "boiled_egg", "whole_wheat_pita", "fruit_medium"]},
+                "option_b": {"cuisine": "Syrian", "items": ["whole_wheat_pita", "labneh_2tbsp", "boiled_egg", "avocado_half", "fruit_medium"]},
             },
             "snack1": {
-                "option_a": {"cuisine": "Egyptian", "items": ["fruit_medium"]},
-                "option_b": {"cuisine": "Syrian", "items": ["dates_3pc", "mixed_nuts_25g"]},
+                "option_a": {"cuisine": "Egyptian", "items": ["greek_yogurt_lowfat_200g", "dates_3pc", "mixed_nuts_25g"]},
+                "option_b": {"cuisine": "Syrian", "items": ["cottage_cheese_100g", "dates_3pc", "mixed_nuts_25g"]},
             },
             "lunch": {
-                "option_a": {"cuisine": "Egyptian", "items": ["grilled_beef_steak_180g", "white_rice_150g", "salad_tomato_cucumber"]},
-                "option_b": {"cuisine": "Grilled", "items": ["grilled_kebab_hindi_150g", "grilled_halloumi_50g", "batata_harra_100g"]},
+                "option_a": {"cuisine": "Egyptian", "items": ["grilled_chicken_breast_200g", "koshari_bowl_small", "salad_tomato_cucumber"]},
+                "option_b": {"cuisine": "Grilled", "items": ["shish_tawook_200g", "syrian_rice_vermicelli_150g", "syrian_rice_vermicelli_150g", "fattoush_bowl"]},
             },
             "snack2": {
-                "option_a": {"cuisine": "Egyptian", "items": ["rice_pudding_small"]},
-                "option_b": {"cuisine": "Syrian", "items": ["greek_yogurt_lowfat_200g"]},
+                "option_a": {"cuisine": "Egyptian", "items": ["rice_pudding_small", "fruit_medium"]},
+                "option_b": {"cuisine": "Syrian", "items": ["greek_yogurt_lowfat_200g", "dates_3pc"]},
             },
             "dinner": {
-                "option_a": {"cuisine": "Egyptian", "items": ["lentil_soup_bowl", "cottage_cheese_100g", "grilled_chicken_breast_200g", "cottage_cheese_100g"]},
-                "option_b": {"cuisine": "Grilled", "items": ["shawarma_plate_220g", "salad_tomato_cucumber", "cottage_cheese_100g", "turkey_breast_150g"]},
+                "option_a": {"cuisine": "Egyptian", "items": ["turkey_breast_150g", "freekeh_150g", "molokhia_bowl"]},
+                "option_b": {"cuisine": "Grilled", "items": ["grilled_chicken_thigh_200g", "batata_harra_100g", "tabbouleh_bowl", "cottage_cheese_100g"]},
             },
         },
     },
@@ -394,18 +395,19 @@ def display_name(key: str) -> str:
 
 
 def compute_macros(item_keys):
-    kcal = protein = carbs = fat = 0.0
+    kcal = protein = carbs = fat = fiber = 0.0
     for key in item_keys:
-        k, p, c, f = FOODS[key]
+        k, p, c, f, fi = FOODS[key]
         kcal += k
         protein += p
         carbs += c
         fat += f
-    return round(kcal), round(protein, 1), round(carbs, 1), round(fat, 1)
+        fiber += fi
+    return round(kcal), round(protein, 1), round(carbs, 1), round(fat, 1), round(fiber, 1)
 
 
 def _build_option(option_key: str, option: dict) -> dict:
-    kcal, protein, carbs, fat = compute_macros(option["items"])
+    kcal, protein, carbs, fat, fiber = compute_macros(option["items"])
     return {
         "key": option_key,
         "cuisine": option["cuisine"],
@@ -414,6 +416,7 @@ def _build_option(option_key: str, option: dict) -> dict:
         "protein": protein,
         "carbs": carbs,
         "fat": fat,
+        "fiber": fiber,
     }
 
 
@@ -424,7 +427,7 @@ def get_day(day_number_1_indexed: int):
     meals_out = []
     # Daily totals are based on option A (the default view); each option's
     # own totals are shown on its card.
-    day_kcal = day_protein = day_carbs = day_fat = 0.0
+    day_kcal = day_protein = day_carbs = day_fat = day_fiber = 0.0
     for slot in MEAL_SLOTS:
         slot_options = day["meals"][slot]
         options = [_build_option(key, slot_options[key]) for key in ("option_a", "option_b")]
@@ -439,14 +442,17 @@ def get_day(day_number_1_indexed: int):
         day_protein += options[0]["protein"]
         day_carbs += options[0]["carbs"]
         day_fat += options[0]["fat"]
+        day_fiber += options[0]["fiber"]
     return {
         "day_index": day["day_index"],
         "label": day["label"],
+        "is_refeed": day.get("is_refeed", False),
         "meals": meals_out,
         "totals": {
             "kcal": round(day_kcal),
             "protein": round(day_protein, 1),
             "carbs": round(day_carbs, 1),
             "fat": round(day_fat, 1),
+            "fiber": round(day_fiber, 1),
         },
     }

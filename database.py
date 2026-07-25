@@ -18,6 +18,11 @@ _LIGHT_MIGRATIONS = [
     "ALTER TABLE profile ADD COLUMN start_weight_kg FLOAT",
     "ALTER TABLE meallog ADD COLUMN option_key VARCHAR",
     "ALTER TABLE meallog ADD COLUMN drink_key VARCHAR",
+    "ALTER TABLE bodylog ADD COLUMN sleep_hours FLOAT",
+    "ALTER TABLE bodylog ADD COLUMN chest_cm FLOAT",
+    "ALTER TABLE bodylog ADD COLUMN arm_cm FLOAT",
+    "ALTER TABLE bodylog ADD COLUMN hips_cm FLOAT",
+    "ALTER TABLE bodylog ADD COLUMN thigh_cm FLOAT",
 ]
 
 
