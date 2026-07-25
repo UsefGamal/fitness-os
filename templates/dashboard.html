@@ -4,6 +4,26 @@
 <h1>Dashboard</h1>
 
 <section class="card card-glow">
+  <h2 style="margin-top:0"><svg class="icon"><use href="#icon-check"/></svg> Today's Checklist</h2>
+  <div class="today-meals-row">
+    {% for m in today_meals_status %}
+    <a href="/meals" class="today-meal-chip{% if m.done %} today-meal-chip-done{% endif %}">
+      <svg class="icon" style="width:13px;height:13px"><use href="#icon-{{ m.icon }}"/></svg>
+      <span>{{ m.label }}</span>
+      {% if m.done %}<svg class="icon icon-fill" style="width:11px;height:11px"><use href="#icon-check"/></svg>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  <p class="muted" style="font-size:12px;margin:8px 0 0">{{ meals_done_count }}/5 meals logged</p>
+
+  <div style="margin-top:16px">{{ hydration_meter_today | safe }}</div>
+
+  <a href="/bonus" style="margin-top:16px;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">
+    <svg class="icon"><use href="#icon-star"/></svg> {{ quests_done_count }}/{{ quests_total_count }} quests done today →
+  </a>
+</section>
+
+<section class="card card-glow">
   <div class="kpi-row">
     <div class="kpi-tile">
       <div class="kpi-label">Weekly Δ</div>

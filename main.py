@@ -12,7 +12,8 @@ from sqlmodel import Session, func, select
 
 from auth import APP_PASSWORD, is_logged_in
 from baseline import get_baseline
-from charting import build_heatmap_html, build_line_svg, status_chip_html
+from charting import build_heatmap_html, build_line_svg, build_meter_html, status_chip_html
+from content.bonus_tasks import BONUS_TASKS
 from content.gym_exercises import SEED_EXERCISES
 from content.meal_plan import get_day
 from content.milestones import badge_progress, level_for_points
@@ -24,9 +25,9 @@ from content.projections import (
     training_adherence_pct,
 )
 from database import get_session, init_db
-from models import BodyLog, BonusLog, Exercise, MealLog, Profile, Workout, WorkoutSet
+from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
 from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate
-from routers.meals import PLAN_START_DATE
+from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
 
 load_dotenv()
 
@@ -178,6 +179,28 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
         raw = (start_weight - current_weight) / (start_weight - goal_mid) * 100
         goal_progress_pct = round(min(100, max(0, raw)))
 
+    # ── Today's checklist (meals + quests + hydration, one glance) ──
+    today_meal_logs = session.exec(select(MealLog).where(MealLog.log_date == today)).all()
+    completed_meal_slots = {log.meal_slot for log in today_meal_logs if log.completed}
+    today_meals_status = [
+        {
+            "slot": slot,
+            "label": SLOT_LABELS.get(slot, slot),
+            "icon": SLOT_ICONS.get(slot, "plate"),
+            "done": slot in completed_meal_slots,
+        }
+        for slot in ["breakfast", "snack1", "lunch", "snack2", "dinner"]
+    ]
+    meals_done_count = len(completed_meal_slots)
+
+    today_bonus_logs = session.exec(select(BonusLog).where(BonusLog.log_date == today)).all()
+    quests_done_count = len(today_bonus_logs)
+    quests_total_count = len(BONUS_TASKS)
+
+    today_hydration_log = session.exec(select(HydrationLog).where(HydrationLog.log_date == today)).first()
+    today_hydration_ml = today_hydration_log.ml if today_hydration_log else 0
+    hydration_meter_today = build_meter_html(today_hydration_ml, HYDRATION_TARGET_ML, "Water", "ml")
+
     # ── Confidence & prediction ─────────────────────────────────
     two_weeks_ago = today - timedelta(days=14)
     recent_sessions = session.exec(
@@ -316,6 +339,11 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "weekly_weight_delta": weekly_weight_delta,
             "meal_adherence": meal_adherence,
             "adherence_insight": adherence_insight,
+            "today_meals_status": today_meals_status,
+            "meals_done_count": meals_done_count,
+            "quests_done_count": quests_done_count,
+            "quests_total_count": quests_total_count,
+            "hydration_meter_today": hydration_meter_today,
         },
     )
 
