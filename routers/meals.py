@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
-from charting import build_meter_html
+from charting import build_heatmap_html, build_meter_html, build_sparkline_svg
 from content.eating_out_guide import EATING_OUT_TIPS
 from content.food_items import CATEGORY_ORDER, FOOD_CATEGORIES
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
@@ -51,11 +51,43 @@ SLOT_EATING_OUT_KEY = {
 # Meal slots that get the "training today" protein+carb callout.
 TRAINING_DAY_SLOTS = ("lunch", "dinner")
 
+MACRO_TREND_DAYS = 14
+ADHERENCE_HEATMAP_DAYS = 28
+
 DRINK_LABELS = {key: display_name(key) for key in DRINK_OPTIONS}
 
 
 def _day_number_for(d: date) -> int:
     return (d - PLAN_START_DATE).days + 1
+
+
+def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
+    """Reconstructs each day's eaten macro totals from MealLog + the meal
+    plan content (MealLog itself only stores which option was picked, not
+    the macro grams)."""
+    logs = session.exec(
+        select(MealLog).where(MealLog.log_date >= start, MealLog.log_date <= end, MealLog.completed == True)  # noqa: E712
+    ).all()
+    logs_by_date = defaultdict(list)
+    for log in logs:
+        logs_by_date[log.log_date].append(log)
+
+    totals_by_date = {}
+    d = start
+    while d <= end:
+        totals = {"protein": 0.0, "carbs": 0.0, "fat": 0.0, "fiber": 0.0}
+        day_logs = logs_by_date.get(d, [])
+        if day_logs:
+            plan_by_slot = {m["slot"]: m for m in get_day(_day_number_for(d))["meals"]}
+            for log in day_logs:
+                meal = plan_by_slot.get(log.meal_slot)
+                option = next((o for o in meal["options"] if o["key"] == log.option_key), None) if meal else None
+                if option:
+                    for macro in totals:
+                        totals[macro] += option[macro]
+        totals_by_date[d] = totals
+        d += timedelta(days=1)
+    return totals_by_date
 
 
 @router.get("/meals", dependencies=[Depends(require_login)])
@@ -103,6 +135,28 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     ]
     hydration_meter = build_meter_html(hydration_ml, HYDRATION_TARGET_ML, "Water", "ml")
 
+    today = date.today()
+    window_start = today - timedelta(days=ADHERENCE_HEATMAP_DAYS - 1)
+    daily_totals = _daily_macro_totals(session, window_start, today)
+    ordered_days = sorted(daily_totals)
+    trend_days = ordered_days[-MACRO_TREND_DAYS:]
+
+    macro_trend_svgs = {
+        macro: build_sparkline_svg([daily_totals[d][macro] for d in trend_days])
+        for macro in ("protein", "carbs", "fat", "fiber")
+    }
+
+    heatmap_cells = []
+    for d in ordered_days:
+        totals = daily_totals[d]
+        if not any(totals.values()):
+            level, title = 0, f"{d.isoformat()} — no meals logged"
+        else:
+            pct_avg = sum(min(100, totals[m] / MACRO_TARGETS[m] * 100) for m in totals) / 4
+            level, title = min(4, int(pct_avg // 25)), f"{d.isoformat()} — {round(pct_avg)}% of macro targets"
+        heatmap_cells.append({"date": d.isoformat(), "level": level, "title": title})
+    adherence_heatmap = build_heatmap_html(heatmap_cells)
+
     return templates.TemplateResponse(
         "meals.html",
         {
@@ -119,6 +173,9 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
             "hydration_meter": hydration_meter,
             "hydration_quick_add": HYDRATION_QUICK_ADD,
             "macro_meters": macro_meters,
+            "macro_trend_svgs": macro_trend_svgs,
+            "macro_trend_days": MACRO_TREND_DAYS,
+            "adherence_heatmap": adherence_heatmap,
         },
     )
 

@@ -1,4 +1,5 @@
-from datetime import date
+from collections import defaultdict
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -7,18 +8,40 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
-from charting import build_line_svg
+from charting import build_diverging_bar_svg, build_line_svg
 from database import get_session
 from models import BodyLog
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+WEEKLY_DELTA_WEEKS = 10
+
+
+def _weekly_weight_deltas(logs: list[BodyLog]) -> tuple[list[float], list[str]]:
+    """One average weight per ISO week, then week-over-week deltas — a
+    steadier signal than the noisy daily line for 'am I on pace'."""
+    by_week: dict[date, list[float]] = defaultdict(list)
+    for log in logs:
+        week_start = log.log_date - timedelta(days=log.log_date.weekday())
+        by_week[week_start].append(log.weight_kg)
+
+    weeks = sorted(by_week)
+    averages = [sum(by_week[wk]) / len(by_week[wk]) for wk in weeks]
+
+    deltas = [round(averages[i] - averages[i - 1], 2) for i in range(1, len(averages))]
+    labels = [weeks[i].isoformat() for i in range(1, len(weeks))]
+    return deltas[-WEEKLY_DELTA_WEEKS:], labels[-WEEKLY_DELTA_WEEKS:]
+
 
 @router.get("/body", dependencies=[Depends(require_login)])
 def body_log_page(request: Request, session: Session = Depends(get_session)):
     logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
     weights = [log.weight_kg for log in logs]
+
+    weekly_deltas, weekly_labels = _weekly_weight_deltas(logs)
+    weekly_rows = list(reversed(list(zip(weekly_labels, weekly_deltas))))
+
     return templates.TemplateResponse(
         "body.html",
         {
@@ -26,6 +49,8 @@ def body_log_page(request: Request, session: Session = Depends(get_session)):
             "logged_in": True,
             "logs": list(reversed(logs)),
             "chart_svg": build_line_svg(weights),
+            "weekly_delta_svg": build_diverging_bar_svg(weekly_deltas),
+            "weekly_delta_rows": weekly_rows,
             "today": date.today().isoformat(),
         },
     )

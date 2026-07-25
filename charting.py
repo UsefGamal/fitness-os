@@ -147,6 +147,53 @@ def build_bar_svg(
     return "".join(parts)
 
 
+def build_diverging_bar_svg(
+    values: list[float],
+    width: int = 600,
+    height: int = 140,
+    pad: int = 12,
+    max_bar_width: int = 24,
+) -> str:
+    """Signed bar chart diverging from a zero baseline down the middle —
+    e.g. weekly weight change, where the sign itself is the story (loss vs.
+    gain), not a second series. Bars below zero use the default fill;
+    bars above zero (a regression) switch to the critical status color."""
+    if not values:
+        return ""
+    max_abs = max(abs(v) for v in values) or 1
+    n = len(values)
+    plot_w = width - 2 * pad
+    slot_w = plot_w / n
+    bar_w = min(max_bar_width, slot_w * 0.6)
+    mid_y = height / 2
+    half_h = height / 2 - pad
+
+    parts = [f'<svg viewBox="0 0 {width} {height}" class="chart-svg" preserveAspectRatio="none">']
+    parts.append(f'<line x1="{pad}" y1="{mid_y:.1f}" x2="{width - pad}" y2="{mid_y:.1f}" class="chart-grid-line"/>')
+
+    for i, v in enumerate(values):
+        cx = pad + slot_w * (i + 0.5)
+        bar_h = max(abs(v) / max_abs * half_h, 1)
+        y = mid_y - bar_h if v <= 0 else mid_y
+        cls = "chart-bar-fill" if v <= 0 else "chart-bar-warn"
+        parts.append(
+            f'<rect x="{cx - bar_w / 2:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" '
+            f'rx="4" class="{cls}"/>'
+        )
+
+    if values:
+        v = values[-1]
+        cx = pad + slot_w * (n - 0.5)
+        bar_h = max(abs(v) / max_abs * half_h, 1)
+        label_y = (mid_y - bar_h - 6) if v <= 0 else (mid_y + bar_h + 14)
+        parts.append(
+            f'<text x="{cx:.1f}" y="{label_y:.1f}" text-anchor="middle" class="chart-label-primary">{_fmt(v)}</text>'
+        )
+
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 def build_meter_html(value: float, target: float, label: str, unit: str = "") -> str:
     """Same-ramp progress meter: fill = value/target, unfilled track is the
     surface-2 step. Reuses the existing .progress-bar/.progress-fill

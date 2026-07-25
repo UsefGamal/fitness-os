@@ -633,6 +633,7 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 
 .chart-bar-track { fill: var(--surface2); }
 .chart-bar-fill { fill: var(--chart-3); }
+.chart-bar-warn { fill: var(--chart-critical); }
 
 .sparkline-wrap { display: flex; align-items: center; gap: 10px; }
 .sparkline-svg { flex-shrink: 0; }

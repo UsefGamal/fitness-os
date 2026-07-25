@@ -42,6 +42,32 @@
   {% for meter in macro_meters %}{{ meter | safe }}{% endfor %}
 </section>
 
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> {{ macro_trend_days }}-day macro trend</h2>
+  <div class="sparkline-wrap">
+    {{ macro_trend_svgs.protein | safe }}
+    <div class="sparkline-meta"><div class="sparkline-title">Protein</div></div>
+  </div>
+  <div class="sparkline-wrap" style="margin-top:10px">
+    {{ macro_trend_svgs.carbs | safe }}
+    <div class="sparkline-meta"><div class="sparkline-title">Carbs</div></div>
+  </div>
+  <div class="sparkline-wrap" style="margin-top:10px">
+    {{ macro_trend_svgs.fat | safe }}
+    <div class="sparkline-meta"><div class="sparkline-title">Fat</div></div>
+  </div>
+  <div class="sparkline-wrap" style="margin-top:10px">
+    {{ macro_trend_svgs.fiber | safe }}
+    <div class="sparkline-meta"><div class="sparkline-title">Fiber</div></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-calendar"/></svg> Macro adherence</h2>
+  <p class="muted" style="font-size:12px;margin-top:-4px;margin-bottom:8px">Last 4 weeks — darker means closer to your protein/carbs/fat/fiber targets that day.</p>
+  {{ adherence_heatmap | safe }}
+</section>
+
 <details class="card eating-out">
   <summary><svg class="icon"><use href="#icon-salad"/></svg> Eating out today? General rules</summary>
   <ul>

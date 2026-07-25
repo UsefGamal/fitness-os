@@ -10,6 +10,27 @@
 </section>
 {% endif %}
 
+{% if weekly_delta_svg %}
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-chart"/></svg> Weekly weight change</h2>
+  <p class="muted" style="font-size:12px;margin-top:-4px;margin-bottom:8px">Week-over-week average — steadier than the daily line for judging pace. Below the line = loss, above = gain.</p>
+  <div class="chart-wrap">{{ weekly_delta_svg | safe }}</div>
+  <details class="chart-table-toggle">
+    <summary>View as table</summary>
+    <div class="table-scroll">
+    <table class="log-table">
+      <thead><tr><th>Week of</th><th>Δ vs. prior week</th></tr></thead>
+      <tbody>
+      {% for wk, delta in weekly_delta_rows %}
+        <tr><td>{{ wk }}</td><td>{{ delta }} kg</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </details>
+</section>
+{% endif %}
+
 <section class="card">
   <h2><svg class="icon"><use href="#icon-scale"/></svg> Log today's weigh-in</h2>
   <form method="post" action="/body" class="stack-form">
