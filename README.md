@@ -90,6 +90,15 @@ uvicorn main:app --host 127.0.0.1 --port 8000
 
 Local DB defaults to `sqlite:///./fitness.db` (auto-created on first run, gitignored). Delete it any time for a clean slate — `main.py`'s startup event reseeds the `Profile` row and the `Exercise` library.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+`tests/conftest.py` sets `DATABASE_URL`/`APP_PASSWORD`/`SESSION_SECRET`/`CRON_SECRET` to test-only values *before* importing the app, so the suite always runs against its own temp SQLite file — never the real dev or production database. Each test gets a freshly-migrated, empty database (an autouse fixture drops all tables before/after every test). Covers: auth + login rate-limiting, full CRUD (create/edit/delete) for every logged entity, server-side validation error paths, the shopping-list ingredient-merging logic, quest cadences, migration idempotency (including a regression guard for the SQLite/Postgres boolean-default bug), and security headers/CSP/cron-secret auth.
+
 ## Deployment
 
 - **Render**: `render.yaml` blueprint (free web service, Python 3.12.10 pinned via `runtime.txt` + `PYTHON_VERSION`). Push to `main` → auto-deploy.

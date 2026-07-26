@@ -1,0 +1,4 @@
+# Test-only dependencies — not needed in production, so kept separate
+# from requirements.txt (which Render's build uses directly).
+-r requirements.txt
+pytest==9.1.1
