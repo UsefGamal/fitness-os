@@ -55,6 +55,7 @@ def body_log_page(request: Request, edit: Optional[int] = None, session: Session
             "weekly_delta_rows": weekly_rows,
             "today": date.today().isoformat(),
             "edit_log": edit_log,
+            "saved": request.query_params.get("saved") == "1",
         },
     )
 
@@ -98,7 +99,7 @@ def add_body_log(
             )
         )
     session.commit()
-    return RedirectResponse(url="/body", status_code=303)
+    return RedirectResponse(url="/body?saved=1", status_code=303)
 
 
 @router.post("/body/{log_id}/delete", dependencies=[Depends(require_login)])

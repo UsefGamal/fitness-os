@@ -3,6 +3,8 @@
 {% block content %}
 <h1><svg class="icon"><use href="#icon-scale"/></svg> Body Log</h1>
 
+{% if saved %}<p style="color:var(--accent);font-size:14px;display:flex;align-items:center;gap:6px"><svg class="icon icon-fill"><use href="#icon-check"/></svg> Saved.</p>{% endif %}
+
 {% if chart_svg %}
 <section class="card">
   <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Trend</h2>
