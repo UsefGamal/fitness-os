@@ -16,6 +16,7 @@ templates = Jinja2Templates(directory="templates")
 def training_hub(request: Request, session: Session = Depends(get_session)):
     next_day = next_program_day(count_training_sessions(session))
     return templates.TemplateResponse(
+        request,
         "training.html",
         {
             "request": request,

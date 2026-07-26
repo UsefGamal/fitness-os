@@ -22,6 +22,7 @@ def recovery_list(request: Request, session: Session = Depends(get_session)):
         select(Workout).where(Workout.workout_type == "recovery").order_by(Workout.log_date.desc())
     ).all()
     return templates.TemplateResponse(
+        request,
         "recovery_list.html",
         {"request": request, "logged_in": True, "workouts": workouts, "today": date.today().isoformat()},
     )
@@ -56,6 +57,7 @@ def recovery_detail(workout_id: int, request: Request, session: Session = Depend
     checklist = [{"name": item, "done": item in done_items} for item in RECOVERY_CHECKLIST]
 
     return templates.TemplateResponse(
+        request,
         "recovery_detail.html",
         {"request": request, "logged_in": True, "workout": workout, "checklist": checklist},
     )

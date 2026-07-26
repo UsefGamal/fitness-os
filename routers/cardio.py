@@ -29,6 +29,7 @@ def cardio_list(request: Request, edit: Optional[int] = None, session: Session =
         edit_workout = next((s for s in sessions if s.id == edit), None)
 
     return templates.TemplateResponse(
+        request,
         "cardio.html",
         {
             "request": request,

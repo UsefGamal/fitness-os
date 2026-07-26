@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 
 from auth import require_login
 from charting import build_diverging_bar_svg, build_line_svg
+from content.projections import week_start
 from database import get_session
 from models import BodyLog
 from validation import require_max_length, require_not_future, require_range
@@ -24,8 +25,7 @@ def _weekly_weight_deltas(logs: list[BodyLog]) -> tuple[list[float], list[str]]:
     steadier signal than the noisy daily line for 'am I on pace'."""
     by_week: dict[date, list[float]] = defaultdict(list)
     for log in logs:
-        week_start = log.log_date - timedelta(days=log.log_date.weekday())
-        by_week[week_start].append(log.weight_kg)
+        by_week[week_start(log.log_date)].append(log.weight_kg)
 
     weeks = sorted(by_week)
     averages = [sum(by_week[wk]) / len(by_week[wk]) for wk in weeks]
@@ -46,6 +46,7 @@ def body_log_page(request: Request, edit: Optional[int] = None, session: Session
     edit_log = next((log for log in logs if log.id == edit), None) if edit else None
 
     return templates.TemplateResponse(
+        request,
         "body.html",
         {
             "request": request,

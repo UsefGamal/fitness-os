@@ -43,6 +43,7 @@ def padel_list(request: Request, edit: Optional[int] = None, session: Session = 
         edit_workout = next((s for s in sessions if s.id == edit), None)
 
     return templates.TemplateResponse(
+        request,
         "padel.html",
         {
             "request": request,

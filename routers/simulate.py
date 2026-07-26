@@ -48,6 +48,7 @@ def simulate_page(
         delta_days = (scenario_date - baseline["baseline_date"]).days
 
     return templates.TemplateResponse(
+        request,
         "simulate.html",
         {
             "request": request,

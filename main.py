@@ -1,5 +1,6 @@
 import os
 import secrets
+from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from typing import Optional
 from urllib.parse import urlparse
@@ -16,11 +17,10 @@ from sqlmodel import Session, func, select
 from auth import (
     APP_PASSWORD,
     is_login_locked_out,
-    is_logged_in,
     record_failed_login,
     record_successful_login,
+    require_login,
 )
-from validation import ValidationError, error_redirect
 from baseline import get_baseline
 from charting import build_heatmap_html, build_line_svg, build_meter_html, status_chip_html
 from content.bonus_tasks import BONUS_TASKS
@@ -33,15 +33,46 @@ from content.projections import (
     meal_adherence_pct,
     slack_impact_date,
     training_adherence_pct,
+    week_start as get_week_start,
 )
-from database import get_session, init_db
+from database import engine, get_session, init_db
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
 from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate, training
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
+from validation import ValidationError, error_redirect
 
 load_dotenv()
 
-app = FastAPI(title="Fitness OS")
+
+def _seed_profile():
+    with Session(engine) as session:
+        existing = session.exec(select(Profile)).first()
+        if not existing:
+            session.add(Profile())
+            session.commit()
+
+
+def _seed_exercises():
+    with Session(engine) as session:
+        existing_names = set(session.exec(select(Exercise.name)).all())
+        added = False
+        for muscle_group, name, equipment in SEED_EXERCISES:
+            if name not in existing_names:
+                session.add(Exercise(name=name, muscle_group=muscle_group, equipment=equipment))
+                added = True
+        if added:
+            session.commit()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    _seed_profile()
+    _seed_exercises()
+    yield
+
+
+app = FastAPI(title="Fitness OS", lifespan=lifespan)
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"),
@@ -132,46 +163,16 @@ async def request_validation_error_handler(request: Request, exc: RequestValidat
     return RedirectResponse(url=error_redirect(_referer_path(request), message), status_code=303)
 
 
-@app.on_event("startup")
-def on_startup():
-    init_db()
-    _seed_profile()
-    _seed_exercises()
-
-
-def _seed_profile():
-    from database import engine
-
-    with Session(engine) as session:
-        existing = session.exec(select(Profile)).first()
-        if not existing:
-            session.add(Profile())
-            session.commit()
-
-
-def _seed_exercises():
-    from database import engine
-
-    with Session(engine) as session:
-        existing_names = set(session.exec(select(Exercise.name)).all())
-        added = False
-        for muscle_group, name, equipment in SEED_EXERCISES:
-            if name not in existing_names:
-                session.add(Exercise(name=name, muscle_group=muscle_group, equipment=equipment))
-                added = True
-        if added:
-            session.commit()
-
-
 @app.get("/login")
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "logged_in": False, "error": None})
+    return templates.TemplateResponse(request, "login.html", {"request": request, "logged_in": False, "error": None})
 
 
 @app.post("/login")
 def login_submit(request: Request, password: str = Form(...)):
     if is_login_locked_out():
         return templates.TemplateResponse(
+            request,
             "login.html",
             {"request": request, "logged_in": False, "error": "Too many attempts — wait a minute and try again."},
             status_code=429,
@@ -182,6 +183,7 @@ def login_submit(request: Request, password: str = Form(...)):
         return RedirectResponse(url="/", status_code=303)
     record_failed_login()
     return templates.TemplateResponse(
+        request,
         "login.html",
         {"request": request, "logged_in": False, "error": "Wrong password."},
         status_code=401,
@@ -194,18 +196,14 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
-@app.get("/more")
+@app.get("/more", dependencies=[Depends(require_login)])
 def more_page(request: Request):
-    if not is_logged_in(request):
-        return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("more.html", {"request": request, "logged_in": True})
+    return templates.TemplateResponse(request, "more.html", {"request": request, "logged_in": True})
 
 
-@app.get("/help")
+@app.get("/help", dependencies=[Depends(require_login)])
 def help_page(request: Request):
-    if not is_logged_in(request):
-        return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("help.html", {"request": request, "logged_in": True})
+    return templates.TemplateResponse(request, "help.html", {"request": request, "logged_in": True})
 
 
 WORKOUT_TYPE_LABELS = {"gym": "Gym", "home": "Home Session", "recovery": "Active Recovery", "padel": "Padel", "cardio": "Cardio"}
@@ -256,11 +254,8 @@ def _weekly_adherence_outcome_insight(session: Session, today: date, weeks: int 
     return f"On weeks you hit 80%+ meal adherence, you lost {diff}kg more on average than lower-adherence weeks."
 
 
-@app.get("/")
+@app.get("/", dependencies=[Depends(require_login)])
 def dashboard(request: Request, session: Session = Depends(get_session)):
-    if not is_logged_in(request):
-        return RedirectResponse(url="/login", status_code=303)
-
     today = date.today()
 
     # ── Pain-pattern flag (across every training type) ──────────────
@@ -382,7 +377,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     streak_heatmap_html = build_heatmap_html(heatmap_cells)
 
     # ── This week ────────────────────────────────────────────────
-    week_start = today - timedelta(days=today.weekday())
+    week_start = get_week_start(today)
     week_workouts = session.exec(
         select(Workout).where(Workout.log_date >= week_start, Workout.log_date < week_start + timedelta(days=7))
     ).all()
@@ -416,6 +411,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     today_logged = bool(workouts_by_date.get(today))
 
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
             "request": request,

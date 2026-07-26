@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -8,6 +8,7 @@ from sqlmodel import Session, func, select
 from auth import require_login
 from content.bonus_tasks import BONUS_TASKS, BONUS_TASKS_BY_KEY
 from content.milestones import badge_progress
+from content.projections import week_start as _week_start
 from database import get_session
 from models import BonusLog
 from validation import ValidationError
@@ -19,10 +20,6 @@ templates = Jinja2Templates(directory="templates")
 def _total_points(session: Session) -> int:
     total = session.exec(select(func.sum(BonusLog.points))).first()
     return total or 0
-
-
-def _week_start(d: date) -> date:
-    return d - timedelta(days=d.weekday())
 
 
 def _done_keys(session: Session, today: date) -> set[str]:
@@ -71,6 +68,7 @@ def bonus_page(request: Request, session: Session = Depends(get_session)):
         progress_pct = round(((total_points - floor) / span) * 100) if span else 100
 
     return templates.TemplateResponse(
+        request,
         "bonus.html",
         {
             "request": request,

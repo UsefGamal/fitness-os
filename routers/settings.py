@@ -21,6 +21,7 @@ FITNESS_LEVELS = ["beginner", "intermediate", "advanced"]
 def settings_page(request: Request, session: Session = Depends(get_session)):
     profile = session.exec(select(Profile)).first()
     return templates.TemplateResponse(
+        request,
         "settings.html",
         {
             "request": request,

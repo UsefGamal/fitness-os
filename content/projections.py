@@ -2,6 +2,11 @@ from datetime import date, timedelta
 from typing import Optional
 
 
+def week_start(d: date) -> date:
+    """Monday of the ISO week containing d."""
+    return d - timedelta(days=d.weekday())
+
+
 def linear_rate_kg_per_week(body_logs: list) -> Optional[float]:
     """Least-squares weight trend from BodyLog rows (any order), in kg/week
     (positive = losing weight). None if fewer than 2 logs or span < 7 days."""

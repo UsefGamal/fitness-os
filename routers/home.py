@@ -41,6 +41,7 @@ def home_list(request: Request, session: Session = Depends(get_session)):
     next_day = next_program_day(count_training_sessions(session))
 
     return templates.TemplateResponse(
+        request,
         "home_list.html",
         {
             "request": request,
@@ -130,6 +131,7 @@ def home_detail(workout_id: int, request: Request, session: Session = Depends(ge
         targeted_muscles = sorted(muscle_set)
 
     return templates.TemplateResponse(
+        request,
         "home_detail.html",
         {
             "request": request,

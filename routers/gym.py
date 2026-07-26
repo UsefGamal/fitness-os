@@ -35,6 +35,7 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
     next_day = next_program_day(count_training_sessions(session))
 
     return templates.TemplateResponse(
+        request,
         "gym_list.html",
         {
             "request": request,
@@ -97,6 +98,7 @@ def gym_progress(request: Request, session: Session = Depends(get_session)):
     rpe_svg = build_sparkline_svg(rpe_values) if len(rpe_values) >= 2 else ""
 
     return templates.TemplateResponse(
+        request,
         "gym_progress.html",
         {
             "request": request,
@@ -239,6 +241,7 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
         targeted_muscles = sorted(muscle_set)
 
     return templates.TemplateResponse(
+        request,
         "gym_detail.html",
         {
             "request": request,

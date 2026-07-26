@@ -166,6 +166,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     adherence_heatmap = build_heatmap_html(heatmap_cells)
 
     return templates.TemplateResponse(
+        request,
         "meals.html",
         {
             "request": request,
@@ -257,6 +258,7 @@ def add_hydration(
 @router.get("/meals/maintenance", dependencies=[Depends(require_login)])
 def maintenance_page(request: Request):
     return templates.TemplateResponse(
+        request,
         "maintenance.html",
         {
             "request": request,
@@ -299,6 +301,7 @@ def shopping_list_page(request: Request):
     ]
 
     return templates.TemplateResponse(
+        request,
         "shopping_list.html",
         {
             "request": request,
