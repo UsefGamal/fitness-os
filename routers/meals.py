@@ -9,19 +9,13 @@ from sqlmodel import Session, select
 from auth import require_login
 from charting import build_heatmap_html, build_meter_html, build_sparkline_svg
 from content.eating_out_guide import EATING_OUT_TIPS
-from content.food_items import (
-    CATEGORY_COLORS,
-    CATEGORY_ICONS,
-    CATEGORY_ORDER,
-    FOOD_CATEGORIES,
-    format_shopping_qty,
-    parse_shopping_unit,
-)
+from content.food_items import CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_ORDER, format_shopping_qty
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
-from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
+from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_SLOTS, display_name
+from content.meal_sync import SpoonacularError, get_active_day, get_shopping_entries_for_day, get_sync_status, run_sync
 from database import get_session
 from models import HydrationLog, MealLog, Workout
-from validation import require_choice, require_range
+from validation import ValidationError, require_choice, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -86,7 +80,7 @@ def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
         totals = {"protein": 0.0, "carbs": 0.0, "fat": 0.0, "fiber": 0.0}
         day_logs = logs_by_date.get(d, [])
         if day_logs:
-            plan_by_slot = {m["slot"]: m for m in get_day(_day_number_for(d))["meals"]}
+            plan_by_slot = {m["slot"]: m for m in get_active_day(session, _day_number_for(d))["meals"]}
             for log in day_logs:
                 meal = plan_by_slot.get(log.meal_slot)
                 option = next((o for o in meal["options"] if o["key"] == log.option_key), None) if meal else None
@@ -102,7 +96,7 @@ def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
 def meals_page(request: Request, view_date: str = None, session: Session = Depends(get_session)):
     current = date.fromisoformat(view_date) if view_date else date.today()
     day_number = _day_number_for(current)
-    plan = get_day(day_number)
+    plan = get_active_day(session, day_number)
 
     logs = session.exec(select(MealLog).where(MealLog.log_date == current)).all()
     logs_by_slot = {log.meal_slot: log for log in logs}
@@ -270,19 +264,16 @@ def maintenance_page(request: Request):
 
 
 @router.get("/meals/shopping-list", dependencies=[Depends(require_login)])
-def shopping_list_page(request: Request):
+def shopping_list_page(request: Request, session: Session = Depends(get_session)):
     today = date.today()
+    active_sync = get_sync_status(session)
     totals: dict[tuple, float] = defaultdict(float)
     base_category: dict[str, str] = {}
     for offset in range(7):
         d = today + timedelta(days=offset)
-        day = MEAL_PLAN_14_DAY[(_day_number_for(d) - 1) % 14]
-        for slot in MEAL_SLOTS:
-            for option_key in ("option_a", "option_b"):
-                for item in day["meals"][slot][option_key]["items"]:
-                    base, qty, unit = parse_shopping_unit(item)
-                    totals[(base, unit)] += qty
-                    base_category.setdefault(base, FOOD_CATEGORIES.get(item, "Nuts, Sauces & Extras"))
+        for base, qty, unit, category in get_shopping_entries_for_day(session, _day_number_for(d), active_sync):
+            totals[(base, unit)] += qty
+            base_category.setdefault(base, category)
 
     by_category: dict[str, list[dict]] = {cat: [] for cat in CATEGORY_ORDER}
     for (base, unit), total in totals.items():
@@ -309,5 +300,19 @@ def shopping_list_page(request: Request):
             "categories": categories,
             "start_date": today.isoformat(),
             "end_date": (today + timedelta(days=6)).isoformat(),
+            "synced": active_sync is not None,
         },
     )
+
+
+@router.post("/meals/sync", dependencies=[Depends(require_login)])
+def sync_meal_plan(session: Session = Depends(get_session)):
+    """Pulls a fresh 14-day plan from Spoonacular, replacing whatever plan
+    (synced or the built-in static one) is currently active. Leaves the
+    previous plan untouched if the sync fails partway, so a flaky API call
+    never leaves the app without a usable meal plan."""
+    try:
+        run_sync(session)
+    except SpoonacularError as exc:
+        raise ValidationError(f"Meal plan sync failed: {exc}") from exc
+    return RedirectResponse(url="/more?synced=1", status_code=303)

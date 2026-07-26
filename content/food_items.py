@@ -181,6 +181,7 @@ def format_shopping_qty(total: float, unit: str) -> str:
         return f"{total:g} {unit}"
     if unit == "slice":
         return f"{total:g} slice" if total == 1 else f"{total:g} slices"
-    if total == int(total):
-        return f"×{int(total)}"
-    return f"×{total:g}"
+    if not unit or unit == "unit":
+        return f"×{int(total)}" if total == int(total) else f"×{total:g}"
+    # Any other unit (Spoonacular's own — cup, clove, oz, ...): show as-is.
+    return f"{total:g} {unit}"
