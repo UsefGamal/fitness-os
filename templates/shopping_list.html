@@ -13,7 +13,7 @@
     {% for item in cat.foods %}
     <div class="link-row" style="cursor:default">
       <span>{{ item.name }}</span>
-      <span class="muted" style="margin-left:auto;font-family:var(--font-mono)">×{{ item.count }}</span>
+      <span class="muted" style="margin-left:auto;font-family:var(--font-mono)">{{ item.qty }}</span>
     </div>
     {% endfor %}
   </div>

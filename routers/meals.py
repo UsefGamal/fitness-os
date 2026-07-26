@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -9,7 +9,14 @@ from sqlmodel import Session, select
 from auth import require_login
 from charting import build_heatmap_html, build_meter_html, build_sparkline_svg
 from content.eating_out_guide import EATING_OUT_TIPS
-from content.food_items import CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_ORDER, FOOD_CATEGORIES
+from content.food_items import (
+    CATEGORY_COLORS,
+    CATEGORY_ICONS,
+    CATEGORY_ORDER,
+    FOOD_CATEGORIES,
+    format_shopping_qty,
+    parse_shopping_unit,
+)
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
 from database import get_session
@@ -257,19 +264,22 @@ def maintenance_page(request: Request):
 @router.get("/meals/shopping-list", dependencies=[Depends(require_login)])
 def shopping_list_page(request: Request):
     today = date.today()
-    counts = Counter()
+    totals: dict[tuple, float] = defaultdict(float)
+    base_category: dict[str, str] = {}
     for offset in range(7):
         d = today + timedelta(days=offset)
         day = MEAL_PLAN_14_DAY[(_day_number_for(d) - 1) % 14]
         for slot in MEAL_SLOTS:
             for option_key in ("option_a", "option_b"):
                 for item in day["meals"][slot][option_key]["items"]:
-                    counts[item] += 1
+                    base, qty, unit = parse_shopping_unit(item)
+                    totals[(base, unit)] += qty
+                    base_category.setdefault(base, FOOD_CATEGORIES.get(item, "Nuts, Sauces & Extras"))
 
     by_category: dict[str, list[dict]] = {cat: [] for cat in CATEGORY_ORDER}
-    for key, count in counts.items():
-        category = FOOD_CATEGORIES.get(key, "Nuts, Sauces & Extras")
-        by_category[category].append({"name": display_name(key), "count": count})
+    for (base, unit), total in totals.items():
+        category = base_category.get(base, "Nuts, Sauces & Extras")
+        by_category[category].append({"name": display_name(base), "qty": format_shopping_qty(total, unit)})
 
     categories = [
         {

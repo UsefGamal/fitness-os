@@ -2,6 +2,8 @@
 # Each value: (kcal, protein_g, carbs_g, fat_g, fiber_g) per the stated portion.
 # Approximate structured-portion figures, not lab-precision macros.
 
+import re
+
 FOODS = {
     "ful_medames_bowl": (280, 15, 35, 9, 9),  # ~250g fava beans, olive oil, cumin, lemon
     "boiled_egg": (70, 6, 0.5, 5, 0),
@@ -149,3 +151,36 @@ DRINKS = {
     "diet_soda": (2, 0, 0.5, 0, 0),
     "flavored_sparkling_water": (0, 0, 0, 0, 0),
 }
+
+# Shopping-list quantity parsing — lets the same base ingredient sold at
+# different portion sizes (e.g. grilled_chicken_breast_150g and _200g)
+# consolidate into one real-world shopping quantity instead of listing
+# as two separate lines. Only strips a trailing "_<N><unit>" or "_half"
+# — composite dish names (ful_medames_bowl, koshari_bowl_small, ...)
+# have no such suffix and fall through unmerged, which is correct: they
+# aren't decomposed into raw ingredients here, just consolidated by name.
+_SHOPPING_UNIT_RE = re.compile(r"^(.+)_(\d+(?:\.\d+)?)(g|tbsp|pc|slices?)$")
+
+
+def parse_shopping_unit(key: str) -> tuple:
+    """Returns (base_key, quantity, unit). unit is 'g', 'tbsp', 'pc',
+    'slice', or 'unit' (whole dishes, pitas, halves, generic counts)."""
+    match = _SHOPPING_UNIT_RE.match(key)
+    if match:
+        base, qty, unit = match.group(1), float(match.group(2)), match.group(3)
+        return base, qty, "slice" if unit.startswith("slice") else unit
+    if key.endswith("_half"):
+        return key[: -len("_half")], 0.5, "unit"
+    return key, 1.0, "unit"
+
+
+def format_shopping_qty(total: float, unit: str) -> str:
+    if unit == "g":
+        return f"{total / 1000:g} kg" if total >= 1000 else f"{total:g} g"
+    if unit in ("tbsp", "pc"):
+        return f"{total:g} {unit}"
+    if unit == "slice":
+        return f"{total:g} slice" if total == 1 else f"{total:g} slices"
+    if total == int(total):
+        return f"×{int(total)}"
+    return f"×{total:g}"

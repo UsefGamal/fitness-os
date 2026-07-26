@@ -36,6 +36,19 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "de
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
+@app.middleware("http")
+async def no_store_dynamic_pages(request: Request, call_next):
+    """Every logged-in page shows personal health/training data and
+    changes on every log/edit/delete — never let the browser (or a
+    shared/public machine's disk cache) serve a stale or cached copy
+    of it via back/forward navigation. Static assets are unaffected."""
+    response = await call_next(request)
+    if not request.url.path.startswith("/static"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
 app.include_router(body.router)
 app.include_router(gym.router)
 app.include_router(padel.router)
