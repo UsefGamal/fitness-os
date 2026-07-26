@@ -28,6 +28,7 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
             "profile": profile,
             "fitness_levels": FITNESS_LEVELS,
             "saved": request.query_params.get("saved") == "1",
+            "today": date.today().isoformat(),
         },
     )
 

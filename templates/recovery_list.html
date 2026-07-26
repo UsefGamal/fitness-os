@@ -6,8 +6,8 @@
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> Start a recovery session</h2>
   <form method="post" action="/recovery/new" class="stack-form">
-    <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
-    <label>Notes <input type="text" name="notes"></label>
+    <label>Date <input type="date" name="log_date" value="{{ today }}" max="{{ today }}" required></label>
+    <label>Notes <input type="text" name="notes" maxlength="200"></label>
     <button type="submit">Start session</button>
   </form>
 </section>

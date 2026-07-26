@@ -28,10 +28,10 @@
   <h2><svg class="icon"><use href="#icon-plus"/></svg> {% if edit_workout %}Edit session{% else %}Log a session{% endif %}</h2>
   <form method="post" action="/cardio" class="stack-form">
     {% if edit_workout %}<input type="hidden" name="workout_id" value="{{ edit_workout.id }}">{% endif %}
-    <label>Date <input type="date" name="log_date" value="{{ edit_workout.log_date if edit_workout else today }}" required></label>
-    <label>Duration (min) <input type="number" name="duration_min" value="{{ edit_workout.duration_min if edit_workout else 22 }}"></label>
+    <label>Date <input type="date" name="log_date" value="{{ edit_workout.log_date if edit_workout else today }}" max="{{ today }}" required></label>
+    <label>Duration (min) <input type="number" min="1" max="600" name="duration_min" value="{{ edit_workout.duration_min if edit_workout else 22 }}"></label>
     <label>RPE (optional, 1-10) <input type="number" min="1" max="10" name="session_rpe" value="{{ edit_workout.session_rpe if edit_workout and edit_workout.session_rpe is not none else '' }}"></label>
-    <label>Notes <input type="text" name="notes" value="{{ edit_workout.notes if edit_workout else '' }}"></label>
+    <label>Notes <input type="text" name="notes" maxlength="300" value="{{ edit_workout.notes if edit_workout else '' }}"></label>
     <button type="submit">{% if edit_workout %}Update{% else %}Save{% endif %}</button>
     {% if edit_workout %}<a href="/cardio" class="back-link" style="margin-top:0">Cancel edit</a>{% endif %}
   </form>

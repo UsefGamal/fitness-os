@@ -27,9 +27,9 @@
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> Start a session</h2>
   <form method="post" action="/home/new" class="stack-form">
-    <label>Date <input type="date" name="log_date" value="{{ today }}" required></label>
-    <label>Planned duration (min) <input type="number" name="duration_min" value="35"></label>
-    <label>Notes <input type="text" name="notes" value="{{ next_day.label }}"></label>
+    <label>Date <input type="date" name="log_date" value="{{ today }}" max="{{ today }}" required></label>
+    <label>Planned duration (min) <input type="number" min="1" max="600" name="duration_min" value="35"></label>
+    <label>Notes <input type="text" name="notes" maxlength="200" value="{{ next_day.label }}"></label>
     <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" name="is_deload" value="true" style="width:auto"> This is a deload session</label>
     <button type="submit">Start session</button>
   </form>
