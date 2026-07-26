@@ -99,36 +99,3 @@ class ReminderLog(SQLModel, table=True):
     log_date: date
     reminder_type: str
     sent_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class MealPlanSync(SQLModel, table=True):
-    """Metadata for the currently-active dynamically-generated (Spoonacular)
-    meal plan. Only ever one row — a new sync replaces it rather than
-    keeping history, since only the current plan matters here."""
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    synced_at: datetime = Field(default_factory=datetime.utcnow)
-    source: str = "spoonacular"
-    recipe_count: int = 0
-
-
-class SyncedMealOption(SQLModel, table=True):
-    """One recipe assigned to one (day, slot, option) cell of the active
-    synced plan. day_index cycles 1-14 exactly like the static plan's
-    MEAL_PLAN_14_DAY, so both sources can be read through the same shape."""
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    sync_id: int = Field(foreign_key="mealplansync.id")
-    day_index: int
-    slot: str
-    option_key: str
-    recipe_id: int
-    title: str
-    image_url: Optional[str] = None
-    source_url: Optional[str] = None
-    kcal: float
-    protein: float
-    carbs: float
-    fat: float
-    fiber: float
-    ingredients_json: str = "[]"  # JSON list of {"name","amount","unit","aisle"}

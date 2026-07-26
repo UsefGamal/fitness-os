@@ -81,7 +81,7 @@ def daily_digest(
             session.exec(select(Workout).where(Workout.workout_type == "gym")).all()
         )
 
-        subject, html = build_daily_digest_html(today, gym_session_count, APP_BASE_URL, session)
+        subject, html = build_daily_digest_html(today, gym_session_count, APP_BASE_URL)
         _send_email(subject, html)
 
         if not already_sent:

@@ -3,21 +3,6 @@
 {% block content %}
 <h1><svg class="icon"><use href="#icon-dots"/></svg> More</h1>
 
-{% if just_synced %}<p style="color:var(--accent);font-size:14px;display:flex;align-items:center;gap:6px"><svg class="icon icon-fill"><use href="#icon-check"/></svg> Meal plan synced.</p>{% endif %}
-
-<section class="card">
-  <h2><svg class="icon"><use href="#icon-utensils"/></svg> Meal Plan Sync</h2>
-  {% if meal_sync %}
-  <p class="muted" style="font-size:13px">Last synced {{ meal_sync.synced_at.strftime("%b %d, %Y at %H:%M") }} UTC — {{ meal_sync.recipe_count }} recipes pulled from Spoonacular.</p>
-  {% else %}
-  <p class="muted" style="font-size:13px">Never synced yet — showing the built-in structured-portion plan.</p>
-  {% endif %}
-  <form method="post" action="/meals/sync" style="margin-top:10px">
-    <button type="submit">{% if meal_sync %}Sync again{% else %}Sync now{% endif %}</button>
-  </form>
-  <p class="muted" style="font-size:12px;margin-top:8px">Pulls a fresh 14-day plan matching your macro targets. Do this roughly every 2 weeks for variety — it can take a few seconds.</p>
-</section>
-
 <section class="card">
   <h2><svg class="icon"><use href="#icon-wrench"/></svg> Plan & Tools</h2>
   <div class="link-list">

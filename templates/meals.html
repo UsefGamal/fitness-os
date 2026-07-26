@@ -99,14 +99,12 @@
         </button>
       </form>
     </div>
-    {% if option.title %}<p style="font-weight:600;font-size:14px;margin:6px 0 4px">{{ option.title }}</p>{% endif %}
     <div class="meal-items">
       {% for item in option.ingredients %}<span class="ingredient-chip">{{ item }}</span>{% endfor %}
     </div>
     <div class="meal-macros-row">
       <span>{{ option.kcal }} kcal</span> · <span>{{ option.protein }}g protein</span> · <span>{{ option.carbs }}g carbs</span> · <span>{{ option.fat }}g fat</span> · <span>{{ option.fiber }}g fiber</span>
     </div>
-    {% if option.source_url %}<p style="margin-top:6px"><a href="{{ option.source_url }}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg class="icon" style="width:13px;height:13px"><use href="#icon-external-link"/></svg> View recipe</a></p>{% endif %}
   </div>
   {% endfor %}
 

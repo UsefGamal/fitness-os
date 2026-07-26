@@ -1,10 +1,8 @@
 from datetime import date
 
-from sqlmodel import Session
-
 from content.eating_out_guide import EATING_OUT_TIPS
 from content.gym_program import next_program_day
-from content.meal_sync import get_active_day
+from content.meal_plan import get_day
 from routers.meals import PLAN_START_DATE, SLOT_LABELS
 
 # Same palette as static/style.css's dark theme — kept in sync by hand since
@@ -38,16 +36,9 @@ def _wrap_document(body: str) -> str:
 </html>"""
 
 
-def _option_line(option: dict) -> str:
-    label = option.get("title") or option.get("cuisine", "Option")
-    return (
-        f'<strong style="color:{TEXT}">{label}:</strong> {", ".join(option["ingredients"])}'
-    )
-
-
-def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_url: str, session: Session) -> tuple[str, str]:
+def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_url: str) -> tuple[str, str]:
     day_number = (today - PLAN_START_DATE).days + 1
-    meal_plan = get_active_day(session, day_number)
+    meal_plan = get_day(day_number)
     gym_day = next_program_day(completed_gym_sessions)
     general_tips = EATING_OUT_TIPS["general"]
     eating_out_tip = general_tips[day_number % len(general_tips)]
@@ -73,10 +64,11 @@ def build_daily_digest_html(today: date, completed_gym_sessions: int, app_base_u
               {SLOT_LABELS.get(m['slot'], m['slot'])}
               <span style="font-weight:400;color:{MUTED};font-size:11px">&nbsp;&middot; {m['time_window']}</span>
             </td>
-            <td style="padding:0;color:{ACCENT};font-weight:700;font-size:14px;text-align:right;white-space:nowrap;vertical-align:baseline">{m['options'][0]['kcal'] if m['options'] else '—'} kcal</td>
+            <td style="padding:0;color:{ACCENT};font-weight:700;font-size:14px;text-align:right;white-space:nowrap;vertical-align:baseline">{m['options'][0]['kcal']} kcal</td>
           </tr></table>
           <p style="color:{MUTED};font-size:13px;line-height:1.6;margin:8px 0 0;word-wrap:break-word">
-            {'<br>'.join(_option_line(opt) for opt in m['options']) or 'No option available for this slot.'}
+            <strong style="color:{TEXT}">A ({m['options'][0]['cuisine']}):</strong> {', '.join(m['options'][0]['ingredients'])}<br>
+            <strong style="color:{TEXT}">B ({m['options'][1]['cuisine']}):</strong> {', '.join(m['options'][1]['ingredients'])}
           </p>
         </div>"""
         for m in meal_plan["meals"]

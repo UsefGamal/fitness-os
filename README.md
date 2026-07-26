@@ -97,7 +97,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-`tests/conftest.py` sets `DATABASE_URL`/`APP_PASSWORD`/`SESSION_SECRET`/`CRON_SECRET` to test-only values *before* importing the app, so the suite always runs against its own temp SQLite file — never the real dev or production database. Each test gets a freshly-migrated, empty database (an autouse fixture drops all tables before/after every test). Covers: auth + login rate-limiting, full CRUD (create/edit/delete) for every logged entity, server-side validation error paths, the shopping-list ingredient-merging logic, quest cadences, migration idempotency (including a regression guard for the SQLite/Postgres boolean-default bug), security headers/CSP/cron-secret auth, and meal-plan sync (against a monkeypatched Spoonacular client — no real API key needed to run the suite).
+`tests/conftest.py` sets `DATABASE_URL`/`APP_PASSWORD`/`SESSION_SECRET`/`CRON_SECRET` to test-only values *before* importing the app, so the suite always runs against its own temp SQLite file — never the real dev or production database. Each test gets a freshly-migrated, empty database (an autouse fixture drops all tables before/after every test). Covers: auth + login rate-limiting, full CRUD (create/edit/delete) for every logged entity, server-side validation error paths, the shopping-list ingredient-merging logic, quest cadences, migration idempotency (including a regression guard for the SQLite/Postgres boolean-default bug), and security headers/CSP/cron-secret auth.
 
 ## Deployment
 
@@ -116,7 +116,6 @@ pytest
 | `DIGEST_EMAIL_TO` | where digest/recap emails go |
 | `CRON_SECRET` | shared secret for the `/cron/*` endpoints |
 | `APP_BASE_URL` | used to build links inside emails |
-| `SPOONACULAR_API_KEY` | optional — enables the meal-plan sync feature (see below) |
 
 All are `sync: false` in `render.yaml` — set manually in the Render dashboard, never committed.
 
@@ -142,15 +141,6 @@ Both digest endpoints:
 - Password and cron-secret comparisons are constant-time (`secrets.compare_digest`).
 - Every dynamic response sends `Cache-Control: no-store` (personal health data shouldn't be cacheable) plus standard hardening headers (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`). The CSP is `script-src 'self'` — no inline `<script>` or `onclick=`/`onsubmit=` handlers anywhere in the templates; destructive actions (delete buttons) confirm via a `.confirm-delete` class handled in `static/app.js` instead.
 - **If `CRON_SECRET` has ever been shared in plaintext (chat, email, etc.), rotate it** — generate a new value, update it in Render's dashboard and in the cron-job.org job URLs/headers.
-
-## Meal plan sync
-
-The built-in 14-day plan (`content/meal_plan.py`) is the default, but a "Sync now" button on More can replace it with a fresh one pulled from the [Spoonacular](https://spoonacular.com/food-api) recipe API — matching the same daily macro band, drawing from any cuisine (fish/seafood included), excluding alcohol and creatine/protein-powder. Requires `SPOONACULAR_API_KEY`; without it, sync fails cleanly and the app keeps using whichever plan (static or previously-synced) was already active.
-
-- `content/spoonacular_client.py` — the only module that knows Spoonacular's request/response shape; defensive by design (a recipe with unparseable nutrition is skipped, not fatal).
-- `content/meal_sync.py` — `run_sync()` queries ~20 candidate recipes per meal slot (not per day — 5 API calls, not 140) matched to that slot's share of the daily macro band, then spreads them across all 14 days × 2 options. `get_active_day()` and `get_shopping_entries_for_day()` are read through by every caller that used to read the static plan directly (meals page, dashboard week preview, shopping list, daily digest email) — each falls back to the static plan automatically if no sync has ever run.
-- No sync history is kept — a new sync replaces the previous one (`MealPlanSync` + `SyncedMealOption` tables), since only the current plan matters here, unlike the user's own logged data.
-- Ingredient categorization for the shopping list uses Spoonacular's own `aisle` field, mapped onto the same 6 color-coded categories the static plan's shopping list already uses.
 
 ## Data model
 
