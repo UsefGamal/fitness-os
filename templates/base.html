@@ -23,6 +23,8 @@
 </header>
 {% endif %}
 <main class="content{% if logged_in %} has-tabbar{% endif %}">
+{% set error_msg = request.query_params.get('error') %}
+{% if error_msg %}<p class="form-error"><svg class="icon"><use href="#icon-alert"/></svg> {{ error_msg }}</p>{% endif %}
 {% block content %}{% endblock %}
 </main>
 {% if logged_in %}

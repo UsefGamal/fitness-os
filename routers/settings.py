@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from auth import require_login
 from database import get_session
 from models import Profile
+from validation import ValidationError, require_choice, require_max_length, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -43,6 +44,20 @@ def update_settings(
     start_weight_kg: Optional[float] = Form(None),
     session: Session = Depends(get_session),
 ):
+    require_range(height_cm, 100, 250, "Height")
+    require_range(start_weight_kg, 20, 400, "Starting weight")
+    require_range(goal_weight_low_kg, 20, 400, "Goal weight (low)")
+    require_range(goal_weight_high_kg, 20, 400, "Goal weight (high)")
+    if goal_weight_low_kg > goal_weight_high_kg:
+        raise ValidationError("Goal weight (low) can't be higher than goal weight (high).")
+    require_choice(fitness_level, FITNESS_LEVELS, "Fitness level")
+    require_max_length(activity_notes, 300, "Activity notes")
+    today = date.today()
+    if date_of_birth >= today:
+        raise ValidationError("Date of birth must be in the past.")
+    if (today - date_of_birth).days > 130 * 365:
+        raise ValidationError("Date of birth doesn't look right.")
+
     profile = session.exec(select(Profile)).first()
     profile.height_cm = height_cm
     profile.date_of_birth = date_of_birth

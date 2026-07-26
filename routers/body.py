@@ -11,6 +11,7 @@ from auth import require_login
 from charting import build_diverging_bar_svg, build_line_svg
 from database import get_session
 from models import BodyLog
+from validation import require_max_length, require_not_future, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -73,6 +74,16 @@ def add_body_log(
     notes: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    require_not_future(log_date, "Date", date.today())
+    require_range(weight_kg, 20, 400, "Weight")
+    require_range(waist_cm, 20, 300, "Waist")
+    require_range(chest_cm, 20, 300, "Chest")
+    require_range(arm_cm, 10, 100, "Arm")
+    require_range(hips_cm, 20, 300, "Hips")
+    require_range(thigh_cm, 10, 150, "Thigh")
+    require_range(sleep_hours, 0, 24, "Sleep hours")
+    require_max_length(notes, 500, "Notes")
+
     existing = session.exec(select(BodyLog).where(BodyLog.log_date == log_date)).first()
     if existing:
         existing.weight_kg = weight_kg

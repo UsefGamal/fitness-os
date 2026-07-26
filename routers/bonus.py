@@ -10,6 +10,7 @@ from content.bonus_tasks import BONUS_TASKS, BONUS_TASKS_BY_KEY
 from content.milestones import badge_progress
 from database import get_session
 from models import BonusLog
+from validation import ValidationError
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -89,7 +90,7 @@ def bonus_page(request: Request, session: Session = Depends(get_session)):
 def toggle_bonus(task_key: str = Form(...), session: Session = Depends(get_session)):
     task = BONUS_TASKS_BY_KEY.get(task_key)
     if not task:
-        return RedirectResponse(url="/bonus", status_code=303)
+        raise ValidationError("That quest doesn't exist.")
 
     today = date.today()
     frequency = task["frequency"]

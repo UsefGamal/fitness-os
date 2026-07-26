@@ -2,9 +2,11 @@ import os
 import secrets
 from datetime import date, timedelta
 from typing import Optional
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,6 +20,7 @@ from auth import (
     record_failed_login,
     record_successful_login,
 )
+from validation import ValidationError, error_redirect
 from baseline import get_baseline
 from charting import build_heatmap_html, build_line_svg, build_meter_html, status_chip_html
 from content.bonus_tasks import BONUS_TASKS
@@ -94,6 +97,39 @@ app.include_router(bonus.router)
 app.include_router(simulate.router)
 app.include_router(cardio.router)
 app.include_router(training.router)
+
+
+def _referer_path(request: Request) -> str:
+    """Extract just the path+query from the Referer header — never redirect
+    to a raw header value directly (open-redirect risk if it were ever
+    absolute/cross-origin), and this is always our own same-origin form
+    page anyway since it's how the user got to the form that failed."""
+    referer = request.headers.get("referer", "")
+    parsed = urlparse(referer)
+    return f"{parsed.path}{'?' + parsed.query if parsed.query else ''}" or "/"
+
+
+@app.exception_handler(ValidationError)
+async def validation_error_handler(request: Request, exc: ValidationError):
+    """Domain-range checks (validation.py) — weight/RPE/reps out of a sane
+    range, an invalid choice, etc. Redirect back to the form with the
+    message instead of a bare 500."""
+    return RedirectResponse(url=error_redirect(_referer_path(request), exc.message), status_code=303)
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+    """FastAPI/Pydantic's built-in check — a missing required field or a
+    value that doesn't match its expected type (e.g. letters typed into a
+    number field bypassing the browser's own input type). Redirect with a
+    plain-language message instead of the raw JSON 422 body."""
+    errors = exc.errors()
+    if errors:
+        field = str(errors[0].get("loc", ["input"])[-1]).replace("_", " ")
+        message = f"'{field}' is missing or not the right kind of value — please check and try again."
+    else:
+        message = "Some of that input wasn't valid — please check and try again."
+    return RedirectResponse(url=error_redirect(_referer_path(request), message), status_code=303)
 
 
 @app.on_event("startup")

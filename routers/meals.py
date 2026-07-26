@@ -21,6 +21,7 @@ from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
 from database import get_session
 from models import HydrationLog, MealLog, Workout
+from validation import require_choice, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -189,12 +190,14 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
 
 @router.post("/meals/toggle", dependencies=[Depends(require_login)])
 def toggle_meal(
-    log_date: str = Form(...),
+    log_date: date = Form(...),
     meal_slot: str = Form(...),
     option_key: str = Form(...),
     session: Session = Depends(get_session),
 ):
-    d = date.fromisoformat(log_date)
+    require_choice(meal_slot, MEAL_SLOTS, "Meal slot")
+    require_choice(option_key, ["option_a", "option_b"], "Option")
+    d = log_date
     existing = session.exec(
         select(MealLog).where(MealLog.log_date == d, MealLog.meal_slot == meal_slot)
     ).first()
@@ -213,12 +216,14 @@ def toggle_meal(
 
 @router.post("/meals/drink", dependencies=[Depends(require_login)])
 def set_drink(
-    log_date: str = Form(...),
+    log_date: date = Form(...),
     meal_slot: str = Form(...),
     drink_key: str = Form(...),
     session: Session = Depends(get_session),
 ):
-    d = date.fromisoformat(log_date)
+    require_choice(meal_slot, MEAL_SLOTS, "Meal slot")
+    require_choice(drink_key, DRINK_OPTIONS, "Drink")
+    d = log_date
     existing = session.exec(
         select(MealLog).where(MealLog.log_date == d, MealLog.meal_slot == meal_slot)
     ).first()
@@ -233,11 +238,12 @@ def set_drink(
 
 @router.post("/meals/hydration", dependencies=[Depends(require_login)])
 def add_hydration(
-    log_date: str = Form(...),
+    log_date: date = Form(...),
     ml: int = Form(...),
     session: Session = Depends(get_session),
 ):
-    d = date.fromisoformat(log_date)
+    require_range(ml, -5000, 5000, "Hydration amount")
+    d = log_date
     existing = session.exec(select(HydrationLog).where(HydrationLog.log_date == d)).first()
     if existing:
         existing.ml = max(0, existing.ml + ml)

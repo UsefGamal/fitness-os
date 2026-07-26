@@ -12,6 +12,7 @@ from database import get_session
 from models import ChecklistItemLog, Workout
 from routers.meals import PLAN_START_DATE
 from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
+from validation import require_max_length, require_not_future, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -61,6 +62,10 @@ def create_home_session(
     is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
+    require_not_future(log_date, "Date", date.today())
+    require_range(duration_min, 1, 600, "Duration")
+    require_max_length(notes, 200, "Notes")
+
     if not notes:
         notes = next_program_day(count_training_sessions(session))["label"]
 
@@ -147,6 +152,8 @@ def update_session_notes(
     workout = session.get(Workout, workout_id)
     if not workout:
         raise HTTPException(status_code=404)
+    require_range(session_rpe, 1, 10, "Session RPE")
+    require_max_length(pain_note, 300, "Pain note")
     workout.session_rpe = session_rpe
     workout.pain_note = pain_note or None
     session.add(workout)
@@ -176,6 +183,7 @@ def log_item(
     workout = session.get(Workout, workout_id)
     if not workout:
         raise HTTPException(status_code=404)
+    require_range(reps_achieved, 0, 500, "Reps achieved")
 
     existing = session.exec(
         select(ChecklistItemLog).where(

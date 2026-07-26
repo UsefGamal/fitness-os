@@ -10,6 +10,7 @@ from auth import require_login
 from content.recovery_program import RECOVERY_CHECKLIST
 from database import get_session
 from models import ChecklistItemLog, Workout
+from validation import require_max_length, require_not_future, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -32,6 +33,8 @@ def create_recovery_session(
     notes: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    require_not_future(log_date, "Date", date.today())
+    require_max_length(notes, 200, "Notes")
     workout = Workout(log_date=log_date, workout_type="recovery", notes=notes)
     session.add(workout)
     session.commit()
@@ -68,6 +71,8 @@ def update_session_notes(
     workout = session.get(Workout, workout_id)
     if not workout:
         raise HTTPException(status_code=404)
+    require_range(session_rpe, 1, 10, "Session RPE")
+    require_max_length(pain_note, 300, "Pain note")
     workout.session_rpe = session_rpe
     workout.pain_note = pain_note or None
     session.add(workout)

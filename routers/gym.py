@@ -14,6 +14,7 @@ from database import get_session
 from models import Exercise, Workout, WorkoutSet
 from routers.meals import PLAN_START_DATE
 from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
+from validation import ValidationError, require_max_length, require_not_future, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -117,6 +118,10 @@ def create_gym_session(
     is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
+    require_not_future(log_date, "Date", date.today())
+    require_range(duration_min, 1, 600, "Duration")
+    require_max_length(notes, 200, "Notes")
+
     if not notes:
         notes = next_program_day(count_training_sessions(session))["label"]
 
@@ -264,6 +269,12 @@ def add_set(
     if not workout:
         raise HTTPException(status_code=404)
 
+    require_range(reps, 1, 100, "Reps")
+    require_range(weight_kg, 0, 500, "Weight")
+    require_range(rpe, 1, 10, "RPE")
+    if not session.get(Exercise, exercise_id):
+        raise ValidationError("That exercise doesn't exist — please pick one from the list.")
+
     existing_count = len(
         session.exec(select(WorkoutSet).where(WorkoutSet.workout_id == workout_id)).all()
     )
@@ -290,6 +301,8 @@ def update_session_notes(
     workout = session.get(Workout, workout_id)
     if not workout:
         raise HTTPException(status_code=404)
+    require_range(session_rpe, 1, 10, "Session RPE")
+    require_max_length(pain_note, 300, "Pain note")
     workout.session_rpe = session_rpe
     workout.pain_note = pain_note or None
     session.add(workout)

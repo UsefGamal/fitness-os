@@ -11,6 +11,7 @@ from auth import require_login
 from charting import build_sparkline_svg
 from database import get_session
 from models import Workout
+from validation import require_choice, require_max_length, require_not_future, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -68,6 +69,13 @@ def add_padel_session(
     pain_note: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
+    require_not_future(log_date, "Date", date.today())
+    require_range(duration_min, 1, 600, "Duration")
+    require_range(session_rpe, 1, 10, "RPE")
+    require_choice(result or None, ["win", "loss", "draw"], "Result")
+    require_max_length(notes, 300, "Notes")
+    require_max_length(pain_note, 300, "Pain note")
+
     existing = session.get(Workout, workout_id) if workout_id else None
     if existing and existing.workout_type == "padel":
         existing.log_date = log_date

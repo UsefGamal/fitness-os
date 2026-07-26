@@ -11,6 +11,7 @@ from charting import build_sparkline_svg
 from content.cardio_program import ALTERNATIVES, CARDIO_SESSION
 from database import get_session
 from models import Workout
+from validation import require_max_length, require_not_future, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -51,6 +52,11 @@ def add_cardio_session(
     session_rpe: Optional[int] = Form(None),
     session: Session = Depends(get_session),
 ):
+    require_not_future(log_date, "Date", date.today())
+    require_range(duration_min, 1, 600, "Duration")
+    require_range(session_rpe, 1, 10, "RPE")
+    require_max_length(notes, 300, "Notes")
+
     existing = session.get(Workout, workout_id) if workout_id else None
     if existing and existing.workout_type == "cardio":
         existing.log_date = log_date
