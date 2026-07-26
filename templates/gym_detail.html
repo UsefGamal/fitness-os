@@ -4,7 +4,7 @@
 <h1><svg class="icon"><use href="#icon-dumbbell"/></svg> Gym — {{ workout.log_date }}</h1>
 <p class="muted" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
   <span>{{ workout.notes or "" }}{% if workout.duration_min %} · {{ workout.duration_min }} min{% endif %}</span>
-  <form method="post" action="/gym/{{ workout.id }}/delete" onsubmit="return confirm('Delete this whole session and all its logged sets?')">
+  <form method="post" action="/gym/{{ workout.id }}/delete" class="confirm-delete" data-confirm="Delete this whole session and all its logged sets?">
     <button type="submit" class="row-delete-btn" aria-label="Delete session"><svg class="icon"><use href="#icon-trash"/></svg> Delete session</button>
   </form>
 </p>
@@ -98,7 +98,7 @@
         <td>{{ s.weight_kg }} kg</td>
         <td>{{ s.rpe if s.rpe is not none else "—" }}</td>
         <td>
-          <form method="post" action="/gym/{{ workout.id }}/sets/{{ s.id }}/delete" onsubmit="return confirm('Delete this set?')">
+          <form method="post" action="/gym/{{ workout.id }}/sets/{{ s.id }}/delete" class="confirm-delete" data-confirm="Delete this set?">
             <button type="submit" class="row-delete-btn" aria-label="Delete set"><svg class="icon"><use href="#icon-trash"/></svg></button>
           </form>
         </td>

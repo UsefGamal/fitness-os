@@ -123,6 +123,15 @@ Set these up on [cron-job.org](https://cron-job.org) (or any external scheduler)
 Both digest endpoints:
 - Skip silently if already sent today (dedup via `ReminderLog`) — add `&force=true` to resend on demand.
 - Never throw an uncaught error — failures return a small structured JSON body (`{"status":"error","detail":"..."}`) so they're diagnosable via a plain curl instead of guessing from a cron monitor's failure report.
+- Accept the secret via an `X-Cron-Secret` header instead of `?secret=` in the URL — preferred, since URL query strings end up in access logs and referrer headers. cron-job.org supports custom headers under a job's "Advanced" tab. The query param still works for backward compatibility.
+
+## Security
+
+- Single-user, password-gated (`APP_PASSWORD`), session cookie is `httponly` + `same_site=lax` + `secure` in production (detected via Render's `RENDER` env var).
+- Login is rate-limited: 5 failed attempts locks out further attempts for 60 seconds (global, not per-IP — see `auth.py` for why).
+- Password and cron-secret comparisons are constant-time (`secrets.compare_digest`).
+- Every dynamic response sends `Cache-Control: no-store` (personal health data shouldn't be cacheable) plus standard hardening headers (CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`). The CSP is `script-src 'self'` — no inline `<script>` or `onclick=`/`onsubmit=` handlers anywhere in the templates; destructive actions (delete buttons) confirm via a `.confirm-delete` class handled in `static/app.js` instead.
+- **If `CRON_SECRET` has ever been shared in plaintext (chat, email, etc.), rotate it** — generate a new value, update it in Render's dashboard and in the cron-job.org job URLs/headers.
 
 ## Data model
 

@@ -66,7 +66,7 @@
         <td>
           <div class="row-actions">
             <a href="/padel?edit={{ s.id }}" class="row-edit-btn" aria-label="Edit"><svg class="icon"><use href="#icon-edit"/></svg></a>
-            <form method="post" action="/padel/{{ s.id }}/delete" onsubmit="return confirm('Delete this session?')">
+            <form method="post" action="/padel/{{ s.id }}/delete" class="confirm-delete" data-confirm="Delete this session?">
               <button type="submit" class="row-delete-btn" aria-label="Delete"><svg class="icon"><use href="#icon-trash"/></svg></button>
             </form>
           </div>

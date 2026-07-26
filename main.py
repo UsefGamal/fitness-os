@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import date, timedelta
 from typing import Optional
 
@@ -10,7 +11,13 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, func, select
 
-from auth import APP_PASSWORD, is_logged_in
+from auth import (
+    APP_PASSWORD,
+    is_login_locked_out,
+    is_logged_in,
+    record_failed_login,
+    record_successful_login,
+)
 from baseline import get_baseline
 from charting import build_heatmap_html, build_line_svg, build_meter_html, status_chip_html
 from content.bonus_tasks import BONUS_TASKS
@@ -32,21 +39,47 @@ from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT
 load_dotenv()
 
 app = FastAPI(title="Fitness OS")
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"))
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "dev-secret-change-me"),
+    https_only=os.getenv("RENDER") is not None,  # Render sets RENDER=true on every service; false for local http dev
+    same_site="lax",
+    max_age=14 * 24 * 60 * 60,
+)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "img-src 'self'; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'none'; "
+    "form-action 'self'"
+)
+
 
 @app.middleware("http")
-async def no_store_dynamic_pages(request: Request, call_next):
-    """Every logged-in page shows personal health/training data and
-    changes on every log/edit/delete — never let the browser (or a
-    shared/public machine's disk cache) serve a stale or cached copy
-    of it via back/forward navigation. Static assets are unaffected."""
+async def response_hardening(request: Request, call_next):
+    """Two things every response on this app needs, static assets aside:
+    (1) never cached — every page shows personal health/training data
+    that changes on every log/edit/delete, so a browser's back/forward
+    cache serving a stale copy (e.g. a just-deleted session still
+    showing) or a shared machine's disk cache retaining it are both real
+    risks; (2) standard hardening headers, since this is a password-gated
+    app carrying sensitive personal data over the open internet."""
     response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     if not request.url.path.startswith("/static"):
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         response.headers["Pragma"] = "no-cache"
+        response.headers["Content-Security-Policy"] = _CSP
     return response
 
 app.include_router(body.router)
@@ -101,9 +134,17 @@ def login_form(request: Request):
 
 @app.post("/login")
 def login_submit(request: Request, password: str = Form(...)):
-    if password == APP_PASSWORD:
+    if is_login_locked_out():
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "logged_in": False, "error": "Too many attempts — wait a minute and try again."},
+            status_code=429,
+        )
+    if secrets.compare_digest(password, APP_PASSWORD):
+        record_successful_login()
         request.session["authed"] = True
         return RedirectResponse(url="/", status_code=303)
+    record_failed_login()
     return templates.TemplateResponse(
         "login.html",
         {"request": request, "logged_in": False, "error": "Wrong password."},

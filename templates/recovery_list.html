@@ -24,7 +24,7 @@
         <td><a href="/recovery/{{ w.id }}">{{ w.log_date }}</a></td>
         <td>{{ w.notes or "" }}</td>
         <td>
-          <form method="post" action="/recovery/{{ w.id }}/delete" onsubmit="return confirm('Delete this session?')">
+          <form method="post" action="/recovery/{{ w.id }}/delete" class="confirm-delete" data-confirm="Delete this session?">
             <button type="submit" class="row-delete-btn" aria-label="Delete session"><svg class="icon"><use href="#icon-trash"/></svg></button>
           </form>
         </td>

@@ -1,8 +1,10 @@
 import os
+import secrets
 from datetime import date, timedelta
+from typing import Optional
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlmodel import Session, func, select
 
 from content.email_digest import build_daily_digest_html
@@ -17,6 +19,16 @@ CRON_SECRET = os.getenv("CRON_SECRET", "")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 DIGEST_EMAIL_TO = os.getenv("DIGEST_EMAIL_TO", "")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://fitness-os.onrender.com")
+
+
+def _check_cron_secret(secret_qs: Optional[str], secret_header: Optional[str]) -> None:
+    """Accepts the secret via the `?secret=` query param (the original
+    cron-job.org setup) or an `X-Cron-Secret` header (preferred — query
+    strings end up in access logs and referrer headers, a header doesn't).
+    Both are constant-time compared."""
+    provided = secret_header or secret_qs or ""
+    if not CRON_SECRET or not secrets.compare_digest(provided, CRON_SECRET):
+        raise HTTPException(status_code=403, detail="Invalid cron secret")
 
 
 def _send_email(subject: str, html: str) -> None:
@@ -46,9 +58,13 @@ def healthz_warm():
 
 
 @router.get("/cron/daily-digest")
-def daily_digest(secret: str = Query(...), force: bool = Query(False), session: Session = Depends(get_session)):
-    if not CRON_SECRET or secret != CRON_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid cron secret")
+def daily_digest(
+    secret: Optional[str] = Query(None),
+    x_cron_secret: Optional[str] = Header(None),
+    force: bool = Query(False),
+    session: Session = Depends(get_session),
+):
+    _check_cron_secret(secret, x_cron_secret)
 
     today = date.today()
 
@@ -82,9 +98,13 @@ def daily_digest(secret: str = Query(...), force: bool = Query(False), session: 
 
 
 @router.get("/cron/weekly-recap")
-def weekly_recap(secret: str = Query(...), force: bool = Query(False), session: Session = Depends(get_session)):
-    if not CRON_SECRET or secret != CRON_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid cron secret")
+def weekly_recap(
+    secret: Optional[str] = Query(None),
+    x_cron_secret: Optional[str] = Header(None),
+    force: bool = Query(False),
+    session: Session = Depends(get_session),
+):
+    _check_cron_secret(secret, x_cron_secret)
 
     today = date.today()
 

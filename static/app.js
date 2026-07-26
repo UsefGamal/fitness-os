@@ -3,6 +3,17 @@
 // brief client-side flourish so completing something feels satisfying.
 document.addEventListener('submit', function (e) {
   const form = e.target;
+
+  // Destructive actions (delete session/set/entry) confirm before submitting.
+  // Kept as unobtrusive JS (not inline onsubmit=) so the app can run a
+  // strict script-src 'self' Content-Security-Policy.
+  if (form.classList.contains('confirm-delete')) {
+    if (!window.confirm(form.dataset.confirm || 'Are you sure?')) {
+      e.preventDefault();
+    }
+    return;
+  }
+
   if (!form.classList.contains('js-toggle')) return;
 
   const btn = form.querySelector('button[type="submit"]');
