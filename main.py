@@ -25,7 +25,6 @@ from baseline import get_baseline
 from charting import build_heatmap_html, build_line_svg, build_meter_html, status_chip_html
 from content.bonus_tasks import BONUS_TASKS
 from content.gym_exercises import SEED_EXERCISES
-from content.meal_plan import get_day
 from content.milestones import badge_progress, level_for_points
 from content.projections import (
     compute_streak,
@@ -36,9 +35,10 @@ from content.projections import (
     week_start as get_week_start,
 )
 from database import engine, get_session, init_db
+import fitchef_sync
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
 from quest_engine import sync_system_quests
-from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate, training
+from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate, training, webhooks
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
 from validation import ValidationError, error_redirect
 
@@ -129,6 +129,7 @@ app.include_router(bonus.router)
 app.include_router(simulate.router)
 app.include_router(cardio.router)
 app.include_router(training.router)
+app.include_router(webhooks.router)
 
 
 def _referer_path(request: Request) -> str:
@@ -198,8 +199,20 @@ def logout(request: Request):
 
 
 @app.get("/more", dependencies=[Depends(require_login)])
-def more_page(request: Request):
-    return templates.TemplateResponse(request, "more.html", {"request": request, "logged_in": True})
+def more_page(request: Request, session: Session = Depends(get_session)):
+    sync = fitchef_sync.latest_sync(session)
+    if sync and sync.status not in ("complete", "error"):
+        sync = fitchef_sync.advance_sync(session, sync)
+    return templates.TemplateResponse(
+        request,
+        "more.html",
+        {
+            "request": request,
+            "logged_in": True,
+            "fitchef_sync": sync,
+            "just_synced": request.query_params.get("synced") == "1",
+        },
+    )
 
 
 @app.get("/help", dependencies=[Depends(require_login)])
@@ -403,7 +416,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     for i in range(7):
         day_date = week_start + timedelta(days=i)
         day_number = (day_date - PLAN_START_DATE).days + 1
-        meal_day = get_day(day_number)
+        meal_day = fitchef_sync.get_active_day(session, day_number)
         day_cards.append(
             {
                 "date": day_date,

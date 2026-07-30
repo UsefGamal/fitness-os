@@ -99,3 +99,23 @@ class ReminderLog(SQLModel, table=True):
     log_date: date
     reminder_type: str
     sent_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MealPlanSync(SQLModel, table=True):
+    """One row per FitChef sync attempt. A sync covers two chained weekly
+    generations (14 days total) — status walks week1_pending ->
+    week2_pending -> complete (or -> error at either step). Only the most
+    recent 'complete' row is ever read for meal content (see
+    fitchef_sync.get_active_day); older rows are kept only as history."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requested_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: Optional[datetime] = None
+    status: str = "week1_pending"  # week1_pending | week2_pending | complete | error
+    week1_identifier: Optional[int] = None
+    week2_identifier: Optional[int] = None
+    recipe_history: Optional[str] = None  # JSON string, chained into the next sync
+    week1_json: Optional[str] = None  # raw week1 payload, held until week2 completes
+    plan_json: Optional[str] = None  # final merged 14-day plan, set once complete
+    products_json: Optional[str] = None  # merged shopping-list products, set once complete
+    error_detail: Optional[str] = None

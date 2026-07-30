@@ -18,8 +18,9 @@ from content.food_items import (
     parse_shopping_unit,
 )
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
-from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name, get_day
+from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name
 from database import get_session
+from fitchef_sync import advance_sync, get_active_day, get_active_shopping_products, latest_sync, start_sync
 from models import HydrationLog, MealLog, Workout
 from validation import require_choice, require_range
 
@@ -86,7 +87,7 @@ def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
         totals = {"protein": 0.0, "carbs": 0.0, "fat": 0.0, "fiber": 0.0}
         day_logs = logs_by_date.get(d, [])
         if day_logs:
-            plan_by_slot = {m["slot"]: m for m in get_day(_day_number_for(d))["meals"]}
+            plan_by_slot = {m["slot"]: m for m in get_active_day(session, _day_number_for(d))["meals"]}
             for log in day_logs:
                 meal = plan_by_slot.get(log.meal_slot)
                 option = next((o for o in meal["options"] if o["key"] == log.option_key), None) if meal else None
@@ -100,9 +101,13 @@ def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
 
 @router.get("/meals", dependencies=[Depends(require_login)])
 def meals_page(request: Request, view_date: str = None, session: Session = Depends(get_session)):
+    sync = latest_sync(session)
+    if sync and sync.status not in ("complete", "error"):
+        advance_sync(session, sync)
+
     current = date.fromisoformat(view_date) if view_date else date.today()
     day_number = _day_number_for(current)
-    plan = get_day(day_number)
+    plan = get_active_day(session, day_number)
 
     logs = session.exec(select(MealLog).where(MealLog.log_date == current)).all()
     logs_by_slot = {log.meal_slot: log for log in logs}
@@ -270,8 +275,37 @@ def maintenance_page(request: Request):
 
 
 @router.get("/meals/shopping-list", dependencies=[Depends(require_login)])
-def shopping_list_page(request: Request):
+def shopping_list_page(request: Request, session: Session = Depends(get_session)):
     today = date.today()
+
+    products = get_active_shopping_products(session)
+    if products is not None:
+        # FitChef's aggregated list isn't categorized like our own FOODS
+        # catalog (that needs its full product taxonomy, not exposed in the
+        # webhook payload) — one flat, alphabetized list instead.
+        categories = [
+            {
+                "name": "Shopping List",
+                "foods": sorted(
+                    ({"name": p.get("name", "?"), "qty": f"×{p.get('quantity', 1)}"} for p in products),
+                    key=lambda x: x["name"],
+                ),
+                "color": "var(--accent)",
+                "icon": "list",
+            }
+        ]
+        return templates.TemplateResponse(
+            request,
+            "shopping_list.html",
+            {
+                "request": request,
+                "logged_in": True,
+                "categories": categories,
+                "start_date": today.isoformat(),
+                "end_date": (today + timedelta(days=13)).isoformat(),
+            },
+        )
+
     totals: dict[tuple, float] = defaultdict(float)
     base_category: dict[str, str] = {}
     for offset in range(7):
@@ -311,3 +345,14 @@ def shopping_list_page(request: Request):
             "end_date": (today + timedelta(days=6)).isoformat(),
         },
     )
+
+
+@router.post("/meals/fitchef-sync", dependencies=[Depends(require_login)])
+def trigger_fitchef_sync(session: Session = Depends(get_session)):
+    """Kicks off a new 14-day FitChef generation. Only ever queues one at a
+    time — a sync already in flight isn't restarted, since that would
+    orphan its identifiers and quietly waste part of the monthly quota."""
+    existing = latest_sync(session)
+    if not existing or existing.status in ("complete", "error"):
+        start_sync(session)
+    return RedirectResponse(url="/more?synced=1", status_code=303)

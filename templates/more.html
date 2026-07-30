@@ -4,6 +4,43 @@
 <h1><svg class="icon"><use href="#icon-dots"/></svg> More</h1>
 
 <section class="card">
+  <h2><svg class="icon"><use href="#icon-utensils"/></svg> FitChef Meal Plan Sync</h2>
+  {% if just_synced %}
+  <p style="color:var(--accent);font-size:13px;display:flex;align-items:center;gap:6px;margin-top:-4px">
+    <svg class="icon icon-fill"><use href="#icon-check"/></svg> Sync started — generation runs in the background and can take a few minutes. Reload this page to check progress.
+  </p>
+  {% endif %}
+
+  {% if not fitchef_sync %}
+    <p class="muted" style="font-size:13px">Not synced yet — meals and the shopping list are using the built-in static plan.</p>
+  {% elif fitchef_sync.status in ("week1_pending", "week2_pending") %}
+    <p style="font-size:14px;display:flex;align-items:center;gap:8px">
+      <svg class="icon" style="width:16px;height:16px;color:var(--gold)"><use href="#icon-activity"/></svg>
+      Generating your new 14-day plan{% if fitchef_sync.status == "week2_pending" %} (week 2 of 2){% else %} (week 1 of 2){% endif %}…
+    </p>
+    <p class="muted" style="font-size:12px;margin-top:4px">Requested {{ fitchef_sync.requested_at.strftime('%b %d, %H:%M') }} — reload this page in a minute or two to check progress.</p>
+  {% elif fitchef_sync.status == "error" %}
+    <p style="color:var(--danger);font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon"><use href="#icon-alert"/></svg> Sync failed: {{ fitchef_sync.error_detail }}
+    </p>
+  {% elif fitchef_sync.status == "complete" %}
+    <p style="font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon icon-fill" style="color:var(--accent)"><use href="#icon-check"/></svg>
+      Last synced {{ fitchef_sync.completed_at.strftime('%b %d, %H:%M') }} — meals and the shopping list are using this plan.
+    </p>
+  {% endif %}
+
+  {% if not fitchef_sync or fitchef_sync.status in ("complete", "error") %}
+  <form method="post" action="/meals/fitchef-sync" style="margin-top:10px">
+    <button type="submit" class="meal-check-btn">
+      {% if fitchef_sync and fitchef_sync.status == "complete" %}Sync again (new 14 days){% elif fitchef_sync and fitchef_sync.status == "error" %}Try again{% else %}Sync now{% endif %}
+    </button>
+  </form>
+  {% endif %}
+  <p class="muted" style="font-size:11px;margin-top:8px">Excludes pork (bacon/ham); no alcohol in FitChef's catalog. Uses a small share of the account's monthly generation quota each time.</p>
+</section>
+
+<section class="card">
   <h2><svg class="icon"><use href="#icon-wrench"/></svg> Plan & Tools</h2>
   <div class="link-list">
     <a href="/body" class="link-row"><svg class="icon link-icon"><use href="#icon-scale"/></svg><span>Body Log</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>
