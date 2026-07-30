@@ -37,6 +37,7 @@ from content.projections import (
 )
 from database import engine, get_session, init_db
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
+from quest_engine import sync_system_quests
 from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate, training
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
 from validation import ValidationError, error_redirect
@@ -324,9 +325,21 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     status_kind, status_icon = CONFIDENCE_STATUS.get(confidence_label, ("warning", "activity"))
     confidence_chip = status_chip_html(status_kind, confidence_label, status_icon)
 
-    # ── Weight vs goal chart (emphasis form: one line, dashed goal ref) ──
+    # ── Progress-to-goal chart: kg lost so far (ascending as you approach
+    # goal), with a dashed band for the amount you need to lose to land
+    # inside the goal_weight_low..goal_weight_high range. Plotting raw
+    # weight here reads backwards — it trends *down* toward the goal, which
+    # looks like regression rather than progress. ─────────────────────
     body_logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
-    weight_chart_svg = build_line_svg([log.weight_kg for log in body_logs], reference_value=goal_mid)
+    if start_weight is not None:
+        progress_series = [round(start_weight - log.weight_kg, 2) for log in body_logs]
+        goal_band = (
+            round(start_weight - profile.goal_weight_high_kg, 2),
+            round(start_weight - profile.goal_weight_low_kg, 2),
+        )
+        weight_chart_svg = build_line_svg(progress_series, reference_band=goal_band, label_suffix=" kg lost")
+    else:
+        weight_chart_svg = ""
 
     # ── Avg training RPE, last 14 days (session + per-set) ──────────
     recent_gym_workouts = session.exec(
@@ -354,6 +367,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     adherence_insight = _weekly_adherence_outcome_insight(session, today)
 
     # ── Points, level & badge ────────────────────────────────────
+    sync_system_quests(session, today)
     total_points = session.exec(select(func.sum(BonusLog.points))).first() or 0
     current_badge, next_milestone = badge_progress(total_points)
     level = level_for_points(total_points)

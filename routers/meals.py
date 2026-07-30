@@ -26,7 +26,7 @@ from validation import require_choice, require_range
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-PLAN_START_DATE = date(2026, 8, 1)  # day 1 of the rotation — real program start date
+PLAN_START_DATE = date(2026, 9, 1)  # day 1 of the rotation — real program start date
 HYDRATION_TARGET_ML = 3000
 HYDRATION_QUICK_ADD = [250, 500, 1000]
 TRAINING_WORKOUT_TYPES = ("gym", "home", "cardio")

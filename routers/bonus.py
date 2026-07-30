@@ -11,6 +11,7 @@ from content.milestones import badge_progress
 from content.projections import week_start as _week_start
 from database import get_session
 from models import BonusLog
+from quest_engine import sync_system_quests
 from validation import ValidationError
 
 router = APIRouter()
@@ -52,6 +53,7 @@ def _done_keys(session: Session, today: date) -> set[str]:
 @router.get("/bonus", dependencies=[Depends(require_login)])
 def bonus_page(request: Request, session: Session = Depends(get_session)):
     today = date.today()
+    sync_system_quests(session, today)
     done_keys = _done_keys(session, today)
 
     tasks_by_frequency = {"daily": [], "weekly": [], "once": []}
@@ -89,21 +91,13 @@ def toggle_bonus(task_key: str = Form(...), session: Session = Depends(get_sessi
     task = BONUS_TASKS_BY_KEY.get(task_key)
     if not task:
         raise ValidationError("That quest doesn't exist.")
+    if task["frequency"] != "daily":
+        raise ValidationError("This quest is tracked automatically from your logged activity — nothing to mark by hand.")
 
     today = date.today()
-    frequency = task["frequency"]
-
-    if frequency == "daily":
-        existing = session.exec(
-            select(BonusLog).where(BonusLog.log_date == today, BonusLog.task_key == task_key)
-        ).first()
-    elif frequency == "weekly":
-        week_start = _week_start(today)
-        existing = session.exec(
-            select(BonusLog).where(BonusLog.log_date >= week_start, BonusLog.task_key == task_key)
-        ).first()
-    else:  # "once"
-        existing = session.exec(select(BonusLog).where(BonusLog.task_key == task_key)).first()
+    existing = session.exec(
+        select(BonusLog).where(BonusLog.log_date == today, BonusLog.task_key == task_key)
+    ).first()
 
     if existing:
         session.delete(existing)

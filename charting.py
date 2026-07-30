@@ -27,11 +27,15 @@ def build_line_svg(
     width: int = 600,
     height: int = 160,
     reference_value: float | None = None,
+    reference_band: tuple[float, float] | None = None,
+    label_suffix: str = "",
     pad: int = 12,
 ) -> str:
     """Emphasis-form line chart: one colored 'actual' line, an optional
-    muted dashed reference line (target/goal/baseline), direct labels at
-    the first/last points only. Returns "" if there's not enough data."""
+    muted dashed reference line (target/goal/baseline) or reference BAND
+    (two dashed lines + a faint fill between them — e.g. a goal range),
+    direct labels at the first/last points only. Returns "" if there's not
+    enough data."""
     if len(values) < 2:
         return ""
 
@@ -40,7 +44,8 @@ def build_line_svg(
     # that point sits near the top of the range.
     pad_top = pad + 16
 
-    all_values = list(values) + ([reference_value] if reference_value is not None else [])
+    band_values = list(reference_band) if reference_band is not None else []
+    all_values = list(values) + ([reference_value] if reference_value is not None else []) + band_values
     min_v, max_v = min(all_values), max(all_values)
     span = (max_v - min_v) or 1
     n = len(values)
@@ -59,7 +64,17 @@ def build_line_svg(
     base_y = height - pad
     parts.append(f'<line x1="{pad}" y1="{base_y:.1f}" x2="{width - pad}" y2="{base_y:.1f}" class="chart-grid-line"/>')
 
-    if reference_value is not None:
+    if reference_band is not None:
+        lo, hi = sorted(reference_band)
+        _, y_lo = xy(0, lo)
+        _, y_hi = xy(0, hi)
+        top, bottom = min(y_lo, y_hi), max(y_lo, y_hi)
+        parts.append(
+            f'<rect x="{pad}" y="{top:.1f}" width="{width - 2 * pad}" height="{max(bottom - top, 1):.1f}" class="chart-reference-band"/>'
+        )
+        parts.append(f'<line x1="{pad}" y1="{y_lo:.1f}" x2="{width - pad}" y2="{y_lo:.1f}" class="chart-reference-line"/>')
+        parts.append(f'<line x1="{pad}" y1="{y_hi:.1f}" x2="{width - pad}" y2="{y_hi:.1f}" class="chart-reference-line"/>')
+    elif reference_value is not None:
         _, ry = xy(0, reference_value)
         parts.append(f'<line x1="{pad}" y1="{ry:.1f}" x2="{width - pad}" y2="{ry:.1f}" class="chart-reference-line"/>')
 
@@ -72,8 +87,9 @@ def build_line_svg(
     parts.append(f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="4" class="chart-marker"/>')
     label_anchor = "end" if lx > width - 60 else "start"
     label_dx = -8 if label_anchor == "end" else 8
+    label_text = f"{_fmt(values[-1])}{label_suffix}"
     parts.append(
-        f'<text x="{lx + label_dx:.1f}" y="{ly - 8:.1f}" text-anchor="{label_anchor}" class="chart-label-primary">{_fmt(values[-1])}</text>'
+        f'<text x="{lx + label_dx:.1f}" y="{ly - 8:.1f}" text-anchor="{label_anchor}" class="chart-label-primary">{label_text}</text>'
     )
 
     parts.append("</svg>")

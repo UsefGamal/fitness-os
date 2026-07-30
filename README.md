@@ -5,7 +5,7 @@ A self-hosted, single-user fitness and nutrition tracker built for a 6-month bod
 ## Overview
 
 - **Who it's for**: one user, password-gated, no multi-tenancy.
-- **Program window**: `PLAN_START_DATE = 2026-08-01` (in `routers/meals.py`) — the meal/gym rotations anchor to this date.
+- **Program window**: `PLAN_START_DATE = 2026-09-01` (in `routers/meals.py`) — the meal/gym rotations anchor to this date.
 - **Philosophy**: structured portions, not calorie-counting. Two selectable options per meal (Egyptian- and Syrian/grilled-leaning), macro-matched to the same daily band, no fish/seafood.
 
 ## Features
@@ -26,7 +26,7 @@ A self-hosted, single-user fitness and nutrition tracker built for a 6-month bod
 
 **Body tracking**
 - Weight, waist, chest, arm, hips, thigh, sleep hours
-- Weight-vs-goal trend chart (emphasis form: actual line + dashed goal reference) plus a weekly weight-change bar chart
+- Progress-to-goal chart (kg lost so far, ascending, against a dashed goal-range band — not raw weight, which reads backwards as it trends down) plus a weekly weight-change bar chart
 - Reached via More (not the bottom tab bar) since it's a weekly/biweekly check-in, not a daily one
 
 **Editing & deleting logged data**
@@ -34,7 +34,7 @@ A self-hosted, single-user fitness and nutrition tracker built for a 6-month bod
 
 **Gamification**
 - Points, levels, tiered badges (bronze → diamond), daily streak
-- Quest board with three cadences — daily habits, weekly quests, one-time milestones — so it isn't just a checklist that zeroes out every midnight
+- Quest board with three cadences — only daily habits are marked by hand; weekly quests and one-time milestones are evaluated automatically from logged activity (including the daily habits themselves), see `quest_engine.py`
 - Confidence score (blended pace-vs-target + adherence) shown as a status chip, predicted goal date, a what-if simulator (`/simulate`)
 
 **Dashboard**

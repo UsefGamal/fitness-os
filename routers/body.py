@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from baseline import get_baseline
 from charting import build_diverging_bar_svg, build_line_svg
 from content.projections import week_start
 from database import get_session
@@ -45,6 +46,23 @@ def body_log_page(request: Request, edit: Optional[int] = None, session: Session
 
     edit_log = next((log for log in logs if log.id == edit), None) if edit else None
 
+    # Progress-to-goal chart: kg lost so far, ascending toward a dashed
+    # band for the goal_weight_low..goal_weight_high range — see main.py's
+    # dashboard chart for the same framing. Falls back to a plain weight
+    # trend if no starting weight is set yet in Settings.
+    baseline = get_baseline(session, date.today())
+    profile = baseline["profile"]
+    start_weight = baseline["start_weight"]
+    if start_weight is not None:
+        progress_series = [round(start_weight - w, 2) for w in weights]
+        goal_band = (
+            round(start_weight - profile.goal_weight_high_kg, 2),
+            round(start_weight - profile.goal_weight_low_kg, 2),
+        )
+        chart_svg = build_line_svg(progress_series, reference_band=goal_band, label_suffix=" kg lost")
+    else:
+        chart_svg = build_line_svg(weights)
+
     return templates.TemplateResponse(
         request,
         "body.html",
@@ -52,7 +70,8 @@ def body_log_page(request: Request, edit: Optional[int] = None, session: Session
             "request": request,
             "logged_in": True,
             "logs": list(reversed(logs)),
-            "chart_svg": build_line_svg(weights),
+            "chart_svg": chart_svg,
+            "has_goal_band": start_weight is not None,
             "weekly_delta_svg": build_diverging_bar_svg(weekly_deltas),
             "weekly_delta_rows": weekly_rows,
             "today": date.today().isoformat(),

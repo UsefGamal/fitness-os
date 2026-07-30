@@ -7,8 +7,9 @@
 
 {% if chart_svg %}
 <section class="card">
-  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Trend</h2>
+  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> {% if has_goal_band %}Progress to Goal{% else %}Trend{% endif %}</h2>
   <div class="chart-wrap">{{ chart_svg | safe }}</div>
+  {% if has_goal_band %}<p class="muted" style="font-size:11px;text-align:center">solid = kg lost so far · shaded band = goal range</p>{% endif %}
 </section>
 {% endif %}
 

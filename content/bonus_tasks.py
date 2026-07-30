@@ -1,8 +1,12 @@
 # Quest board: three cadences so it isn't just a daily checklist that
 # resets to zero every midnight.
-#   "daily"  — resets every day (checked against today's BonusLog rows)
-#   "weekly" — resets once per ISO week (checked against this week's rows)
-#   "once"   — completed a single time, ever, and then stays done
+#   "daily"  — the only cadence the user marks by hand (see routers/bonus.py's
+#              toggle_bonus). Resets every day, checked against today's rows.
+#   "weekly" — resets once per ISO week. System-evaluated by quest_engine.py
+#              from real logged activity (including the daily habits above),
+#              never toggled directly.
+#   "once"   — completed a single time, ever, and then stays done.
+#              System-evaluated by quest_engine.py, never toggled directly.
 BONUS_TASKS = [
     {"key": "extra_walk", "label": "Extra 20-30 min walk", "points": 10, "icon": "footprints", "frequency": "daily"},
     {"key": "extra_cardio", "label": "Extra padel/cardio session", "points": 15, "icon": "heart-pulse", "frequency": "daily"},

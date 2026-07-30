@@ -24,7 +24,7 @@
   {% endif %}
 </section>
 
-{% macro quest_list(tasks) %}
+{% macro quest_list(tasks, markable=True) %}
   {% for task in tasks %}
   <div class="quest-card{% if task.done %} quest-done{% endif %}">
     <svg class="icon quest-icon"><use href="#icon-{{ task.icon }}"/></svg>
@@ -32,26 +32,32 @@
       <div class="quest-label">{{ task.label }}</div>
       <div class="quest-points">+{{ task.points }} pts</div>
     </div>
+    {% if markable %}
     <form method="post" action="/bonus/toggle" class="js-toggle">
       <input type="hidden" name="task_key" value="{{ task.key }}">
       <button type="submit" class="meal-check-btn{% if task.done %} done{% endif %}" data-done-label="✓ Done" data-undone-label="Mark done">{% if task.done %}✓ Done{% else %}Mark done{% endif %}</button>
     </form>
+    {% else %}
+    <span class="meal-check-btn{% if task.done %} done{% endif %}" style="cursor:default" title="Tracked automatically from your logged activity">{% if task.done %}✓ Achieved{% else %}Not yet{% endif %}</span>
+    {% endif %}
   </div>
   {% endfor %}
 {% endmacro %}
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-star"/></svg> Milestones <span class="muted" style="font-weight:400;font-size:12px">— once, ever</span></h2>
-  {{ quest_list(once_tasks) }}
+  <p class="muted" style="font-size:12px;margin-top:-6px;margin-bottom:10px">Unlocked automatically once your logged data qualifies — nothing to mark here.</p>
+  {{ quest_list(once_tasks, markable=False) }}
 </section>
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-calendar"/></svg> This week's quests <span class="muted" style="font-weight:400;font-size:12px">— resets Monday</span></h2>
-  {{ quest_list(weekly_tasks) }}
+  <p class="muted" style="font-size:12px;margin-top:-6px;margin-bottom:10px">Evaluated from this week's logged activity (including your daily habits) — nothing to mark here.</p>
+  {{ quest_list(weekly_tasks, markable=False) }}
 </section>
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-sunrise"/></svg> Today's habits <span class="muted" style="font-weight:400;font-size:12px">— resets daily</span></h2>
-  {{ quest_list(daily_tasks) }}
+  {{ quest_list(daily_tasks, markable=True) }}
 </section>
 {% endblock %}

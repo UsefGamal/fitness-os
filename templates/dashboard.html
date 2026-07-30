@@ -88,7 +88,7 @@
     <p class="muted" style="font-size:13px;margin-top:6px">{{ goal_progress_pct }}% of the way from {{ start_weight }} kg to goal</p>
     {% if weight_chart_svg %}
     <div class="chart-wrap" style="margin-top:14px">{{ weight_chart_svg | safe }}</div>
-    <p class="muted" style="font-size:11px;text-align:center">solid = actual weight · dashed = goal</p>
+    <p class="muted" style="font-size:11px;text-align:center">solid = kg lost so far · shaded band = goal range</p>
     {% endif %}
   {% else %}
     <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
