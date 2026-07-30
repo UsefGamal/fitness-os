@@ -21,7 +21,7 @@ from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name
 from database import get_session
 from fitchef_sync import advance_sync, get_active_day, get_active_shopping_products, latest_sync, start_sync
-from models import HydrationLog, MealLog, Workout
+from models import HydrationLog, MealLog, MealPlanSync, Workout
 from validation import require_choice, require_range
 
 router = APIRouter()
@@ -354,5 +354,12 @@ def trigger_fitchef_sync(session: Session = Depends(get_session)):
     orphan its identifiers and quietly waste part of the monthly quota."""
     existing = latest_sync(session)
     if not existing or existing.status in ("complete", "error"):
-        start_sync(session)
+        try:
+            start_sync(session)
+        except Exception as exc:
+            # Never let a bad/missing credential or a transient FitChef
+            # outage 500 the page — show it on /more like any other sync
+            # failure instead.
+            session.add(MealPlanSync(status="error", error_detail=str(exc)[:300]))
+            session.commit()
     return RedirectResponse(url="/more?synced=1", status_code=303)
