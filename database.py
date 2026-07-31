@@ -9,7 +9,13 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fitness.db")
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
+# pool_pre_ping: Neon's serverless Postgres can close idle connections
+# server-side (auto-suspend), which SQLAlchemy's pool won't notice on its
+# own — the next query on that stale connection fails with "SSL connection
+# has been closed unexpectedly". A pre-ping does a cheap liveness check
+# before handing a pooled connection back out, transparently reconnecting
+# if it's dead, instead of surfacing the failure as a 500.
+engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args, pool_pre_ping=True)
 
 # Columns added to existing tables after their first deploy. SQLModel's
 # create_all() only creates missing tables, not missing columns on tables
