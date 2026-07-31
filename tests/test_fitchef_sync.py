@@ -26,10 +26,10 @@ def _fake_meal(meal_name, name, kcal_parts, alternatives=None):
     }
 
 
-def _fake_week_payload(identifier, label_prefix):
+def _fake_week_payload(identifier, label_prefix, day_count=7):
     slots = ["breakfast", "snack_morning", "lunch", "snack_afternoon", "dinner", "snack_evening"]
     days = []
-    for d in range(7):
+    for d in range(day_count):
         meals = [_fake_meal(slot, f"{label_prefix} {slot} {d}", (20, 15, 5, 3)) for slot in slots]
         days.append({"meals": meals, "nutritionBudget": {}, "score": 1, "timeSpent": 10, "price": 5, "restPrice": 1})
     return {
@@ -121,6 +121,43 @@ def test_advance_sync_completes_and_merges_14_days(stub_fitchef):
         products = json.loads(sync.products_json)
         egg = next(p for p in products if p["name"] == "Egg")
         assert egg["quantity"] == 24  # 12 + 12, merged across both weeks
+
+
+def test_advance_sync_handles_fewer_than_7_days_per_week(stub_fitchef):
+    """Regression guard for a real production IndexError: the merge/lookup
+    logic assumed FitChef always returns exactly 7 days per generation.
+    A real generation came back with fewer, and %14 indexing against a
+    shorter-than-14 plan crashed. Must merge and index by whatever length
+    actually came back, never a hardcoded 7/14."""
+    with Session(engine) as db:
+        sync = fitchef_sync.start_sync(db)
+        stub_fitchef[f"payload_{sync.week1_identifier}"] = _fake_week_payload(sync.week1_identifier, "W1", day_count=5)
+        sync = fitchef_sync.advance_sync(db, sync)
+        stub_fitchef[f"payload_{sync.week2_identifier}"] = _fake_week_payload(sync.week2_identifier, "W2", day_count=3)
+
+        sync = fitchef_sync.advance_sync(db, sync)
+        assert sync.status == "complete"
+
+        plan = json.loads(sync.plan_json)
+        assert len(plan) == 8  # 5 + 3, not 14
+        assert plan[-1]["is_refeed"] is True  # last day of week 2's actual days
+
+        # day_number way beyond the plan's length must never IndexError.
+        for day_number in (1, 8, 9, 14, 30, 100):
+            day = fitchef_sync.get_active_day(db, day_number)
+            assert day["meals"]
+
+
+def test_advance_sync_errors_when_both_weeks_come_back_empty(stub_fitchef):
+    with Session(engine) as db:
+        sync = fitchef_sync.start_sync(db)
+        stub_fitchef[f"payload_{sync.week1_identifier}"] = _fake_week_payload(sync.week1_identifier, "W1", day_count=0)
+        sync = fitchef_sync.advance_sync(db, sync)
+        stub_fitchef[f"payload_{sync.week2_identifier}"] = _fake_week_payload(sync.week2_identifier, "W2", day_count=0)
+
+        sync = fitchef_sync.advance_sync(db, sync)
+        assert sync.status == "error"
+        assert "no days" in sync.error_detail
 
 
 def test_advance_sync_marks_error_on_client_failure(stub_fitchef, monkeypatch):

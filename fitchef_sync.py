@@ -127,10 +127,20 @@ def _advance_week2(session: Session, sync: MealPlanSync, token: str) -> MealPlan
         return sync  # still generating
 
     payload1 = json.loads(sync.week1_json)
-    merged_days = [_map_fitchef_day(day, i + 1, is_refeed=False) for i, day in enumerate(payload1.get("days", [])[:7])]
+    # FitChef's actual day count per generation isn't guaranteed to be 7 —
+    # merge however many each call actually returned instead of assuming a
+    # fixed week length (a hardcoded [:7]/%14 here caused a production
+    # IndexError the first time a real generation came back short).
+    week1_days = payload1.get("days") or []
+    week2_days = payload2.get("days") or []
+    merged_days = [_map_fitchef_day(day, i + 1, is_refeed=False) for i, day in enumerate(week1_days)]
     merged_days += [
-        _map_fitchef_day(day, i + 8, is_refeed=(i == 6)) for i, day in enumerate(payload2.get("days", [])[:7])
+        _map_fitchef_day(day, i + len(week1_days) + 1, is_refeed=(i == len(week2_days) - 1))
+        for i, day in enumerate(week2_days)
     ]
+
+    if not merged_days:
+        return _mark_error(session, sync, "FitChef's completed generation contained no days")
 
     products = (payload1.get("products") or []) + (payload2.get("products") or [])
 
@@ -256,7 +266,9 @@ def get_active_day(session: Session, day_number_1_indexed: int) -> dict:
     if not sync or not sync.plan_json:
         return get_static_day(day_number_1_indexed)
     plan = json.loads(sync.plan_json)
-    idx = (day_number_1_indexed - 1) % 14
+    if not plan:
+        return get_static_day(day_number_1_indexed)
+    idx = (day_number_1_indexed - 1) % len(plan)
     return _build_synced_day(plan[idx])
 
 
