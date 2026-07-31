@@ -104,4 +104,13 @@ def fetch_mealplan(token: str, identifier: int) -> dict | None:
     if response.status_code == 410:
         raise FitChefError("This generation expired before it was fetched — try syncing again.")
     response.raise_for_status()
-    return response.json()
+    data = response.json()
+    # The docs describe the webhook payload as flat (top-level "days",
+    # "recipeHistory", etc.) and claim GET returns "the same shape" — in
+    # practice, GET nests all of that under a "result" key alongside
+    # status/created_at/completed_at wrapper fields the docs don't
+    # mention. Normalize here so callers never need to know about the
+    # discrepancy; falls back to the payload as-is if "result" isn't
+    # present, in case a different account tier really does return the
+    # documented flat shape.
+    return data.get("result", data)

@@ -18,6 +18,10 @@
     {% endfor %}
   </div>
 </section>
+{% else %}
+<section class="card">
+  <p class="muted">No shopping list available for the current plan yet.</p>
+</section>
 {% endfor %}
 
 <a class="back-link" href="/meals"><svg class="icon"><use href="#icon-chevron-left"/></svg> Back to meals</a>
