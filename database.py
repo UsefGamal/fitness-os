@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from sqlalchemy import inspect
 from sqlmodel import SQLModel, Session, create_engine, text
 
 load_dotenv()
@@ -31,9 +32,33 @@ _LIGHT_MIGRATIONS = [
 ]
 
 
+def _drop_stale_mealplansync_table() -> None:
+    """The reverted Spoonacular meal-sync feature used this exact table
+    name with a different schema (see git history around "Add
+    Spoonacular-backed meal plan sync" / its revert). `git revert` doesn't
+    touch the live database, and create_all() only creates *missing*
+    tables — it never alters an existing one — so the old columns were
+    silently left in place under the new FitChef-sync model's name,
+    causing UndefinedColumn errors on any query. One-time cleanup: if the
+    table exists but doesn't look like the current schema, drop it so
+    create_all() (called right after this) recreates it fresh. The old
+    data has zero value — it's leftover from a feature that was live only
+    briefly before being rolled back."""
+    try:
+        with engine.begin() as conn:
+            inspector = inspect(conn)
+            if "mealplansync" in inspector.get_table_names():
+                columns = {col["name"] for col in inspector.get_columns("mealplansync")}
+                if "requested_at" not in columns:
+                    conn.execute(text("DROP TABLE mealplansync"))
+    except Exception:
+        pass  # best-effort cleanup — a failure here shouldn't block startup
+
+
 def init_db() -> None:
     import models  # noqa: F401  (ensures models are registered before create_all)
 
+    _drop_stale_mealplansync_table()
     SQLModel.metadata.create_all(engine)
     run_light_migrations()
 

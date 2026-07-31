@@ -5,8 +5,10 @@ this is where a real production outage came from once (a SQLite-lenient
 import sqlite3
 
 from sqlalchemy import inspect
+from sqlmodel import SQLModel
 
-from database import DATABASE_URL, _LIGHT_MIGRATIONS, engine, run_light_migrations
+import models  # noqa: F401  (ensures models are registered before create_all)
+from database import DATABASE_URL, _LIGHT_MIGRATIONS, _drop_stale_mealplansync_table, engine, run_light_migrations
 
 
 def test_light_migrations_idempotent_and_add_missing_columns():
@@ -27,6 +29,27 @@ def test_light_migrations_idempotent_and_add_missing_columns():
     columns = {col["name"] for col in inspect(engine).get_columns("workout")}
     for expected in ("session_rpe", "is_deload", "pain_note", "result"):
         assert expected in columns
+
+
+def test_stale_mealplansync_table_from_old_schema_is_dropped_and_recreated():
+    """Regression guard for a real production outage: the reverted
+    Spoonacular meal-sync feature left a `mealplansync` table behind with
+    a different schema (no `requested_at` column). create_all() only
+    creates *missing* tables, so it silently kept the stale columns until
+    _drop_stale_mealplansync_table() started clearing it out first."""
+    raw_path = DATABASE_URL.replace("sqlite:///", "")
+    conn = sqlite3.connect(raw_path)
+    conn.execute("DROP TABLE IF EXISTS mealplansync")
+    conn.execute("CREATE TABLE mealplansync (id INTEGER PRIMARY KEY, spoonacular_meal_plan_id VARCHAR, synced_at DATE)")
+    conn.commit()
+    conn.close()
+
+    _drop_stale_mealplansync_table()  # should drop the old-shape table...
+    SQLModel.metadata.create_all(engine)  # ...so this recreates it with the current schema
+
+    columns = {col["name"] for col in inspect(engine).get_columns("mealplansync")}
+    assert "requested_at" in columns
+    assert "spoonacular_meal_plan_id" not in columns
 
 
 def test_light_migrations_never_use_sqlite_only_boolean_syntax():
