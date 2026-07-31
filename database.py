@@ -35,24 +35,33 @@ _LIGHT_MIGRATIONS = [
 def _drop_stale_mealplansync_table() -> None:
     """The reverted Spoonacular meal-sync feature used this exact table
     name with a different schema (see git history around "Add
-    Spoonacular-backed meal plan sync" / its revert). `git revert` doesn't
+    Spoonacular-backed meal plan sync" / its revert), plus a second table
+    (SyncedMealOption) that foreign-keys into it. `git revert` doesn't
     touch the live database, and create_all() only creates *missing*
     tables — it never alters an existing one — so the old columns were
     silently left in place under the new FitChef-sync model's name,
     causing UndefinedColumn errors on any query. One-time cleanup: if the
     table exists but doesn't look like the current schema, drop it so
-    create_all() (called right after this) recreates it fresh. The old
-    data has zero value — it's leftover from a feature that was live only
-    briefly before being rolled back."""
+    create_all() (called right after this) recreates it fresh. CASCADE is
+    required on Postgres — a plain DROP TABLE is blocked by
+    SyncedMealOption's foreign key — but isn't valid SQLite syntax, so
+    it's only added for non-SQLite databases. The old data has zero
+    value — it's leftover from a feature that was live only briefly
+    before being rolled back."""
     try:
         with engine.begin() as conn:
             inspector = inspect(conn)
             if "mealplansync" in inspector.get_table_names():
                 columns = {col["name"] for col in inspector.get_columns("mealplansync")}
                 if "requested_at" not in columns:
-                    conn.execute(text("DROP TABLE mealplansync"))
-    except Exception:
-        pass  # best-effort cleanup — a failure here shouldn't block startup
+                    cascade = "" if DATABASE_URL.startswith("sqlite") else " CASCADE"
+                    conn.execute(text(f"DROP TABLE mealplansync{cascade}"))
+                    print("database.py: dropped stale mealplansync table (old Spoonacular-era schema)")
+    except Exception as exc:
+        # Deliberately visible instead of silently swallowed — a failed
+        # cleanup here means the app comes back up but every meal-plan
+        # route keeps 500ing, so this needs to show up in the logs.
+        print(f"database.py: _drop_stale_mealplansync_table failed, leaving old table in place: {exc!r}")
 
 
 def init_db() -> None:
