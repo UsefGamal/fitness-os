@@ -6,6 +6,8 @@ def _valid_payload(**overrides):
         "goal_weight_high_kg": 80,
         "goal_date": "2027-01-01",
         "fitness_level": "intermediate",
+        "gender": "male",
+        "activity_level": "moderate",
         "start_weight_kg": 100,
     }
     payload.update(overrides)
@@ -46,5 +48,19 @@ def test_date_of_birth_in_future_rejected(auth_client):
 def test_height_out_of_range_rejected(auth_client):
     r = auth_client.post(
         "/settings", data=_valid_payload(height_cm=5), headers={"referer": "http://testserver/settings"}
+    )
+    assert "error=" in str(r.url)
+
+
+def test_invalid_gender_rejected(auth_client):
+    r = auth_client.post(
+        "/settings", data=_valid_payload(gender="robot"), headers={"referer": "http://testserver/settings"}
+    )
+    assert "error=" in str(r.url)
+
+
+def test_invalid_activity_level_rejected(auth_client):
+    r = auth_client.post(
+        "/settings", data=_valid_payload(activity_level="hyperactive"), headers={"referer": "http://testserver/settings"}
     )
     assert "error=" in str(r.url)

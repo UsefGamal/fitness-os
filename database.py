@@ -35,6 +35,8 @@ _LIGHT_MIGRATIONS = [
     "ALTER TABLE workout ADD COLUMN pain_note VARCHAR",
     "ALTER TABLE workoutset ADD COLUMN rpe FLOAT",
     "ALTER TABLE workout ADD COLUMN result VARCHAR",
+    "ALTER TABLE profile ADD COLUMN gender VARCHAR DEFAULT 'male'",
+    "ALTER TABLE profile ADD COLUMN activity_level VARCHAR DEFAULT 'moderate'",
 ]
 
 

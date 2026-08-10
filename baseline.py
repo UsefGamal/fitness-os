@@ -2,9 +2,9 @@ from datetime import date
 
 from sqlmodel import Session, select
 
+from content.meal_plan import PLAN_START_DATE
 from content.projections import linear_rate_kg_per_week, predicted_goal_date, target_rate_kg_per_week
 from models import BodyLog, Profile
-from routers.meals import PLAN_START_DATE
 
 
 def get_baseline(session: Session, today: date = None) -> dict:

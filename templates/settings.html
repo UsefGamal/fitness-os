@@ -23,8 +23,32 @@
         {% endfor %}
       </select>
     </label>
+    <label>Gender — used for the BMR/TDEE calorie calculation below
+      <select name="gender">
+        {% for g in genders %}
+        <option value="{{ g }}" {% if g == profile.gender %}selected{% endif %}>{{ g | capitalize }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Activity level — used for the same calculation
+      <select name="activity_level">
+        {% for level in activity_levels %}
+        <option value="{{ level }}" {% if level == profile.activity_level %}selected{% endif %}>{{ level | replace("_", " ") | capitalize }}</option>
+        {% endfor %}
+      </select>
+    </label>
     <label>Activity notes (optional) <input type="text" name="activity_notes" maxlength="300" value="{{ profile.activity_notes }}"></label>
     <button type="submit">Save</button>
   </form>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-target"/></svg> Your Calorie Target</h2>
+  <p class="muted" style="font-size:13px;margin-top:-4px">Calculated from your stats above (Mifflin-St Jeor BMR × activity level), with the deficit set to whatever pace is needed to hit your goal weight by your goal date.</p>
+  <p style="margin-top:10px">
+    <strong style="font-family:var(--font-mono);font-size:22px">{{ macro_targets.kcal }} kcal</strong>
+    <span class="muted">/ day</span>
+  </p>
+  <p class="muted" style="font-size:13px">{{ macro_targets.protein }}g protein &middot; {{ macro_targets.carbs }}g carbs &middot; {{ macro_targets.fat }}g fat &middot; {{ macro_targets.fiber }}g fiber</p>
 </section>
 {% endblock %}

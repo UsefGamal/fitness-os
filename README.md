@@ -144,7 +144,11 @@ Both digest endpoints:
 
 ## Data model
 
-Key tables (`models.py`): `Profile` (single row — stats/goal), `BodyLog`, `Workout` (`workout_type` ∈ gym/home/recovery/cardio/padel; `session_rpe`/`is_deload`/`pain_note`/`result`), `Exercise`, `WorkoutSet` (`rpe`), `ChecklistItemLog` (Home/Recovery), `MealLog` (`option_key`/`drink_key`), `HydrationLog`, `BonusLog`, `ReminderLog` (email dedup).
+Key tables (`models.py`): `Profile` (single row — stats/goal, including `gender`/`activity_level` for TDEE calculation), `BodyLog`, `Workout` (`workout_type` ∈ gym/home/recovery/cardio/padel; `session_rpe`/`is_deload`/`pain_note`/`result`), `Exercise`, `WorkoutSet` (`rpe`), `ChecklistItemLog` (Home/Recovery), `MealLog` (`option_key`/`drink_key`), `HydrationLog`, `BonusLog`, `ReminderLog` (email dedup), `MealPlanSync` (FitChef sync state).
+
+### Calorie/macro targeting
+
+`macro_targets.py`'s `get_macro_targets()` computes a real per-user daily target — Mifflin-St Jeor BMR (`content/tdee.py`) × an activity multiplier = TDEE, then a deficit derived from whatever pace is already needed to hit the profile's goal weight by its goal date (`baseline.py`'s `target_rate_kg_per_week`, capped to a sane 1200 kcal floor / 1000 kcal max daily deficit) — rather than a fixed "~1900-2050 kcal" constant or a generic "500 kcal/day" rule of thumb. Falls back to `content.meal_plan.MACRO_TARGETS` (the original static band) if there isn't enough profile data yet (no weight logged/set, or an out-of-range age).
 
 ### Migrations
 

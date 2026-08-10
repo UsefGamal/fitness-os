@@ -1,4 +1,11 @@
+from datetime import date
+
 from content.food_items import FOODS
+
+# Lives here (not routers/meals.py) so baseline.py and other non-router
+# modules can import it without a circular dependency — routers/meals.py
+# re-exports it for every other existing call site.
+PLAN_START_DATE = date(2026, 9, 1)  # day 1 of the rotation — real program start date
 
 MEAL_SLOTS = ["breakfast", "snack1", "lunch", "snack2", "dinner"]
 

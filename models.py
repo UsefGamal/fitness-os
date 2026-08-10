@@ -16,6 +16,8 @@ class Profile(SQLModel, table=True):
     activity_notes: str = "Data engineer, desk job. Padel 2x/week (1.5h)."
     fitness_level: str = "intermediate"
     start_weight_kg: Optional[float] = None
+    gender: str = "male"  # Mifflin-St Jeor input (see content/tdee.py) — no neutral default exists for this formula
+    activity_level: str = "moderate"  # TDEE multiplier tier (see content/tdee.py's ACTIVITY_MULTIPLIERS)
 
 
 class BodyLog(SQLModel, table=True):

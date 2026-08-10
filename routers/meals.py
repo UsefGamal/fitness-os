@@ -18,16 +18,16 @@ from content.food_items import (
     parse_shopping_unit,
 )
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
-from content.meal_plan import DRINK_OPTIONS, MACRO_TARGETS, MEAL_PLAN_14_DAY, MEAL_SLOTS, display_name
+from content.meal_plan import DRINK_OPTIONS, MEAL_PLAN_14_DAY, MEAL_SLOTS, PLAN_START_DATE, display_name
 from database import get_session
 from fitchef_sync import advance_sync, get_active_day, get_active_shopping_products, latest_sync, start_sync
+from macro_targets import get_macro_targets
 from models import HydrationLog, MealLog, MealPlanSync, Workout
 from validation import require_choice, require_range
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-PLAN_START_DATE = date(2026, 9, 1)  # day 1 of the rotation — real program start date
 HYDRATION_TARGET_ML = 3000
 HYDRATION_QUICK_ADD = [250, 500, 1000]
 TRAINING_WORKOUT_TYPES = ("gym", "home", "cardio")
@@ -108,6 +108,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     current = date.fromisoformat(view_date) if view_date else date.today()
     day_number = _day_number_for(current)
     plan = get_active_day(session, day_number)
+    macro_targets = get_macro_targets(session)
 
     logs = session.exec(select(MealLog).where(MealLog.log_date == current)).all()
     logs_by_slot = {log.meal_slot: log for log in logs}
@@ -141,10 +142,10 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
     hydration_ml = hydration_log.ml if hydration_log else 0
 
     macro_meters = [
-        build_meter_html(eaten_totals["protein"], MACRO_TARGETS["protein"], "Protein", "g"),
-        build_meter_html(eaten_totals["carbs"], MACRO_TARGETS["carbs"], "Carbs", "g"),
-        build_meter_html(eaten_totals["fat"], MACRO_TARGETS["fat"], "Fat", "g"),
-        build_meter_html(eaten_totals["fiber"], MACRO_TARGETS["fiber"], "Fiber", "g"),
+        build_meter_html(eaten_totals["protein"], macro_targets["protein"], "Protein", "g"),
+        build_meter_html(eaten_totals["carbs"], macro_targets["carbs"], "Carbs", "g"),
+        build_meter_html(eaten_totals["fat"], macro_targets["fat"], "Fat", "g"),
+        build_meter_html(eaten_totals["fiber"], macro_targets["fiber"], "Fiber", "g"),
     ]
     hydration_meter = build_meter_html(hydration_ml, HYDRATION_TARGET_ML, "Water", "ml")
 
@@ -165,7 +166,7 @@ def meals_page(request: Request, view_date: str = None, session: Session = Depen
         if not any(totals.values()):
             level, title = 0, f"{d.isoformat()} — no meals logged"
         else:
-            pct_avg = sum(min(100, totals[m] / MACRO_TARGETS[m] * 100) for m in totals) / 4
+            pct_avg = sum(min(100, totals[m] / macro_targets[m] * 100) for m in totals) / 4
             level, title = min(4, int(pct_avg // 25)), f"{d.isoformat()} — {round(pct_avg)}% of macro targets"
         heatmap_cells.append({"date": d.isoformat(), "level": level, "title": title})
     adherence_heatmap = build_heatmap_html(heatmap_cells)

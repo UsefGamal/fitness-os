@@ -7,7 +7,9 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from content.tdee import ACTIVITY_LEVELS, GENDERS
 from database import get_session
+from macro_targets import get_macro_targets
 from models import Profile
 from validation import ValidationError, require_choice, require_max_length, require_range
 
@@ -28,6 +30,9 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
             "logged_in": True,
             "profile": profile,
             "fitness_levels": FITNESS_LEVELS,
+            "genders": GENDERS,
+            "activity_levels": ACTIVITY_LEVELS,
+            "macro_targets": get_macro_targets(session),
             "saved": request.query_params.get("saved") == "1",
             "today": date.today().isoformat(),
         },
@@ -43,6 +48,8 @@ def update_settings(
     goal_date: date = Form(...),
     activity_notes: str = Form(""),
     fitness_level: str = Form(...),
+    gender: str = Form(...),
+    activity_level: str = Form(...),
     start_weight_kg: Optional[float] = Form(None),
     session: Session = Depends(get_session),
 ):
@@ -53,6 +60,8 @@ def update_settings(
     if goal_weight_low_kg > goal_weight_high_kg:
         raise ValidationError("Goal weight (low) can't be higher than goal weight (high).")
     require_choice(fitness_level, FITNESS_LEVELS, "Fitness level")
+    require_choice(gender, GENDERS, "Gender")
+    require_choice(activity_level, ACTIVITY_LEVELS, "Activity level")
     require_max_length(activity_notes, 300, "Activity notes")
     today = date.today()
     if date_of_birth >= today:
@@ -68,6 +77,8 @@ def update_settings(
     profile.goal_date = goal_date
     profile.activity_notes = activity_notes
     profile.fitness_level = fitness_level
+    profile.gender = gender
+    profile.activity_level = activity_level
     profile.start_weight_kg = start_weight_kg
     session.add(profile)
     session.commit()

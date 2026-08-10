@@ -97,7 +97,14 @@ def test_advance_sync_transitions_to_week2_with_recipe_history_and_refeed(stub_f
 
         week2_call = stub_fitchef["request_mealplan"][1]
         assert week2_call["recipe_history"] == result.recipe_history
-        assert week2_call["configured_days"] == [{"validOn": [6], "nutrition": fitchef_sync.REFEED_MACROS}]
+        refeed = week2_call["configured_days"][0]["nutrition"]
+        normal = week2_call
+        # Refeed keeps protein equal to the normal target and only bumps
+        # carbs/fat -- same relationship regardless of what the dynamic
+        # per-user target actually computes to.
+        assert refeed["protein"] == normal["protein"]
+        assert refeed["carbohydrate"] == normal["carbohydrate"] + fitchef_sync.REFEED_EXTRA_CARBS_G
+        assert refeed["fat"] == normal["fat"] + fitchef_sync.REFEED_EXTRA_FAT_G
 
 
 def test_advance_sync_completes_and_merges_14_days(stub_fitchef):

@@ -24,9 +24,10 @@ from datetime import datetime
 import httpx
 from sqlmodel import Session, select
 
-from content.meal_plan import MACRO_TARGETS, MEAL_SLOT_WINDOWS, MEAL_SLOTS
+from content.meal_plan import MEAL_SLOT_WINDOWS, MEAL_SLOTS
 from content.meal_plan import get_day as get_static_day
 from fitchef_client import FitChefError, fetch_mealplan, get_access_token, request_mealplan
+from macro_targets import get_macro_targets
 from models import MealPlanSync
 
 # Only pork products FitChef's catalog exposes an excludable set for (see
@@ -34,10 +35,27 @@ from models import MealPlanSync
 # the closest available lever, not a provable guarantee.
 PORK_EXCLUDED_SETS = ["bacon", "ham"]
 
-NORMAL_MACROS = {"carbohydrate": MACRO_TARGETS["carbs"], "protein": MACRO_TARGETS["protein"], "fat": MACRO_TARGETS["fat"]}
-# Day 14 (last day of week 2, validOn index 6) gets a bumped target so the
-# existing refeed-day pattern continues under synced plans too.
-REFEED_MACROS = {"carbohydrate": 220, "protein": 185, "fat": 80}
+# Day 14's refeed bump, in kcal above the normal target — same protein
+# (preserve muscle), extra carbs/fat for a genuine higher-calorie day.
+REFEED_EXTRA_CARBS_G = 70
+REFEED_EXTRA_FAT_G = 15
+
+
+def _fitchef_macro_request(session: Session) -> dict:
+    """Real per-user macro targets (see macro_targets.get_macro_targets),
+    translated to the field names FitChef's request body expects."""
+    targets = get_macro_targets(session)
+    return {"carbohydrate": targets["carbs"], "protein": targets["protein"], "fat": targets["fat"]}
+
+
+def _fitchef_refeed_macros(session: Session) -> dict:
+    normal = _fitchef_macro_request(session)
+    return {
+        "carbohydrate": normal["carbohydrate"] + REFEED_EXTRA_CARBS_G,
+        "protein": normal["protein"],
+        "fat": normal["fat"] + REFEED_EXTRA_FAT_G,
+    }
+
 
 # breakfast/lunch/dinner map 1:1; FitChef's two snack moments map onto ours.
 # snack_evening has no equivalent slot in this app and is dropped.
@@ -63,11 +81,12 @@ def _latest_complete_sync(session: Session) -> MealPlanSync | None:
 
 def start_sync(session: Session) -> MealPlanSync:
     token = get_access_token()
+    macros = _fitchef_macro_request(session)
     identifier = request_mealplan(
         token,
-        carbohydrate=NORMAL_MACROS["carbohydrate"],
-        protein=NORMAL_MACROS["protein"],
-        fat=NORMAL_MACROS["fat"],
+        carbohydrate=macros["carbohydrate"],
+        protein=macros["protein"],
+        fat=macros["fat"],
         excluded_sets=PORK_EXCLUDED_SETS,
     )
     sync = MealPlanSync(status="week1_pending", week1_identifier=identifier)
@@ -104,14 +123,15 @@ def _advance_week1(session: Session, sync: MealPlanSync, token: str) -> MealPlan
     history = json.dumps(payload.get("recipeHistory", {}))
     sync.recipe_history = history
 
+    macros = _fitchef_macro_request(session)
     identifier2 = request_mealplan(
         token,
-        carbohydrate=NORMAL_MACROS["carbohydrate"],
-        protein=NORMAL_MACROS["protein"],
-        fat=NORMAL_MACROS["fat"],
+        carbohydrate=macros["carbohydrate"],
+        protein=macros["protein"],
+        fat=macros["fat"],
         excluded_sets=PORK_EXCLUDED_SETS,
         recipe_history=history,
-        configured_days=[{"validOn": [6], "nutrition": REFEED_MACROS}],
+        configured_days=[{"validOn": [6], "nutrition": _fitchef_refeed_macros(session)}],
     )
     sync.week2_identifier = identifier2
     sync.status = "week2_pending"
