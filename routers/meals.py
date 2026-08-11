@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -20,7 +20,11 @@ from content.food_items import (
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MEAL_PLAN_14_DAY, MEAL_SLOTS, PLAN_START_DATE, display_name
 from database import get_session
-from fitchef_sync import advance_sync, get_active_day, get_active_shopping_products, latest_sync, start_sync
+from edamam_sync import get_active_day, get_active_shopping_products, is_pending_stale, run_sync_in_background
+from edamam_sync import latest_sync as latest_edamam_sync
+from edamam_sync import start_sync as start_edamam_sync
+from fitchef_sync import advance_sync, latest_sync
+from fitchef_sync import start_sync as start_fitchef_sync
 from macro_targets import get_macro_targets
 from models import HydrationLog, MealLog, MealPlanSync, Workout
 from validation import require_choice, require_range
@@ -366,11 +370,26 @@ def trigger_fitchef_sync(session: Session = Depends(get_session)):
     existing = latest_sync(session)
     if not existing or existing.status in ("complete", "error"):
         try:
-            start_sync(session)
+            start_fitchef_sync(session)
         except Exception as exc:
             # Never let a bad/missing credential or a transient FitChef
             # outage 500 the page — show it on /more like any other sync
             # failure instead.
             session.add(MealPlanSync(status="error", error_detail=str(exc)[:300]))
             session.commit()
+    return RedirectResponse(url="/more?synced=1", status_code=303)
+
+
+@router.post("/meals/edamam-sync", dependencies=[Depends(require_login)])
+def trigger_edamam_sync(background_tasks: BackgroundTasks, session: Session = Depends(get_session)):
+    """Edamam's real rate limit needs retries with backoff to reliably
+    complete a sync (see edamam_client.py), which can take over a minute —
+    too long to block this request/response cycle. start_sync() creates a
+    'pending' row and returns immediately; the real work runs in the
+    background and /more picks up the result on a later page load, same
+    UX pattern as FitChef's async job polling."""
+    existing = latest_edamam_sync(session)
+    if not existing or existing.status in ("complete", "error") or is_pending_stale(existing):
+        sync = start_edamam_sync(session)
+        background_tasks.add_task(run_sync_in_background, sync.id)
     return RedirectResponse(url="/more?synced=1", status_code=303)

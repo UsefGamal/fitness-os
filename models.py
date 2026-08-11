@@ -121,3 +121,23 @@ class MealPlanSync(SQLModel, table=True):
     plan_json: Optional[str] = None  # final merged 14-day plan, set once complete
     products_json: Optional[str] = None  # merged shopping-list products, set once complete
     error_detail: Optional[str] = None
+
+
+class EdamamPlanSync(SQLModel, table=True):
+    """One row per Edamam sync. Recipe Search's real per-account rate
+    limit turned out to be much tighter and less predictable than
+    documented (isolated calls succeed instantly; calls even 15-20s apart
+    still sometimes 429) — retries with backoff are necessary and can
+    make a sync take a couple of minutes, so this runs as a FastAPI
+    background task rather than blocking the request/response cycle.
+    status walks pending -> complete (or -> error). Only the most recent
+    'complete' row is read for meal content (see
+    edamam_sync.get_active_day); older rows are kept only as history."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requested_at: datetime = Field(default_factory=datetime.utcnow)
+    synced_at: Optional[datetime] = None
+    status: str = "pending"  # pending | complete | error
+    plan_json: Optional[str] = None
+    products_json: Optional[str] = None
+    error_detail: Optional[str] = None

@@ -144,7 +144,13 @@ Both digest endpoints:
 
 ## Data model
 
-Key tables (`models.py`): `Profile` (single row — stats/goal, including `gender`/`activity_level` for TDEE calculation), `BodyLog`, `Workout` (`workout_type` ∈ gym/home/recovery/cardio/padel; `session_rpe`/`is_deload`/`pain_note`/`result`), `Exercise`, `WorkoutSet` (`rpe`), `ChecklistItemLog` (Home/Recovery), `MealLog` (`option_key`/`drink_key`), `HydrationLog`, `BonusLog`, `ReminderLog` (email dedup), `MealPlanSync` (FitChef sync state).
+Key tables (`models.py`): `Profile` (single row — stats/goal, including `gender`/`activity_level` for TDEE calculation), `BodyLog`, `Workout` (`workout_type` ∈ gym/home/recovery/cardio/padel; `session_rpe`/`is_deload`/`pain_note`/`result`), `Exercise`, `WorkoutSet` (`rpe`), `ChecklistItemLog` (Home/Recovery), `MealLog` (`option_key`/`drink_key`), `HydrationLog`, `BonusLog`, `ReminderLog` (email dedup), `MealPlanSync` (FitChef sync state, secondary), `EdamamPlanSync` (Edamam sync state, primary).
+
+### Meal plan sync (Edamam, primary)
+
+`/more` has a "Sync now" button that builds a real 14-day plan from Edamam's Recipe Search API (`edamam_sync.py`, `edamam_client.py`) — Mediterranean-leaning, pork/alcohol/shellfish-free, macro targets from `macro_targets.get_macro_targets()`. Edamam's real per-account rate limit is much tighter and less predictable than documented (an isolated call always succeeds; calls even 15-20s apart can still 429), so `edamam_client.search_recipes()` retries on 429 with backoff, and the sync itself runs as a FastAPI background task (`EdamamPlanSync.status`: pending → complete/error) rather than blocking the request — a full sync can take a couple of minutes. `edamam_sync.is_pending_stale()` guards against an orphaned 'pending' row (e.g. a server restart mid-sync) permanently blocking future syncs.
+
+FitChef (`fitchef_sync.py`) is kept as a secondary, collapsed option on `/more` — its free tier only ever returned sandbox/sample data ("Not for production use") in testing, so it's not relied on, but `get_active_day()`/`get_active_shopping_products()` fall through to it (which itself falls back to the static plan) if no Edamam sync is active. Priority: Edamam → FitChef → static.
 
 ### Calorie/macro targeting
 

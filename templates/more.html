@@ -4,13 +4,49 @@
 <h1><svg class="icon"><use href="#icon-dots"/></svg> More</h1>
 
 <section class="card">
-  <h2><svg class="icon"><use href="#icon-utensils"/></svg> FitChef Meal Plan Sync</h2>
+  <h2><svg class="icon"><use href="#icon-utensils"/></svg> Meal Plan Sync</h2>
   {% if just_synced %}
   <p style="color:var(--accent);font-size:13px;display:flex;align-items:center;gap:6px;margin-top:-4px">
-    <svg class="icon icon-fill"><use href="#icon-check"/></svg> Sync started — generation runs in the background and can take a few minutes. Reload this page to check progress.
+    <svg class="icon icon-fill"><use href="#icon-check"/></svg> Sync request handled — see status below.
   </p>
   {% endif %}
 
+  {% if not edamam_sync %}
+    <p class="muted" style="font-size:13px">Not synced yet — meals and the shopping list are using the built-in static plan.</p>
+  {% elif edamam_sync.status == "pending" and edamam_sync_stale %}
+    <p style="color:var(--danger);font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon"><use href="#icon-alert"/></svg> This sync stalled (requested {{ edamam_sync.requested_at.strftime('%b %d, %H:%M') }} and never finished — likely a server restart mid-sync). Try again below.
+    </p>
+  {% elif edamam_sync.status == "pending" %}
+    <p style="font-size:14px;display:flex;align-items:center;gap:8px">
+      <svg class="icon" style="width:16px;height:16px;color:var(--gold)"><use href="#icon-activity"/></svg>
+      Generating your new 14-day plan…
+    </p>
+    <p class="muted" style="font-size:12px;margin-top:4px">Requested {{ edamam_sync.requested_at.strftime('%b %d, %H:%M') }} — Edamam's real rate limit needs retries with backoff, so this can take a couple of minutes. Reload this page to check progress.</p>
+  {% elif edamam_sync.status == "error" %}
+    <p style="color:var(--danger);font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon"><use href="#icon-alert"/></svg> Sync failed: {{ edamam_sync.error_detail }}
+    </p>
+  {% elif edamam_sync.status == "complete" %}
+    <p style="font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon icon-fill" style="color:var(--accent)"><use href="#icon-check"/></svg>
+      Last synced {{ edamam_sync.synced_at.strftime('%b %d, %H:%M') }} — meals and the shopping list are using this plan.
+    </p>
+  {% endif %}
+
+  {% if not edamam_sync or edamam_sync.status in ("complete", "error") or edamam_sync_stale %}
+  <form method="post" action="/meals/edamam-sync" style="margin-top:10px">
+    <button type="submit" class="meal-check-btn">
+      {% if edamam_sync and edamam_sync.status == "complete" %}Sync again (new 14 days){% elif edamam_sync and (edamam_sync.status == "error" or edamam_sync_stale) %}Try again{% else %}Sync now{% endif %}
+    </button>
+  </form>
+  {% endif %}
+  <p class="muted" style="font-size:11px;margin-top:8px">Mediterranean-leaning, high-protein, excludes pork/alcohol/shellfish. Real recipes, not sample data — can take a couple of minutes due to Edamam's rate limit.</p>
+</section>
+
+<details class="card">
+  <summary style="cursor:pointer;list-style:none"><h2 style="display:inline-flex;align-items:center;gap:8px;margin:0"><svg class="icon"><use href="#icon-utensils"/></svg> FitChef Sync (secondary, sandbox-limited)</h2></summary>
+  <div style="margin-top:10px">
   {% if not fitchef_sync %}
     <p class="muted" style="font-size:13px">Not synced yet — meals and the shopping list are using the built-in static plan.</p>
   {% elif fitchef_sync.status in ("week1_pending", "week2_pending") %}
@@ -37,8 +73,9 @@
     </button>
   </form>
   {% endif %}
-  <p class="muted" style="font-size:11px;margin-top:8px">Excludes pork (bacon/ham); no alcohol in FitChef's catalog. Uses a small share of the account's monthly generation quota each time.</p>
-</section>
+  <p class="muted" style="font-size:11px;margin-top:8px">Excludes pork (bacon/ham); no alcohol in FitChef's catalog. Uses a small share of the account's monthly generation quota each time. Its free tier has only returned sample/demo data in testing — kept here in case that changes.</p>
+  </div>
+</details>
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-wrench"/></svg> Plan & Tools</h2>

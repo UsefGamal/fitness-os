@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from content.eating_out_guide import EATING_OUT_TIPS
 from content.gym_program import next_program_day
-from fitchef_sync import get_active_day
+from edamam_sync import get_active_day
 from routers.meals import PLAN_START_DATE, SLOT_LABELS
 
 # Same palette as static/style.css's dark theme — kept in sync by hand since

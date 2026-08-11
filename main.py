@@ -35,6 +35,7 @@ from content.projections import (
     week_start as get_week_start,
 )
 from database import engine, get_session, init_db
+import edamam_sync
 import fitchef_sync
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
 from quest_engine import sync_system_quests
@@ -200,16 +201,19 @@ def logout(request: Request):
 
 @app.get("/more", dependencies=[Depends(require_login)])
 def more_page(request: Request, session: Session = Depends(get_session)):
-    sync = fitchef_sync.latest_sync(session)
-    if sync and sync.status not in ("complete", "error"):
-        sync = fitchef_sync.advance_sync(session, sync)
+    fitchef_sync_status = fitchef_sync.latest_sync(session)
+    if fitchef_sync_status and fitchef_sync_status.status not in ("complete", "error"):
+        fitchef_sync_status = fitchef_sync.advance_sync(session, fitchef_sync_status)
+    edamam_sync_status = edamam_sync.latest_sync(session)
     return templates.TemplateResponse(
         request,
         "more.html",
         {
             "request": request,
             "logged_in": True,
-            "fitchef_sync": sync,
+            "fitchef_sync": fitchef_sync_status,
+            "edamam_sync": edamam_sync_status,
+            "edamam_sync_stale": bool(edamam_sync_status and edamam_sync.is_pending_stale(edamam_sync_status)),
             "just_synced": request.query_params.get("synced") == "1",
         },
     )
@@ -416,7 +420,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     for i in range(7):
         day_date = week_start + timedelta(days=i)
         day_number = (day_date - PLAN_START_DATE).days + 1
-        meal_day = fitchef_sync.get_active_day(session, day_number)
+        meal_day = edamam_sync.get_active_day(session, day_number)
         day_cards.append(
             {
                 "date": day_date,
