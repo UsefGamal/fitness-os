@@ -189,19 +189,39 @@ def _mark_error(session: Session, sync: EdamamPlanSync, detail: str) -> None:
 
 
 def _build_shopping_list(days: list[dict]) -> list[dict]:
-    """Edamam's ingredientLines are free-text per recipe (e.g. "4 boneless
-    skinless chicken breasts") — there's no structured per-product
-    aggregation like FitChef's products[] gave us, so this is a
-    deduplicated flat list of ingredient lines actually used across the
-    plan, not summed quantities. Slightly less tidy than the static
-    plan's shopping list, but every line is real."""
-    seen = {}
+    """Aggregates by Edamam's own food_id (falls back to the normalized
+    food name if a foodId is missing) — this is what actually merges "1
+    clove garlic" / "2 cloves garlic" / "4 garlic cloves" from different
+    recipes into one line, instead of listing each recipe's exact
+    wording separately (the original bug: this used to aggregate on raw
+    ingredientLines text, where near-identical phrasing never matched).
+    Summing weight_g gives one consistent unit across recipes that
+    phrase quantities differently; "category" comes straight from
+    Edamam's own foodCategory, so the list is actually grouped instead
+    of one flat wall of text."""
+    merged: dict[str, dict] = {}
     for day in days:
         for slot_meals in day["meals"].values():
             for option in (slot_meals["option_a"], slot_meals["option_b"]):
-                for line in option["ingredients"]:
-                    seen[line] = seen.get(line, 0) + 1
-    return [{"name": name, "quantity": count} for name, count in sorted(seen.items())]
+                for ing in option.get("structured_ingredients", []):
+                    key = ing.get("food_id") or ing["food"]
+                    entry = merged.setdefault(
+                        key, {"name": ing["food"], "category": ing["category"], "weight_g": 0.0, "count": 0}
+                    )
+                    if ing.get("weight_g"):
+                        entry["weight_g"] += ing["weight_g"]
+                    entry["count"] += 1
+
+    products = []
+    for item in merged.values():
+        if item["weight_g"] >= 1000:
+            qty = f"{round(item['weight_g'] / 1000, 1)} kg"
+        elif item["weight_g"] > 0:
+            qty = f"{round(item['weight_g'])} g"
+        else:  # some foods (e.g. "salt to taste") never carry a weight — fall back to a use-count
+            qty = f"×{item['count']}"
+        products.append({"name": item["name"].title(), "category": item["category"], "quantity": qty})
+    return sorted(products, key=lambda p: (p["category"], p["name"]))
 
 
 def _build_synced_day(stored_day: dict) -> dict:

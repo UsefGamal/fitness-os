@@ -84,7 +84,19 @@ def search_recipes(
 def normalize_recipe(recipe: dict) -> dict:
     """Recipe macros/calories are reported for the *whole recipe* — divide
     by yield (servings) to get the per-serving numbers this app actually
-    tracks everywhere else."""
+    tracks everywhere else.
+
+    Two different ingredient representations are kept for two different
+    jobs: "ingredients" (Edamam's ingredientLines — exact per-recipe
+    phrasing like "4 boneless, skinless organic chicken breasts") is for
+    *display* on /meals, where the recipe's own wording is what you want
+    when cooking. "structured_ingredients" (Edamam's parsed ingredients[]
+    — normalized food name, foodCategory, weight in grams, a stable
+    foodId) is for the *shopping list*, where "1 clove garlic" / "2
+    cloves garlic" / "4 garlic cloves" across different recipes need to
+    merge into one real line instead of three near-duplicate ones. Using
+    ingredientLines for both was the original bug — see edamam_sync.py's
+    _build_shopping_list()."""
     servings = recipe.get("yield") or 1
     nutrients = recipe.get("totalNutrients", {})
 
@@ -97,6 +109,16 @@ def normalize_recipe(recipe: dict) -> dict:
         "url": recipe.get("url"),
         "uri": recipe.get("uri"),
         "ingredients": recipe.get("ingredientLines", []),
+        "structured_ingredients": [
+            {
+                "food": ing["food"],
+                "food_id": ing.get("foodId"),
+                "category": ing.get("foodCategory") or "Other",
+                "weight_g": ing.get("weight"),
+            }
+            for ing in recipe.get("ingredients", [])
+            if ing.get("food")  # unparsed lines (section headers like "For the salad:") have no food match
+        ],
         "kcal": round(per_serving("ENERC_KCAL")),
         "protein": round(per_serving("PROCNT"), 1),
         "carbs": round(per_serving("CHOCDF"), 1),

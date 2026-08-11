@@ -285,30 +285,34 @@ def shopping_list_page(request: Request, session: Session = Depends(get_session)
 
     products = get_active_shopping_products(session)
     if products is not None:
-        # A synced plan is active. FitChef's aggregated list isn't
-        # categorized like our own FOODS catalog (that needs its full
-        # product taxonomy, not exposed in the webhook payload) — one
-        # flat, alphabetized list instead. If the response didn't include
-        # any products at all (seen on the sandbox tier's sample data),
-        # categories stays empty and the template shows a plain "no
-        # shopping list yet" message — falling back to the *static* plan's
-        # shopping list here would be actively misleading, since it
-        # wouldn't match the synced meals actually being shown on /meals.
-        categories = (
-            [
-                {
-                    "name": "Shopping List",
-                    "foods": sorted(
-                        ({"name": p.get("name", "?"), "qty": f"×{p.get('quantity', 1)}"} for p in products),
-                        key=lambda x: x["name"],
-                    ),
-                    "color": "var(--accent)",
-                    "icon": "list",
-                }
-            ]
-            if products
-            else []
-        )
+        # A synced plan is active. Edamam's products carry a real
+        # "category" (its own foodCategory, e.g. "Poultry") and a
+        # pre-formatted "quantity" string (already summed to kg/g — see
+        # edamam_sync._build_shopping_list); FitChef's older shape has
+        # neither, so both fall back sensibly here: ungrouped items land
+        # in one "Shopping List" bucket, and a bare numeric quantity gets
+        # a "×" prefix like the static plan's counts do. If the response
+        # didn't include any products at all (seen on FitChef's sandbox
+        # sample data), categories stays empty and the template shows a
+        # plain "no shopping list yet" message — falling back to the
+        # *static* plan's shopping list here would be actively
+        # misleading, since it wouldn't match the synced meals actually
+        # being shown on /meals.
+        by_category: dict[str, list[dict]] = defaultdict(list)
+        for p in products:
+            qty = p.get("quantity", 1)
+            qty_display = qty if isinstance(qty, str) else f"×{qty}"
+            by_category[p.get("category") or "Shopping List"].append({"name": p.get("name", "?"), "qty": qty_display})
+
+        categories = [
+            {
+                "name": cat,
+                "foods": sorted(items, key=lambda x: x["name"]),
+                "color": "var(--accent)",
+                "icon": "list",
+            }
+            for cat, items in sorted(by_category.items())
+        ]
         return templates.TemplateResponse(
             request,
             "shopping_list.html",

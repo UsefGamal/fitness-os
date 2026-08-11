@@ -15,13 +15,21 @@ from edamam_client import EdamamError
 from models import EdamamPlanSync
 
 
-def _fake_recipe(uri, name, kcal, protein, carbs, fat, fiber, servings=1):
+def _fake_recipe(uri, name, kcal, protein, carbs, fat, fiber, servings=1, ingredients=None):
+    if ingredients is None:
+        # A default single ingredient distinct per recipe (by uri) so
+        # tests that don't care about ingredient merging still exercise
+        # the real structured-ingredient path end to end.
+        ingredients = [
+            {"text": f"1 unit {name}", "food": name.lower(), "foodId": f"food_{uri}", "foodCategory": "Other", "weight": 100.0}
+        ]
     return {
         "uri": uri,
         "label": name,
         "url": f"https://example.com/{uri}",
         "yield": servings,
         "ingredientLines": [f"1 serving of {name}"],
+        "ingredients": ingredients,
         "totalNutrients": {
             "ENERC_KCAL": {"quantity": kcal * servings, "unit": "kcal"},
             "PROCNT": {"quantity": protein * servings, "unit": "g"},
@@ -83,12 +91,54 @@ def test_run_sync_produces_14_days_with_2_options_each(stub_edamam):
         assert plan[0]["is_refeed"] is False
 
 
-def test_run_sync_builds_shopping_list_from_ingredient_lines(stub_edamam):
+def test_run_sync_builds_shopping_list_with_real_categories(stub_edamam):
     with Session(engine) as db:
         sync = _run_full_sync(db)
         products = json.loads(sync.products_json)
         assert len(products) > 0
-        assert all("name" in p and "quantity" in p for p in products)
+        assert all("name" in p and "quantity" in p and "category" in p for p in products)
+        # Every fake recipe was tagged "Other" — the field is real Edamam
+        # foodCategory data, not a placeholder, just uninteresting in this stub.
+        assert all(p["category"] == "Other" for p in products)
+
+
+def test_shopping_list_merges_same_ingredient_across_different_recipes():
+    """Regression guard for the actual bug reported: "1 garlic clove" /
+    "2 cloves garlic" / "4 garlic cloves" from different recipes were
+    listed as separate near-duplicate lines because aggregation used to
+    key on the raw ingredientLines text. Aggregating on Edamam's own
+    foodId must merge them into one line with a summed weight instead.
+
+    Tests _build_shopping_list() directly against a hand-built one-day
+    plan rather than through a full 14-day sync — the real pipeline
+    cycles a small recipe pool across 5 slots x 14 days x 2 options, so
+    the same ingredient legitimately gets counted many times over (each
+    repeat of a recipe needs its ingredients again); that multiplication
+    would make the expected sum here a moving target unrelated to what
+    this test actually checks."""
+    garlic_a = {"text": "1 clove garlic", "food": "garlic", "foodId": "food_garlic", "foodCategory": "Vegetables", "weight": 5.0}
+    garlic_b = {"text": "4 garlic cloves", "food": "garlic", "foodId": "food_garlic", "foodCategory": "Vegetables", "weight": 20.0}
+    unparsed_header = {"text": "For the salad:"}  # no "food" key -- must be dropped, not shown as junk
+
+    from edamam_client import normalize_recipe
+
+    option_a = normalize_recipe(_fake_recipe("r1", "Recipe One", 400, 30, 40, 12, 5, ingredients=[garlic_a, unparsed_header]))
+    option_b = normalize_recipe(_fake_recipe("r2", "Recipe Two", 400, 30, 40, 12, 5, ingredients=[garlic_b]))
+    fake_days = [
+        {
+            "day_index": 1,
+            "label": "Test Day",
+            "is_refeed": False,
+            "meals": {"breakfast": {"option_a": option_a, "option_b": option_b}},
+        }
+    ]
+
+    products = edamam_sync._build_shopping_list(fake_days)
+    garlic_entries = [p for p in products if p["name"] == "Garlic"]
+    assert len(garlic_entries) == 1  # merged, not two near-duplicate lines
+    assert garlic_entries[0]["quantity"] == "25 g"  # 5g + 20g summed
+    assert garlic_entries[0]["category"] == "Vegetables"
+    assert not any("For the salad" in p["name"] for p in products)  # junk header dropped
 
 
 def test_day_label_comes_from_the_lunch_recipe_name(stub_edamam):
