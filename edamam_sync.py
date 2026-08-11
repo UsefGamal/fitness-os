@@ -164,9 +164,8 @@ def run_sync_in_background(sync_id: int) -> None:
                     idx_a = (day_index - 1) % len(pool)
                     idx_b = (day_index - 1 + len(pool) // 2 or 1) % len(pool)
                     meals[slot] = {"option_a": pool[idx_a], "option_b": pool[idx_b]}
-                days.append(
-                    {"day_index": day_index, "label": "Edamam Day", "is_refeed": is_refeed, "meals": meals}
-                )
+                label = meals.get("lunch", {}).get("option_a", {}).get("name", "Edamam Day")
+                days.append({"day_index": day_index, "label": label, "is_refeed": is_refeed, "meals": meals})
 
             products = _build_shopping_list(days)
 
@@ -217,6 +216,8 @@ def _build_synced_day(stored_day: dict) -> dict:
                 {
                     "key": key,
                     "cuisine": "Edamam",
+                    "name": opt.get("name", "Recipe"),
+                    "url": opt.get("url"),
                     "ingredients": opt["ingredients"],
                     "kcal": opt["kcal"],
                     "protein": opt["protein"],

@@ -99,6 +99,11 @@
         </button>
       </form>
     </div>
+    {% if option.name %}
+    <div class="meal-option-title" style="font-weight:600;font-size:14px;margin:2px 0 6px">
+      {{ option.name }}{% if option.url %} <a href="{{ option.url }}" target="_blank" rel="noopener noreferrer" style="font-weight:400;font-size:12px;color:var(--accent);text-decoration:none">View recipe →</a>{% endif %}
+    </div>
+    {% endif %}
     <div class="meal-items">
       {% for item in option.ingredients %}<span class="ingredient-chip">{{ item }}</span>{% endfor %}
     </div>

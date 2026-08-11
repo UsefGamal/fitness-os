@@ -91,6 +91,31 @@ def test_run_sync_builds_shopping_list_from_ingredient_lines(stub_edamam):
         assert all("name" in p and "quantity" in p for p in products)
 
 
+def test_day_label_comes_from_the_lunch_recipe_name(stub_edamam):
+    """Regression guard: days were shipped with a hardcoded generic
+    'Edamam Day' label — should read like the static plan's real
+    per-day titles instead."""
+    with Session(engine) as db:
+        sync = _run_full_sync(db)
+        plan = json.loads(sync.plan_json)
+        for day in plan:
+            assert day["label"] != "Edamam Day"
+            assert day["label"] == day["meals"]["lunch"]["option_a"]["name"]
+
+
+def test_option_carries_recipe_name_and_url_through_to_get_active_day(stub_edamam):
+    """Regression guard: the recipe title was computed by normalize_recipe()
+    but silently dropped when building the app-facing option dict, so
+    /meals rendered a wall of ingredients with no name attached to them."""
+    with Session(engine) as db:
+        _run_full_sync(db)
+        day = edamam_sync.get_active_day(db, 1)
+        option = day["meals"][0]["options"][0]
+        assert option["name"]
+        assert option["name"] != "Recipe"  # not just the fallback placeholder
+        assert option["url"].startswith("https://example.com/")
+
+
 def test_run_sync_marks_error_when_a_slot_has_no_recipes(client, monkeypatch):
     monkeypatch.setattr(edamam_sync.time, "sleep", lambda _seconds: None)
 
