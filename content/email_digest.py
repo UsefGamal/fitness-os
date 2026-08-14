@@ -4,6 +4,7 @@ from sqlmodel import Session
 
 from content.eating_out_guide import EATING_OUT_TIPS
 from content.gym_program import next_program_day
+from content.home_program import next_program_day as next_home_program_day
 from edamam_sync import get_active_day
 from routers.meals import PLAN_START_DATE, SLOT_LABELS
 
@@ -38,10 +39,14 @@ def _wrap_document(body: str) -> str:
 </html>"""
 
 
-def build_daily_digest_html(session: Session, today: date, completed_gym_sessions: int, app_base_url: str) -> tuple[str, str]:
+def build_daily_digest_html(session: Session, today: date, training_session_count: int, app_base_url: str) -> tuple[str, str]:
     day_number = (today - PLAN_START_DATE).days + 1
     meal_plan = get_active_day(session, day_number)
-    gym_day = next_program_day(completed_gym_sessions)
+    # Gym and Home share one rotation counter (see training_counter.py) —
+    # both calls need the same combined count so the day letter (and
+    # therefore the movement focus) matches between the two alternatives.
+    gym_day = next_program_day(training_session_count)
+    home_day = next_home_program_day(training_session_count)
     general_tips = EATING_OUT_TIPS["general"]
     eating_out_tip = general_tips[day_number % len(general_tips)]
 
@@ -52,6 +57,13 @@ def build_daily_digest_html(session: Session, today: date, completed_gym_session
         if meal_plan.get("is_refeed")
         else ""
     )
+
+    def _option_label(option: dict, letter: str) -> str:
+        # Static-plan and FitChef options don't carry a recipe name (only
+        # Edamam's normalize_recipe() computes one) — fall back to the
+        # cuisine tag alone rather than showing a placeholder.
+        name = option.get("name")
+        return f"{letter} ({option['cuisine']}) — {name}:" if name else f"{letter} ({option['cuisine']}):"
 
     # Each meal is a full-width stacked block, not a table cell — a narrow
     # fixed-width table column was wrapping long ingredient lists to one
@@ -69,8 +81,8 @@ def build_daily_digest_html(session: Session, today: date, completed_gym_session
             <td style="padding:0;color:{ACCENT};font-weight:700;font-size:14px;text-align:right;white-space:nowrap;vertical-align:baseline">{m['options'][0]['kcal']} kcal</td>
           </tr></table>
           <p style="color:{MUTED};font-size:13px;line-height:1.6;margin:8px 0 0;word-wrap:break-word">
-            <strong style="color:{TEXT}">A ({m['options'][0]['cuisine']}):</strong> {', '.join(m['options'][0]['ingredients'])}<br>
-            <strong style="color:{TEXT}">B ({m['options'][1]['cuisine']}):</strong> {', '.join(m['options'][1]['ingredients'])}
+            <strong style="color:{TEXT}">{_option_label(m['options'][0], 'A')}</strong> {', '.join(m['options'][0]['ingredients'])}<br>
+            <strong style="color:{TEXT}">{_option_label(m['options'][1], 'B')}</strong> {', '.join(m['options'][1]['ingredients'])}
           </p>
         </div>"""
         for m in meal_plan["meals"]
@@ -80,6 +92,15 @@ def build_daily_digest_html(session: Session, today: date, completed_gym_session
         f"""<li style="margin-bottom:6px"><strong style="color:{TEXT}">{ex['name']}</strong>
         <span style="color:{MUTED}"> — {ex['sets']} x {ex['reps']}</span></li>"""
         for ex in gym_day["exercises"]
+    )
+
+    # Home exercises are bodyweight (reps/time only, no working-weight
+    # "sets x reps" shape — see content/home_program.py) so this can't
+    # reuse gym_rows' template as-is.
+    home_rows = "".join(
+        f"""<li style="margin-bottom:6px"><strong style="color:{TEXT}">{ex['name']}</strong>
+        <span style="color:{MUTED}"> — {ex['reps']}</span></li>"""
+        for ex in home_day["exercises"]
     )
 
     subject = f"Fitness OS — {today.strftime('%a %b %d')} plan"
@@ -118,6 +139,15 @@ def build_daily_digest_html(session: Session, today: date, completed_gym_session
           <ul style="padding-left:18px;margin:0 0 10px;font-size:14px;color:{TEXT}">{gym_rows}</ul>
           <p style="text-align:right;margin:8px 0 0">
             <a href="{app_base_url}/gym" style="color:{ACCENT};font-size:13px;font-weight:600;text-decoration:none">Log your session →</a>
+          </p>
+
+          <h2 style="color:{TEXT};font-size:16px;border-top:1px solid {BORDER};padding-top:18px;margin:24px 0 4px">
+            Or a home session instead: {home_day['label']}
+          </h2>
+          <p style="color:{MUTED};font-size:13px;margin:0 0 10px">{home_day['focus']} — same rotation slot as the gym day above</p>
+          <ul style="padding-left:18px;margin:0 0 10px;font-size:14px;color:{TEXT}">{home_rows}</ul>
+          <p style="text-align:right;margin:8px 0 0">
+            <a href="{app_base_url}/home" style="color:{ACCENT};font-size:13px;font-weight:600;text-decoration:none">Log your session →</a>
           </p>
         </div>
 

@@ -166,6 +166,29 @@ def test_option_carries_recipe_name_and_url_through_to_get_active_day(stub_edama
         assert option["url"].startswith("https://example.com/")
 
 
+def test_stale_stored_label_self_heals_on_read(stub_edamam):
+    """Regression guard: the day-label fix (see
+    test_day_label_comes_from_the_lunch_recipe_name) only changed how a
+    *new* sync computes the label — it's baked into plan_json at sync
+    time, so any plan synced before that fix shipped still has the literal
+    'Edamam Day' string stored forever. get_active_day() must derive the
+    real label from the stored data at read time instead of trusting a
+    stale stored value, so already-synced plans self-heal without needing
+    a re-sync."""
+    with Session(engine) as db:
+        sync = _run_full_sync(db)
+        plan = json.loads(sync.plan_json)
+        for day in plan:
+            day["label"] = "Edamam Day"  # simulate data synced before the fix
+        sync.plan_json = json.dumps(plan)
+        db.add(sync)
+        db.commit()
+
+        day = edamam_sync.get_active_day(db, 1)
+        assert day["label"] != "Edamam Day"
+        assert day["label"] == day["meals"][2]["options"][0]["name"]  # meals[2] == lunch
+
+
 def test_run_sync_marks_error_when_a_slot_has_no_recipes(client, monkeypatch):
     monkeypatch.setattr(edamam_sync.time, "sleep", lambda _seconds: None)
 

@@ -37,6 +37,25 @@
 
 * { box-sizing: border-box; }
 
+/* ── Page-to-page navigation transitions ───────────────────────
+   Native View Transitions API for cross-document (MPA) navigation — no
+   JS, no framework, no client-side router. Progressive enhancement: a
+   no-op cross-fade on browsers that don't support it yet (older Safari),
+   full navigation still works identically either way. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation-duration: 0.15s;
+  animation-timing-function: ease-out;
+}
+
+::view-transition-new(root) {
+  animation-duration: 0.18s;
+  animation-timing-function: ease-out;
+}
+
 /* ── Icon system: minimalist mono-color line icons ─────────────
    All icons are stroke-based (fill:none) so a single SVG sprite reads
    consistently everywhere; color always comes from currentColor, so

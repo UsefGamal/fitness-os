@@ -1,6 +1,7 @@
-// Instant visual feedback on "mark done" style toggles before the page
-// reloads with the real server state. No framework, no fetch/AJAX — just a
-// brief client-side flourish so completing something feels satisfying.
+// Instant visual feedback on "mark done" style toggles, then a background
+// fetch that swaps in the freshly-rendered page instead of a full browser
+// navigation — no framework, no fetch library, just the platform fetch()
+// API, which the CSP's connect-src 'self' already allows.
 document.addEventListener('submit', function (e) {
   const form = e.target;
 
@@ -14,26 +15,61 @@ document.addEventListener('submit', function (e) {
     return;
   }
 
-  if (!form.classList.contains('js-toggle')) return;
+  if (form.classList.contains('js-toggle')) {
+    const btn = form.querySelector('button[type="submit"]');
+    if (!btn) return;
 
-  const btn = form.querySelector('button[type="submit"]');
-  if (!btn) return;
+    e.preventDefault();
 
-  e.preventDefault();
+    const willBeDone = !btn.classList.contains('done');
+    btn.classList.toggle('done', willBeDone);
+    btn.classList.remove('pop');
+    void btn.offsetWidth; // restart animation
+    btn.classList.add('pop');
+    btn.textContent = willBeDone
+      ? (btn.dataset.doneLabel || '✓ Done')
+      : (btn.dataset.undoneLabel || 'Mark done');
 
-  const willBeDone = !btn.classList.contains('done');
-  btn.classList.toggle('done', willBeDone);
-  btn.classList.remove('pop');
-  void btn.offsetWidth; // restart animation
-  btn.classList.add('pop');
-  btn.textContent = willBeDone
-    ? (btn.dataset.doneLabel || '✓ Done')
-    : (btn.dataset.undoneLabel || 'Mark done');
+    if (willBeDone) spawnConfetti(btn);
 
-  if (willBeDone) spawnConfetti(btn);
+    submitWithoutReload(form);
+    return;
+  }
 
-  setTimeout(function () { form.submit(); }, 260);
+  if (form.classList.contains('no-reload-form')) {
+    e.preventDefault();
+    submitWithoutReload(form);
+  }
 });
+
+// Submits a form via fetch and swaps <main> with the freshly-rendered
+// response instead of doing a full page navigation — same server routes,
+// same redirect-on-success flow (fetch follows the 303 automatically), no
+// backend changes needed. Falls back to a real form submit (full reload)
+// on any failure, so a network hiccup or a JS error never leaves the user
+// stuck without the form having gone through at all.
+function submitWithoutReload(form) {
+  fetch(form.action, { method: 'POST', body: new FormData(form) })
+    .then(function (response) {
+      if (!response.ok) throw new Error('request failed: ' + response.status);
+      return response.text().then(function (html) {
+        return { html: html, url: response.url };
+      });
+    })
+    .then(function (result) {
+      const newMain = new DOMParser().parseFromString(result.html, 'text/html').querySelector('main');
+      const currentMain = document.querySelector('main');
+      if (!newMain || !currentMain) {
+        window.location.href = result.url;
+        return;
+      }
+      currentMain.replaceWith(newMain);
+      history.replaceState(null, '', result.url);
+    })
+    .catch(function () {
+      form.submit();
+    });
+}
 
 function spawnConfetti(anchor) {
   const rect = anchor.getBoundingClientRect();
