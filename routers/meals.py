@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from auth import require_login
 from charting import build_heatmap_html, build_meter_html, build_sparkline_svg
+from clock import today as get_today
 from content.eating_out_guide import EATING_OUT_TIPS
 from content.food_items import (
     CATEGORY_COLORS,
@@ -109,7 +110,7 @@ def meals_page(request: Request, view_date: str | None = None, session: Session 
     if sync and sync.status not in ("complete", "error"):
         advance_sync(session, sync)
 
-    current = date.fromisoformat(view_date) if view_date else date.today()
+    current = date.fromisoformat(view_date) if view_date else get_today()
     day_number = _day_number_for(current)
     plan = get_active_day(session, day_number)
     macro_targets = get_macro_targets(session)
@@ -153,7 +154,7 @@ def meals_page(request: Request, view_date: str | None = None, session: Session 
     ]
     hydration_meter = build_meter_html(hydration_ml, HYDRATION_TARGET_ML, "Water", "ml")
 
-    today = date.today()
+    today = get_today()
     window_start = today - timedelta(days=ADHERENCE_HEATMAP_DAYS - 1)
     daily_totals = _daily_macro_totals(session, window_start, today)
     ordered_days = sorted(daily_totals)
@@ -185,7 +186,7 @@ def meals_page(request: Request, view_date: str | None = None, session: Session 
             "current_date": current.isoformat(),
             "prev_date": (current - timedelta(days=1)).isoformat(),
             "next_date": (current + timedelta(days=1)).isoformat(),
-            "is_today": current == date.today(),
+            "is_today": current == get_today(),
             "eating_out_general": EATING_OUT_TIPS["general"],
             "hydration_ml": hydration_ml,
             "hydration_target_ml": HYDRATION_TARGET_ML,
@@ -281,7 +282,7 @@ def maintenance_page(request: Request):
 
 @router.get("/meals/shopping-list", dependencies=[Depends(require_login)])
 def shopping_list_page(request: Request, session: Session = Depends(get_session)):
-    today = date.today()
+    today = get_today()
 
     products = get_active_shopping_products(session)
     if products is not None:

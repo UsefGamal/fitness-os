@@ -78,6 +78,25 @@
 </details>
 
 <section class="card">
+  <h2><svg class="icon"><use href="#icon-bolt"/></svg> Email Digests</h2>
+  {% for label, reminder in [("Daily digest", daily_digest_reminder), ("Weekly recap", weekly_recap_reminder)] %}
+    {% if not reminder %}
+    <p class="muted" style="font-size:13px">{{ label }}: not sent yet.</p>
+    {% elif reminder.status == "error" %}
+    <p style="color:var(--danger);font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon"><use href="#icon-alert"/></svg> {{ label }} failed at {{ reminder.sent_at.strftime('%b %d, %H:%M') }}: {{ reminder.error_detail }}
+    </p>
+    {% else %}
+    <p style="font-size:13px;display:flex;align-items:center;gap:6px">
+      <svg class="icon icon-fill" style="color:var(--accent)"><use href="#icon-check"/></svg>
+      {{ label }}: sent {{ reminder.sent_at.strftime('%b %d, %H:%M') }}.
+    </p>
+    {% endif %}
+  {% endfor %}
+  <p class="muted" style="font-size:11px;margin-top:4px">Sent by the cron jobs at cron-job.org — see README's "Scheduled jobs". This reflects the last attempt for each, whether it landed in your inbox or failed.</p>
+</section>
+
+<section class="card">
   <h2><svg class="icon"><use href="#icon-wrench"/></svg> Plan & Tools</h2>
   <div class="link-list">
     <a href="/body" class="link-row"><svg class="icon link-icon"><use href="#icon-scale"/></svg><span>Body Log</span><svg class="icon link-arrow"><use href="#icon-chevron-right"/></svg></a>

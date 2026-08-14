@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from auth import require_login
 from baseline import get_baseline
 from charting import build_diverging_bar_svg, build_line_svg
+from clock import today as get_today
 from content.projections import week_start
 from database import get_session
 from models import BodyLog
@@ -50,7 +51,7 @@ def body_log_page(request: Request, edit: int | None = None, session: Session = 
     # band for the goal_weight_low..goal_weight_high range — see main.py's
     # dashboard chart for the same framing. Falls back to a plain weight
     # trend if no starting weight is set yet in Settings.
-    baseline = get_baseline(session, date.today())
+    baseline = get_baseline(session, get_today())
     profile = baseline["profile"]
     start_weight = baseline["start_weight"]
     if start_weight is not None:
@@ -74,7 +75,7 @@ def body_log_page(request: Request, edit: int | None = None, session: Session = 
             "has_goal_band": start_weight is not None,
             "weekly_delta_svg": build_diverging_bar_svg(weekly_deltas),
             "weekly_delta_rows": weekly_rows,
-            "today": date.today().isoformat(),
+            "today": get_today().isoformat(),
             "edit_log": edit_log,
             "saved": request.query_params.get("saved") == "1",
         },
@@ -94,7 +95,7 @@ def add_body_log(
     notes: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
-    require_not_future(log_date, "Date", date.today())
+    require_not_future(log_date, "Date", get_today())
     require_range(weight_kg, 20, 400, "Weight")
     require_range(waist_cm, 20, 300, "Waist")
     require_range(chest_cm, 20, 300, "Chest")

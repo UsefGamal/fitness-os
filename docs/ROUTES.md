@@ -40,6 +40,8 @@ Reached via More, not the bottom tab bar — a weekly/biweekly activity, not a d
 | POST | `/meals/hydration` | redirect `/meals?view_date=` | Add ml to today's `HydrationLog` |
 | GET | `/meals/maintenance` | `maintenance.html` | Post-cut reverse-diet guidance (static content) |
 | GET | `/meals/shopping-list` | `shopping_list.html` | Aggregated ingredient list for the next 7 days (both options), grouped into color-coded grocery categories |
+| POST | `/meals/edamam-sync` | redirect `/more?synced=1` | Kick off a real 14-day plan sync from Edamam (primary source) — creates a `pending` `EdamamPlanSync` row, real work runs as a background task; see [sync-job-pattern](../.claude/skills/sync-job-pattern/SKILL.md) |
+| POST | `/meals/fitchef-sync` | redirect `/more?synced=1` | Kick off a FitChef sync (secondary, sandbox-limited) — async job/polling model, advanced on the next `/more` or `/meals` page load |
 
 ## Gym
 
@@ -109,13 +111,19 @@ Reached via More, not the bottom tab bar — a weekly/biweekly activity, not a d
 
 ## Cron / automation
 
-Secret-protected via `?secret=<CRON_SECRET>` (403 without it). See the README's [Scheduled jobs](../README.md#scheduled-jobs) for the actual schedule setup.
+Secret-protected via `?secret=<CRON_SECRET>` or an `X-Cron-Secret` header (403 without either). See the README's [Scheduled jobs](../README.md#scheduled-jobs) for the actual schedule setup.
 
 | Method | Path | Renders / Returns | Purpose |
 |---|---|---|---|
 | GET | `/healthz-warm` | `{"status":"ok"}` | No-DB keep-alive ping, no secret required |
-| GET | `/cron/daily-digest` | `{"status": "sent"\|"skipped"\|"error", ...}` | Sends the daily digest email; `&force=true` bypasses the already-sent-today skip |
-| GET | `/cron/weekly-recap` | `{"status": "sent"\|"skipped"\|"error", ...}` | Sends the weekly recap email; `&force=true` bypasses the already-sent-today skip |
+| GET | `/cron/daily-digest` | `{"status": "queued"\|"skipped"}` | Queues the daily digest email as a background task and responds immediately — cron-job.org's free tier times out at 30s, and building the digest + calling Resend inline used to risk that, especially on a cold Render instance. `&force=true` bypasses the already-sent-today skip. Actual outcome (`sent`/`error` + detail) lands in a `ReminderLog` row, surfaced on `/more` |
+| GET | `/cron/weekly-recap` | `{"status": "queued"\|"skipped"}` | Same pattern as `/cron/daily-digest` |
+
+## Webhooks
+
+| Method | Path | Renders / Returns | Purpose |
+|---|---|---|---|
+| POST | `/webhooks/fitchef` | `{"status": "acknowledged"}` | FitChef's callback for async mealplan generation — acknowledged only, no signature verification available; the real completion check is `fitchef_sync.advance_sync()`'s polling |
 
 ## Template includes (not routes)
 

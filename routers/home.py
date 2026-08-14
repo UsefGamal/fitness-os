@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from clock import today as get_today
 from content.home_program import ALTERNATE_EXERCISES, HOME_MUSCLE_GROUPS, PROGRAM, next_program_day
 from database import get_session
 from models import ChecklistItemLog, Workout
@@ -46,7 +47,7 @@ def home_list(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "logged_in": True,
             "summaries": summaries,
-            "today": date.today().isoformat(),
+            "today": get_today().isoformat(),
             "next_day": next_day,
             "deload_due": deload_due(session, PLAN_START_DATE),
             "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
@@ -62,7 +63,7 @@ def create_home_session(
     is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
-    require_not_future(log_date, "Date", date.today())
+    require_not_future(log_date, "Date", get_today())
     require_range(duration_min, 1, 600, "Duration")
     require_max_length(notes, 200, "Notes")
 

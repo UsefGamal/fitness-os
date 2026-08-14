@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from auth import require_login
 from charting import build_sparkline_svg
+from clock import today as get_today
 from content.cardio_program import ALTERNATIVES, CARDIO_SESSION
 from database import get_session
 from models import Workout
@@ -34,7 +35,7 @@ def cardio_list(request: Request, edit: int | None = None, session: Session = De
             "request": request,
             "logged_in": True,
             "sessions": sessions,
-            "today": date.today().isoformat(),
+            "today": get_today().isoformat(),
             "cardio_session": CARDIO_SESSION,
             "alternatives": ALTERNATIVES,
             "duration_svg": build_sparkline_svg(recent_durations) if len(recent_durations) >= 2 else "",
@@ -52,7 +53,7 @@ def add_cardio_session(
     session_rpe: int | None = Form(None),
     session: Session = Depends(get_session),
 ):
-    require_not_future(log_date, "Date", date.today())
+    require_not_future(log_date, "Date", get_today())
     require_range(duration_min, 1, 600, "Duration")
     require_range(session_rpe, 1, 10, "RPE")
     require_max_length(notes, 300, "Notes")

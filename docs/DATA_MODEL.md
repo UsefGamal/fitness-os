@@ -140,13 +140,49 @@ Total points = `SUM(points)` across all rows, all-time. Level = `1 + total_point
 
 ## `ReminderLog`
 
-Dedup guard for the two cron email jobs — one row per `(log_date, reminder_type)` once a send succeeds.
+Dedup guard *and* outcome record for the two cron email jobs. The `/cron/*` routes respond immediately (`{"status": "queued"}`) and do the actual digest-building + email-sending in a background task (see [sync-job-pattern](../.claude/skills/sync-job-pattern/SKILL.md)) — this row is the only record of whether that background attempt actually succeeded, surfaced on `/more`.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `int` | PK |
 | `log_date` | `date` | |
 | `reminder_type` | `str` | `daily_digest` or `weekly_recap` |
-| `sent_at` | `datetime` | `default_factory=datetime.utcnow` |
+| `sent_at` | `datetime` | `default_factory=datetime.utcnow` — written when the attempt finishes, not when it was queued |
+| `status` | `str` | `sent` or `error`; default `sent` (existing pre-migration rows were only ever written on success) |
+| `error_detail` | `Optional[str]` | set only when `status == "error"` — shown on `/more` |
 
-`/cron/*` routes check this table and skip (unless `force=true`) if a row already exists for today — see the README's [Scheduled jobs](../README.md#scheduled-jobs) section.
+A row only counts as "already sent" (blocking a same-day retry without `force=true`) when `status == "sent"` — an `error` row lets the very next cron ping retry automatically.
+
+## `MealPlanSync`
+
+One row per FitChef sync attempt (secondary meal-plan source). A sync covers two chained weekly generations (14 days total) — `status` walks `week1_pending` → `week2_pending` → `complete` (or → `error` at either step). Only the most recent `complete` row is ever read for meal content (`fitchef_sync.get_active_day()`); older rows are kept only as history.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `int` | PK |
+| `requested_at` | `datetime` | `default_factory=datetime.utcnow` |
+| `completed_at` | `Optional[datetime]` | set once `status == "complete"` |
+| `status` | `str` | `week1_pending` / `week2_pending` / `complete` / `error` |
+| `week1_identifier` | `Optional[int]` | FitChef's identifier for the week-1 generation request |
+| `week2_identifier` | `Optional[int]` | FitChef's identifier for the week-2 generation request, chained from week 1's `recipeHistory` |
+| `recipe_history` | `Optional[str]` | JSON string, chained into the next sync so weeks 1 and 2 don't repeat recipes |
+| `week1_json` | `Optional[str]` | raw week-1 payload, held only until week 2 completes, then cleared |
+| `plan_json` | `Optional[str]` | final merged 14-day plan, set once `complete` |
+| `products_json` | `Optional[str]` | merged shopping-list products, set once `complete` |
+| `error_detail` | `Optional[str]` | set only on `error` |
+
+## `EdamamPlanSync`
+
+One row per Edamam sync attempt (primary meal-plan source). `status` walks `pending` → `complete` (or → `error`) as a background task — see [sync-job-pattern](../.claude/skills/sync-job-pattern/SKILL.md) for why. Only the most recent `complete` row is read for meal content (`edamam_sync.get_active_day()`); older rows are kept only as history.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `int` | PK |
+| `requested_at` | `datetime` | `default_factory=datetime.utcnow` |
+| `synced_at` | `Optional[datetime]` | set once `status == "complete"` |
+| `status` | `str` | `pending` / `complete` / `error` |
+| `plan_json` | `Optional[str]` | final 14-day plan, set once `complete` |
+| `products_json` | `Optional[str]` | shopping-list products (aggregated by Edamam's `foodId`), set once `complete` |
+| `error_detail` | `Optional[str]` | set only on `error` |
+
+`edamam_sync.is_pending_stale()` treats a `pending` row older than `PENDING_TIMEOUT_MINUTES` (10) as dead — a background task has no durability guarantee across a server restart mid-sync — so a stuck row doesn't block every future sync attempt forever.

@@ -37,6 +37,8 @@ _LIGHT_MIGRATIONS = [
     "ALTER TABLE workout ADD COLUMN result VARCHAR",
     "ALTER TABLE profile ADD COLUMN gender VARCHAR DEFAULT 'male'",
     "ALTER TABLE profile ADD COLUMN activity_level VARCHAR DEFAULT 'moderate'",
+    "ALTER TABLE reminderlog ADD COLUMN status VARCHAR DEFAULT 'sent'",
+    "ALTER TABLE reminderlog ADD COLUMN error_detail VARCHAR",
 ]
 
 

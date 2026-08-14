@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from auth import require_login
 from charting import build_bar_svg, build_sparkline_svg
+from clock import today as get_today
 from content.gym_program import PROGRAM, PROGRESSION_NOTE, next_program_day
 from database import get_session
 from models import Exercise, Workout, WorkoutSet
@@ -40,7 +41,7 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "logged_in": True,
             "summaries": summaries,
-            "today": date.today().isoformat(),
+            "today": get_today().isoformat(),
             "next_day": next_day,
             "deload_due": deload_due(session, PLAN_START_DATE),
             "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
@@ -76,6 +77,9 @@ def gym_progress(request: Request, session: Session = Depends(get_session)):
                 "current": weights[-1],
                 "delta": delta,
                 "svg": build_sparkline_svg(weights),
+                # Accessibility twin for the sparkline above — see
+                # frontend-design's "accessibility twin" convention.
+                "rows": list(zip(dates, weights, strict=True)),
             }
         )
 
@@ -93,8 +97,14 @@ def gym_progress(request: Request, session: Session = Depends(get_session)):
         rpes.append(sum(set_rpes) / len(set_rpes) if set_rpes else None)
 
     volume_svg = build_bar_svg(volumes) if any(volumes) else ""
+    # Table twin for volume_svg — same (date, volume) pairs the bar chart
+    # plots, including zero-volume sessions so the two never disagree.
+    volume_rows = list(zip([w.log_date for w in gym_workouts], volumes, strict=True))
     rpe_values = [r for r in rpes if r is not None]
     rpe_svg = build_sparkline_svg(rpe_values) if len(rpe_values) >= 2 else ""
+    # Table twin for rpe_svg — dates re-paired with their non-None RPE,
+    # since rpe_values itself (what the sparkline plots) drops the dates.
+    rpe_rows = [(w.log_date, r) for w, r in zip(gym_workouts, rpes, strict=True) if r is not None]
 
     return templates.TemplateResponse(
         request,
@@ -104,8 +114,10 @@ def gym_progress(request: Request, session: Session = Depends(get_session)):
             "logged_in": True,
             "strength_charts": strength_charts,
             "volume_svg": volume_svg,
+            "volume_rows": volume_rows,
             "session_count": len(gym_workouts),
             "rpe_svg": rpe_svg,
+            "rpe_rows": rpe_rows,
             "latest_rpe": rpe_values[-1] if rpe_values else None,
         },
     )
@@ -119,7 +131,7 @@ def create_gym_session(
     is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
-    require_not_future(log_date, "Date", date.today())
+    require_not_future(log_date, "Date", get_today())
     require_range(duration_min, 1, 600, "Duration")
     require_max_length(notes, 200, "Notes")
 

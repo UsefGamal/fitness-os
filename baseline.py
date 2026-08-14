@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlmodel import Session, select
 
+from clock import today as get_today
 from content.meal_plan import PLAN_START_DATE
 from content.projections import linear_rate_kg_per_week, predicted_goal_date, target_rate_kg_per_week
 from models import BodyLog, Profile
@@ -10,7 +11,7 @@ from models import BodyLog, Profile
 def get_baseline(session: Session, today: date | None = None) -> dict:
     """Shared baseline projection numbers used by both the dashboard and the
     what-if simulator, so they never drift out of sync with each other."""
-    today = today or date.today()
+    today = today or get_today()
     profile = session.exec(select(Profile)).first()
     body_logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
 

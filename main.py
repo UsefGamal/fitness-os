@@ -24,6 +24,7 @@ from auth import (
 )
 from baseline import get_baseline
 from charting import build_heatmap_html, build_line_svg, build_meter_html, status_chip_html
+from clock import today as get_today
 from content.bonus_tasks import BONUS_TASKS
 from content.gym_exercises import SEED_EXERCISES
 from content.milestones import badge_progress, level_for_points
@@ -230,6 +231,8 @@ def more_page(request: Request, session: Session = Depends(get_session)):
             "edamam_sync": edamam_sync_status,
             "edamam_sync_stale": bool(edamam_sync_status and edamam_sync.is_pending_stale(edamam_sync_status)),
             "just_synced": request.query_params.get("synced") == "1",
+            "daily_digest_reminder": reminders.latest_reminder(session, "daily_digest"),
+            "weekly_recap_reminder": reminders.latest_reminder(session, "weekly_recap"),
         },
     )
 
@@ -289,7 +292,7 @@ def _weekly_adherence_outcome_insight(session: Session, today: date, weeks: int 
 
 @app.get("/", dependencies=[Depends(require_login)])
 def dashboard(request: Request, session: Session = Depends(get_session)):
-    today = date.today()
+    today = get_today()
 
     # ── Pain-pattern flag (across every training type) ──────────────
     recent_workouts_any = session.exec(select(Workout).order_by(Workout.log_date.desc())).all()[:5]

@@ -13,6 +13,7 @@ from datetime import date
 from sqlmodel import Session
 
 from baseline import get_baseline
+from clock import today as get_today
 from content.meal_plan import MACRO_TARGETS as _STATIC_FALLBACK
 from content.tdee import bmr_mifflin_st_jeor, macro_split, target_kcal, tdee_kcal
 
@@ -36,7 +37,7 @@ def get_macro_targets(session: Session, today: date | None = None) -> dict:
     if weight is None:
         return _static_fallback()
 
-    today = today or date.today()
+    today = today or get_today()
     age_years = (today - profile.date_of_birth).days / 365.25
     if not (MIN_AGE_YEARS <= age_years <= MAX_AGE_YEARS):
         return _static_fallback()

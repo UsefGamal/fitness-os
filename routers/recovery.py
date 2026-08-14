@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from clock import today as get_today
 from content.recovery_program import RECOVERY_CHECKLIST
 from database import get_session
 from models import ChecklistItemLog, Workout
@@ -23,7 +24,7 @@ def recovery_list(request: Request, session: Session = Depends(get_session)):
     return templates.TemplateResponse(
         request,
         "recovery_list.html",
-        {"request": request, "logged_in": True, "workouts": workouts, "today": date.today().isoformat()},
+        {"request": request, "logged_in": True, "workouts": workouts, "today": get_today().isoformat()},
     )
 
 
@@ -33,7 +34,7 @@ def create_recovery_session(
     notes: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
-    require_not_future(log_date, "Date", date.today())
+    require_not_future(log_date, "Date", get_today())
     require_max_length(notes, 200, "Notes")
     workout = Workout(log_date=log_date, workout_type="recovery", notes=notes)
     session.add(workout)

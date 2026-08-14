@@ -100,6 +100,12 @@ class ReminderLog(SQLModel, table=True):
     log_date: date
     reminder_type: str
     sent_at: datetime = Field(default_factory=datetime.utcnow)
+    # "sent" | "error" — the digest cron routes queue a background task and
+    # respond immediately (see reminders.py), so this is the only record of
+    # whether the email actually went out. An "error" row doesn't count as
+    # already-sent for the day, so the next cron ping retries automatically.
+    status: str = "sent"
+    error_detail: str | None = None
 
 
 class MealPlanSync(SQLModel, table=True):

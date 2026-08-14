@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
+from clock import today as get_today
 from content.tdee import ACTIVITY_LEVELS, GENDERS
 from database import get_session
 from macro_targets import get_macro_targets
@@ -33,7 +34,7 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
             "activity_levels": ACTIVITY_LEVELS,
             "macro_targets": get_macro_targets(session),
             "saved": request.query_params.get("saved") == "1",
-            "today": date.today().isoformat(),
+            "today": get_today().isoformat(),
         },
     )
 
@@ -62,7 +63,7 @@ def update_settings(
     require_choice(gender, GENDERS, "Gender")
     require_choice(activity_level, ACTIVITY_LEVELS, "Activity level")
     require_max_length(activity_notes, 300, "Activity notes")
-    today = date.today()
+    today = get_today()
     if date_of_birth >= today:
         raise ValidationError("Date of birth must be in the past.")
     if (today - date_of_birth).days > 130 * 365:

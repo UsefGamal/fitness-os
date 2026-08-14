@@ -72,3 +72,43 @@ def test_session_duration_out_of_range_rejected(auth_client):
         headers={"referer": "http://testserver/gym"},
     )
     assert "error=" in str(r.url)
+
+
+def test_progress_page_has_no_data_states_when_empty(auth_client):
+    r = auth_client.get("/gym/progress")
+    assert r.status_code == 200
+    assert "Log a couple of gym sessions" in r.text
+    assert "Log RPE on a few sets" in r.text
+    assert "Log the same exercise across 2+ sessions" in r.text
+    assert "log-table" not in r.text
+
+
+def test_progress_page_charts_have_accessibility_twin_tables(auth_client):
+    """Regression guard: every chart on /gym/progress (session volume,
+    RPE trend, per-exercise strength) must be paired with a table of the
+    same underlying data, per charting.py's own accessibility-twin
+    convention — this page used to render three charts with no table
+    anywhere on it."""
+    r1 = auth_client.post("/gym/new", data={"log_date": "2026-08-10"}, follow_redirects=False)
+    gym_url_1 = r1.headers["location"]
+    ex_id = _first_exercise_id(auth_client, gym_url_1)
+    auth_client.post(f"{gym_url_1}/sets", data={"exercise_id": ex_id, "reps": 10, "weight_kg": 20, "rpe": 7})
+
+    r2 = auth_client.post("/gym/new", data={"log_date": "2026-08-13"}, follow_redirects=False)
+    gym_url_2 = r2.headers["location"]
+    auth_client.post(f"{gym_url_2}/sets", data={"exercise_id": ex_id, "reps": 10, "weight_kg": 25, "rpe": 8})
+
+    r = auth_client.get("/gym/progress")
+    assert r.status_code == 200
+
+    # Three accessibility-twin tables: session volume, RPE trend, strength.
+    assert r.text.count("log-table") == 3
+    assert "Volume (kg)" in r.text
+    assert "Avg RPE" in r.text
+    assert "Top set (kg)" in r.text
+
+    # The actual logged values show up in a table cell, not just the SVG.
+    assert "2026-08-10" in r.text
+    assert "2026-08-13" in r.text
+    assert "25.0" in r.text  # top set weight for the second session
+    assert "8.0" in r.text  # RPE for the second session

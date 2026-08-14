@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlmodel import Session, select
 
+from clock import today as get_today
 from models import Workout
 
 DELOAD_REMINDER_WEEKS = 6
@@ -25,7 +26,7 @@ def weeks_since_last_deload(session: Session, plan_start_date: date) -> int:
         .order_by(Workout.log_date.desc())
     ).first()
     since = last_deload.log_date if last_deload else plan_start_date
-    return (date.today() - since).days // 7
+    return (get_today() - since).days // 7
 
 
 def deload_due(session: Session, plan_start_date: date) -> bool:

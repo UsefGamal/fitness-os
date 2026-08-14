@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from auth import require_login
 from charting import build_sparkline_svg
+from clock import today as get_today
 from database import get_session
 from models import Workout
 from validation import require_choice, require_max_length, require_not_future, require_range
@@ -48,7 +49,7 @@ def padel_list(request: Request, edit: int | None = None, session: Session = Dep
             "request": request,
             "logged_in": True,
             "sessions": sessions,
-            "today": date.today().isoformat(),
+            "today": get_today().isoformat(),
             "duration_svg": build_sparkline_svg(recent_durations) if len(recent_durations) >= 2 else "",
             "record_str": record_str,
             "pain_flag": pain_flag,
@@ -69,7 +70,7 @@ def add_padel_session(
     pain_note: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
-    require_not_future(log_date, "Date", date.today())
+    require_not_future(log_date, "Date", get_today())
     require_range(duration_min, 1, 600, "Duration")
     require_range(session_rpe, 1, 10, "RPE")
     require_choice(result or None, ["win", "loss", "draw"], "Result")
