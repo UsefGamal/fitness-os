@@ -12,6 +12,7 @@ from content.projections import compute_streak, meal_adherence_pct
 from content.weekly_recap_email import build_weekly_recap_html
 from database import engine, get_session
 from models import BodyLog, BonusLog, MealLog, ReminderLog, Workout
+from training_counter import count_training_sessions
 
 router = APIRouter()
 
@@ -67,7 +68,7 @@ def healthz_warm():
     return {"status": "ok"}
 
 
-def _run_daily_digest(today: date, gym_session_count: int) -> None:
+def _run_daily_digest(today: date, training_session_count: int) -> None:
     """Runs after the route has already responded — see sync-job-pattern.
     Own DB session since the request-scoped one used by the route is
     already closed by the time this executes. Building the digest HTML and
@@ -78,7 +79,7 @@ def _run_daily_digest(today: date, gym_session_count: int) -> None:
     the route instead of in the background."""
     with Session(engine) as session:
         try:
-            subject, html = build_daily_digest_html(session, today, gym_session_count, APP_BASE_URL)
+            subject, html = build_daily_digest_html(session, today, training_session_count, APP_BASE_URL)
             _send_email(subject, html)
             session.add(ReminderLog(log_date=today, reminder_type="daily_digest", status="sent"))
         except Exception as exc:  # noqa: BLE001 — a background task must never raise unhandled
@@ -111,8 +112,12 @@ def daily_digest(
     if already_sent and not force:
         return {"status": "skipped", "reason": "already sent today — add &force=true to resend"}
 
-    gym_session_count = len(session.exec(select(Workout).where(Workout.workout_type == "gym")).all())
-    background_tasks.add_task(_run_daily_digest, today, gym_session_count)
+    # Gym and Home share one rotation counter (see training_counter.py) —
+    # using a gym-only count here would desync the digest's "next up" day
+    # from what /gym and /home themselves show once the user alternates
+    # between the two.
+    training_session_count = count_training_sessions(session)
+    background_tasks.add_task(_run_daily_digest, today, training_session_count)
     return {"status": "queued"}
 
 

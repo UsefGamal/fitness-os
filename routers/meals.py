@@ -20,6 +20,7 @@ from content.food_items import (
 )
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
 from content.meal_plan import DRINK_OPTIONS, MEAL_PLAN_14_DAY, MEAL_SLOTS, PLAN_START_DATE, display_name
+from content.meal_plan import get_day as get_static_day
 from database import get_session
 from edamam_sync import get_active_day, get_active_shopping_products, is_pending_stale, run_sync_in_background
 from edamam_sync import latest_sync as latest_edamam_sync
@@ -70,12 +71,56 @@ ADHERENCE_HEATMAP_DAYS = 28
 
 DRINK_LABELS = {key: display_name(key) for key in DRINK_OPTIONS}
 
+# option_c is the static plan's own option A, injected as a third choice
+# alongside a synced plan's two options — see _add_static_fallback_option.
+OPTION_KEYS = ["option_a", "option_b", "option_c"]
+
 
 def _day_number_for(d: date) -> int:
     return (d - PLAN_START_DATE).days + 1
 
 
-def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
+def _synced_plan_active(session: Session) -> bool:
+    """True when /meals is currently showing a completed Edamam or
+    FitChef sync rather than the static plan — mirrors the same
+    "does a completed sync exist" check get_active_day()'s fallback
+    chain makes internally, using only the public latest_sync() API."""
+    edamam_status = latest_edamam_sync(session)
+    if edamam_status and edamam_status.status == "complete" and edamam_status.plan_json:
+        return True
+    fitchef_status = latest_sync(session)
+    return bool(fitchef_status and fitchef_status.status == "complete" and fitchef_status.plan_json)
+
+
+def _add_static_fallback_option(day_number: int, plan: dict) -> None:
+    """Appends the static plan's own option A as a third, clearly-labeled
+    choice per meal slot — the always-available, no-dependency fallback
+    alongside whichever two options the active synced plan produced.
+    Caller must only invoke this when a synced plan is actually active
+    (see _synced_plan_active) — calling it when the static plan is
+    already the active plan would just duplicate option A against
+    itself."""
+    static_day = get_static_day(day_number)
+    static_options_by_slot = {m["slot"]: m["options"][0] for m in static_day["meals"]}
+    for meal in plan["meals"]:
+        static_option = static_options_by_slot.get(meal["slot"])
+        if not static_option:
+            continue
+        meal["options"].append(
+            {
+                "key": "option_c",
+                "cuisine": "Static Plan",
+                "ingredients": static_option["ingredients"],
+                "kcal": static_option["kcal"],
+                "protein": static_option["protein"],
+                "carbs": static_option["carbs"],
+                "fat": static_option["fat"],
+                "fiber": static_option["fiber"],
+            }
+        )
+
+
+def _daily_macro_totals(session: Session, start: date, end: date, synced_plan_active: bool) -> dict:
     """Reconstructs each day's eaten macro totals from MealLog + the meal
     plan content (MealLog itself only stores which option was picked, not
     the macro grams)."""
@@ -92,7 +137,11 @@ def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
         totals = {"protein": 0.0, "carbs": 0.0, "fat": 0.0, "fiber": 0.0}
         day_logs = logs_by_date.get(d, [])
         if day_logs:
-            plan_by_slot = {m["slot"]: m for m in get_active_day(session, _day_number_for(d))["meals"]}
+            day_number = _day_number_for(d)
+            active_plan = get_active_day(session, day_number)
+            if synced_plan_active:
+                _add_static_fallback_option(day_number, active_plan)
+            plan_by_slot = {m["slot"]: m for m in active_plan["meals"]}
             for log in day_logs:
                 meal = plan_by_slot.get(log.meal_slot)
                 option = next((o for o in meal["options"] if o["key"] == log.option_key), None) if meal else None
@@ -113,6 +162,9 @@ def meals_page(request: Request, view_date: str | None = None, session: Session 
     current = date.fromisoformat(view_date) if view_date else get_today()
     day_number = _day_number_for(current)
     plan = get_active_day(session, day_number)
+    synced_plan_active = _synced_plan_active(session)
+    if synced_plan_active:
+        _add_static_fallback_option(day_number, plan)
     macro_targets = get_macro_targets(session)
 
     logs = session.exec(select(MealLog).where(MealLog.log_date == current)).all()
@@ -156,7 +208,7 @@ def meals_page(request: Request, view_date: str | None = None, session: Session 
 
     today = get_today()
     window_start = today - timedelta(days=ADHERENCE_HEATMAP_DAYS - 1)
-    daily_totals = _daily_macro_totals(session, window_start, today)
+    daily_totals = _daily_macro_totals(session, window_start, today, synced_plan_active)
     ordered_days = sorted(daily_totals)
     trend_days = ordered_days[-MACRO_TREND_DAYS:]
 
@@ -208,7 +260,7 @@ def toggle_meal(
     session: Session = Depends(get_session),
 ):
     require_choice(meal_slot, MEAL_SLOTS, "Meal slot")
-    require_choice(option_key, ["option_a", "option_b"], "Option")
+    require_choice(option_key, OPTION_KEYS, "Option")
     d = log_date
     existing = session.exec(
         select(MealLog).where(MealLog.log_date == d, MealLog.meal_slot == meal_slot)

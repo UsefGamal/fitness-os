@@ -84,7 +84,7 @@ class MealLog(SQLModel, table=True):
     log_date: date
     meal_slot: str
     completed: bool = False
-    option_key: str | None = None  # "option_a" or "option_b" — which one was eaten
+    option_key: str | None = None  # "option_a" / "option_b", or "option_c" (the static-plan fallback shown alongside a synced plan) — which one was eaten
     drink_key: str | None = None  # which drink (see content/food_items.DRINKS) was chosen
 
 

@@ -28,7 +28,7 @@
   {{ hydration_meter | safe }}
   <div class="drinks-row" style="margin-top:8px">
     {% for amount in hydration_quick_add %}
-    <form method="post" action="/meals/hydration" style="display:inline">
+    <form method="post" action="/meals/hydration" class="no-reload-form" style="display:inline">
       <input type="hidden" name="log_date" value="{{ current_date }}">
       <input type="hidden" name="ml" value="{{ amount }}">
       <button type="submit" class="drink-chip">+{{ amount }}ml</button>
@@ -116,7 +116,7 @@
   <div class="drinks-row">
     <span class="drinks-label">Drink:</span>
     {% for drink in meal.drinks %}
-    <form method="post" action="/meals/drink" style="display:inline">
+    <form method="post" action="/meals/drink" class="no-reload-form" style="display:inline">
       <input type="hidden" name="log_date" value="{{ current_date }}">
       <input type="hidden" name="meal_slot" value="{{ meal.slot }}">
       <input type="hidden" name="drink_key" value="{{ drink.key }}">

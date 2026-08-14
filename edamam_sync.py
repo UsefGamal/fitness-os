@@ -253,9 +253,20 @@ def _build_synced_day(stored_day: dict) -> dict:
         day_fiber += options[0]["fiber"]
         meals_out.append({"slot": slot, "time_window": MEAL_SLOT_WINDOWS[slot], "options": options})
 
+    # Self-heals plans synced before the day-label fix (label used to be
+    # hardcoded "Edamam Day" at sync time and baked into plan_json forever
+    # — see git history around "Surface the recipe name and source link on
+    # /meals"). Deriving it here instead of trusting the stored value means
+    # already-synced data picks up the fix on the next render, no re-sync
+    # required.
+    label = stored_day.get("label")
+    if not label or label == "Edamam Day":
+        lunch = next((m for m in meals_out if m["slot"] == "lunch"), None)
+        label = lunch["options"][0]["name"] if lunch else "Edamam Day"
+
     return {
         "day_index": stored_day["day_index"],
-        "label": stored_day["label"],
+        "label": label,
         "is_refeed": stored_day.get("is_refeed", False),
         "meals": meals_out,
         "totals": {
