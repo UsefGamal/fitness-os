@@ -1,7 +1,6 @@
 import os
 import secrets
 from datetime import date, timedelta
-from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
@@ -21,7 +20,7 @@ DIGEST_EMAIL_TO = os.getenv("DIGEST_EMAIL_TO", "")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://fitness-os.onrender.com")
 
 
-def _check_cron_secret(secret_qs: Optional[str], secret_header: Optional[str]) -> None:
+def _check_cron_secret(secret_qs: str | None, secret_header: str | None) -> None:
     """Accepts the secret via the `?secret=` query param (the original
     cron-job.org setup) or an `X-Cron-Secret` header (preferred — query
     strings end up in access logs and referrer headers, a header doesn't).
@@ -59,8 +58,8 @@ def healthz_warm():
 
 @router.get("/cron/daily-digest")
 def daily_digest(
-    secret: Optional[str] = Query(None),
-    x_cron_secret: Optional[str] = Header(None),
+    secret: str | None = Query(None),
+    x_cron_secret: str | None = Header(None),
     force: bool = Query(False),
     session: Session = Depends(get_session),
 ):
@@ -99,8 +98,8 @@ def daily_digest(
 
 @router.get("/cron/weekly-recap")
 def weekly_recap(
-    secret: Optional[str] = Query(None),
-    x_cron_secret: Optional[str] = Header(None),
+    secret: str | None = Query(None),
+    x_cron_secret: str | None = Header(None),
     force: bool = Query(False),
     session: Session = Depends(get_session),
 ):

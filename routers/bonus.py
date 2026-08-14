@@ -26,7 +26,7 @@ def _total_points(session: Session) -> int:
 def _done_keys(session: Session, today: date) -> set[str]:
     """Which task keys currently count as 'done', per their own cadence."""
     week_start = _week_start(today)
-    done = set()
+    done: set[str] = set()
 
     daily_keys = {t["key"] for t in BONUS_TASKS if t["frequency"] == "daily"}
     if daily_keys:
@@ -56,7 +56,7 @@ def bonus_page(request: Request, session: Session = Depends(get_session)):
     sync_system_quests(session, today)
     done_keys = _done_keys(session, today)
 
-    tasks_by_frequency = {"daily": [], "weekly": [], "once": []}
+    tasks_by_frequency: dict[str, list[dict]] = {"daily": [], "weekly": [], "once": []}
     for task in BONUS_TASKS:
         tasks_by_frequency[task["frequency"]].append({**task, "done": task["key"] in done_keys})
 

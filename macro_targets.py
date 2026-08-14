@@ -29,7 +29,7 @@ def _static_fallback() -> dict:
     return {**m, "kcal": kcal}
 
 
-def get_macro_targets(session: Session, today: date = None) -> dict:
+def get_macro_targets(session: Session, today: date | None = None) -> dict:
     baseline = get_baseline(session, today)
     profile = baseline["profile"]
     weight = baseline["current_weight"] or baseline["start_weight"]

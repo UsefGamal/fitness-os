@@ -1,5 +1,4 @@
 from datetime import date, datetime
-from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -7,7 +6,7 @@ from sqlmodel import Field, SQLModel
 class Profile(SQLModel, table=True):
     """Single-row table holding the user's current stats and goal."""
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     height_cm: float = 173
     date_of_birth: date = date(1999, 1, 1)
     goal_weight_low_kg: float = 75
@@ -15,57 +14,57 @@ class Profile(SQLModel, table=True):
     goal_date: date = date(2027, 1, 18)
     activity_notes: str = "Data engineer, desk job. Padel 2x/week (1.5h)."
     fitness_level: str = "intermediate"
-    start_weight_kg: Optional[float] = None
+    start_weight_kg: float | None = None
     gender: str = "male"  # Mifflin-St Jeor input (see content/tdee.py) — no neutral default exists for this formula
     activity_level: str = "moderate"  # TDEE multiplier tier (see content/tdee.py's ACTIVITY_MULTIPLIERS)
 
 
 class BodyLog(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     log_date: date
     weight_kg: float
-    waist_cm: Optional[float] = None
-    notes: Optional[str] = None
-    sleep_hours: Optional[float] = None
-    chest_cm: Optional[float] = None
-    arm_cm: Optional[float] = None
-    hips_cm: Optional[float] = None
-    thigh_cm: Optional[float] = None
+    waist_cm: float | None = None
+    notes: str | None = None
+    sleep_hours: float | None = None
+    chest_cm: float | None = None
+    arm_cm: float | None = None
+    hips_cm: float | None = None
+    thigh_cm: float | None = None
 
 
 class HydrationLog(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     log_date: date
     ml: int = 0
 
 
 class Workout(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     log_date: date
     workout_type: str  # "gym" or "padel"
-    duration_min: Optional[int] = None
-    notes: Optional[str] = None
-    session_rpe: Optional[int] = None  # 1-10 session-level intensity/effort
+    duration_min: int | None = None
+    notes: str | None = None
+    session_rpe: int | None = None  # 1-10 session-level intensity/effort
     is_deload: bool = False
-    pain_note: Optional[str] = None
-    result: Optional[str] = None  # "win" / "loss" / "draw" — used by padel
+    pain_note: str | None = None
+    result: str | None = None  # "win" / "loss" / "draw" — used by padel
 
 
 class Exercise(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str
     muscle_group: str
-    equipment: Optional[str] = None
+    equipment: str | None = None
 
 
 class WorkoutSet(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     workout_id: int = Field(foreign_key="workout.id")
     exercise_id: int = Field(foreign_key="exercise.id")
     set_number: int
     reps: int
     weight_kg: float
-    rpe: Optional[float] = None  # 1-10 perceived effort for this set
+    rpe: float | None = None  # 1-10 perceived effort for this set
 
 
 class ChecklistItemLog(SQLModel, table=True):
@@ -73,31 +72,31 @@ class ChecklistItemLog(SQLModel, table=True):
     WorkoutSet since there's no external load to log, just completion and
     (for Home) reps achieved for progression suggestions."""
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     workout_id: int = Field(foreign_key="workout.id")
     item_name: str
     completed: bool = False
-    reps_achieved: Optional[int] = None
+    reps_achieved: int | None = None
 
 
 class MealLog(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     log_date: date
     meal_slot: str
     completed: bool = False
-    option_key: Optional[str] = None  # "option_a" or "option_b" — which one was eaten
-    drink_key: Optional[str] = None  # which drink (see content/food_items.DRINKS) was chosen
+    option_key: str | None = None  # "option_a" or "option_b" — which one was eaten
+    drink_key: str | None = None  # which drink (see content/food_items.DRINKS) was chosen
 
 
 class BonusLog(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     log_date: date
     task_key: str
     points: int
 
 
 class ReminderLog(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     log_date: date
     reminder_type: str
     sent_at: datetime = Field(default_factory=datetime.utcnow)
@@ -110,17 +109,17 @@ class MealPlanSync(SQLModel, table=True):
     recent 'complete' row is ever read for meal content (see
     fitchef_sync.get_active_day); older rows are kept only as history."""
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     requested_at: datetime = Field(default_factory=datetime.utcnow)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     status: str = "week1_pending"  # week1_pending | week2_pending | complete | error
-    week1_identifier: Optional[int] = None
-    week2_identifier: Optional[int] = None
-    recipe_history: Optional[str] = None  # JSON string, chained into the next sync
-    week1_json: Optional[str] = None  # raw week1 payload, held until week2 completes
-    plan_json: Optional[str] = None  # final merged 14-day plan, set once complete
-    products_json: Optional[str] = None  # merged shopping-list products, set once complete
-    error_detail: Optional[str] = None
+    week1_identifier: int | None = None
+    week2_identifier: int | None = None
+    recipe_history: str | None = None  # JSON string, chained into the next sync
+    week1_json: str | None = None  # raw week1 payload, held until week2 completes
+    plan_json: str | None = None  # final merged 14-day plan, set once complete
+    products_json: str | None = None  # merged shopping-list products, set once complete
+    error_detail: str | None = None
 
 
 class EdamamPlanSync(SQLModel, table=True):
@@ -134,10 +133,10 @@ class EdamamPlanSync(SQLModel, table=True):
     'complete' row is read for meal content (see
     edamam_sync.get_active_day); older rows are kept only as history."""
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     requested_at: datetime = Field(default_factory=datetime.utcnow)
-    synced_at: Optional[datetime] = None
+    synced_at: datetime | None = None
     status: str = "pending"  # pending | complete | error
-    plan_json: Optional[str] = None
-    products_json: Optional[str] = None
-    error_detail: Optional[str] = None
+    plan_json: str | None = None
+    products_json: str | None = None
+    error_detail: str | None = None

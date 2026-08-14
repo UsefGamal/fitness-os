@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -31,7 +30,7 @@ def recovery_list(request: Request, session: Session = Depends(get_session)):
 @router.post("/recovery/new", dependencies=[Depends(require_login)])
 def create_recovery_session(
     log_date: date = Form(...),
-    notes: Optional[str] = Form(None),
+    notes: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     require_not_future(log_date, "Date", date.today())
@@ -66,8 +65,8 @@ def recovery_detail(workout_id: int, request: Request, session: Session = Depend
 @router.post("/recovery/{workout_id}/notes", dependencies=[Depends(require_login)])
 def update_session_notes(
     workout_id: int,
-    session_rpe: Optional[int] = Form(None),
-    pain_note: Optional[str] = Form(None),
+    session_rpe: int | None = Form(None),
+    pain_note: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     workout = session.get(Workout, workout_id)

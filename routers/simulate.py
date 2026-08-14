@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
@@ -18,7 +17,7 @@ def simulate_page(
     request: Request,
     missed_sessions_per_week: float = 0,
     meal_adherence_pct: float = 100,
-    rate_override: Optional[float] = None,
+    rate_override: float | None = None,
     pause_weeks: float = 0,
     session: Session = Depends(get_session),
 ):

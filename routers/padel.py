@@ -1,6 +1,5 @@
 from collections import Counter
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -22,7 +21,7 @@ PAIN_PATTERN_THRESHOLD = 3
 
 
 @router.get("/padel", dependencies=[Depends(require_login)])
-def padel_list(request: Request, edit: Optional[int] = None, session: Session = Depends(get_session)):
+def padel_list(request: Request, edit: int | None = None, session: Session = Depends(get_session)):
     sessions = session.exec(
         select(Workout).where(Workout.workout_type == "padel").order_by(Workout.log_date.desc())
     ).all()
@@ -61,13 +60,13 @@ def padel_list(request: Request, edit: Optional[int] = None, session: Session = 
 
 @router.post("/padel", dependencies=[Depends(require_login)])
 def add_padel_session(
-    workout_id: Optional[int] = Form(None),
+    workout_id: int | None = Form(None),
     log_date: date = Form(...),
-    duration_min: Optional[int] = Form(90),
-    notes: Optional[str] = Form(None),
-    session_rpe: Optional[int] = Form(None),
-    result: Optional[str] = Form(None),
-    pain_note: Optional[str] = Form(None),
+    duration_min: int | None = Form(90),
+    notes: str | None = Form(None),
+    session_rpe: int | None = Form(None),
+    result: str | None = Form(None),
+    pain_note: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     require_not_future(log_date, "Date", date.today())

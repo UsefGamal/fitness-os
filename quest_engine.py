@@ -14,6 +14,7 @@ bigger quests over time rather than being tracked twice.
 """
 
 from datetime import date
+from itertools import pairwise
 
 from sqlmodel import Session, select
 
@@ -34,7 +35,7 @@ def _longest_streak_ever(workout_dates: set[date]) -> int:
         return 0
     ordered = sorted(workout_dates)
     best = run = 1
-    for prev, curr in zip(ordered, ordered[1:]):
+    for prev, curr in pairwise(ordered):
         run = run + 1 if (curr - prev).days == 1 else 1
         best = max(best, run)
     return best

@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -18,7 +17,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/cardio", dependencies=[Depends(require_login)])
-def cardio_list(request: Request, edit: Optional[int] = None, session: Session = Depends(get_session)):
+def cardio_list(request: Request, edit: int | None = None, session: Session = Depends(get_session)):
     sessions = session.exec(
         select(Workout).where(Workout.workout_type == "cardio").order_by(Workout.log_date.desc())
     ).all()
@@ -46,11 +45,11 @@ def cardio_list(request: Request, edit: Optional[int] = None, session: Session =
 
 @router.post("/cardio", dependencies=[Depends(require_login)])
 def add_cardio_session(
-    workout_id: Optional[int] = Form(None),
+    workout_id: int | None = Form(None),
     log_date: date = Form(...),
-    duration_min: Optional[int] = Form(22),
-    notes: Optional[str] = Form(None),
-    session_rpe: Optional[int] = Form(None),
+    duration_min: int | None = Form(22),
+    notes: str | None = Form(None),
+    session_rpe: int | None = Form(None),
     session: Session = Depends(get_session),
 ):
     require_not_future(log_date, "Date", date.today())

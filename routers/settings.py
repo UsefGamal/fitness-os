@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -50,7 +49,7 @@ def update_settings(
     fitness_level: str = Form(...),
     gender: str = Form(...),
     activity_level: str = Form(...),
-    start_weight_kg: Optional[float] = Form(None),
+    start_weight_kg: float | None = Form(None),
     session: Session = Depends(get_session),
 ):
     require_range(height_cm, 100, 250, "Height")

@@ -104,7 +104,7 @@ def _daily_macro_totals(session: Session, start: date, end: date) -> dict:
 
 
 @router.get("/meals", dependencies=[Depends(require_login)])
-def meals_page(request: Request, view_date: str = None, session: Session = Depends(get_session)):
+def meals_page(request: Request, view_date: str | None = None, session: Session = Depends(get_session)):
     sync = latest_sync(session)
     if sync and sync.status not in ("complete", "error"):
         advance_sync(session, sync)
@@ -337,10 +337,10 @@ def shopping_list_page(request: Request, session: Session = Depends(get_session)
                     totals[(base, unit)] += qty
                     base_category.setdefault(base, FOOD_CATEGORIES.get(item, "Nuts, Sauces & Extras"))
 
-    by_category: dict[str, list[dict]] = {cat: [] for cat in CATEGORY_ORDER}
+    static_by_category: dict[str, list[dict]] = {cat: [] for cat in CATEGORY_ORDER}
     for (base, unit), total in totals.items():
         category = base_category.get(base, "Nuts, Sauces & Extras")
-        by_category[category].append({"name": display_name(base), "qty": format_shopping_qty(total, unit)})
+        static_by_category[category].append({"name": display_name(base), "qty": format_shopping_qty(total, unit)})
 
     categories = [
         {
@@ -349,7 +349,7 @@ def shopping_list_page(request: Request, session: Session = Depends(get_session)
             "color": CATEGORY_COLORS.get(cat, "var(--muted)"),
             "icon": CATEGORY_ICONS.get(cat, "list"),
         }
-        for cat, items in by_category.items()
+        for cat, items in static_by_category.items()
         if items
     ]
 

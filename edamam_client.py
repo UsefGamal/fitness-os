@@ -55,7 +55,7 @@ def search_recipes(
     if not _app_id() or not _app_key():
         raise EdamamError("EDAMAM_APP_ID/EDAMAM_APP_KEY not configured")
 
-    params = {"type": "public", "q": query, "app_id": _app_id(), "app_key": _app_key()}
+    params: dict[str, str | list[str]] = {"type": "public", "q": query, "app_id": _app_id(), "app_key": _app_key()}
     if meal_type:
         params["mealType"] = meal_type
     if cuisine_type:
@@ -79,6 +79,12 @@ def search_recipes(
         response.raise_for_status()
         data = response.json()
         return [hit["recipe"] for hit in data.get("hits", [])]
+
+    # Unreachable in practice (the 429 branch above always either retries
+    # or raises on the final attempt), but explicit rather than relying on
+    # the loop-bound proof — a future change to the retry logic shouldn't
+    # be able to fall off the end and return None from a `-> list[dict]`.
+    raise EdamamError("Edamam retry loop exited without a response — this should never happen")
 
 
 def normalize_recipe(recipe: dict) -> dict:

@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-from typing import Optional
 
 
 def week_start(d: date) -> date:
@@ -7,7 +6,7 @@ def week_start(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
 
-def linear_rate_kg_per_week(body_logs: list) -> Optional[float]:
+def linear_rate_kg_per_week(body_logs: list) -> float | None:
     """Least-squares weight trend from BodyLog rows (any order), in kg/week
     (positive = losing weight). None if fewer than 2 logs or span < 7 days."""
     if len(body_logs) < 2:
@@ -23,7 +22,7 @@ def linear_rate_kg_per_week(body_logs: list) -> Optional[float]:
     n = len(xs)
     sum_x = sum(xs)
     sum_y = sum(ys)
-    sum_xy = sum(x * y for x, y in zip(xs, ys))
+    sum_xy = sum(x * y for x, y in zip(xs, ys, strict=True))
     sum_x2 = sum(x * x for x in xs)
 
     denom = n * sum_x2 - sum_x * sum_x
@@ -34,14 +33,14 @@ def linear_rate_kg_per_week(body_logs: list) -> Optional[float]:
     return round(-slope_per_day * 7, 3)
 
 
-def target_rate_kg_per_week(start_weight: float, goal_mid: float, start_date: date, goal_date: date) -> Optional[float]:
+def target_rate_kg_per_week(start_weight: float, goal_mid: float, start_date: date, goal_date: date) -> float | None:
     days = (goal_date - start_date).days
     if days <= 0:
         return None
     return round((start_weight - goal_mid) / days * 7, 3)
 
 
-def predicted_goal_date(current_weight: float, goal_mid: float, actual_rate_per_week: Optional[float], today: date) -> Optional[date]:
+def predicted_goal_date(current_weight: float, goal_mid: float, actual_rate_per_week: float | None, today: date) -> date | None:
     if actual_rate_per_week is None or actual_rate_per_week <= 0:
         return None
     remaining = current_weight - goal_mid
@@ -51,7 +50,7 @@ def predicted_goal_date(current_weight: float, goal_mid: float, actual_rate_per_
     return today + timedelta(days=round(weeks_needed * 7))
 
 
-def slack_impact_date(baseline_predicted: Optional[date], missed_weeks: float) -> Optional[date]:
+def slack_impact_date(baseline_predicted: date | None, missed_weeks: float) -> date | None:
     """Rough estimate: a full pause shifts the goal date by the pause length,
     assuming the same rate resumes afterward."""
     if baseline_predicted is None:
@@ -84,7 +83,7 @@ def compute_streak(logged_dates: set, today: date) -> int:
     return streak
 
 
-def confidence_score(actual_rate: Optional[float], target_rate: Optional[float], adherence_pct: float):
+def confidence_score(actual_rate: float | None, target_rate: float | None, adherence_pct: float):
     """Returns (score_0_100_or_None, label). Blends pace-vs-target (60%) and
     adherence (40%). None score means not enough data yet to judge pace."""
     if actual_rate is None or target_rate is None or target_rate <= 0:

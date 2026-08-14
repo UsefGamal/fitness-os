@@ -1,6 +1,6 @@
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory="templates")
 WEEKLY_DELTA_WEEKS = 10
 
 
-def _weekly_weight_deltas(logs: list[BodyLog]) -> tuple[list[float], list[str]]:
+def _weekly_weight_deltas(logs: Sequence[BodyLog]) -> tuple[list[float], list[str]]:
     """One average weight per ISO week, then week-over-week deltas — a
     steadier signal than the noisy daily line for 'am I on pace'."""
     by_week: dict[date, list[float]] = defaultdict(list)
@@ -37,12 +37,12 @@ def _weekly_weight_deltas(logs: list[BodyLog]) -> tuple[list[float], list[str]]:
 
 
 @router.get("/body", dependencies=[Depends(require_login)])
-def body_log_page(request: Request, edit: Optional[int] = None, session: Session = Depends(get_session)):
+def body_log_page(request: Request, edit: int | None = None, session: Session = Depends(get_session)):
     logs = session.exec(select(BodyLog).order_by(BodyLog.log_date)).all()
     weights = [log.weight_kg for log in logs]
 
     weekly_deltas, weekly_labels = _weekly_weight_deltas(logs)
-    weekly_rows = list(reversed(list(zip(weekly_labels, weekly_deltas))))
+    weekly_rows = list(reversed(list(zip(weekly_labels, weekly_deltas, strict=True))))
 
     edit_log = next((log for log in logs if log.id == edit), None) if edit else None
 
@@ -85,13 +85,13 @@ def body_log_page(request: Request, edit: Optional[int] = None, session: Session
 def add_body_log(
     log_date: date = Form(...),
     weight_kg: float = Form(...),
-    waist_cm: Optional[float] = Form(None),
-    chest_cm: Optional[float] = Form(None),
-    arm_cm: Optional[float] = Form(None),
-    hips_cm: Optional[float] = Form(None),
-    thigh_cm: Optional[float] = Form(None),
-    sleep_hours: Optional[float] = Form(None),
-    notes: Optional[str] = Form(None),
+    waist_cm: float | None = Form(None),
+    chest_cm: float | None = Form(None),
+    arm_cm: float | None = Form(None),
+    hips_cm: float | None = Form(None),
+    thigh_cm: float | None = Form(None),
+    sleep_hours: float | None = Form(None),
+    notes: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     require_not_future(log_date, "Date", date.today())

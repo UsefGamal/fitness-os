@@ -13,6 +13,7 @@ builders don't own that, since the underlying data (dates, values)
 already has a natural table representation at the call site.
 """
 
+from collections.abc import Sequence
 from html import escape
 
 
@@ -96,7 +97,7 @@ def build_line_svg(
     return "".join(parts)
 
 
-def build_sparkline_svg(values: list[float], width: int = 96, height: int = 32, pad: int = 3) -> str:
+def build_sparkline_svg(values: Sequence[float], width: int = 96, height: int = 32, pad: int = 3) -> str:
     """Compact single-hue trend line for small multiples — no axis, no grid."""
     if len(values) < 2:
         return ""

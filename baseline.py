@@ -7,7 +7,7 @@ from content.projections import linear_rate_kg_per_week, predicted_goal_date, ta
 from models import BodyLog, Profile
 
 
-def get_baseline(session: Session, today: date = None) -> dict:
+def get_baseline(session: Session, today: date | None = None) -> dict:
     """Shared baseline projection numbers used by both the dashboard and the
     what-if simulator, so they never drift out of sync with each other."""
     today = today or date.today()

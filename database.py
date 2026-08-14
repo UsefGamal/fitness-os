@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import inspect
-from sqlmodel import SQLModel, Session, create_engine, text
+from sqlmodel import Session, SQLModel, create_engine, text
 
 load_dotenv()
 
@@ -85,8 +85,18 @@ def run_light_migrations() -> None:
         try:
             with engine.begin() as conn:
                 conn.execute(text(statement))
-        except Exception:
-            pass  # column already exists
+        except Exception as exc:
+            # Expected steady-state: the column already exists from a prior
+            # run (SQLite raises "duplicate column name", Postgres raises
+            # "already exists"/DuplicateColumn) — silent by design. Anything
+            # else (a genuine syntax error, an ANSI-incompatible type only
+            # Postgres rejects, a connectivity issue) must stay visible — a
+            # blanket `except Exception: pass` here is exactly what let the
+            # SQLite-lenient `BOOLEAN DEFAULT 0` migration reach production
+            # unnoticed (see test_migrations.py's regression guard for it).
+            detail = str(exc).lower()
+            if "duplicate column" not in detail and "already exists" not in detail:
+                print(f"database.py: light migration failed unexpectedly, skipping: {statement!r} -> {exc!r}")
 
 
 def get_session():

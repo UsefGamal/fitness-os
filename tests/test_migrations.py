@@ -8,7 +8,7 @@ from sqlalchemy import inspect
 from sqlmodel import SQLModel
 
 import models  # noqa: F401  (ensures models are registered before create_all)
-from database import DATABASE_URL, _LIGHT_MIGRATIONS, _drop_stale_mealplansync_table, engine, run_light_migrations
+from database import _LIGHT_MIGRATIONS, DATABASE_URL, _drop_stale_mealplansync_table, engine, run_light_migrations
 
 
 def test_light_migrations_idempotent_and_add_missing_columns():

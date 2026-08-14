@@ -2,7 +2,6 @@ import os
 import secrets
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
-from typing import Optional
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -11,9 +10,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, func, select
+from starlette.middleware.sessions import SessionMiddleware
 
+import edamam_sync
+import fitchef_sync
 from auth import (
     APP_PASSWORD,
     is_login_locked_out,
@@ -32,14 +33,28 @@ from content.projections import (
     meal_adherence_pct,
     slack_impact_date,
     training_adherence_pct,
+)
+from content.projections import (
     week_start as get_week_start,
 )
 from database import engine, get_session, init_db
-import edamam_sync
-import fitchef_sync
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
 from quest_engine import sync_system_quests
-from routers import body, bonus, cardio, gym, home, meals, padel, recovery, reminders, settings, simulate, training, webhooks
+from routers import (
+    body,
+    bonus,
+    cardio,
+    gym,
+    home,
+    meals,
+    padel,
+    recovery,
+    reminders,
+    settings,
+    simulate,
+    training,
+    webhooks,
+)
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
 from validation import ValidationError, error_redirect
 
@@ -236,11 +251,11 @@ CONFIDENCE_STATUS = {
 }
 
 
-def _weekly_adherence_outcome_insight(session: Session, today: date, weeks: int = 8) -> Optional[str]:
+def _weekly_adherence_outcome_insight(session: Session, today: date, weeks: int = 8) -> str | None:
     """'Weeks you hit >=80% meal adherence, you lost X more' — or None if
     there isn't enough history yet to say anything meaningful."""
-    high_changes = []
-    low_changes = []
+    high_changes: list[float] = []
+    low_changes: list[float] = []
     for i in range(weeks):
         week_end = today - timedelta(days=7 * i)
         week_start = week_end - timedelta(days=6)
@@ -362,7 +377,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     recent_gym_workouts = session.exec(
         select(Workout).where(Workout.log_date >= two_weeks_ago, Workout.workout_type == "gym")
     ).all()
-    rpe_pool = []
+    rpe_pool: list[float] = []
     for w in recent_gym_workouts:
         set_rpes = session.exec(
             select(WorkoutSet.rpe).where(WorkoutSet.workout_id == w.id, WorkoutSet.rpe.is_not(None))
@@ -412,7 +427,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     week_workouts = session.exec(
         select(Workout).where(Workout.log_date >= week_start, Workout.log_date < week_start + timedelta(days=7))
     ).all()
-    workouts_by_date = {}
+    workouts_by_date: dict[date, list[Workout]] = {}
     for w in week_workouts:
         workouts_by_date.setdefault(w.log_date, []).append(w)
 

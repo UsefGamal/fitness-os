@@ -1,6 +1,5 @@
 import re
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -115,8 +114,8 @@ def gym_progress(request: Request, session: Session = Depends(get_session)):
 @router.post("/gym/new", dependencies=[Depends(require_login)])
 def create_gym_session(
     log_date: date = Form(...),
-    duration_min: Optional[int] = Form(None),
-    notes: Optional[str] = Form(None),
+    duration_min: int | None = Form(None),
+    notes: str | None = Form(None),
     is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
@@ -134,7 +133,7 @@ def create_gym_session(
     return RedirectResponse(url=f"/gym/{workout.id}", status_code=303)
 
 
-def _rep_range_top(reps_str: str) -> Optional[int]:
+def _rep_range_top(reps_str: str) -> int | None:
     match = re.match(r"(\d+)-(\d+)", reps_str)
     if match:
         return int(match.group(2))
@@ -142,7 +141,7 @@ def _rep_range_top(reps_str: str) -> Optional[int]:
 
 
 def _suggest_next_weight(
-    exercise: Exercise, last_reps: int, last_weight: float, target_reps: str, last_rpe: Optional[float] = None
+    exercise: Exercise, last_reps: int, last_weight: float, target_reps: str, last_rpe: float | None = None
 ) -> str:
     top = _rep_range_top(target_reps)
     if top is None:
@@ -208,18 +207,18 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
         checklist = []
         muscle_set = set()
         for spec in program_day["exercises"]:
-            ex = exercise_by_name.get(spec["name"])
+            spec_ex = exercise_by_name.get(spec["name"])
             suggestion = "no prior data yet — pick a comfortable starting weight"
-            if ex and ex.id in last_performance_raw:
-                last_reps, last_weight, last_rpe = last_performance_raw[ex.id]
-                suggestion = _suggest_next_weight(ex, last_reps, last_weight, spec["reps"], last_rpe)
+            if spec_ex and spec_ex.id in last_performance_raw:
+                last_reps, last_weight, last_rpe = last_performance_raw[spec_ex.id]
+                suggestion = _suggest_next_weight(spec_ex, last_reps, last_weight, spec["reps"], last_rpe)
             alternatives = []
-            if ex:
-                muscle_set.add(ex.muscle_group)
+            if spec_ex:
+                muscle_set.add(spec_ex.muscle_group)
                 alternatives = [
                     {"name": other.name, "equipment": other.equipment}
                     for other in exercises
-                    if other.muscle_group == ex.muscle_group and other.name != ex.name
+                    if other.muscle_group == spec_ex.muscle_group and other.name != spec_ex.name
                 ]
             checklist.append(
                 {
@@ -265,7 +264,7 @@ def add_set(
     exercise_id: int = Form(...),
     reps: int = Form(...),
     weight_kg: float = Form(...),
-    rpe: Optional[float] = Form(None),
+    rpe: float | None = Form(None),
     session: Session = Depends(get_session),
 ):
     workout = session.get(Workout, workout_id)
@@ -297,8 +296,8 @@ def add_set(
 @router.post("/gym/{workout_id}/notes", dependencies=[Depends(require_login)])
 def update_session_notes(
     workout_id: int,
-    session_rpe: Optional[int] = Form(None),
-    pain_note: Optional[str] = Form(None),
+    session_rpe: int | None = Form(None),
+    pain_note: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     workout = session.get(Workout, workout_id)

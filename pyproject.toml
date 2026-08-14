@@ -1,0 +1,33 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".venv", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+# E501: several existing lines (long docstrings, email-digest HTML, URLs)
+# exceed 120 chars; rewrapping them isn't part of adopting linting.
+# B008: FastAPI's own idiomatic pattern is `param: X = Depends(...)` in a
+# route signature — not the "mutable default" bug this rule targets.
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["content", "routers"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+exclude = ["^\\.venv/", "^tests/"]
+# SQLModel types Field()-based columns as their plain Python type (e.g.
+# `log_date: date`) for editor/IDE ergonomics, not as SQLAlchemy's
+# InstrumentedAttribute — so mypy can't tell that `Model.field` used in
+# .order_by()/.join()/.in_() is a query construct, and flags real, working
+# query code as a type mismatch. The same root cause (Optional[int] on
+# autoincrement primary keys) also fires once a row's id/int field is
+# passed somewhere a plain int is expected post-commit. This is a known
+# SQLModel/mypy limitation, not a bug in this code — SQLModel's own docs
+# point to Pyright/Pylance for accurate editor-level checking instead.
+disable_error_code = ["union-attr", "attr-defined", "index", "call-overload", "arg-type"]

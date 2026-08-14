@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -58,8 +57,8 @@ def home_list(request: Request, session: Session = Depends(get_session)):
 @router.post("/home/new", dependencies=[Depends(require_login)])
 def create_home_session(
     log_date: date = Form(...),
-    duration_min: Optional[int] = Form(None),
-    notes: Optional[str] = Form(None),
+    duration_min: int | None = Form(None),
+    notes: str | None = Form(None),
     is_deload: bool = Form(False),
     session: Session = Depends(get_session),
 ):
@@ -147,8 +146,8 @@ def home_detail(workout_id: int, request: Request, session: Session = Depends(ge
 @router.post("/home/{workout_id}/notes", dependencies=[Depends(require_login)])
 def update_session_notes(
     workout_id: int,
-    session_rpe: Optional[int] = Form(None),
-    pain_note: Optional[str] = Form(None),
+    session_rpe: int | None = Form(None),
+    pain_note: str | None = Form(None),
     session: Session = Depends(get_session),
 ):
     workout = session.get(Workout, workout_id)
@@ -179,7 +178,7 @@ def delete_home_session(workout_id: int, session: Session = Depends(get_session)
 def log_item(
     workout_id: int,
     item_name: str = Form(...),
-    reps_achieved: Optional[int] = Form(None),
+    reps_achieved: int | None = Form(None),
     session: Session = Depends(get_session),
 ):
     workout = session.get(Workout, workout_id)
