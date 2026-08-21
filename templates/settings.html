@@ -7,7 +7,7 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-user"/></svg> Profile & Goal</h2>
-  <form method="post" action="/settings" class="stack-form">
+  <form method="post" action="/settings" class="stack-form no-reload-form">
     <label>Height (cm) <input type="number" step="0.1" min="100" max="250" name="height_cm" value="{{ profile.height_cm }}" required></label>
     <label>Date of birth <input type="date" name="date_of_birth" value="{{ profile.date_of_birth }}" max="{{ today }}" required></label>
     <label>Starting weight (kg) — drives your confidence score and predicted goal date

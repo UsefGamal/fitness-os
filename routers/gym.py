@@ -33,6 +33,8 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
         summaries.append({"workout": w, "set_count": set_count})
 
     next_day = next_program_day(count_training_sessions(session))
+    today = get_today()
+    today_session = next((s["workout"] for s in summaries if s["workout"].log_date == today), None)
 
     return templates.TemplateResponse(
         request,
@@ -41,7 +43,8 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "logged_in": True,
             "summaries": summaries,
-            "today": get_today().isoformat(),
+            "today": today.isoformat(),
+            "today_session": today_session,
             "next_day": next_day,
             "deload_due": deload_due(session, PLAN_START_DATE),
             "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
@@ -137,6 +140,23 @@ def create_gym_session(
 
     if not notes:
         notes = next_program_day(count_training_sessions(session))["label"]
+
+    # Upsert by date — matches body/cardio/padel's own convention (see
+    # new-logged-entity skill). Without this, re-submitting "Start a
+    # session" for a day that already has one (e.g. re-opening the app
+    # mid-workout) silently created a second Workout row for the same day,
+    # splitting that day's sets across two sessions instead of one.
+    existing = session.exec(
+        select(Workout).where(Workout.log_date == log_date, Workout.workout_type == "gym")
+    ).first()
+    if existing:
+        existing.duration_min = duration_min
+        existing.notes = notes
+        existing.is_deload = is_deload
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return RedirectResponse(url=f"/gym/{existing.id}", status_code=303)
 
     workout = Workout(log_date=log_date, workout_type="gym", duration_min=duration_min, notes=notes, is_deload=is_deload)
     session.add(workout)

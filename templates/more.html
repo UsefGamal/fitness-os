@@ -35,7 +35,7 @@
   {% endif %}
 
   {% if not edamam_sync or edamam_sync.status in ("complete", "error") or edamam_sync_stale %}
-  <form method="post" action="/meals/edamam-sync" style="margin-top:10px">
+  <form method="post" action="/meals/edamam-sync" class="no-reload-form" style="margin-top:10px">
     <button type="submit" class="meal-check-btn">
       {% if edamam_sync and edamam_sync.status == "complete" %}Sync again (new 14 days){% elif edamam_sync and (edamam_sync.status == "error" or edamam_sync_stale) %}Try again{% else %}Sync now{% endif %}
     </button>
@@ -67,7 +67,7 @@
   {% endif %}
 
   {% if not fitchef_sync or fitchef_sync.status in ("complete", "error") %}
-  <form method="post" action="/meals/fitchef-sync" style="margin-top:10px">
+  <form method="post" action="/meals/fitchef-sync" class="no-reload-form" style="margin-top:10px">
     <button type="submit" class="meal-check-btn">
       {% if fitchef_sync and fitchef_sync.status == "complete" %}Sync again (new 14 days){% elif fitchef_sync and fitchef_sync.status == "error" %}Try again{% else %}Sync now{% endif %}
     </button>

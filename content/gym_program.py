@@ -31,7 +31,7 @@ PROGRAM = [
             {"name": "Leg Press", "sets": 3, "reps": "10-12", "rest": "90s"},
             {"name": "Leg Curl", "sets": 3, "reps": "10-12", "rest": "60s"},
             {"name": "Standing Calf Raise", "sets": 4, "reps": "12-15", "rest": "45s"},
-            {"name": "Cable Crunch", "sets": 3, "reps": "12-15", "rest": "45s"},
+            {"name": "Pallof Press", "sets": 3, "reps": "10-12/side", "rest": "45s"},
         ],
     },
     {

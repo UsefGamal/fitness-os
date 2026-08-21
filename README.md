@@ -127,12 +127,15 @@ Set these up on [cron-job.org](https://cron-job.org) (or any external scheduler)
 |---|---|---|---|
 | Daily digest | `https://fitness-os.onrender.com/cron/daily-digest?secret=<CRON_SECRET>` | Daily, e.g. 6:00 AM | Meal plan + gym day email |
 | Weekly recap | `https://fitness-os.onrender.com/cron/weekly-recap?secret=<CRON_SECRET>` | Weekly, e.g. Sunday evening | Weight/adherence/points recap email |
+| Evening nudge | `https://fitness-os.onrender.com/cron/evening-nudge?secret=<CRON_SECRET>` | Daily, e.g. 8:00-9:00 PM | Push notification if today's meals/training aren't logged yet |
 | Keep-alive | `https://fitness-os.onrender.com/healthz-warm` | Every 10-14 min | Stops the Render free-tier instance from sleeping, so the digest cron doesn't land on a cold start |
 
 Both digest endpoints:
 - Skip silently if already sent today (dedup via `ReminderLog`) — add `&force=true` to resend on demand.
 - Never throw an uncaught error — failures return a small structured JSON body (`{"status":"error","detail":"..."}`) so they're diagnosable via a plain curl instead of guessing from a cron monitor's failure report.
 - Accept the secret via an `X-Cron-Secret` header instead of `?secret=` in the URL — preferred, since URL query strings end up in access logs and referrer headers. cron-job.org supports custom headers under a job's "Advanced" tab. The query param still works for backward compatibility.
+
+**`/healthz-warm` also self-heals a missed digest.** In practice, the dedicated once-a-day cron pings have sometimes failed to reach the app at all for a week or more at a stretch (`ReminderLog` gaps), most likely landing on a cold instance and timing out before Render finishes booting, or a scheduler-side miss — not a Resend/credentials problem, since every attempt that *did* land succeeded. Because the keep-alive ping is far more frequent, `/healthz-warm` also checks (after 8 AM local time, and after 6 PM on Sundays for the weekly recap) whether today's digest/recap has actually gone out, and fires it itself if not — using the same dedup as the dedicated cron, so this never double-sends. If digests still go missing after this, the keep-alive job itself likely isn't actually running (check its execution history on cron-job.org directly).
 
 ## Security
 

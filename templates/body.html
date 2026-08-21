@@ -36,7 +36,7 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-scale"/></svg> {% if edit_log %}Edit entry — {{ edit_log.log_date }}{% else %}Log today's weigh-in{% endif %}</h2>
-  <form method="post" action="/body" class="stack-form">
+  <form method="post" action="/body" class="stack-form no-reload-form">
     <label>Date <input type="date" name="log_date" value="{{ edit_log.log_date if edit_log else today }}" max="{{ today }}" required></label>
     <label>Weight (kg) <input type="number" step="0.1" min="20" max="400" name="weight_kg" value="{{ edit_log.weight_kg if edit_log else '' }}" required></label>
     <label>Waist (cm, optional) <input type="number" step="0.1" min="20" max="300" name="waist_cm" value="{{ edit_log.waist_cm if edit_log and edit_log.waist_cm is not none else '' }}"></label>

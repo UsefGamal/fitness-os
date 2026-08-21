@@ -20,7 +20,7 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-activity"/></svg> Session notes</h2>
-  <form method="post" action="/recovery/{{ workout.id }}/notes" class="stack-form">
+  <form method="post" action="/recovery/{{ workout.id }}/notes" class="stack-form no-reload-form">
     <label>How did it feel? (optional, 1-10) <input type="number" min="1" max="10" name="session_rpe" value="{{ workout.session_rpe or '' }}"></label>
     <label>Anything hurt today? (optional) <input type="text" name="pain_note" maxlength="300" value="{{ workout.pain_note or '' }}"></label>
     <button type="submit">Save notes</button>

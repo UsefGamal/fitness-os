@@ -1,5 +1,6 @@
 import os
 import secrets
+import time
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from urllib.parse import urlparse
@@ -27,6 +28,7 @@ from charting import build_heatmap_html, build_line_svg, build_meter_html, statu
 from clock import today as get_today
 from content.bonus_tasks import BONUS_TASKS
 from content.gym_exercises import SEED_EXERCISES
+from content.gym_program import next_program_day
 from content.milestones import badge_progress, level_for_points
 from content.projections import (
     compute_streak,
@@ -58,6 +60,7 @@ from routers import (
     webhooks,
 )
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
+from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
 from validation import ValidationError, error_redirect
 
 load_dotenv()
@@ -101,6 +104,14 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+# Cache-busting for static/style.css and static/app.js — set once per
+# process start, not per-request. StaticFiles responses aren't covered by
+# response_hardening's Cache-Control: no-store (see below), so browsers are
+# free to cache them; without a version in the URL, a CSS/JS change can
+# silently keep serving the old file until the user manually hard-refreshes.
+# Bumping this on every process start (i.e. every deploy) fixes that without
+# needing a build step to hash the files.
+templates.env.globals["asset_version"] = str(int(time.time()))
 
 
 @app.get("/sw.js")
@@ -330,6 +341,22 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
         raw = (start_weight - current_weight) / (start_weight - goal_mid) * 100
         goal_progress_pct = round(min(100, max(0, raw)))
 
+    # ── Vision strip: where "today" sits in the overall program window ──
+    program_total_days = max((profile.goal_date - PLAN_START_DATE).days, 1)
+    days_elapsed = (today - PLAN_START_DATE).days
+    program_not_started = days_elapsed < 0
+    days_until_start = -days_elapsed
+    week_number = max(days_elapsed // 7 + 1, 1)
+    total_weeks = max(program_total_days // 7 + 1, 1)
+    time_progress_pct = round(min(100, max(0, days_elapsed / program_total_days * 100)))
+
+    # ── Today's Routine: single next-training recommendation, plus the
+    # same deload nudge shown on /training and /gym, so "what's next" is
+    # answerable from the dashboard alone. ───────────────────────────
+    next_training_day = next_program_day(count_training_sessions(session))
+    deload_flag = deload_due(session, PLAN_START_DATE)
+    weeks_since_deload = weeks_since_last_deload(session, PLAN_START_DATE)
+
     # ── Today's checklist (meals + quests + hydration, one glance) ──
     today_meal_logs = session.exec(select(MealLog).where(MealLog.log_date == today)).all()
     completed_meal_slots = {log.meal_slot for log in today_meal_logs if log.completed}
@@ -459,6 +486,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
                 "weekday": day_date.strftime("%a"),
                 "meal_label": meal_day["label"],
                 "meal_kcal": meal_day["totals"]["kcal"],
+                "is_refeed": meal_day.get("is_refeed", False),
                 "workouts": [
                     {
                         "type_label": WORKOUT_TYPE_LABELS.get(w.workout_type, w.workout_type),
@@ -510,6 +538,15 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "quests_total_count": quests_total_count,
             "hydration_meter_today": hydration_meter_today,
             "pain_pattern_flag": pain_pattern_flag,
+            "week_number": week_number,
+            "total_weeks": total_weeks,
+            "time_progress_pct": time_progress_pct,
+            "program_not_started": program_not_started,
+            "days_until_start": days_until_start,
+            "plan_start_date": PLAN_START_DATE.isoformat(),
+            "next_training_day": next_training_day,
+            "deload_flag": deload_flag,
+            "weeks_since_deload": weeks_since_deload,
         },
     )
 

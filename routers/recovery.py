@@ -21,10 +21,18 @@ def recovery_list(request: Request, session: Session = Depends(get_session)):
     workouts = session.exec(
         select(Workout).where(Workout.workout_type == "recovery").order_by(Workout.log_date.desc())
     ).all()
+    today = get_today()
+    today_session = next((w for w in workouts if w.log_date == today), None)
     return templates.TemplateResponse(
         request,
         "recovery_list.html",
-        {"request": request, "logged_in": True, "workouts": workouts, "today": get_today().isoformat()},
+        {
+            "request": request,
+            "logged_in": True,
+            "workouts": workouts,
+            "today": today.isoformat(),
+            "today_session": today_session,
+        },
     )
 
 
@@ -36,6 +44,19 @@ def create_recovery_session(
 ):
     require_not_future(log_date, "Date", get_today())
     require_max_length(notes, 200, "Notes")
+
+    # Upsert by date — see the matching comment in routers/gym.py's
+    # create_gym_session for why (prevents a same-day duplicate session).
+    existing = session.exec(
+        select(Workout).where(Workout.log_date == log_date, Workout.workout_type == "recovery")
+    ).first()
+    if existing:
+        existing.notes = notes
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return RedirectResponse(url=f"/recovery/{existing.id}", status_code=303)
+
     workout = Workout(log_date=log_date, workout_type="recovery", notes=notes)
     session.add(workout)
     session.commit()

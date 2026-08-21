@@ -1,13 +1,14 @@
 import json
 import os
 import secrets
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query
 from pywebpush import WebPushException, webpush
 from sqlmodel import Session, func, select
 
+from clock import APP_TIMEZONE
 from clock import today as get_today
 from content.email_digest import build_daily_digest_html
 from content.projections import compute_streak, meal_adherence_pct
@@ -67,10 +68,48 @@ def latest_reminder(session: Session, reminder_type: str) -> ReminderLog | None:
 
 
 @router.get("/healthz-warm")
-def healthz_warm():
-    """Lightweight, no-DB endpoint a keep-alive cron can hit every ~10 min
-    to stop the Render free-tier instance from sleeping — so the real
-    daily-digest cron doesn't land on a cold start."""
+def healthz_warm(background_tasks: BackgroundTasks, session: Session = Depends(get_session)):
+    """A keep-alive cron hits this every ~10-14 min to stop the Render
+    free-tier instance from sleeping, so the once-a-day digest cron doesn't
+    land on a cold start.
+
+    It also doubles as a safety net for that same digest cron: in practice,
+    ReminderLog has shown gaps of over a week between daily_digest attempts
+    while every attempt that *did* land succeeded — consistent with that
+    single once-a-day request occasionally timing out against a cold
+    instance (or a third-party scheduler simply missing a run), not a
+    Resend/credentials problem. Since this endpoint gets pinged far more
+    often than once a day, it gets many more chances to notice "today's
+    digest never went out" and fire it itself. The hour/weekday gates give
+    the dedicated cron a head start before this kicks in as a fallback, and
+    the existing already-sent dedup (same check the dedicated cron uses)
+    means this can safely run on every ping without double-sending."""
+    today = get_today()
+    now_local = datetime.now(APP_TIMEZONE)
+
+    if now_local.hour >= 8:
+        digest_sent = session.exec(
+            select(ReminderLog).where(
+                ReminderLog.log_date == today,
+                ReminderLog.reminder_type == "daily_digest",
+                ReminderLog.status == "sent",
+            )
+        ).first()
+        if not digest_sent:
+            training_session_count = count_training_sessions(session)
+            background_tasks.add_task(_run_daily_digest, today, training_session_count)
+
+    if now_local.weekday() == 6 and now_local.hour >= 18:  # Sunday evening, per README's suggested schedule
+        recap_sent = session.exec(
+            select(ReminderLog).where(
+                ReminderLog.log_date == today,
+                ReminderLog.reminder_type == "weekly_recap",
+                ReminderLog.status == "sent",
+            )
+        ).first()
+        if not recap_sent:
+            background_tasks.add_task(_run_weekly_recap, today)
+
     return {"status": "ok"}
 
 

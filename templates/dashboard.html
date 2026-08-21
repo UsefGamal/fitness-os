@@ -9,8 +9,20 @@
 </section>
 {% endif %}
 
+<section class="card vision-strip">
+  <div class="vision-strip-row">
+    <span class="vision-strip-label">Body Recomposition</span>
+    <span class="vision-strip-week">{% if program_not_started %}Starts in {{ days_until_start }}d{% else %}Week {{ week_number }} of {{ total_weeks }}{% endif %}</span>
+  </div>
+  <div class="progress-bar" style="height:6px;margin-top:8px"><div class="progress-fill" style="width:{{ time_progress_pct }}%"></div></div>
+  <div class="vision-strip-row" style="margin-top:6px">
+    <span class="muted" style="font-size:12px">{{ profile.goal_weight_low_kg }}&ndash;{{ profile.goal_weight_high_kg }}kg by {{ profile.goal_date }}</span>
+    <span class="muted" style="font-size:12px">{% if program_not_started %}starts {{ plan_start_date }}{% else %}{{ time_progress_pct }}% through{% endif %}</span>
+  </div>
+</section>
+
 <section class="card card-glow">
-  <h2 style="margin-top:0"><svg class="icon"><use href="#icon-check"/></svg> Today's Checklist</h2>
+  <h2 style="margin-top:0"><svg class="icon"><use href="#icon-check"/></svg> Today's Routine</h2>
   <div class="today-meals-row">
     {% for m in today_meals_status %}
     <a href="/meals" class="today-meal-chip{% if m.done %} today-meal-chip-done{% endif %}">
@@ -24,9 +36,46 @@
 
   <div style="margin-top:16px">{{ hydration_meter_today | safe }}</div>
 
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+    {% if today_logged %}
+    <p style="margin:0;display:flex;align-items:center;gap:8px;color:var(--accent);font-size:13px;font-weight:600">
+      <svg class="icon icon-fill"><use href="#icon-check"/></svg> Training logged for today
+    </p>
+    {% else %}
+    <p class="muted" style="font-size:12px;margin-bottom:8px">Next up: <strong style="color:var(--text)">{{ next_training_day.label }}</strong> — pick Gym or Home, whichever you have access to today.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/gym" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-dumbbell"/></svg> Gym</a>
+      <a href="/home" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-house"/></svg> Home</a>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap">
+      <a href="/recovery" style="color:var(--muted);font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg class="icon" style="width:14px;height:14px"><use href="#icon-heart"/></svg> Recovery</a>
+      <a href="/cardio" style="color:var(--muted);font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg class="icon" style="width:14px;height:14px"><use href="#icon-heart-pulse"/></svg> Cardio</a>
+      <a href="/padel" style="color:var(--muted);font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px"><svg class="icon" style="width:14px;height:14px"><use href="#icon-racket"/></svg> Padel</a>
+    </div>
+    {% endif %}
+    {% if deload_flag %}
+    <p style="margin:10px 0 0;display:flex;align-items:center;gap:6px;color:var(--gold);font-size:12px"><svg class="icon" style="width:14px;height:14px"><use href="#icon-flame"/></svg> {{ weeks_since_deload }} weeks since your last deload — consider taking one this week.</p>
+    {% endif %}
+  </div>
+
   <a href="/bonus" style="margin-top:16px;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">
     <svg class="icon"><use href="#icon-star"/></svg> {{ quests_done_count }}/{{ quests_total_count }} quests done today →
   </a>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-calendar"/></svg> This Week</h2>
+  <div class="week-strip">
+    {% for day in day_cards %}
+    <a href="/meals?view_date={{ day.date }}" class="week-day-chip{% if day.is_today %} week-day-chip-today{% endif %}">
+      <span class="week-day-chip-label">{{ day.weekday }}</span>
+      <span class="week-day-chip-marks">
+        {% if day.workouts %}<svg class="icon" style="width:12px;height:12px"><use href="#icon-{{ day.workouts[0].icon }}"/></svg>{% endif %}
+        {% if day.is_refeed %}<span class="week-day-chip-refeed" title="Refeed day"></span>{% endif %}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
 </section>
 
 <section class="card card-glow">
@@ -36,10 +85,6 @@
       <div class="kpi-value {% if weekly_weight_delta is not none %}{% if weekly_weight_delta < 0 %}kpi-delta up{% elif weekly_weight_delta > 0 %}kpi-delta down{% endif %}{% endif %}" style="font-size:18px">{% if weekly_weight_delta is not none %}{{ weekly_weight_delta }}kg{% else %}—{% endif %}</div>
     </div>
     <div class="kpi-tile">
-      <div class="kpi-label">Streak</div>
-      <div class="kpi-value" style="font-size:18px">{{ streak }}d</div>
-    </div>
-    <div class="kpi-tile">
       <div class="kpi-label">Meal Adherence</div>
       <div class="kpi-value" style="font-size:18px">{{ meal_adherence }}%</div>
     </div>
@@ -47,6 +92,42 @@
       <div class="kpi-label">Avg RPE</div>
       <div class="kpi-value" style="font-size:18px">{{ avg_rpe if avg_rpe is not none else "—" }}</div>
     </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-target"/></svg> Progress</h2>
+  {% if start_weight and current_weight %}
+    <p>
+      <strong style="font-family:var(--font-mono);font-size:22px">{{ current_weight }} kg</strong>
+      <span class="muted">→ target {{ profile.goal_weight_low_kg }}–{{ profile.goal_weight_high_kg }} kg</span>
+    </p>
+    <div class="progress-bar"><div class="progress-fill" style="width:{{ goal_progress_pct }}%"></div></div>
+    <p class="muted" style="font-size:13px;margin-top:6px">{{ goal_progress_pct }}% of the way from {{ start_weight }} kg to goal</p>
+    {% if weight_chart_svg %}
+    <div class="chart-wrap" style="margin-top:14px">{{ weight_chart_svg | safe }}</div>
+    <p class="muted" style="font-size:11px;text-align:center">solid = kg lost so far · shaded band = goal range</p>
+    {% endif %}
+  {% else %}
+    <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
+  {% endif %}
+  {% if adherence_insight %}<p class="muted" style="font-size:13px;margin-top:10px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-trending-up"/></svg> {{ adherence_insight }}</p>{% endif %}
+
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+  {% if confidence is not none %}
+    <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <strong style="color:var(--accent);font-size:26px;font-family:var(--font-mono)">{{ confidence }}%</strong>
+      {{ confidence_chip | safe }}
+    </p>
+    <p class="muted" style="font-size:13px">Actual pace: {{ actual_rate }} kg/week &middot; Target pace: {{ target_rate }} kg/week</p>
+    {% if predicted_date %}
+      <p style="margin-top:8px">At this rate, projected goal date: <strong>{{ predicted_date }}</strong></p>
+      <p class="muted" style="font-size:13px">If you took 2 weeks off entirely: <strong>{{ slack_date }}</strong> &middot; <a href="/simulate" style="color:var(--accent)">try other scenarios →</a></p>
+    {% endif %}
+  {% else %}
+    {{ confidence_chip | safe }}
+    <p class="muted" style="margin-top:8px">Log at least two weigh-ins a week or more apart to see your pace.</p>
+  {% endif %}
   </div>
 </section>
 
@@ -75,77 +156,5 @@
   {% endif %}
   <p class="muted" style="font-size:11px;margin:12px 0 6px">Last 5 weeks</p>
   {{ streak_heatmap_html | safe }}
-</section>
-
-<section class="card">
-  <h2><svg class="icon"><use href="#icon-target"/></svg> Goal Progress</h2>
-  {% if start_weight and current_weight %}
-    <p>
-      <strong style="font-family:var(--font-mono);font-size:22px">{{ current_weight }} kg</strong>
-      <span class="muted">→ target {{ profile.goal_weight_low_kg }}–{{ profile.goal_weight_high_kg }} kg</span>
-    </p>
-    <div class="progress-bar"><div class="progress-fill" style="width:{{ goal_progress_pct }}%"></div></div>
-    <p class="muted" style="font-size:13px;margin-top:6px">{{ goal_progress_pct }}% of the way from {{ start_weight }} kg to goal</p>
-    {% if weight_chart_svg %}
-    <div class="chart-wrap" style="margin-top:14px">{{ weight_chart_svg | safe }}</div>
-    <p class="muted" style="font-size:11px;text-align:center">solid = kg lost so far · shaded band = goal range</p>
-    {% endif %}
-  {% else %}
-    <p class="muted">Log a weigh-in and set a starting weight in <a href="/settings" style="color:var(--accent)">Settings</a> to see your progress bar.</p>
-  {% endif %}
-  {% if adherence_insight %}<p class="muted" style="font-size:13px;margin-top:10px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-trending-up"/></svg> {{ adherence_insight }}</p>{% endif %}
-</section>
-
-<section class="card">
-  <h2><svg class="icon"><use href="#icon-trending-up"/></svg> Confidence & Prediction</h2>
-  {% if confidence is not none %}
-    <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <strong style="color:var(--accent);font-size:26px;font-family:var(--font-mono)">{{ confidence }}%</strong>
-      {{ confidence_chip | safe }}
-    </p>
-    <p class="muted" style="font-size:13px">Actual pace: {{ actual_rate }} kg/week &middot; Target pace: {{ target_rate }} kg/week</p>
-    {% if predicted_date %}
-      <p style="margin-top:8px">At this rate, projected goal date: <strong>{{ predicted_date }}</strong></p>
-      <p class="muted" style="font-size:13px">If you took 2 weeks off entirely: <strong>{{ slack_date }}</strong> &middot; <a href="/simulate" style="color:var(--accent)">try other scenarios →</a></p>
-    {% endif %}
-  {% else %}
-    {{ confidence_chip | safe }}
-    <p class="muted" style="margin-top:8px">Log at least two weigh-ins a week or more apart to see your pace.</p>
-  {% endif %}
-</section>
-
-{% if not today_logged %}
-<section class="card card-glow">
-  <h2><svg class="icon"><use href="#icon-bolt"/></svg> Log today's training</h2>
-  <p class="muted" style="font-size:13px;margin-bottom:10px">Nothing logged yet today — pick one:</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a href="/gym" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-dumbbell"/></svg> Gym</a>
-    <a href="/home" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-house"/></svg> Home</a>
-    <a href="/recovery" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart"/></svg> Recovery</a>
-    <a href="/cardio" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-heart-pulse"/></svg> Cardio</a>
-    <a href="/padel" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-racket"/></svg> Padel</a>
-  </div>
-</section>
-{% endif %}
-
-<section class="card">
-  <h2><svg class="icon"><use href="#icon-calendar"/></svg> This Week</h2>
-  {% for day in day_cards %}
-  <div class="day-card{% if day.is_today %} is-today{% endif %}">
-    <div style="display:flex;justify-content:space-between;align-items:baseline">
-      <strong>{{ day.weekday }} {{ day.date }}{% if day.is_today %} <span class="muted" style="font-size:11px">(today)</span>{% endif %}</strong>
-    </div>
-    <div class="muted" style="font-size:13px;margin-top:4px;display:flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-utensils"/></svg> {{ day.meal_label }} · {{ day.meal_kcal }} kcal · <a href="/meals?view_date={{ day.date }}" style="color:var(--accent)">meals</a></div>
-    <div style="margin-top:6px">
-      {% if day.workouts %}
-        {% for w in day.workouts %}
-          <span class="workout-chip"><svg class="icon"><use href="#icon-{{ w.icon }}"/></svg> {{ w.type_label }}{% if w.notes %} — {{ w.notes }}{% endif %}</span>
-        {% endfor %}
-      {% else %}
-        <span class="muted" style="font-size:12px">Nothing logged</span>
-      {% endif %}
-    </div>
-  </div>
-  {% endfor %}
 </section>
 {% endblock %}

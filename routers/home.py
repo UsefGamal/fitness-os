@@ -39,6 +39,8 @@ def home_list(request: Request, session: Session = Depends(get_session)):
         summaries.append({"workout": w, "item_count": item_count})
 
     next_day = next_program_day(count_training_sessions(session))
+    today = get_today()
+    today_session = next((s["workout"] for s in summaries if s["workout"].log_date == today), None)
 
     return templates.TemplateResponse(
         request,
@@ -47,7 +49,8 @@ def home_list(request: Request, session: Session = Depends(get_session)):
             "request": request,
             "logged_in": True,
             "summaries": summaries,
-            "today": get_today().isoformat(),
+            "today": today.isoformat(),
+            "today_session": today_session,
             "next_day": next_day,
             "deload_due": deload_due(session, PLAN_START_DATE),
             "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
@@ -69,6 +72,20 @@ def create_home_session(
 
     if not notes:
         notes = next_program_day(count_training_sessions(session))["label"]
+
+    # Upsert by date — see the matching comment in routers/gym.py's
+    # create_gym_session for why (prevents a same-day duplicate session).
+    existing = session.exec(
+        select(Workout).where(Workout.log_date == log_date, Workout.workout_type == "home")
+    ).first()
+    if existing:
+        existing.duration_min = duration_min
+        existing.notes = notes
+        existing.is_deload = is_deload
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return RedirectResponse(url=f"/home/{existing.id}", status_code=303)
 
     workout = Workout(log_date=log_date, workout_type="home", duration_min=duration_min, notes=notes, is_deload=is_deload)
     session.add(workout)

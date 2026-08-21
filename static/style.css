@@ -708,30 +708,38 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   .link-row:hover .link-arrow { transform: translateX(3px); }
 }
 
-/* ── Day cards (dashboard weekly plan) ─────────────────────── */
-.day-card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  background: #0b0f1a;
-}
+/* ── Vision strip (dashboard) ───────────────────────────────── */
+.vision-strip-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.vision-strip-label { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+.vision-strip-week { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; }
 
-.day-card.is-today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow); }
+/* ── Week strip (dashboard) ─────────────────────────────────── */
+.week-strip { display: flex; gap: 6px; }
 
-.workout-chip {
-  display: inline-flex;
+.week-day-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: var(--accent);
-  border-radius: 8px;
-  padding: 3px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  margin: 2px 4px 2px 0;
+  padding: 10px 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0b0f1a;
+  text-decoration: none;
+  color: var(--muted);
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
+.week-day-chip:active { transform: scale(0.94); }
+
+@media (hover: hover) and (pointer: fine) {
+  .week-day-chip:hover { border-color: var(--accent); color: var(--text); }
+}
+
+.week-day-chip-today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow); color: var(--text); }
+.week-day-chip-label { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+.week-day-chip-marks { display: flex; align-items: center; gap: 3px; height: 12px; color: var(--accent); }
+.week-day-chip-refeed { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
 
 /* ── Confetti burst ─────────────────────────────────────────── */
 .confetti-particle {
@@ -753,6 +761,13 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
    Shown only when static/app.js's offline queue has pending submissions
    — see queueOfflineSubmit/flushOfflineQueue. */
 .offline-indicator {
+  /* Author styles beat the UA stylesheet's [hidden]{display:none}, so
+     setting display unconditionally here would keep the pill visible
+     (empty) even while the `hidden` attribute is set — this selector
+     only applies it once JS clears `hidden` because the queue is non-empty. */
+  display: none;
+}
+.offline-indicator:not([hidden]) {
   display: inline-flex;
   align-items: center;
   gap: 5px;
