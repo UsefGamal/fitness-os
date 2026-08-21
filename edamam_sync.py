@@ -153,17 +153,37 @@ def run_sync_in_background(sync_id: int) -> None:
 
             days = []
             for day_index in range(1, 15):
-                is_refeed = day_index == 14
+                # Day 7 and day 14: refeed days (weekly, not just the last
+                # day of the cycle — see nutrition-domain skill notes on a
+                # deficit this size wanting more than one break per 14 days).
+                is_refeed = day_index in (7, 14)
                 meals = {}
                 for slot in MEAL_SLOTS:
                     pool = pools[slot]
-                    # Cycle through the pool so 14 days of variety come from
-                    # a handful of queries — option_a/option_b are two
-                    # distinct picks (or the same one repeated if the pool
-                    # has only one).
-                    idx_a = (day_index - 1) % len(pool)
-                    idx_b = (day_index - 1 + len(pool) // 2 or 1) % len(pool)
-                    meals[slot] = {"option_a": pool[idx_a], "option_b": pool[idx_b]}
+                    if is_refeed:
+                        # fitchef_sync.py's refeed applies a flat kcal/carb/fat
+                        # bump (REFEED_EXTRA_CARBS_G/REFEED_EXTRA_FAT_G) via a
+                        # config Edamam's recipe-search API has no equivalent
+                        # for — a second round of queries just for this one day
+                        # isn't worth it against Edamam's already-tight rate
+                        # limit (see sync-job-pattern), so instead this picks
+                        # the two highest-calorie recipes already fetched for
+                        # this slot (the pool's search band already reaches up
+                        # to 1.5x the slot's normal target — see
+                        # _build_slot_pool) rather than the regular cyclic
+                        # pick. Same protein target either way, more food that
+                        # day, no extra API cost.
+                        ranked = sorted(pool, key=lambda r: r["kcal"], reverse=True)
+                        idx_a, idx_b = 0, min(1, len(ranked) - 1)
+                        meals[slot] = {"option_a": ranked[idx_a], "option_b": ranked[idx_b]}
+                    else:
+                        # Cycle through the pool so 14 days of variety come
+                        # from a handful of queries — option_a/option_b are
+                        # two distinct picks (or the same one repeated if the
+                        # pool has only one).
+                        idx_a = (day_index - 1) % len(pool)
+                        idx_b = (day_index - 1 + len(pool) // 2 or 1) % len(pool)
+                        meals[slot] = {"option_a": pool[idx_a], "option_b": pool[idx_b]}
                 label = meals.get("lunch", {}).get("option_a", {}).get("name", "Edamam Day")
                 days.append({"day_index": day_index, "label": label, "is_refeed": is_refeed, "meals": meals})
 

@@ -22,4 +22,5 @@ SEED_EXERCISES = [
     ("Arms", "Triceps Pushdown", "Cable"),
     ("Core", "Plank", "Bodyweight"),
     ("Core", "Cable Crunch", "Cable"),
+    ("Core", "Pallof Press", "Cable"),
 ]
