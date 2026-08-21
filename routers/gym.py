@@ -184,6 +184,7 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
     sets_view = [
         {
             "id": s.id,
+            "exercise_id": s.exercise_id,
             "exercise_name": exercise_by_id[s.exercise_id].name if s.exercise_id in exercise_by_id else "?",
             "set_number": s.set_number,
             "reps": s.reps,

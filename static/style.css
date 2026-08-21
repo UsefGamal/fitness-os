@@ -749,6 +749,46 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
 }
 
+/* ── Offline queue indicator (topbar) ───────────────────────────
+   Shown only when static/app.js's offline queue has pending submissions
+   — see queueOfflineSubmit/flushOfflineQueue. */
+.offline-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ── Duration stopwatch (cardio/padel session logging) ──────────
+   Counts up instead of down — for timing a session as it happens rather
+   than a rest-between-sets countdown; fills the duration field on stop. */
+.duration-stopwatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 4px;
+  background: #0b0f1a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.duration-stopwatch-display {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5ch;
+}
+
 /* ── Set-logging helpers: rest timer + reps/weight stepper ──────
    Mid-workout, one-handed: a stepper avoids opening the numeric keyboard
    for a ±1 rep / ±2.5kg nudge, and the timer removes the separate

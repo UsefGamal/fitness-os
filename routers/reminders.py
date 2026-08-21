@@ -1,9 +1,11 @@
+import json
 import os
 import secrets
 from datetime import date, timedelta
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query
+from pywebpush import WebPushException, webpush
 from sqlmodel import Session, func, select
 
 from clock import today as get_today
@@ -11,7 +13,7 @@ from content.email_digest import build_daily_digest_html
 from content.projections import compute_streak, meal_adherence_pct
 from content.weekly_recap_email import build_weekly_recap_html
 from database import engine, get_session
-from models import BodyLog, BonusLog, MealLog, ReminderLog, Workout
+from models import BodyLog, BonusLog, MealLog, PushSubscription, ReminderLog, Workout
 from training_counter import count_training_sessions
 
 router = APIRouter()
@@ -20,6 +22,10 @@ CRON_SECRET = os.getenv("CRON_SECRET", "")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 DIGEST_EMAIL_TO = os.getenv("DIGEST_EMAIL_TO", "")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://fitness-os.onrender.com")
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+VAPID_CLAIM_EMAIL = os.getenv("VAPID_CLAIM_EMAIL", "mailto:example@example.com")
+DAILY_MEAL_SLOTS = 5  # breakfast/snack1/lunch/snack2/dinner — see routers/meals.SLOT_LABELS
 
 
 def _check_cron_secret(secret_qs: str | None, secret_header: str | None) -> None:
@@ -199,3 +205,90 @@ def weekly_recap(
 
     background_tasks.add_task(_run_weekly_recap, today)
     return {"status": "queued"}
+
+
+def _send_push_to_all(session: Session, title: str, body: str, url: str) -> None:
+    """Sends one push to every registered subscription. Runs inline (not a
+    background task like the email digests above) — this is a single-user
+    app, so there are at most a couple of subscriptions (phone, maybe
+    desktop), and a webpush() call is sub-second; there's no cold-start/
+    slow-external-API timeout risk here the way there is with Resend."""
+    subs = session.exec(select(PushSubscription)).all()
+    payload = json.dumps({"title": title, "body": body, "url": url})
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                },
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_CLAIM_EMAIL},
+            )
+        except WebPushException as exc:
+            # 404/410 means the browser/OS dropped this subscription (site
+            # data cleared, notifications revoked) — remove it so future
+            # sends don't keep paying for a dead endpoint. Any other error
+            # (a transient push-service issue) just gets skipped for this
+            # run rather than killing the loop for the remaining subs.
+            status = exc.response.status_code if exc.response is not None else None
+            if status in (404, 410):
+                session.delete(sub)
+    session.commit()
+
+
+@router.get("/cron/evening-nudge")
+def evening_nudge(
+    secret: str | None = Query(None),
+    x_cron_secret: str | None = Header(None),
+    force: bool = Query(False),
+    session: Session = Depends(get_session),
+):
+    """Push nudge if today's meals or training aren't fully logged yet —
+    meant to be pinged once in the evening (e.g. 20:00) by the same kind of
+    external cron trigger already used for the daily digest/weekly recap."""
+    _check_cron_secret(secret, x_cron_secret)
+
+    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+        return {"status": "skipped", "reason": "VAPID keys not configured"}
+
+    today = get_today()
+
+    already_sent = session.exec(
+        select(ReminderLog).where(
+            ReminderLog.log_date == today, ReminderLog.reminder_type == "evening_nudge", ReminderLog.status == "sent"
+        )
+    ).first()
+    if already_sent and not force:
+        return {"status": "skipped", "reason": "already sent today — add &force=true to resend"}
+
+    if not session.exec(select(PushSubscription)).first():
+        return {"status": "skipped", "reason": "no push subscriptions registered"}
+
+    meals_completed = len(
+        session.exec(
+            select(MealLog).where(MealLog.log_date == today, MealLog.completed == True)  # noqa: E712
+        ).all()
+    )
+    training_logged = session.exec(select(Workout).where(Workout.log_date == today)).first() is not None
+
+    if meals_completed >= DAILY_MEAL_SLOTS and training_logged:
+        return {"status": "skipped", "reason": "already fully logged today"}
+
+    gaps = []
+    if meals_completed < DAILY_MEAL_SLOTS:
+        gaps.append(f"{DAILY_MEAL_SLOTS - meals_completed} meal(s)")
+    if not training_logged:
+        gaps.append("today's training")
+    body_text = "Still to log: " + " and ".join(gaps) + "."
+
+    try:
+        _send_push_to_all(session, "Fitness OS", body_text, APP_BASE_URL)
+        session.add(ReminderLog(log_date=today, reminder_type="evening_nudge", status="sent"))
+    except Exception as exc:  # noqa: BLE001 — a cron path must never raise unhandled
+        session.add(
+            ReminderLog(log_date=today, reminder_type="evening_nudge", status="error", error_detail=str(exc)[:300])
+        )
+    session.commit()
+    return {"status": "sent"}

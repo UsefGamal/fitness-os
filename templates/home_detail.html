@@ -38,7 +38,13 @@
     </div>
     <form method="post" action="/home/{{ workout.id }}/log" class="stack-form js-toggle" style="flex-direction:row;align-items:flex-end;gap:8px;width:100%;margin-top:8px">
       <input type="hidden" name="item_name" value="{{ ex.name }}">
-      <label style="flex:1">Reps achieved (optional) <input type="number" min="0" max="500" name="reps_achieved"></label>
+      <label style="flex:1">Reps achieved (optional)
+        <div class="stepper">
+          <button type="button" class="stepper-btn" data-step-target="reps_achieved" data-step="-1" aria-label="Decrease reps"><svg class="icon"><use href="#icon-minus"/></svg></button>
+          <input type="number" min="0" max="500" name="reps_achieved">
+          <button type="button" class="stepper-btn" data-step-target="reps_achieved" data-step="1" aria-label="Increase reps"><svg class="icon"><use href="#icon-plus"/></svg></button>
+        </div>
+      </label>
       <button type="submit" class="meal-check-btn{% if ex.done %} done{% endif %}" data-done-label="✓ Done" data-undone-label="Mark done">{% if ex.done %}✓ Done{% else %}Mark done{% endif %}</button>
     </form>
   </div>

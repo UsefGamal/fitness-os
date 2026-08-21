@@ -19,6 +19,7 @@
 {% if logged_in %}
 <header class="topbar">
   <a class="brand" href="/"><svg class="icon brand-mark"><use href="#icon-bolt"/></svg> Fitness OS</a>
+  <span class="offline-indicator" data-offline-indicator hidden></span>
   <a class="more-link{% if request.url.path.startswith('/more') %} active{% endif %}" href="/more" aria-label="More"><svg class="icon"><use href="#icon-dots"/></svg></a>
 </header>
 {% endif %}

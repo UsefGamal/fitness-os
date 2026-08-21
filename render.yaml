@@ -22,3 +22,9 @@ services:
         sync: false
       - key: APP_BASE_URL
         value: https://fitness-os.onrender.com
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_CLAIM_EMAIL
+        sync: false

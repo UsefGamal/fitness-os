@@ -1,3 +1,4 @@
+import os
 from datetime import date
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -35,6 +36,7 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
             "macro_targets": get_macro_targets(session),
             "saved": request.query_params.get("saved") == "1",
             "today": get_today().isoformat(),
+            "vapid_public_key": os.getenv("VAPID_PUBLIC_KEY", ""),
         },
     )
 

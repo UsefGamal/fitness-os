@@ -128,6 +128,19 @@ class MealPlanSync(SQLModel, table=True):
     error_detail: str | None = None
 
 
+class PushSubscription(SQLModel, table=True):
+    """One row per browser/device Web Push registration (opted into from
+    Settings). Keyed by endpoint, not assumed to be a single row — even a
+    single-user app can have more than one live subscription (phone +
+    desktop, or a re-subscribe after clearing site data)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    endpoint: str = Field(unique=True)
+    p256dh: str
+    auth: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class EdamamPlanSync(SQLModel, table=True):
     """One row per Edamam sync. Recipe Search's real per-account rate
     limit turned out to be much tighter and less predictable than

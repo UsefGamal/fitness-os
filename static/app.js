@@ -45,15 +45,22 @@ document.addEventListener('submit', function (e) {
   if (form.classList.contains('no-reload-form')) {
     e.preventDefault();
 
-    // The "log a set" form additionally re-selects the same exercise and
-    // starts the rest timer once the swap lands, using data already sat on
-    // the chosen <option> — see the exercise <select>'s data-reps/
-    // data-weight/data-rest attributes in gym_detail.html.
+    // The "log a set" form (both the main form and each row's one-tap
+    // "repeat this set" button — see gym_detail.html) starts the rest timer
+    // the instant it's submitted, not after the server round-trip: the set
+    // itself already happened physically, so the rest period starts now
+    // regardless of network speed or an offline queue detour. Rest duration
+    // comes from the chosen <option>'s data-rest (main form) or the form's
+    // own data-rest (repeat button, no <select> to read from).
     if (form.classList.contains('add-set-form')) {
       const select = form.querySelector('[data-prefill-source]');
       const chosen = select && select.selectedOptions[0];
       const exerciseId = chosen ? chosen.value : null;
-      const restSeconds = chosen && chosen.dataset.rest ? parseInt(chosen.dataset.rest, 10) : null;
+      const restSeconds = chosen && chosen.dataset.rest
+        ? parseInt(chosen.dataset.rest, 10)
+        : (form.dataset.rest ? parseInt(form.dataset.rest, 10) : null);
+
+      startRestTimer(restSeconds || undefined);
 
       submitWithoutReload(form, function () {
         const newSelect = document.querySelector('[data-prefill-source]');
@@ -61,7 +68,6 @@ document.addEventListener('submit', function (e) {
           newSelect.value = exerciseId;
           newSelect.dispatchEvent(new Event('change'));
         }
-        startRestTimer(restSeconds || undefined);
       });
       return;
     }
@@ -73,20 +79,31 @@ document.addEventListener('submit', function (e) {
 // Submits a form via fetch and swaps <main> with the freshly-rendered
 // response instead of doing a full page navigation — same server routes,
 // same redirect-on-success flow (fetch follows the 303 automatically), no
-// backend changes needed. Falls back to a real form submit (full reload)
-// on any failure, so a network hiccup or a JS error never leaves the user
-// stuck without the form having gone through at all. `onDone`, if given,
-// runs after the swap lands (e.g. to restore state the fresh markup can't
-// know about, like an in-progress rest timer).
+// backend changes needed. `onDone`, if given, runs after a successful swap
+// (e.g. to restore state the fresh markup can't know about).
+//
+// Two distinct failure modes get different handling:
+//   - The server responded but rejected the request (validation error, etc.)
+//     — not a connectivity problem, so fall through to a real submit and let
+//     the existing full-page ?error= flow in main.py handle it.
+//   - fetch() itself rejected (offline, DNS failure, timeout) — a genuine
+//     connectivity problem. For forms marked `.offline-queueable` this queues
+//     the submission in localStorage instead of losing it (see the offline
+//     queue below); everything else falls back to a real submit, same as
+//     the validation-error case, so it isn't silently swallowed.
 function submitWithoutReload(form, onDone) {
   fetch(form.action, { method: 'POST', body: new FormData(form) })
     .then(function (response) {
-      if (!response.ok) throw new Error('request failed: ' + response.status);
+      if (!response.ok) {
+        form.submit();
+        return null;
+      }
       return response.text().then(function (html) {
         return { html: html, url: response.url };
       });
     })
     .then(function (result) {
+      if (!result) return;
       const newMain = new DOMParser().parseFromString(result.html, 'text/html').querySelector('main');
       const currentMain = document.querySelector('main');
       if (!newMain || !currentMain) {
@@ -98,7 +115,11 @@ function submitWithoutReload(form, onDone) {
       if (onDone) onDone();
     })
     .catch(function () {
-      form.submit();
+      if (form.classList.contains('offline-queueable')) {
+        queueOfflineSubmit(form);
+      } else {
+        form.submit();
+      }
     });
 }
 
@@ -136,6 +157,28 @@ document.addEventListener('click', function (e) {
     stopRestTimer();
     restTimer.remaining = defaultRestSeconds();
     renderTimerDisplay();
+    return;
+  }
+
+  if (e.target.closest('[data-stopwatch-toggle]')) {
+    toggleStopwatch();
+    return;
+  }
+
+  if (e.target.closest('[data-stopwatch-reset]')) {
+    resetStopwatch();
+    return;
+  }
+
+  const pushEnableBtn = e.target.closest('[data-push-enable]');
+  if (pushEnableBtn) {
+    enablePush(pushEnableBtn);
+    return;
+  }
+
+  const pushDisableBtn = e.target.closest('[data-push-disable]');
+  if (pushDisableBtn) {
+    disablePush(pushDisableBtn);
   }
 });
 
@@ -217,6 +260,253 @@ function announceRestDone() {
     osc.stop(audioCtx.currentTime + 0.5);
   } catch (err) { /* see comment above */ }
 }
+
+// ── Duration stopwatch (cardio/padel session logging) ────────────────
+// Counts up from Start to Stop, then writes the elapsed whole minutes into
+// the paired duration field (data-duration-target on the .duration-stopwatch
+// wrapper) — for timing a session live instead of guessing the duration
+// afterward. Independent of the rest timer above (different page, never
+// both present at once), so a second, separate piece of state is simplest.
+const stopwatch = { intervalId: null, startedAt: null, elapsedMs: 0, running: false };
+
+function formatStopwatch(ms) {
+  const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function renderStopwatchDisplay() {
+  const display = document.querySelector('[data-stopwatch-display]');
+  if (!display) return;
+  const liveMs = stopwatch.elapsedMs + (stopwatch.running ? Date.now() - stopwatch.startedAt : 0);
+  display.textContent = formatStopwatch(liveMs);
+}
+
+function toggleStopwatch() {
+  const toggle = document.querySelector('[data-stopwatch-toggle]');
+  if (stopwatch.running) {
+    stopwatch.elapsedMs += Date.now() - stopwatch.startedAt;
+    stopwatch.running = false;
+    clearInterval(stopwatch.intervalId);
+    if (toggle) toggle.textContent = 'Resume';
+
+    const widget = document.querySelector('.duration-stopwatch');
+    const targetName = widget && widget.dataset.durationTarget;
+    const field = targetName && document.querySelector('[name="' + targetName + '"]');
+    if (field) field.value = Math.max(1, Math.round(stopwatch.elapsedMs / 60000));
+  } else {
+    stopwatch.startedAt = Date.now();
+    stopwatch.running = true;
+    if (toggle) toggle.textContent = 'Stop';
+    stopwatch.intervalId = setInterval(renderStopwatchDisplay, 1000);
+  }
+}
+
+function resetStopwatch() {
+  clearInterval(stopwatch.intervalId);
+  stopwatch.intervalId = null;
+  stopwatch.elapsedMs = 0;
+  stopwatch.running = false;
+  stopwatch.startedAt = null;
+  const toggle = document.querySelector('[data-stopwatch-toggle]');
+  if (toggle) toggle.textContent = 'Start';
+  renderStopwatchDisplay();
+}
+
+// ── Offline queue (gym / padel session logging) ───────────────────────
+// Gym sets and padel sessions are the two things most likely to get logged
+// somewhere with bad signal (a gym basement, an outdoor court). A form
+// marked `.offline-queueable` that hits a genuine network failure (see
+// submitWithoutReload's catch) gets queued in localStorage instead of
+// losing the input; the queue auto-flushes on the next 'online' event or
+// page load, in submission order, one at a time so a mid-flush failure
+// doesn't reorder anything.
+const OFFLINE_QUEUE_KEY = 'fitos-offline-queue';
+
+function readOfflineQueue() {
+  try {
+    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeOfflineQueue(queue) {
+  try {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+  } catch (err) {
+    // localStorage unavailable (private browsing, quota) — the queue just
+    // won't survive a reload; the form still submitted via the normal
+    // fallback path in submitWithoutReload's caller, so nothing is lost
+    // for this request, only for a *future* offline retry.
+  }
+  renderOfflineIndicator(queue.length);
+}
+
+function renderOfflineIndicator(count) {
+  const el = document.querySelector('[data-offline-indicator]');
+  if (!el) return;
+  el.hidden = count === 0;
+  el.textContent = count === 0 ? '' : (count === 1 ? '1 queued' : count + ' queued');
+}
+
+function queueOfflineSubmit(form) {
+  const queue = readOfflineQueue();
+  queue.push({
+    action: form.action,
+    body: new URLSearchParams(new FormData(form)).toString(),
+  });
+  writeOfflineQueue(queue);
+}
+
+function flushOfflineQueue() {
+  const queue = readOfflineQueue();
+  if (!queue.length) return;
+  const [next, ...rest] = queue;
+  fetch(next.action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: next.body,
+  })
+    .then(function () {
+      // The server responded at all (regardless of status) — connectivity
+      // is back, so this item is done being retried either way. A rejected
+      // status means it was stale/invalid, not that we're still offline;
+      // dropping it here (rather than leaving it to block every item behind
+      // it forever) is the tradeoff, at the cost of that one item silently
+      // not making it in — acceptable for how rarely it should happen.
+      writeOfflineQueue(rest);
+      if (rest.length) {
+        flushOfflineQueue();
+      } else {
+        window.location.reload();
+      }
+    })
+    .catch(function () {
+      // fetch() itself rejected — genuinely still offline. Leave the whole
+      // queue untouched; the next 'online' event or page load retries it.
+    });
+}
+
+window.addEventListener('online', flushOfflineQueue);
+document.addEventListener('DOMContentLoaded', function () {
+  renderOfflineIndicator(readOfflineQueue().length);
+  if (navigator.onLine) flushOfflineQueue();
+});
+
+// ── Push notification opt-in (Settings page) ───────────────────────────
+// Registers /sw.js (root-scoped — see main.py) and subscribes/unsubscribes
+// through the browser's PushManager, syncing the subscription to the
+// backend via routers/push.py. Evening-nudge sending itself is a server
+// cron (routers/reminders.py) — this is only the opt-in plumbing.
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+function setPushStatus(text) {
+  const el = document.querySelector('[data-push-status]');
+  if (el) el.textContent = text;
+}
+
+function initPushSettings() {
+  const enableBtn = document.querySelector('[data-push-enable]');
+  const disableBtn = document.querySelector('[data-push-disable]');
+  if (!enableBtn && !disableBtn) return; // not on Settings, or not configured server-side
+
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    setPushStatus("Push notifications aren't supported in this browser.");
+    return;
+  }
+
+  navigator.serviceWorker.register('/sw.js')
+    .then(function (registration) {
+      return registration.pushManager.getSubscription();
+    })
+    .then(function (existing) {
+      if (existing) {
+        setPushStatus('Reminders are on.');
+        if (disableBtn) disableBtn.hidden = false;
+      } else {
+        setPushStatus('Reminders are off.');
+        if (enableBtn) enableBtn.hidden = false;
+      }
+    })
+    .catch(function () {
+      setPushStatus('Could not check notification status.');
+    });
+}
+
+function enablePush(button) {
+  setPushStatus('Requesting permission…');
+  Notification.requestPermission()
+    .then(function (permission) {
+      if (permission !== 'granted') {
+        setPushStatus('Permission denied — enable notifications for this site in your browser settings to turn reminders on.');
+        return null;
+      }
+      return navigator.serviceWorker.ready
+        .then(function (registration) {
+          return registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(button.dataset.vapidKey),
+          });
+        })
+        .then(function (subscription) {
+          const json = subscription.toJSON();
+          return fetch('/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+          });
+        });
+    })
+    .then(function (result) {
+      if (!result) return;
+      setPushStatus('Reminders are on.');
+      button.hidden = true;
+      const disableBtn = document.querySelector('[data-push-disable]');
+      if (disableBtn) disableBtn.hidden = false;
+    })
+    .catch(function () {
+      setPushStatus('Could not enable reminders — try again.');
+    });
+}
+
+function disablePush(button) {
+  navigator.serviceWorker.ready
+    .then(function (registration) {
+      return registration.pushManager.getSubscription();
+    })
+    .then(function (subscription) {
+      if (!subscription) return null;
+      const endpoint = subscription.endpoint;
+      return subscription.unsubscribe().then(function () {
+        return fetch('/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: endpoint }),
+        });
+      });
+    })
+    .then(function () {
+      setPushStatus('Reminders are off.');
+      button.hidden = true;
+      const enableBtn = document.querySelector('[data-push-enable]');
+      if (enableBtn) enableBtn.hidden = false;
+    })
+    .catch(function () {
+      setPushStatus('Could not turn off reminders — try again.');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initPushSettings);
 
 function spawnConfetti(anchor) {
   const rect = anchor.getBoundingClientRect();

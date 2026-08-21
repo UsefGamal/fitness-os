@@ -81,7 +81,7 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> Log a set (#{{ next_set_number }})</h2>
-  <form method="post" action="/gym/{{ workout.id }}/sets" class="stack-form no-reload-form add-set-form">
+  <form method="post" action="/gym/{{ workout.id }}/sets" class="stack-form no-reload-form add-set-form offline-queueable">
     <label>Exercise
       <select name="exercise_id" required data-prefill-source>
         {% for group, items in exercises | groupby("muscle_group") %}
@@ -128,7 +128,14 @@
         <td>{{ s.reps }}</td>
         <td>{{ s.weight_kg }} kg</td>
         <td>{{ s.rpe if s.rpe is not none else "—" }}</td>
-        <td>
+        <td class="row-actions">
+          <form method="post" action="/gym/{{ workout.id }}/sets" class="no-reload-form add-set-form offline-queueable" data-rest="{{ rest_seconds_by_exercise.get(s.exercise_id, 90) }}">
+            <input type="hidden" name="exercise_id" value="{{ s.exercise_id }}">
+            <input type="hidden" name="reps" value="{{ s.reps }}">
+            <input type="hidden" name="weight_kg" value="{{ s.weight_kg }}">
+            {% if s.rpe is not none %}<input type="hidden" name="rpe" value="{{ s.rpe }}">{% endif %}
+            <button type="submit" class="row-edit-btn" aria-label="Log an identical set again"><svg class="icon"><use href="#icon-repeat"/></svg></button>
+          </form>
           <form method="post" action="/gym/{{ workout.id }}/sets/{{ s.id }}/delete" class="confirm-delete" data-confirm="Delete this set?">
             <button type="submit" class="row-delete-btn" aria-label="Delete set"><svg class="icon"><use href="#icon-trash"/></svg></button>
           </form>
