@@ -3,14 +3,22 @@
 {% block content %}
 <h1><svg class="icon"><use href="#icon-heart"/></svg> Active Recovery</h1>
 
+{% if today_session %}
+<section class="card card-glow">
+  <h2><svg class="icon"><use href="#icon-check"/></svg> Today's session is already started</h2>
+  <p class="muted" style="font-size:13px">{{ today_session.notes or "" }}</p>
+  <a href="/recovery/{{ today_session.id }}" class="rest-timer-btn" style="display:inline-block;margin-top:8px;text-decoration:none;text-align:center">Continue today's session →</a>
+</section>
+{% else %}
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> Start a recovery session</h2>
-  <form method="post" action="/recovery/new" class="stack-form">
+  <form method="post" action="/recovery/new" class="stack-form no-reload-form">
     <label>Date <input type="date" name="log_date" value="{{ today }}" max="{{ today }}" required></label>
     <label>Notes <input type="text" name="notes" maxlength="200"></label>
     <button type="submit">Start session</button>
   </form>
 </section>
+{% endif %}
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-list"/></svg> Past sessions</h2>

@@ -26,7 +26,7 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> {% if edit_workout %}Edit session{% else %}Log a session{% endif %}</h2>
-  <form method="post" action="/cardio" class="stack-form">
+  <form method="post" action="/cardio" class="stack-form no-reload-form">
     {% if edit_workout %}<input type="hidden" name="workout_id" value="{{ edit_workout.id }}">{% endif %}
     <label>Date <input type="date" name="log_date" value="{{ edit_workout.log_date if edit_workout else today }}" max="{{ today }}" required></label>
     <div class="duration-stopwatch" data-duration-target="duration_min">
