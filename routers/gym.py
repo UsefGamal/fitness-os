@@ -195,6 +195,15 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
 
     session_volume = sum(s.reps * s.weight_kg for s in sets)
 
+    # Most recent set *this session*, per exercise — takes priority over
+    # last_performance_raw below for prefill purposes, since "same as the
+    # set I just logged 90 seconds ago" is a far more common next action
+    # than "same as last session". `sets` is ordered by id ascending, so
+    # each iteration below simply overwrites with the latest.
+    prefill_raw = {}
+    for s in sets:
+        prefill_raw[s.exercise_id] = (s.reps, s.weight_kg)
+
     last_performance = {}
     last_performance_raw = {}
     for ex in exercises:
@@ -209,11 +218,13 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             rpe_note = f" @ RPE {wset.rpe:g}" if wset.rpe is not None else ""
             last_performance[ex.id] = f"{wset.reps} reps @ {wset.weight_kg}kg{rpe_note} on {w.log_date}"
             last_performance_raw[ex.id] = (wset.reps, wset.weight_kg, wset.rpe)
+            prefill_raw.setdefault(ex.id, (wset.reps, wset.weight_kg))
 
     next_set_number = len(sets) + 1
 
     program_checklist = None
     targeted_muscles = []
+    rest_seconds_by_exercise = {}
     if workout.notes in PROGRAM_LABELS:
         program_day = next(d for d in PROGRAM if d["label"] == workout.notes)
         checklist = []
@@ -232,6 +243,11 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
                     for other in exercises
                     if other.muscle_group == spec_ex.muscle_group and other.name != spec_ex.name
                 ]
+                # Rest timer default per exercise — spec["rest"] is always "<N>s" (see
+                # content/gym_program.py); exercises outside today's program fall back
+                # to a flat default in the template instead of guessing.
+                if spec["rest"].rstrip("s").isdigit():
+                    rest_seconds_by_exercise[spec_ex.id] = int(spec["rest"].rstrip("s"))
             checklist.append(
                 {
                     "name": spec["name"],
@@ -261,6 +277,8 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             "exercises": exercises,
             "sets_view": sets_view,
             "last_performance": last_performance,
+            "prefill_raw": prefill_raw,
+            "rest_seconds_by_exercise": rest_seconds_by_exercise,
             "next_set_number": next_set_number,
             "program_checklist": program_checklist,
             "progression_note": PROGRESSION_NOTE,
@@ -340,6 +358,13 @@ def delete_gym_session(workout_id: int, session: Session = Depends(get_session))
         raise HTTPException(status_code=404)
     for workout_set in session.exec(select(WorkoutSet).where(WorkoutSet.workout_id == workout_id)).all():
         session.delete(workout_set)
+    # Without an ORM relationship() between Workout and WorkoutSet, SQLAlchemy's
+    # unit-of-work has no dependency info ordering these two pending deletes —
+    # it can emit the workout DELETE before the sets' DELETEs in the same flush,
+    # which Postgres rejects (FK violation); SQLite is lenient enough to let it
+    # slide, which is how this stayed invisible in local dev. Flushing the child
+    # deletes first forces the correct order without needing a relationship.
+    session.flush()
     session.delete(workout)
     session.commit()
     return RedirectResponse(url="/gym", status_code=303)

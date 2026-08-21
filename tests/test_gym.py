@@ -10,7 +10,7 @@ def _create_session(client):
 
 def _first_exercise_id(client, gym_url):
     r = client.get(gym_url)
-    return re.search(r'<option value="(\d+)">', r.text).group(1)
+    return re.search(r'<option value="(\d+)"', r.text).group(1)
 
 
 def test_create_session_and_add_set(auth_client):
