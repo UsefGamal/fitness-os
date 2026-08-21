@@ -51,4 +51,16 @@
   </p>
   <p class="muted" style="font-size:13px">{{ macro_targets.protein }}g protein &middot; {{ macro_targets.carbs }}g carbs &middot; {{ macro_targets.fat }}g fat &middot; {{ macro_targets.fiber }}g fiber</p>
 </section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-bolt"/></svg> Reminders</h2>
+  {% if vapid_public_key %}
+  <p class="muted" style="font-size:13px;margin-top:-4px">Get a push notification in the evening if today's meals or training haven't been logged yet.</p>
+  <p style="margin-top:10px" data-push-status>Checking notification status…</p>
+  <button type="button" class="rest-timer-btn" data-push-enable data-vapid-key="{{ vapid_public_key }}" hidden>Enable reminders</button>
+  <button type="button" class="rest-timer-btn rest-timer-btn-ghost" data-push-disable hidden>Turn off reminders</button>
+  {% else %}
+  <p class="muted" style="font-size:13px;margin-top:-4px">Not configured on the server yet (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY are unset).</p>
+  {% endif %}
+</section>
 {% endblock %}

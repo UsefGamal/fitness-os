@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, func, select
@@ -49,6 +49,7 @@ from routers import (
     home,
     meals,
     padel,
+    push,
     recovery,
     reminders,
     settings,
@@ -101,6 +102,17 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
+@app.get("/sw.js")
+def service_worker():
+    """Served from the root path (not /static) specifically so its default
+    scope is the whole app, not just /static/* — a service worker's scope
+    is the directory of its own URL unless the response opts into a wider
+    one via Service-Worker-Allowed, which only matters for push here (no
+    fetch interception/offline caching), but push still needs the
+    registration itself to be page-independent."""
+    return FileResponse("static/sw.js", media_type="text/javascript", headers={"Service-Worker-Allowed": "/"})
+
 _CSP = (
     "default-src 'self'; "
     "script-src 'self'; "
@@ -147,6 +159,7 @@ app.include_router(simulate.router)
 app.include_router(cardio.router)
 app.include_router(training.router)
 app.include_router(webhooks.router)
+app.include_router(push.router)
 
 
 def _referer_path(request: Request) -> str:

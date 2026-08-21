@@ -29,10 +29,21 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-plus"/></svg> {% if edit_workout %}Edit session{% else %}Log a session{% endif %}</h2>
-  <form method="post" action="/padel" class="stack-form">
+  <form method="post" action="/padel" class="stack-form no-reload-form offline-queueable">
     {% if edit_workout %}<input type="hidden" name="workout_id" value="{{ edit_workout.id }}">{% endif %}
     <label>Date <input type="date" name="log_date" value="{{ edit_workout.log_date if edit_workout else today }}" max="{{ today }}" required></label>
-    <label>Duration (min) <input type="number" min="1" max="600" name="duration_min" value="{{ edit_workout.duration_min if edit_workout else 90 }}"></label>
+    <div class="duration-stopwatch" data-duration-target="duration_min">
+      <span class="duration-stopwatch-display" data-stopwatch-display>0:00</span>
+      <button type="button" class="rest-timer-btn" data-stopwatch-toggle>Start</button>
+      <button type="button" class="rest-timer-btn rest-timer-btn-ghost" data-stopwatch-reset>Reset</button>
+    </div>
+    <label>Duration (min)
+      <div class="stepper">
+        <button type="button" class="stepper-btn" data-step-target="duration_min" data-step="-1" aria-label="Decrease duration"><svg class="icon"><use href="#icon-minus"/></svg></button>
+        <input type="number" min="1" max="600" name="duration_min" value="{{ edit_workout.duration_min if edit_workout else 90 }}">
+        <button type="button" class="stepper-btn" data-step-target="duration_min" data-step="1" aria-label="Increase duration"><svg class="icon"><use href="#icon-plus"/></svg></button>
+      </div>
+    </label>
     <label>RPE (optional, 1-10) <input type="number" min="1" max="10" name="session_rpe" value="{{ edit_workout.session_rpe if edit_workout and edit_workout.session_rpe is not none else '' }}"></label>
     <label>Result
       <select name="result">
