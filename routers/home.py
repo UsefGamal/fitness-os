@@ -170,6 +170,10 @@ def delete_home_session(workout_id: int, session: Session = Depends(get_session)
         raise HTTPException(status_code=404)
     for log in session.exec(select(ChecklistItemLog).where(ChecklistItemLog.workout_id == workout_id)).all():
         session.delete(log)
+    # See the matching comment in routers/gym.py's delete_gym_session — without
+    # a relationship() between Workout and ChecklistItemLog, this flush is what
+    # forces the child deletes before the parent delete on Postgres.
+    session.flush()
     session.delete(workout)
     session.commit()
     return RedirectResponse(url="/home", status_code=303)

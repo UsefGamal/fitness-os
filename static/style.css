@@ -33,27 +33,64 @@
   --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "DM Mono", monospace;
+
+  /* Motion tokens — one shared vocabulary for every transition/animation
+     below instead of one-off durations per component. --ease-playful has
+     a small overshoot (the "pop" this app already used for done-toggles),
+     used deliberately, not on every hover — see the interaction-feedback
+     section for where each one applies. */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-playful: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 * { box-sizing: border-box; }
 
+/* ── Reduced motion ─────────────────────────────────────────────
+   Respected globally, not just for the page transition below — anyone
+   with this OS setting on gets near-instant state changes everywhere
+   instead of opting out component by component. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 /* ── Page-to-page navigation transitions ───────────────────────
    Native View Transitions API for cross-document (MPA) navigation — no
    JS, no framework, no client-side router. Progressive enhancement: a
-   no-op cross-fade on browsers that don't support it yet (older Safari),
-   full navigation still works identically either way. */
+   no-op cross-fade on browsers that don't support it yet (older Safari,
+   Firefox), full navigation still works identically either way. A small
+   slide+scale rather than a plain cross-fade, to match the rest of the
+   app's playful-but-fast motion language — still under a third of a
+   second end to end so daily navigation never feels sluggish. */
 @view-transition {
   navigation: auto;
 }
 
 ::view-transition-old(root) {
-  animation-duration: 0.15s;
-  animation-timing-function: ease-out;
+  animation: fitos-page-out var(--dur-base) var(--ease-out) forwards;
 }
 
 ::view-transition-new(root) {
-  animation-duration: 0.18s;
-  animation-timing-function: ease-out;
+  animation: fitos-page-in var(--dur-slow) var(--ease-playful) forwards;
+}
+
+@keyframes fitos-page-out {
+  to { opacity: 0; transform: translateY(-6px) scale(0.99); }
+}
+
+@keyframes fitos-page-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
 }
 
 /* ── Icon system: minimalist mono-color line icons ─────────────
@@ -119,10 +156,11 @@ h1, h2, h3 { font-family: var(--font-display); }
   align-items: center;
   padding: 6px;
   border-radius: 8px;
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.topbar .more-link:hover, .topbar .more-link.active { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
+.topbar .more-link.active { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
 .topbar .more-link .icon { width: 20px; height: 20px; }
+.topbar .more-link:active { transform: scale(0.9); }
 
 .content {
   max-width: 640px;
@@ -159,10 +197,11 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   font-size: 10px;
   font-weight: 600;
   border-radius: 10px;
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .tabbar a.active { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
+.tabbar a:active { transform: scale(0.92); }
 .tab-icon { width: 20px; height: 20px; }
 
 /* ── Cards ──────────────────────────────────────────────────── */
@@ -222,7 +261,10 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
+
+.login-form button:active { transform: scale(0.97); }
 
 .error { color: var(--danger); font-size: 14px; }
 
@@ -281,6 +323,13 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 10px var(--accent-glow);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.stack-form button:active { transform: scale(0.96); }
+
+@media (hover: hover) and (pointer: fine) {
+  .stack-form button:hover { transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
 }
 
 /* ── Tables ─────────────────────────────────────────────────── */
@@ -314,10 +363,10 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   display: inline-flex;
   align-items: center;
   text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .row-delete-btn .icon, .row-edit-btn .icon { width: 15px; height: 15px; }
-.row-delete-btn:hover { color: var(--chart-critical); background: rgba(220, 38, 38, 0.1); }
-.row-edit-btn:hover { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
+.row-delete-btn:active, .row-edit-btn:active { transform: scale(0.88); }
 .row-actions { display: flex; gap: 4px; }
 
 .back-link {
@@ -326,9 +375,14 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   color: var(--muted);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
-.back-link:hover { color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  .row-delete-btn:hover { color: var(--chart-critical); background: rgba(220, 38, 38, 0.1); }
+  .row-edit-btn:hover { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
+  .back-link:hover { color: var(--text); }
+}
 
 /* ── Meal / day nav ─────────────────────────────────────────── */
 .day-nav {
@@ -338,7 +392,8 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   margin-bottom: 10px;
 }
 
-.day-nav a { color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 600; }
+.day-nav a { color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 600; display: inline-block; transition: transform var(--dur-fast) var(--ease-out); }
+.day-nav a:active { transform: scale(0.94); }
 
 .day-macros { display: flex; gap: 10px; flex-wrap: wrap; }
 
@@ -373,7 +428,7 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   text-align: center;
 }
 
@@ -384,11 +439,17 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   font-weight: 700;
 }
 
-.meal-check-btn.pop { animation: pop 0.35s ease; }
+.meal-check-btn:active { transform: scale(0.95); }
+
+@media (hover: hover) and (pointer: fine) {
+  .meal-check-btn:hover { border-color: var(--accent); box-shadow: 0 2px 10px var(--accent-glow); }
+}
+
+.meal-check-btn.pop { animation: pop 0.4s var(--ease-playful); }
 
 @keyframes pop {
   0% { transform: scale(1); }
-  40% { transform: scale(1.12); }
+  45% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
 
@@ -470,12 +531,19 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
+
+.drink-chip:active { transform: scale(0.92); }
 
 .drink-chip.drink-chip-selected {
   border-color: var(--gold);
   color: var(--gold);
   background: rgba(251, 191, 36, 0.1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .drink-chip:hover { border-color: var(--gold); color: var(--gold); }
 }
 
 .eating-out { margin-top: 4px; }
@@ -628,12 +696,17 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   color: var(--text);
   font-weight: 600;
   font-size: 14px;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
-.link-row:hover { background: var(--surface2); }
+.link-row:active { background: var(--surface2); transform: scale(0.98); }
 .link-icon { width: 20px; height: 20px; flex-shrink: 0; }
-.link-arrow { margin-left: auto; color: var(--muted); width: 16px; height: 16px; }
+.link-arrow { margin-left: auto; color: var(--muted); width: 16px; height: 16px; transition: transform var(--dur-fast) var(--ease-out); }
+
+@media (hover: hover) and (pointer: fine) {
+  .link-row:hover { background: var(--surface2); }
+  .link-row:hover .link-arrow { transform: translateX(3px); }
+}
 
 /* ── Day cards (dashboard weekly plan) ─────────────────────── */
 .day-card {
@@ -674,6 +747,88 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
 @keyframes confetti-burst {
   0% { transform: translate(0, 0) scale(1); opacity: 1; }
   100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+}
+
+/* ── Set-logging helpers: rest timer + reps/weight stepper ──────
+   Mid-workout, one-handed: a stepper avoids opening the numeric keyboard
+   for a ±1 rep / ±2.5kg nudge, and the timer removes the separate
+   phone-timer-app step between sets. See static/app.js for the wiring. */
+.rest-timer { text-align: center; }
+
+.rest-timer-display {
+  font-family: var(--font-mono);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rest-timer-presets { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+
+.rest-preset-btn {
+  background: #0b0f1a;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.rest-preset-btn:active { transform: scale(0.92); }
+
+@media (hover: hover) and (pointer: fine) {
+  .rest-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+}
+
+.rest-timer-controls { display: flex; justify-content: center; gap: 8px; }
+
+.rest-timer-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #06210f;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.rest-timer-btn:active { transform: scale(0.95); }
+
+.rest-timer-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.stepper { display: flex; align-items: stretch; gap: 6px; }
+
+.stepper input {
+  flex: 1;
+  text-align: center;
+}
+
+.stepper-btn {
+  width: 40px;
+  flex-shrink: 0;
+  background: #0b0f1a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.stepper-btn:active { transform: scale(0.9); color: var(--accent); }
+
+@media (hover: hover) and (pointer: fine) {
+  .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
 }
 
 /* ── Charts (dataviz-skill mark specs) ─────────────────────────
@@ -752,6 +907,9 @@ h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spa
   color: var(--accent);
   background: rgba(34, 197, 94, 0.1);
 }
+
+.today-meal-chip { transition: transform var(--dur-fast) var(--ease-out); }
+.today-meal-chip:active { transform: scale(0.94); }
 
 @media(max-width:640px){
   .tab-icon { width: 19px; height: 19px; }
