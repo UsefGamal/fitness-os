@@ -1,10 +1,13 @@
 import { Link, useNavigate } from 'react-router';
 
+import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
+import { dayGroups } from '../lib/insights.js';
 import { mealDayFor } from '../lib/meals.js';
+import * as P from '../lib/planEdit.js';
 import { doneKeys, totalPoints } from '../lib/quests.js';
 import { programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
 import { content, useData } from '../store/useData.js';
@@ -20,6 +23,7 @@ export default function Today() {
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
+  const nextGroups = dayGroups(data, P.effectiveDay(next.key, T, data)?.exercises);
   const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
@@ -50,11 +54,16 @@ export default function Today() {
           </>
         ) : (
           <>
-            <span className="chip accent">Today at {T.session_time}</span>
-            <h2 style={{ marginTop: 10 }}>{next.label}</h2>
-            <p className="muted" style={{ margin: '0 0 14px' }}>
-              {next.focus}{next.cardio_after ? `, then ${next.cardio_after.minutes} min cycling` : ''}
-            </p>
+            <div className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
+              <div className="grow">
+                <span className="chip accent">Today at {T.session_time}</span>
+                <h2 style={{ marginTop: 10 }}>{next.label}</h2>
+                <p className="muted" style={{ margin: '0 0 14px' }}>
+                  {next.focus}{next.cardio_after ? `, then ${next.cardio_after.minutes} min cycling` : ''}
+                </p>
+              </div>
+              <div style={{ width: 104, flex: 'none' }}><BodyMap hit={nextGroups} size={104} label={`${next.label} works ${[...nextGroups].join(', ')}`} /></div>
+            </div>
             {todays?.finished_at ? (
               <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> Done · {todays.sets.length} sets</Link>
             ) : (

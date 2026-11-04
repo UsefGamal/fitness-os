@@ -7,6 +7,7 @@ import { MODULES } from '../lib/data.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
+import { applyImport, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { Health, isNative } from '../store/native.js';
@@ -22,6 +23,8 @@ export default function Settings() {
   const fileRef = useRef(null);
   const [msg, setMsg] = useState('');
   const [pendingImport, setPendingImport] = useState(null);
+  const csvRef = useRef(null);
+  const [csv, setCsv] = useState(null); // { text, unit, parsed, preview }
   const s = summarize(data);
   const health = healthSettings(data);
   const [hcStatus, setHcStatus] = useState(isNative() ? 'checking' : 'unavailable');
@@ -79,6 +82,39 @@ export default function Settings() {
     setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}.`);
   };
 
+  const readCsv = (text, unit) => {
+    const parsed = readWorkoutCsv(text, { unit });
+    setCsv({ text, unit, parsed, preview: previewImport(data, parsed) });
+  };
+
+  const pickCsv = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      readCsv(await file.text(), 'kg');
+      setMsg('');
+    } catch (err) {
+      setMsg(err.message || 'Could not read that file.');
+    }
+  };
+
+  const confirmCsv = () => {
+    const p = csv.preview;
+    update((d) => applyImport(d, previewImport(d, csv.parsed)));
+    setCsv(null);
+    setMsg(`Added ${n(p.workouts.length, 'workout')} and ${n(p.sets, 'set')} from ${csv.parsed.source}.`);
+  };
+
+  const exportCsv = async () => {
+    try {
+      const where = await saveExport(`fitness-os-workouts-${todayISO()}.csv`, toCsv(data), 'text/csv');
+      setMsg(where ? 'Workouts CSV saved to Documents on your phone.' : 'Workouts CSV downloaded.');
+    } catch {
+      setMsg('Could not save the CSV. Check storage permission and try again.');
+    }
+  };
+
   const exportNow = async () => {
     try {
       const where = await saveExport(`fitness-os-backup-${todayISO()}.json`, toDataFile(data));
@@ -116,8 +152,11 @@ export default function Settings() {
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
         <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow">Export a backup</div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export workouts as CSV</div><div className="meta">One row per set, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={pick} />
+      <input ref={csvRef} type="file" accept="text/csv,.csv,text/plain" hidden onChange={pickCsv} />
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your data stays on this phone, with no server and no account. Export a backup now and then; uninstalling the app deletes its data.</p>
 
       {pendingImport ? (
@@ -128,6 +167,31 @@ export default function Settings() {
           </div>
           <button type="button" className="btn" onClick={confirmImport}>Import and replace</button>
           <button type="button" className="btn ghost" onClick={() => setPendingImport(null)}>Cancel</button>
+        </section>
+      ) : null}
+
+      {csv ? (
+        <section className="card stack">
+          <strong>Add these workouts from {csv.parsed.source}?</strong>
+          {csv.parsed.source === 'Strong' ? (
+            <div className="seg" role="group" aria-label="Weights in the file are in">
+              {['kg', 'lb'].map((u) => <button key={u} type="button" className={csv.unit === u ? 'on' : ''} onClick={() => readCsv(csv.text, u)}>Weights in {u}</button>)}
+            </div>
+          ) : null}
+          <div className="muted small">
+            {csv.preview.workouts.length
+              ? `${n(csv.preview.workouts.length, 'workout')} and ${n(csv.preview.sets, 'set')}, ${csv.preview.from} to ${csv.preview.to}.`
+              : 'Nothing new in this file.'}
+            {csv.preview.duplicates ? ` ${n(csv.preview.duplicates, 'workout')} already here, skipped.` : ''}
+            {csv.parsed.skipped ? ` ${n(csv.parsed.skipped, 'row')} left out (warm-ups, rest timers, empty sets).` : ''}
+            {' '}Nothing already on this phone changes.
+          </div>
+          {csv.preview.newExercises.length ? (
+            <div className="small preview-list"><div className="muted">New exercises ({csv.preview.newExercises.length}):</div>{csv.preview.newExercises.join(', ')}</div>
+          ) : null}
+          {csv.preview.workouts.length ? <div className="small muted">First: {csv.preview.workouts[0].label}, {csv.preview.workouts[0].sets[0].exercise} {csv.preview.workouts[0].sets[0].weightKg} kg × {csv.preview.workouts[0].sets[0].reps}</div> : null}
+          <button type="button" className="btn" onClick={confirmCsv} disabled={!csv.preview.workouts.length}>Add {n(csv.preview.workouts.length, 'workout')}</button>
+          <button type="button" className="btn ghost" onClick={() => setCsv(null)}>Cancel</button>
         </section>
       ) : null}
 

@@ -1,0 +1,44 @@
+import { useEffect, useState } from 'react';
+
+import { newBadges, recordBadges } from '../lib/achievements.js';
+import { todayISO } from '../lib/dates.js';
+import { feedback } from '../store/feedback.js';
+import { useData } from '../store/useData.js';
+import Icon from './Icon.jsx';
+
+/** Watches for newly earned badges, records them, and shows a card with a
+ * fanfare. The very first check (data from before badges existed) records
+ * what's already earned quietly. */
+export default function Fanfare() {
+  const { data, update } = useData();
+  const [shown, setShown] = useState(null);
+
+  useEffect(() => {
+    const today = todayISO();
+    const fresh = newBadges(data, today);
+    const first = !data.achievements;
+    if (!fresh.length && !first) return;
+    update((d) => recordBadges({ ...d, achievements: d.achievements || {} }, fresh.map((b) => b.id), today));
+    if (first || !fresh.length) return;
+    setShown(fresh);
+    feedback('pr');
+  }, [data, update]);
+
+  useEffect(() => {
+    if (!shown) return undefined;
+    const id = setTimeout(() => setShown(null), 5000);
+    return () => clearTimeout(id);
+  }, [shown]);
+
+  if (!shown) return null;
+  const top = shown[shown.length - 1];
+  return (
+    <button type="button" className="fanfare" role="status" onClick={() => setShown(null)}>
+      <span className="medal"><Icon name="trophy" /></span>
+      <span className="grow" style={{ textAlign: 'left' }}>
+        <strong>{shown.length > 1 ? `${shown.length} new badges` : 'New badge'}: {top.label}</strong>
+        <div className="muted small">{top.note}</div>
+      </span>
+    </button>
+  );
+}

@@ -37,12 +37,12 @@ async function flush() {
 }
 
 /** Save a file the person can find (Documents), or download it in a browser. */
-export async function saveExport(filename, text) {
+export async function saveExport(filename, text, type = 'application/json') {
   if (Capacitor.isNativePlatform()) {
     const res = await Filesystem.writeFile({ path: filename, directory: Directory.Documents, encoding: Encoding.UTF8, data: text, recursive: true });
     return res.uri;
   }
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
