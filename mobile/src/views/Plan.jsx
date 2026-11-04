@@ -3,9 +3,13 @@ import { Link, useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
+import { entryFor, groupOf } from '../lib/catalogue.js';
+import * as D from '../lib/data.js';
 import { longWeekday, todayISO } from '../lib/dates.js';
 import * as P from '../lib/planEdit.js';
-import { weekView } from '../lib/schedule.js';
+import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
+import { alternatives } from '../lib/similar.js';
+import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 
 function ExerciseList({ day }) {
@@ -32,6 +36,19 @@ function EditList({ day, sessionKey }) {
   const { data, update } = useData();
   const T = content.training;
   const [adding, setAdding] = useState('');
+  const { catalogue } = useCatalogue();
+  // Up to 8 catalogue exercises that work the same muscles, best first.
+  const recommended = (name) => {
+    const entry = catalogue ? entryFor(name, T, catalogue.byId) : null;
+    return entry ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : [];
+  };
+  const swap = (i, value) => {
+    if (!value) return;
+    if (!value.startsWith('cat:')) return update((d) => P.swapExercise(d, sessionKey, T, i, value));
+    const e = catalogue.byId.get(value.slice(4));
+    // Catalogue exercises join the Library first so sets can be logged against them.
+    return update((d) => P.swapExercise(D.addCustomExercise(d, { name: e.name, muscle_group: groupOf(e), equipment: e.equipment }), sessionKey, T, i, e.name));
+  };
   const byMuscle = (name) => data.exercises.find((e) => e.name === name)?.muscle_group;
   const options = (current) => {
     const m = byMuscle(current);
@@ -55,9 +72,16 @@ function EditList({ day, sessionKey }) {
           </div>
           <label className="field">
             <span>Swap for</span>
-            <select value="" onChange={(e) => e.target.value && update((d) => P.swapExercise(d, sessionKey, T, i, e.target.value))}>
+            <select value="" onChange={(e) => swap(i, e.target.value)}>
               <option value="">Keep {ex.name}</option>
-              {options(ex.name).map((o) => <option key={o.id} value={o.name}>{o.name} · {o.muscle_group}</option>)}
+              {recommended(ex.name).length ? (
+                <optgroup label="Same muscles (recommended)">
+                  {recommended(ex.name).map((o) => <option key={o.id} value={`cat:${o.id}`}>{o.name} · {o.equipment || 'body only'}</option>)}
+                </optgroup>
+              ) : null}
+              <optgroup label="Your Library">
+                {options(ex.name).map((o) => <option key={o.id} value={o.name}>{o.name} · {o.muscle_group}</option>)}
+              </optgroup>
             </select>
           </label>
         </div>
@@ -80,15 +104,23 @@ function EditList({ day, sessionKey }) {
 }
 
 export default function Plan() {
-  const { data } = useData();
+  const { data, update } = useData();
   const today = todayISO();
   const T = content.training;
-  const week = weekView(today, T);
+  const week = weekView(today, T, data.session_moves || []);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
   const [picked, setPicked] = useState(firstTraining);
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
+  const moves = data.session_moves || [];
+  const movedHere = moves.find((m) => m.to === picked.date);
+  const pick = (date) => setPicked(weekView(today, T, data.session_moves || []).find((d) => d.date === date) || picked);
+  const move = (to) => {
+    if (!to) return;
+    update((d) => moveSession(d, T, picked.date, to));
+    setPicked({ ...picked, date: to });
+  };
 
   return (
     <div className="page">
@@ -113,6 +145,19 @@ export default function Plan() {
               </details>
               <ExerciseList day={day} />
               {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
+              <div className="row" style={{ gap: 8, alignItems: 'center', margin: '0 0 10px' }}>
+                {movedHere ? (
+                  <button type="button" className="btn ghost small grow" onClick={() => { update((d) => undoMove(d, picked.date)); pick(movedHere.from); }}>Moved from {longWeekday(movedHere.from)} · put it back</button>
+                ) : null}
+                {picked.date >= today ? (
+                  <label className="field grow" style={{ margin: 0 }}>
+                    <select value="" aria-label={`Move ${day.label} to another day`} onChange={(e) => move(e.target.value)}>
+                      <option value="">Move {day.label} to…</option>
+                      {moveTargets(picked.date, T, moves).filter((d) => d >= today).map((d) => <option key={d} value={d}>{longWeekday(d)}{d === today ? ' (today)' : ''}</option>)}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
               {picked.date === today ? (
                 <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> Start {day.label}</button>
               ) : (

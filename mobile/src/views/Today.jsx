@@ -17,14 +17,15 @@ export default function Today() {
   const navigate = useNavigate();
   const today = todayISO();
   const T = content.training;
-  const next = programDayFor(today, T);
-  const week = weekView(today, T);
+  const moves = data.session_moves || [];
+  const next = programDayFor(today, T, moves);
+  const week = weekView(today, T, moves);
   const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
   const water = D.waterOn(data, today);
   const weight = D.latestWeight(data);
-  const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T) === 'rest');
+  const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T, moves) === 'rest');
   const mealDay = mealDayFor(today, content.nutrition);
   const dailyQuests = content.quests.bonus_tasks.filter((t) => t.frequency === 'daily');
   const questsDone = dailyQuests.filter((t) => doneKeys(data, today, content.quests).has(t.key)).length;

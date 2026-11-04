@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { programDayFor, restSeconds, sessionKeyOn, weekView } from './schedule.js';
+import { moveSession, moveTargets, programDayFor, restSeconds, sessionKeyOn, undoMove, weekView } from './schedule.js';
 import { content } from './testContent.js';
 
 const T = content.training;
@@ -53,4 +53,23 @@ test('every working exercise is in the exercise library', () => {
   const lib = new Set(T.exercise_library.map((e) => e[1]));
   const missing = T.program.flatMap((d) => d.exercises.map((e) => e.name)).filter((n) => !lib.has(n));
   assert.deepEqual(missing, []);
+});
+
+test('a moved session shows on its new day and leaves a rest day behind', () => {
+  const T = content.training;
+  const week = weekView('2026-11-01', T); // Sunday start
+  const from = week.find((d) => d.key !== 'rest').date;
+  const to = moveTargets(from, T)[0];
+  const data = moveSession({}, T, from, to);
+  const moves = data.session_moves;
+  assert.equal(sessionKeyOn(from, T, moves), 'rest');
+  assert.equal(sessionKeyOn(to, T, moves), sessionKeyOn(from, T));
+  assert.equal(weekView('2026-11-01', T, moves).find((d) => d.date === to).key, sessionKeyOn(from, T));
+  // Moving it again keeps the original day, and undo puts it back.
+  const again = moveTargets(to, T, moves).find((d) => d !== from);
+  const twice = moveSession(data, T, to, again);
+  assert.deepEqual(twice.session_moves.map((m) => [m.from, m.to]), [[from, again]]);
+  assert.equal(sessionKeyOn(from, T, undoMove(twice, again).session_moves), sessionKeyOn(from, T));
+  // A rest day has nothing to move.
+  assert.equal(moveSession({}, T, '2026-11-03', '2026-11-04').session_moves, undefined);
 });

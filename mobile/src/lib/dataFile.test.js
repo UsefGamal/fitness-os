@@ -36,6 +36,11 @@ test('a backup made by the app imports back to the same data', () => {
   assert.deepEqual(parseDataFile(toDataFile(empty), content), empty);
 });
 
+test('later fields (moved sessions, notes, badges) survive a backup', () => {
+  const data = { ...parseDataFile(JSON.stringify(SERVER_EXPORT), content), session_moves: [{ from: '2026-11-03', to: '2026-11-04', key: 'push' }], exercise_notes: { 'Leg Press': 'Seat 5' }, achievements: { first: '2026-11-04' } };
+  assert.deepEqual(parseDataFile(toDataFile(data), content), data);
+});
+
 test('rejects files that are not a Fitness OS export', () => {
   assert.throws(() => parseDataFile('not json', content), ImportError);
   assert.throws(() => parseDataFile('{"format":"other"}', content), ImportError);

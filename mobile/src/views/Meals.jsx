@@ -18,7 +18,7 @@ export default function Meals() {
   const day = mealDayFor(date, N);
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   const totals = dayTotals(day, picks);
-  const training = sessionKeyOn(date, content.training) !== 'rest';
+  const training = sessionKeyOn(date, content.training, data.session_moves || []) !== 'rest';
   const target = macroTargets(data, N, today);
   const done = N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed).length;
 

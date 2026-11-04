@@ -2,12 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
+import Sheet from '../components/Sheet.jsx';
+import SwipeRow from '../components/SwipeRow.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
-import { entryFor } from '../lib/catalogue.js';
+import { entryFor, groupOf } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
+import { progressionTarget } from '../lib/progression.js';
+import { alternatives } from '../lib/similar.js';
+import { addExtraSet, applyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
 import { activeMs, clock, pauseWorkout, restFor, restoreSet, resumeWorkout, targetProgress, trainingSettings } from '../lib/training.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { useKeepAwake } from '../store/awake.js';
@@ -89,9 +95,11 @@ export default function Workout() {
 
   const active = data.workouts.find((w) => w.id === activeWorkoutId && !w.finished_at) || null;
   const requested = params.get('session');
-  const scheduledKey = sessionKeyOn(today, T);
+  const scheduledKey = sessionKeyOn(today, T, data.session_moves || []);
   const sessionKey = active?.session_key || requested || (scheduledKey !== 'rest' ? scheduledKey : null);
-  const day = sessionKey ? effectiveDay(sessionKey, T, data) : null;
+  const planDay = sessionKey ? effectiveDay(sessionKey, T, data) : null;
+  // Today's changes (extra sets, skips, swaps) live on the workout, not the plan.
+  const day = planDay && active ? applyTweaks(planDay, active.tweaks) : planDay;
 
   const [current, setCurrent] = useState(0);
   const [weight, setWeight] = useState(0);
@@ -103,6 +111,8 @@ export default function Workout() {
   const [now, setNow] = useState(Date.now());
   const [restOverride, setRestOverride] = useState({}); // exercise name -> seconds for this session
   const [undo, setUndo] = useState(null); // { set, label } after a delete
+  const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
+  const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
   useKeepAwake(Boolean(active));
 
@@ -119,15 +129,34 @@ export default function Workout() {
 
   const ex = day?.exercises[current];
   const exRow = ex ? D.exerciseByName(data, ex.name) : null;
+  const entry = ex && catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
+  const barbell = ex ? isBarbell(ex.name, entry) : false;
+  const barKg = BARS[settings.bar]?.kg ?? 20;
 
-  // Prefill weight and reps whenever the exercise changes.
+  // Double progression from earlier sessions (lib/progression.js).
+  const target = useMemo(() => {
+    if (!active || !ex || !exRow) return null;
+    const sessions = D.exerciseHistory(data, exRow.id).filter((h) => h.workoutId !== active.id).map((h) => h.sets);
+    const small = entry ? entry.mechanic === 'isolation' : !barbell;
+    return progressionTarget(ex.reps, ex.sets, sessions, { step: small ? 1 : 2.5 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.id, ex?.name, exRow?.id, catalogue]);
+
+  // Prefill weight and reps whenever the exercise changes: the last set of
+  // today, else the progression target, else last time's first set.
   useEffect(() => {
     if (!active || !ex || !exRow) return;
+    const doneToday = active.sets.some((s) => s.exercise_id === exRow.id);
     const s = D.suggestSet(data, active.id, exRow.id, targetReps(ex.reps));
-    setWeight(s.weightKg);
-    setReps(s.reps);
+    if (!doneToday && target?.weightKg != null) {
+      setWeight(target.weightKg);
+      setReps(target.reps ?? s.reps);
+    } else {
+      setWeight(s.weightKg);
+      setReps(doneToday ? s.reps : target?.reps ?? s.reps);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.id, current, sessionKey]);
+  }, [active?.id, current, sessionKey, ex?.name, target]);
 
   const doneSets = useMemo(() => {
     if (!active || !day) return {};
@@ -143,7 +172,7 @@ export default function Workout() {
     return (
       <div className="page">
         <h1 className="page-title">Start</h1>
-        <p className="page-sub">Rest day. Next up: {programDayFor(today, T).label}. Training anyway? Pick a session.</p>
+        <p className="page-sub">Rest day. Next up: {programDayFor(today, T, data.session_moves || []).label}. Training anyway? Pick a session.</p>
         <Picker onPick={(k) => setParams({ session: k })} />
       </div>
     );
@@ -187,25 +216,36 @@ export default function Workout() {
     );
   }
 
-  const logSet = () => {
-    if (!exRow || reps < 1) return;
-    const set = { exercise_id: exRow.id, reps, weight_kg: weight };
+  const logSet = (w = weight, r = reps) => {
+    if (!exRow || r < 1) return;
+    const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
     const pb = D.isPersonalBest(data, active.id, set);
-    update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps, weightKg: weight }));
+    update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w }));
     unlockAudio();
-    if (pb && weight > 0) {
+    if (pb && w > 0) {
       feedback('pr');
-      setToast(`New best on ${ex.name}: ${weight} kg × ${reps}`);
+      setToast(`New best on ${ex.name}: ${w} kg × ${r}`);
       setTimeout(() => setToast(''), 2500);
     }
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
     const ni = nextIndex(day, after, data, current);
-    const entry = catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
     const rest = restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] });
     if (settings.auto_rest && rest > 0) timer.start(rest, day.exercises[ni].name);
     if (ni !== current) setCurrent(ni);
   };
+
+  const tweak = (fn) => update((d) => setTweaks(d, active.id, fn(active.tweaks, planDay.exercises.length)));
+  const swapTo = (alt) => {
+    // Catalogue exercises join the Library so their sets can be logged.
+    update((d) => setTweaks(
+      alt ? D.addCustomExercise(d, { name: alt.name, muscle_group: groupOf(alt), equipment: alt.equipment }) : d,
+      active.id,
+      swapFor(active.tweaks, planDay.exercises.length, ex.orig, alt ? alt.name : null),
+    ));
+    setSheet(null);
+  };
+  const swapOptions = entry && catalogue ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : [];
 
   const removeSet = (s) => {
     update((d) => D.deleteSet(d, active.id, s.id));
@@ -231,7 +271,7 @@ export default function Workout() {
   const totalTarget = day.exercises.reduce((n, x) => n + x.sets, 0);
   const totalDone = Object.values(doneSets).reduce((n, s) => n + s.length, 0);
   const ms = activeMs(active, now);
-  const target = targetProgress(ms, settings.target_min);
+  const lengthTarget = targetProgress(ms, settings.target_min);
   const paused = Boolean(active.paused_at);
 
   return (
@@ -247,12 +287,12 @@ export default function Workout() {
         <div>
           <h1 className="page-title" style={{ margin: '0 4px' }}>{day.label}</h1>
           <div className="muted small" style={{ margin: '2px 4px 8px' }}>
-            {paused ? 'Paused · ' : ''}{elapsed(ms)}{target ? ` of ${settings.target_min}` : ''} · {totalDone}/{totalTarget} sets · tempo {T.trainer_plan.tempo}
+            {paused ? 'Paused · ' : ''}{elapsed(ms)}{lengthTarget ? ` of ${settings.target_min}` : ''} · {totalDone}/{totalTarget} sets · tempo {T.trainer_plan.tempo}
           </div>
         </div>
         <button type="button" className="btn small" onClick={() => setFinishing(true)}>Finish</button>
       </div>
-      {target ? <div className={`target-bar${target.over ? ' over' : ''}`} role="progressbar" aria-valuenow={Math.round(target.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, target.fraction * 100)}%` }} /></div> : null}
+      {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
       <div className="row" style={{ gap: 8, margin: '0 0 12px' }}>
         <button type="button" className="btn small secondary grow" onClick={() => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id)))}>
           <Icon name={paused ? 'play' : 'pause'} /> {paused ? 'Resume' : 'Pause'}
@@ -293,19 +333,33 @@ export default function Workout() {
               <div className="stack" style={{ marginTop: 12 }}>
                 {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
                 {x.note ? <div className="ex-note">{x.note}</div> : null}
+                {exerciseNote(data, x.name) ? <div className="ex-note">Note: {exerciseNote(data, x.name)}</div> : null}
                 {sets.map((s) => (
-                  <div key={s.id} className="set-row">
+                  <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
+                  <div className="set-row">
                     <span className="set-n done">{s.set_number}</span>
                     <span>{s.weight_kg} kg × {s.reps}</span>
                     <span />
                     <button type="button" className="icon-btn" aria-label={`Delete set ${s.set_number}`} onClick={() => removeSet(s)}><Icon name="trash" /></button>
                   </div>
+                  </SwipeRow>
                 ))}
+                {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
                 <div className="row" style={{ alignItems: 'flex-end' }}>
                   <div className="grow"><Stepper label="kg" value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
                   <div className="grow"><Stepper label="reps" value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
                 </div>
-                <button type="button" className="btn" onClick={logSet}><Icon name="check" /> Log set {sets.length + 1}</button>
+                {barbell && weight > barKg ? <div className="plate-line">Per side: {plateText(platesPerSide(weight, barKg, settings.plates).plates)} kg{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (makes ${platesPerSide(weight, barKg, settings.plates).loaded} kg)`}</div> : null}
+                <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> Log set {sets.length + 1}</button>
+                <div className="ex-actions">
+                  <button type="button" className="chip" onClick={() => tweak((t, n) => addExtraSet(t, n, x.orig))}>+ Set</button>
+                  <button type="button" className="chip" disabled={i === day.exercises.length - 1} onClick={() => { tweak((t, n) => skipToEnd(t, n, i)); }}>Skip for now</button>
+                  <button type="button" className="chip" disabled={i === 0} aria-label={`Move ${x.name} up`} onClick={() => { tweak((t, n) => moveBy(t, n, i, -1)); setCurrent(i - 1); }}>↑</button>
+                  <button type="button" className="chip" disabled={i === day.exercises.length - 1} aria-label={`Move ${x.name} down`} onClick={() => { tweak((t, n) => moveBy(t, n, i, 1)); setCurrent(i + 1); }}>↓</button>
+                  <button type="button" className="chip" onClick={() => setSheet('swap')}>Swap</button>
+                  {barbell ? <button type="button" className="chip" onClick={() => setSheet('warmups')}>Warm-ups</button> : null}
+                  <button type="button" className="chip" onClick={() => { setNoteText(exerciseNote(data, x.name)); setSheet('note'); }}>Note</button>
+                </div>
                 <label className="field row" style={{ alignItems: 'center', gap: 10 }}>
                   <span className="grow">Rest after this exercise</span>
                   <select style={{ width: 'auto' }} value={restOverride[x.name] ?? ''} onChange={(e) => setRestOverride({ ...restOverride, [x.name]: e.target.value === '' ? undefined : Number(e.target.value) })}>
@@ -323,6 +377,43 @@ export default function Workout() {
           </div>
         );
       })}
+      {sheet === 'warmups' && ex ? (
+        <Sheet title={`Warm-ups for ${weight} kg`} onClose={() => setSheet(null)}>
+          {warmupSets(weight, barKg, settings.plates).length ? (
+            <div className="list">
+              {warmupSets(weight, barKg, settings.plates).map((w) => (
+                <div key={w.kg} className="list-row">
+                  <div className="grow"><div>{w.kg} kg × {w.reps}</div><div className="meta">{w.pct}% · {w.kg === barKg ? 'empty bar' : `${plateText(platesPerSide(w.kg, barKg, settings.plates).plates)} kg per side`}</div></div>
+                </div>
+              ))}
+            </div>
+          ) : <div className="card empty">Set a working weight above the empty bar first.</div>}
+          <p className="muted small">Warm-ups aren't logged, so they don't count toward volume or records.</p>
+        </Sheet>
+      ) : null}
+      {sheet === 'swap' && ex ? (
+        <Sheet title={`Swap ${ex.swapped_from || ex.name}`} onClose={() => setSheet(null)}>
+          <p className="muted small" style={{ marginTop: 0 }}>For today only; your plan stays the same.</p>
+          <div className="list">
+            {ex.swapped_from ? <button type="button" className="list-row" onClick={() => swapTo(null)}><div className="grow">Back to {ex.swapped_from}</div></button> : null}
+            {ex.alternative ? <div className="list-row"><div className="grow"><div>Trainer's backup</div><div className="meta">{ex.alternative}</div></div></div> : null}
+            {swapOptions.map((o) => (
+              <button key={o.id} type="button" className="list-row" onClick={() => swapTo(o)}>
+                <div className="grow"><div>{o.name}</div><div className="meta">{o.equipment || 'body only'}</div></div>
+                <Icon name="chev" className="icon chev" />
+              </button>
+            ))}
+            {!swapOptions.length ? <div className="list-row muted">No close matches in the exercise library.</div> : null}
+          </div>
+        </Sheet>
+      ) : null}
+      {sheet === 'note' && ex ? (
+        <Sheet title={`Note for ${ex.name}`} onClose={() => { update((d) => setExerciseNote(d, ex.name, noteText)); setSheet(null); }}>
+          <label className="field"><span>Seat height, grip, pin… shown next time</span>
+            <input type="text" value={noteText} maxLength={200} onChange={(e) => setNoteText(e.target.value)} placeholder="e.g. seat 4, pin 7" />
+          </label>
+        </Sheet>
+      ) : null}
     </div>
   );
 }

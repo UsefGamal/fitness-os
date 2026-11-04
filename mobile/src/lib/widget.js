@@ -9,11 +9,12 @@ export const WIDGET_DAYS = 7;
 export function widgetDays(data, content, today) {
   const T = content.training;
   const slots = content.nutrition.meal_slots.length;
-  const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T) === 'rest');
+  const moves = data.session_moves || [];
+  const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T, moves) === 'rest');
   const out = [];
   for (let i = 0; i < WIDGET_DAYS; i += 1) {
     const date = addDays(today, i);
-    const next = programDayFor(date, T);
+    const next = programDayFor(date, T, moves);
     const done = D.workoutOn(data, date);
     const meals = content.nutrition.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed).length;
     const bits = [];
