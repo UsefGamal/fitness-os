@@ -4,7 +4,9 @@ import { App } from '@capacitor/app';
 
 import { todayISO } from '../lib/dates.js';
 import { healthWorkouts, mergeWeighIns } from '../lib/health.js';
+import { timesOf } from '../lib/times.js';
 import { widgetDays } from '../lib/widget.js';
+import { watchReminders } from './notify.js';
 import { Health, isNative, Widget } from './native.js';
 import { content, flushSave, useData } from './useData.js';
 import { useTimer } from './useTimer.js';
@@ -40,7 +42,7 @@ export async function syncHealth({ all = false } = {}) {
     return r.data;
   });
   const since = all ? 0 : h.workouts_since;
-  const workouts = healthWorkouts(useData.getState().data, content.training.session_time).filter((w) => w.version > since);
+  const workouts = healthWorkouts(useData.getState().data, timesOf(useData.getState().data, content).session_time).filter((w) => w.version > since);
   if (workouts.length) await Health.writeWorkouts({ workouts });
   setHealth({ weights_since: startedAt, workouts_since: startedAt });
   return { weighIns: added, workouts: workouts.length };
@@ -48,6 +50,7 @@ export async function syncHealth({ all = false } = {}) {
 
 export function startPhoneSync() {
   if (!isNative()) return;
+  watchReminders(content);
   pushWidget();
   useData.subscribe((s, prev) => {
     if (s.data !== prev.data) pushWidget();

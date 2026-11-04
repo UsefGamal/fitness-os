@@ -4,6 +4,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 import { todayISO } from '../lib/dates.js';
 import { plannedReminders } from '../lib/reminders.js';
+import { timesOf } from '../lib/times.js';
 import { useData } from './useData.js';
 
 const native = () => Capacitor.isNativePlatform();
@@ -21,7 +22,26 @@ export async function scheduleReminders(content, enabled) {
   // The rest timer lives in RestTimerService now, so every pending one here is a reminder.
   if (pending.notifications.length) await LocalNotifications.cancel({ notifications: pending.notifications.map((n) => ({ id: n.id })) });
   if (!enabled) return;
-  const { session_moves: moves = [], evening_plan: evening = {} } = useData.getState().data;
-  const list = plannedReminders(todayISO(), content, new Date(), moves, evening).map((r) => ({ id: r.id, title: r.title, body: r.body, schedule: { at: r.at, allowWhileIdle: true } }));
+  const data = useData.getState().data;
+  const { session_moves: moves = [], evening_plan: evening = {} } = data;
+  const list = plannedReminders(todayISO(), content, new Date(), moves, evening, timesOf(data, content)).map((r) => ({ id: r.id, title: r.title, body: r.body, schedule: { at: r.at, allowWhileIdle: true } }));
   if (list.length) await LocalNotifications.schedule({ notifications: list });
+}
+
+/** Keep reminders in step with the data: reschedule (once things settle)
+ * when the times, moved sessions or 8 PM plan change, and on each start. */
+export function watchReminders(content) {
+  if (!native()) return;
+  const key = (d) => JSON.stringify([d.settings?.notifications, d.settings?.times, d.session_moves, d.evening_plan]);
+  let last = key(useData.getState().data);
+  let timer = null;
+  const run = () => scheduleReminders(content, Boolean(useData.getState().data.settings?.notifications)).catch(() => {});
+  useData.subscribe((s) => {
+    const k = key(s.data);
+    if (k === last) return;
+    last = k;
+    clearTimeout(timer);
+    timer = setTimeout(run, 1500);
+  });
+  run(); // also rolls the two-week window forward
 }

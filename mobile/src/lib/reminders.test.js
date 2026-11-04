@@ -34,3 +34,28 @@ test('an 8 PM session gets a reminder at 19:30', () => {
   assert.equal(night[0].at.getMinutes(), 30);
   assert.match(night[0].title, /Tabata at 20:00/);
 });
+
+test('custom times: session at 06:00 reminded 15 min early, meals off, evening at 21:00', async () => {
+  const { defaultTimes } = await import('./times.js');
+  const times = { ...defaultTimes(content), session_time: '06:00', evening_time: '21:00', remind_before: 15, remind_meals: false };
+  const now = new Date(2026, 10, 3, 5, 0);
+  const r = plannedReminders('2026-11-03', content, now, [], { wednesday: 'tabata' }, times);
+  const push = r.find((x) => x.title === 'Push at 06:00');
+  assert.equal(push.at.getHours(), 5);
+  assert.equal(push.at.getMinutes(), 45);
+  assert.ok(!r.some((x) => x.id >= 2000 && x.id < 3000));
+  const night = r.find((x) => x.id >= 3000);
+  assert.equal(night.title, 'Tabata at 21:00');
+  assert.equal(night.at.getHours(), 20);
+  assert.equal(night.at.getMinutes(), 45);
+});
+
+test('a reminder before a just-after-midnight time lands the evening before', async () => {
+  const { defaultTimes } = await import('./times.js');
+  const times = { ...defaultTimes(content), session_time: '00:10', remind_before: 30, remind_meals: false };
+  const r = plannedReminders('2026-11-03', content, new Date(2026, 10, 3, 1, 0), [], {}, times);
+  const push = r.find((x) => x.title === 'Push at 00:10');
+  assert.equal(push.at.getDate(), 3);
+  assert.equal(push.at.getHours(), 23);
+  assert.equal(push.at.getMinutes(), 40);
+});
