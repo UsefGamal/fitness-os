@@ -1,7 +1,7 @@
 // Import and export of the data file. Import accepts the old site's
 // Settings > "Download my data" file (format "fitness-os-export", v1) and
 // this app's own backups (the same format).
-import { DATA_VERSION, seedExercises } from './data.js';
+import { DATA_VERSION, defaultSettings, seedExercises } from './data.js';
 
 export const FILE_FORMAT = 'fitness-os-export';
 const LISTS = ['exercises', 'body_logs', 'hydration_logs', 'workouts', 'meal_logs', 'bonus_logs'];
@@ -39,7 +39,8 @@ export function parseDataFile(text, content) {
     workouts,
     meal_logs: raw.meal_logs,
     bonus_logs: raw.bonus_logs,
-    settings: { notifications: false, ...(raw.settings || {}) },
+    plan_overrides: raw.plan_overrides && typeof raw.plan_overrides === 'object' ? raw.plan_overrides : {},
+    settings: { ...defaultSettings(), ...(raw.settings || {}), modules: { ...defaultSettings().modules, ...(raw.settings?.modules || {}) } },
   };
 }
 

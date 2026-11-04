@@ -64,3 +64,22 @@ test('streak counts training days and skips rest days', () => {
   assert.equal(D.trainingStreak(d, '2026-11-05', rest), 3);
   assert.equal(D.trainingStreak(d, '2026-11-06', rest), 0);
 });
+
+test('exercise history, custom exercises, editing a workout and modules', () => {
+  let d = fresh();
+  const ex = D.exerciseByName(d, 'Leg Press');
+  let a; ({ data: d, workoutId: a } = D.startWorkout(d, { date: '2026-10-26', sessionKey: 'lower', label: 'Lower' }));
+  d = D.addSet(d, a, { exerciseId: ex.id, reps: 10, weightKg: 90 });
+  let b; ({ data: d, workoutId: b } = D.startWorkout(d, { date: '2026-11-02', sessionKey: 'lower', label: 'Lower' }));
+  d = D.addSet(d, b, { exerciseId: ex.id, reps: 8, weightKg: 95 });
+  assert.deepEqual(D.exerciseHistory(d, ex.id).map((h) => h.log_date), ['2026-11-02', '2026-10-26']);
+  d = D.editWorkout(d, a, { log_date: '2026-10-27' });
+  assert.equal(d.workouts.find((w) => w.id === a).log_date, '2026-10-27');
+  const n = d.exercises.length;
+  d = D.addCustomExercise(d, { name: '  Sled Push ', muscle_group: 'Legs' });
+  d = D.addCustomExercise(d, { name: 'Sled Push', muscle_group: 'Legs' });
+  assert.equal(d.exercises.length, n + 1);
+  assert.equal(D.moduleOn(d, 'meals'), true);
+  d = { ...d, settings: { ...d.settings, modules: { ...d.settings.modules, meals: false } } };
+  assert.equal(D.moduleOn(d, 'meals'), false);
+});

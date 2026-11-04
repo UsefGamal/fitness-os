@@ -5,7 +5,8 @@ import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
-import { programDay, programDayFor, sessionKeyOn } from '../lib/schedule.js';
+import { effectiveDay } from '../lib/planEdit.js';
+import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { content, useData } from '../store/useData.js';
 import { useTimer } from '../store/useTimer.js';
 
@@ -64,7 +65,7 @@ export default function Workout() {
   const requested = params.get('session');
   const scheduledKey = sessionKeyOn(today, T);
   const sessionKey = active?.session_key || requested || (scheduledKey !== 'rest' ? scheduledKey : null);
-  const day = sessionKey ? programDay(sessionKey, T) : null;
+  const day = sessionKey ? effectiveDay(sessionKey, T, data) : null;
 
   const [current, setCurrent] = useState(0);
   const [weight, setWeight] = useState(0);

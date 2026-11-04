@@ -12,8 +12,11 @@ The tab bar follows openGym: **Home**, **Plan**, **Start**, **Meals** and **Stat
 - **Plan:** your trainer's Upper / Lower / Push / Pull / Leg week. Tap a day to see its warm-up and working sets with RIR, rest, notes, form videos and backups.
 - **Start:** a guided workout. Weight and reps come prefilled from last time and can be changed with big +/- buttons. One tap logs a set and starts the rest timer, which also buzzes as a notification with the screen off. Paired sets (A1/A2) alternate automatically, and a new best set shows a PR banner.
 - **Meals:** the 14-day meal plan for any date. Pick option A or B, tick each meal off and see calories and protein against your targets.
-- **Stats:** weigh-ins with a trend chart against your goal band, workout history (open one to edit or delete sets) and your records per exercise.
-- **Settings:** import your data, export a backup and turn reminders on (30 min before each 07:00 session and at every meal time).
+- **Stats:** weigh-ins with a trend chart against your goal band, your records per exercise, and links to History and Library.
+- **Library:** every exercise, with search, a filter by muscle group and a tappable body map. Each exercise shows your best set, estimated 1RM, where it sits in your plan and every time you've done it. You can add your own exercises too.
+- **History:** every workout by month. Open one to change its date, edit a set's weight or reps, or delete sets or the whole workout.
+- **Editable Plan:** tap Edit on a day to swap an exercise (same muscle group first), change sets, reps or rest, reorder, remove or add exercises. Your trainer's plan stays as the starter plan; "Reset" puts a day back.
+- **Settings:** import your data, export a backup, turn reminders on (30 min before each 07:00 session and at every meal time), and switch **Modules** (Meals, Water, Weight) off to hide them. With Meals off, Library takes its place in the tab bar.
 
 ## Moving your data in
 
