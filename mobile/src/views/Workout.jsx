@@ -379,7 +379,10 @@ export default function Workout() {
                   <div className="grow"><Stepper label="reps" value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
                 </div>
                 {barbell && weight > barKg ? <div className="plate-line">Per side: {plateText(platesPerSide(weight, barKg, settings.plates).plates)} kg{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (makes ${platesPerSide(weight, barKg, settings.plates).loaded} kg)`}</div> : null}
-                <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> Log set {sets.length + 1}</button>
+                <div className="rest-now">
+                  <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> Log set {sets.length + 1}</button>
+                  <button type="button" className="btn secondary" aria-label="Start the rest timer" onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name); }}><Icon name="timer" /> Rest</button>
+                </div>
                 <div className="ex-actions">
                   <button type="button" className="chip" onClick={() => tweak((t, n) => addExtraSet(t, n, x.orig))}>+ Set</button>
                   <button type="button" className="chip" disabled={i === day.exercises.length - 1} onClick={() => { tweak((t, n) => skipToEnd(t, n, i)); }}>Skip for now</button>

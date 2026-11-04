@@ -1,14 +1,16 @@
 // Sounds and haptics for workout moments, in one place:
 //   feedback('restStart' | 'countdown' | 'restDone' | 'stop' | 'workoutStart'
 //            | 'workoutSaved' | 'pr' | 'work' | 'rest' | 'test')
-// Sounds are synthesised with the Web Audio API (no audio files to license
-// or bundle) and follow Settings → Training. On the phone the "rest done"
-// sound comes from the notification (RestTimerService), so it plays with the
-// screen off too; the app doesn't play it a second time there.
+// Sounds are synthesised (no audio files to license or bundle) and follow
+// Settings → Training. On the phone they are played natively (TonePlayer via
+// the RestTimer plugin): the WebView's Web Audio stays muted until a tap and
+// after the app comes back from the background. The "rest done" chime on the
+// phone comes from RestTimerService when the shade timer runs, so it plays
+// with the screen off too; the app only plays it when the shade isn't used.
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
 import { trainingSettings, VOLUMES } from '../lib/training.js';
-import { isNative } from './native.js';
+import { isNative, RestTimer } from './native.js';
 import { useData } from './useData.js';
 
 // Notes as [frequency Hz, start s, length s].
@@ -90,18 +92,30 @@ function play(notes, { volume, soft }) {
   }
 }
 
-/** Play the sound (and buzz) for a workout moment, if switched on. */
-export function feedback(event, { force = false } = {}) {
-  const s = trainingSettings(useData.getState().data);
-  const nativeDone = event === 'restDone' && isNative();
-  if ((s.sounds || force) && SOUNDS[event] && !nativeDone) {
-    try {
-      play(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' });
-    } catch {
-      // No audio on this device: stay silent.
-    }
+function sound(notes, opts) {
+  if (isNative()) {
+    RestTimer.tone({ notes, ...opts }).catch(() => {
+      // An older APK without the native player: try the WebView.
+      try { play(notes, opts); } catch { /* stay silent */ }
+    });
+    return;
   }
-  if (s.vibrate && !nativeDone) buzz(event);
+  try {
+    play(notes, opts);
+  } catch {
+    // No audio on this device: stay silent.
+  }
+}
+
+/** Play the sound (and buzz) for a workout moment, if switched on.
+ * `inShade`: the rest timer runs in the phone's shade, which chimes itself. */
+export function feedback(event, { force = false, inShade = false } = {}) {
+  const s = trainingSettings(useData.getState().data);
+  const shadeDone = event === 'restDone' && isNative() && inShade;
+  if ((s.sounds || force) && SOUNDS[event] && !shadeDone) {
+    sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' });
+  }
+  if (s.vibrate && !shadeDone) buzz(event);
 }
 
 /** A light tap for steppers and chips (haptics only, no sound). */
@@ -111,5 +125,14 @@ export function tap() {
 
 /** Browsers only allow sound after a tap: call this from the first one. */
 export function unlockAudio() {
-  audio();
+  if (!isNative()) audio();
+}
+
+// Unlock Web Audio on the first touch anywhere, so the first beep isn't lost.
+if (!isNative() && globalThis.addEventListener) {
+  const once = () => {
+    unlockAudio();
+    globalThis.removeEventListener('pointerdown', once, true);
+  };
+  globalThis.addEventListener('pointerdown', once, true);
 }

@@ -11,6 +11,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class RestTimerPlugin extends Plugin {
     @Override
     public void load() {
+        RestTimerService.foreground = true;
         RestTimerService.listener = new RestTimerService.Listener() {
             @Override
             public void onChanged(long endsAt, String label) {
@@ -54,8 +55,30 @@ public class RestTimerPlugin extends Plugin {
         call.resolve(o);
     }
 
+    /** A workout sound: { notes: [[hz, start s, length s]...], volume 0..1, soft }. */
+    @PluginMethod
+    public void tone(PluginCall call) {
+        try {
+            TonePlayer.play(call.getArray("notes"), call.getDouble("volume", 0.55), call.getBoolean("soft", false));
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not play the sound", e);
+        }
+    }
+
+    @Override
+    protected void handleOnResume() {
+        RestTimerService.foreground = true;
+    }
+
+    @Override
+    protected void handleOnPause() {
+        RestTimerService.foreground = false;
+    }
+
     @Override
     protected void handleOnDestroy() {
+        RestTimerService.foreground = false;
         RestTimerService.listener = null;
     }
 }
