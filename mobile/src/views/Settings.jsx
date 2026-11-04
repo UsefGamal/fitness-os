@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
+import { MODULES } from '../lib/data.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
@@ -92,6 +93,21 @@ export default function Settings() {
           <span className={`check${data.settings.notifications ? ' on' : ''}`}>{data.settings.notifications ? <Icon name="check" /> : null}</span>
         </button>
       </div>
+
+      <div className="section-label">Modules</div>
+      <div className="list">
+        {MODULES.map((m) => {
+          const on = data.settings?.modules?.[m.key] !== false;
+          return (
+            <button key={m.key} type="button" className="list-row" aria-pressed={on}
+              onClick={() => update((d) => ({ ...d, settings: { ...d.settings, modules: { ...(d.settings?.modules || {}), [m.key]: !on } } }))}>
+              <div className="grow"><div>{m.label}</div><div className="meta">{m.note}</div></div>
+              <span className={`check${on ? ' on' : ''}`}>{on ? <Icon name="check" /> : null}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Switching a module off only hides it. Nothing is deleted.</p>
 
       <div className="section-label">About</div>
       <div className="list">

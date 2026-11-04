@@ -13,13 +13,13 @@ export default function Stats() {
   const latest = D.latestWeight(data);
   const [weight, setWeight] = useState(latest ? String(latest.weight_kg) : '');
   const [waist, setWaist] = useState('');
-  const [tab, setTab] = useState('body');
+  const weightOn = D.moduleOn(data, 'weight');
+  const [tab, setTab] = useState(weightOn ? 'body' : 'records');
   const goalLow = data.profile?.goal_weight_low_kg;
   const goalHigh = data.profile?.goal_weight_high_kg;
   const recent = data.body_logs.slice(-60);
   const first = data.body_logs[0];
-  const workouts = [...data.workouts].sort((a, b) => (a.log_date === b.log_date ? b.id - a.id : a.log_date < b.log_date ? 1 : -1));
-  const bests = [...D.personalBests(data).values()]
+    const bests = [...D.personalBests(data).values()]
     .map((b) => ({ ...b, name: data.exercises.find((e) => e.id === b.exercise_id)?.name || 'Exercise' }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const weekAgo = new Date(Date.now() - 7 * 86400000);
@@ -37,13 +37,17 @@ export default function Stats() {
   return (
     <div className="page">
       <h1 className="page-title">Stats</h1>
+      <div className="list">
+        <Link to="/history" className="list-row"><Icon name="calendar" /><div className="grow"><div>History</div><div className="meta">{thisWeek} sessions in the last 7 days · {data.workouts.length} in total</div></div><Icon name="chev" className="icon chev" /></Link>
+        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>
+      </div>
       <div className="seg" style={{ marginBottom: 14 }}>
-        {[['body', 'Body'], ['history', 'History'], ['records', 'Records']].map(([k, l]) => (
+        {[...(weightOn ? [['body', 'Body']] : []), ['records', 'Records']].map(([k, l]) => (
           <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
 
-      {tab === 'body' ? (
+      {tab === 'body' && weightOn ? (
         <>
           <div className="stat-grid">
             <div className="stat"><div className="label">Now</div><div className="value">{latest ? latest.weight_kg : '–'}<span className="unit">kg</span></div></div>
@@ -72,22 +76,6 @@ export default function Stats() {
               ))}
             </div>
           ) : null}
-        </>
-      ) : null}
-
-      {tab === 'history' ? (
-        <>
-          <div className="muted small" style={{ margin: '0 4px 10px' }}>{thisWeek} sessions in the last 7 days · {data.workouts.length} in total</div>
-          {workouts.length ? (
-            <div className="list">
-              {workouts.slice(0, 100).map((w) => (
-                <Link key={w.id} to={`/history/${w.id}`} className="list-row">
-                  <div className="grow"><div>{w.notes || w.workout_type}</div><div className="meta">{formatDate(w.log_date)} · {w.sets.length} sets{w.duration_min ? ` · ${w.duration_min} min` : ''}</div></div>
-                  <Icon name="chev" className="icon chev" />
-                </Link>
-              ))}
-            </div>
-          ) : <div className="card empty">No workouts yet. Start one from the Start tab.</div>}
         </>
       ) : null}
 

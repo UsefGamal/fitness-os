@@ -1,73 +1,134 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { longWeekday, todayISO } from '../lib/dates.js';
-import { programDay, weekView } from '../lib/schedule.js';
-import { content } from '../store/useData.js';
+import * as P from '../lib/planEdit.js';
+import { weekView } from '../lib/schedule.js';
+import { content, useData } from '../store/useData.js';
 
-export function ExerciseList({ day }) {
+function ExerciseList({ day }) {
+  return day.exercises.map((ex, i) => (
+    <div key={`${ex.name}-${i}`} className="ex-card">
+      <div className="row between">
+        <div className="grow">
+          <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
+          <div className="ex-meta">
+            {ex.sets} × {ex.reps}{ex.rir ? ` · leave ${ex.rir} in the tank` : ''}{ex.rest ? ` · rest ${ex.rest}` : ''}
+          </div>
+        </div>
+        {ex.video ? <a className="icon-btn" href={ex.video} target="_blank" rel="noreferrer" aria-label={`${ex.name} form video`}><Icon name="video" /></a> : null}
+      </div>
+      {ex.swapped_from ? <div className="ex-meta">Instead of {ex.swapped_from}</div> : null}
+      {ex.note ? <div className="ex-note">{ex.note}</div> : null}
+      {ex.film_form ? <div className="ex-meta">Film your form on this one.</div> : null}
+      {ex.alternative ? <div className="ex-meta">Machine taken? {ex.alternative}</div> : null}
+    </div>
+  ));
+}
+
+function EditList({ day, sessionKey }) {
+  const { data, update } = useData();
+  const T = content.training;
+  const [adding, setAdding] = useState('');
+  const byMuscle = (name) => data.exercises.find((e) => e.name === name)?.muscle_group;
+  const options = (current) => {
+    const m = byMuscle(current);
+    const sorted = [...data.exercises].sort((a, b) => (b.muscle_group === m) - (a.muscle_group === m) || a.name.localeCompare(b.name));
+    return sorted.filter((e) => e.name !== current);
+  };
   return (
     <>
       {day.exercises.map((ex, i) => (
-        <div key={`${ex.name}-${i}`} className="ex-card">
+        <div key={`${ex.name}-${i}`} className="ex-card stack">
           <div className="row between">
-            <div className="grow">
-              <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
-              <div className="ex-meta">
-                {ex.sets} × {ex.reps}{ex.rir ? ` · leave ${ex.rir} in the tank` : ''}{ex.rest ? ` · rest ${ex.rest}` : ''}
-              </div>
-            </div>
-            {ex.video ? <a className="icon-btn" href={ex.video} target="_blank" rel="noreferrer" aria-label={`${ex.name} form video`}><Icon name="video" /></a> : null}
+            <div className="ex-name grow">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
+            <button type="button" className="icon-btn" aria-label={`Move ${ex.name} up`} disabled={i === 0} onClick={() => update((d) => P.moveExercise(d, sessionKey, T, i, -1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="back" className="icon" /></span></button>
+            <button type="button" className="icon-btn" aria-label={`Move ${ex.name} down`} disabled={i === day.exercises.length - 1} onClick={() => update((d) => P.moveExercise(d, sessionKey, T, i, 1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="chev" className="icon" /></span></button>
+            <button type="button" className="icon-btn" aria-label={`Remove ${ex.name}`} onClick={() => update((d) => P.removeExercise(d, sessionKey, T, i))}><Icon name="trash" /></button>
           </div>
-          {ex.note ? <div className="ex-note">{ex.note}</div> : null}
-          {ex.film_form ? <div className="ex-meta">Film your form on this one.</div> : null}
-          {ex.alternative ? <div className="ex-meta">Machine taken? {ex.alternative}</div> : null}
+          <div className="row">
+            <label className="field" style={{ width: 80 }}><span>Sets</span><input type="number" inputMode="numeric" min="1" max="10" value={ex.sets} onChange={(e) => { const v = parseInt(e.target.value, 10); if (v >= 1 && v <= 10) update((d) => P.editExercise(d, sessionKey, T, i, { sets: v })); }} /></label>
+            <label className="field grow"><span>Reps</span><input type="text" value={ex.reps} onChange={(e) => update((d) => P.editExercise(d, sessionKey, T, i, { reps: e.target.value }))} /></label>
+            <label className="field grow"><span>Rest</span><input type="text" value={ex.rest || ''} placeholder="2m" onChange={(e) => update((d) => P.editExercise(d, sessionKey, T, i, { rest: e.target.value }))} /></label>
+          </div>
+          <label className="field">
+            <span>Swap for</span>
+            <select value="" onChange={(e) => e.target.value && update((d) => P.swapExercise(d, sessionKey, T, i, e.target.value))}>
+              <option value="">Keep {ex.name}</option>
+              {options(ex.name).map((o) => <option key={o.id} value={o.name}>{o.name} · {o.muscle_group}</option>)}
+            </select>
+          </label>
         </div>
       ))}
+      <div className="card stack">
+        <label className="field">
+          <span>Add an exercise</span>
+          <select value={adding} onChange={(e) => setAdding(e.target.value)}>
+            <option value="">Choose…</option>
+            {[...data.exercises].sort((a, b) => a.name.localeCompare(b.name)).map((o) => <option key={o.id} value={o.name}>{o.name} · {o.muscle_group}</option>)}
+          </select>
+        </label>
+        <button type="button" className="btn secondary" disabled={!adding} onClick={() => { update((d) => P.addExercise(d, sessionKey, T, adding)); setAdding(''); }}><Icon name="plus" /> Add to {day.label}</button>
+      </div>
+      {day.edited ? (
+        <button type="button" className="btn danger" onClick={() => window.confirm(`Put ${day.label} back to your trainer's version?`) && update((d) => P.resetDay(d, sessionKey))}>Reset {day.label} to the trainer's plan</button>
+      ) : null}
     </>
   );
 }
 
 export default function Plan() {
+  const { data } = useData();
   const today = todayISO();
   const T = content.training;
   const week = weekView(today, T);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
   const [picked, setPicked] = useState(firstTraining);
+  const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
-  const day = picked.key === 'rest' ? null : programDay(picked.key, T);
+  const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
 
   return (
     <div className="page">
       <h1 className="page-title">Plan</h1>
       <p className="page-sub">Your trainer's Upper / Lower / Push / Pull / Leg week, {T.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
-      <section className="card"><WeekStrip week={week} onPick={setPicked} /></section>
+      <section className="card"><WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} /></section>
 
       {day ? (
         <>
-          <div className="section-label">{longWeekday(picked.date)} · {day.label}</div>
+          <div className="row between" style={{ margin: '18px 4px 6px' }}>
+            <div className="section-label" style={{ margin: 0 }}>{longWeekday(picked.date)} · {day.label}{day.edited ? ' · edited' : ''}</div>
+            <button type="button" className="btn ghost small" style={{ minHeight: 32 }} onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
+          </div>
           <p className="muted small" style={{ margin: '0 4px 10px' }}>{day.focus}</p>
-          <details className="card more">
-            <summary>Warm-up: {day.pre_cardio}, then {day.warmup_items.length} drills</summary>
-            <div className="stack" style={{ marginTop: 8 }}>
-              {day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}
-            </div>
-          </details>
-          <ExerciseList day={day} />
-          {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
-          {picked.date === today ? (
-            <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> Start {day.label}</button>
+          {editing ? (
+            <EditList day={day} sessionKey={picked.key} />
           ) : (
-            <button type="button" className="btn secondary" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> Do {day.label} today instead</button>
+            <>
+              <details className="card more">
+                <summary>Warm-up: {day.pre_cardio}, then {day.warmup_items.length} drills</summary>
+                <div className="stack" style={{ marginTop: 8 }}>{day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}</div>
+              </details>
+              <ExerciseList day={day} />
+              {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
+              {picked.date === today ? (
+                <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> Start {day.label}</button>
+              ) : (
+                <button type="button" className="btn secondary" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> Do {day.label} today instead</button>
+              )}
+            </>
           )}
         </>
       ) : (
         <div className="card empty">Rest day. Walk, stretch, sleep well.</div>
       )}
 
-      <details className="card more" style={{ marginTop: 12 }}>
+      <div className="list" style={{ marginTop: 12 }}>
+        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>
+      </div>
+      <details className="card more">
         <summary>What the plan's terms mean</summary>
         <div className="stack small" style={{ marginTop: 8 }}>
           {Object.entries(T.trainer_plan.glossary).map(([k, v]) => <div key={k}><strong>{k.replace(/_/g, ' ')}:</strong> <span className="muted">{v}</span></div>)}

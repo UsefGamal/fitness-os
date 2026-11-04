@@ -20,6 +20,7 @@ const PATHS = {
   scale: 'M4 20h16l-2-12H6zM9 8a3 3 0 0 1 6 0',
   upload: 'M12 16V4M7 9l5-5 5 5M4 20h16',
   download: 'M12 4v12M7 11l5 5 5-5M4 20h16',
+  book: 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z',
   bell: 'M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4',
 };
 

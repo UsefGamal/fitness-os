@@ -68,6 +68,7 @@ export default function Today() {
         <WeekStrip week={week} doneDates={done} />
       </section>
 
+      {D.moduleOn(data, 'meals') ? (
       <Link to="/meals" className="card" style={{ display: 'block', color: 'inherit' }}>
         <div className="row between">
           <strong>Meals</strong>
@@ -76,7 +77,9 @@ export default function Today() {
         <div className="muted small" style={{ margin: '4px 0 10px' }}>{mealDay.label}</div>
         <div className="progress"><span style={{ width: `${(mealsDone / content.nutrition.meal_slots.length) * 100}%` }} /></div>
       </Link>
+      ) : null}
 
+      {D.moduleOn(data, 'water') ? (
       <section className="card">
         <div className="row between">
           <strong><Icon name="drop" className="icon" /> Water</strong>
@@ -89,13 +92,16 @@ export default function Today() {
           <button type="button" className="btn ghost small" aria-label="Undo 250 ml" onClick={() => update((d) => D.addWater(d, today, -250))} disabled={!water}>Undo</button>
         </div>
       </section>
+      ) : null}
 
+      {D.moduleOn(data, 'weight') ? (
       <Link to="/stats" className="card" style={{ display: 'block', color: 'inherit' }}>
         <div className="row between">
           <strong><Icon name="scale" className="icon" /> Weight</strong>
           <span className="muted small">{weight ? `${weight.weight_kg} kg · ${formatDate(weight.log_date)}` : 'Log your first weigh-in'} <Icon name="chev" className="icon" /></span>
         </div>
       </Link>
+      ) : null}
     </div>
   );
 }

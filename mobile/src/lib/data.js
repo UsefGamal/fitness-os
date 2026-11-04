@@ -18,8 +18,24 @@ export function emptyData(content) {
     workouts: [],
     meal_logs: [],
     bonus_logs: [],
-    settings: { notifications: false },
+    plan_overrides: {},
+    settings: defaultSettings(),
   };
+}
+
+/** Modules follow openGym: areas you don't use can be switched off. */
+export const MODULES = [
+  { key: 'meals', label: 'Meals', note: 'Meal plan tab and the meals card on Home' },
+  { key: 'water', label: 'Water', note: 'Water card on Home' },
+  { key: 'weight', label: 'Weight', note: 'Weigh-ins on Home and Stats' },
+];
+
+export function defaultSettings() {
+  return { notifications: false, modules: Object.fromEntries(MODULES.map((m) => [m.key, true])) };
+}
+
+export function moduleOn(data, key) {
+  return data.settings?.modules?.[key] !== false;
 }
 
 export function seedExercises(content, existing = []) {
@@ -111,6 +127,11 @@ export function finishWorkout(data, workoutId, { sessionRpe = null, painNote = n
   }));
 }
 
+/** Edit a finished workout's date, notes, duration or RPE (History page). */
+export function editWorkout(data, workoutId, changes) {
+  return updateWorkout(data, workoutId, (w) => ({ ...w, ...changes }));
+}
+
 export function deleteWorkout(data, workoutId) {
   return { ...data, workouts: data.workouts.filter((w) => w.id !== workoutId) };
 }
@@ -165,6 +186,20 @@ export function suggestSet(data, workoutId, exerciseId, targetReps) {
   const prev = lastSets(data, exerciseId, workoutId);
   if (prev.length) return { weightKg: prev[0].weight_kg, reps: prev[0].reps };
   return { weightKg: 0, reps: targetReps };
+}
+
+/** Every workout that has this exercise, newest first, with its sets. */
+export function exerciseHistory(data, exerciseId) {
+  return data.workouts
+    .map((w) => ({ workoutId: w.id, log_date: w.log_date, label: w.notes, sets: w.sets.filter((s) => s.exercise_id === exerciseId) }))
+    .filter((h) => h.sets.length)
+    .sort((a, b) => (a.log_date === b.log_date ? b.workoutId - a.workoutId : a.log_date < b.log_date ? 1 : -1));
+}
+
+export function addCustomExercise(data, { name, muscle_group, equipment = null }) {
+  const clean = name.trim();
+  if (!clean || exerciseByName(data, clean)) return data;
+  return { ...data, exercises: [...data.exercises, { id: nextId(data.exercises), name: clean, muscle_group, equipment, custom: true }] };
 }
 
 // ── Meals, water, body ───────────────────────────────────────────────
