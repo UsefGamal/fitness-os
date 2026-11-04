@@ -65,6 +65,12 @@ export default function Settings() {
       <h1 className="page-title" style={{ marginTop: 4 }}>Settings</h1>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
 
+      <div className="section-label">You</div>
+      <div className="list">
+        <button type="button" className="list-row" onClick={() => navigate('/profile')}><Icon name="user" /><div className="grow">Profile and macro targets</div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">Quests</div><Icon name="chev" className="icon chev" /></button>
+      </div>
+
       <div className="section-label">Your data</div>
       <div className="list">
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>

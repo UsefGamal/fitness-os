@@ -1,16 +1,21 @@
 import { Link, useNavigate, useParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
 import { formatDate } from '../lib/dates.js';
+import { entryFor } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
+import { HowTo } from './CatalogueDetail.jsx';
 
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data } = useData();
+  const { catalogue } = useCatalogue();
   const ex = data.exercises.find((e) => e.id === Number(id));
   if (!ex) return <div className="page"><div className="card empty">Exercise not found.</div></div>;
   const history = D.exerciseHistory(data, ex.id);
@@ -18,6 +23,7 @@ export default function ExerciseDetail() {
   const inPlan = content.training.program
     .map((d) => ({ d, x: effectiveDay(d.key, content.training, data).exercises.find((e) => e.name === ex.name) }))
     .filter((r) => r.x);
+  const photo = ex && catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
   const video = inPlan.find((r) => r.x.video)?.x.video;
 
   return (
@@ -25,6 +31,12 @@ export default function ExerciseDetail() {
       <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>{ex.name}</h1>
       <p className="page-sub">{ex.muscle_group}{ex.equipment ? ` · ${ex.equipment}` : ''}</p>
+      {photo ? (
+        <>
+          <ExercisePhotos entry={photo} />
+          {photo.name.toLowerCase() !== ex.name.toLowerCase() ? <p className="muted small" style={{ margin: '-6px 4px 12px' }}>Photos show {photo.name}, the closest match.</p> : null}
+        </>
+      ) : null}
       <section className="card"><BodyMap hit={new Set([ex.muscle_group])} label={`Works ${ex.muscle_group}`} /></section>
       <div className="stat-grid">
         <div className="stat"><div className="label">Best set</div><div className="value">{best ? `${best.weight_kg}×${best.reps}` : '–'}</div></div>
@@ -37,6 +49,7 @@ export default function ExerciseDetail() {
           {video ? <a href={video} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 8 }}><Icon name="video" className="icon" /> Form video</a> : null}
         </div>
       ) : null}
+      {photo ? <HowTo entry={photo} /> : null}
       <div className="section-label">History</div>
       {history.length ? (
         <div className="list">

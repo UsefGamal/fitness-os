@@ -1,0 +1,92 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+
+import Icon from '../components/Icon.jsx';
+import { todayISO } from '../lib/dates.js';
+import { ACTIVITY, macroTargets, profileOf } from '../lib/macros.js';
+import { content, useData } from '../store/useData.js';
+
+const ACTIVITY_LABELS = {
+  sedentary: 'Sedentary: little or no exercise',
+  light: 'Light: exercise 1-3 days a week',
+  moderate: 'Moderate: exercise 3-5 days a week',
+  active: 'Active: hard exercise 6-7 days a week',
+  very_active: 'Very active: hard exercise and a physical job',
+};
+
+const num = (v) => (v === '' || v == null ? null : Number(v));
+
+export default function Profile() {
+  const { data, update } = useData();
+  const navigate = useNavigate();
+  const today = todayISO();
+  const [p, setP] = useState(() => profileOf(data));
+  const [saved, setSaved] = useState(false);
+  const set = (k) => (e) => { setP({ ...p, [k]: e.target.value }); setSaved(false); };
+
+  const clean = {
+    ...p,
+    height_cm: num(p.height_cm),
+    start_weight_kg: num(p.start_weight_kg),
+    goal_weight_low_kg: num(p.goal_weight_low_kg),
+    goal_weight_high_kg: num(p.goal_weight_high_kg),
+  };
+  const errors = [];
+  if (!(clean.height_cm >= 100 && clean.height_cm <= 250)) errors.push('Height must be between 100 and 250 cm.');
+  if (!(clean.goal_weight_low_kg >= 30 && clean.goal_weight_high_kg <= 300 && clean.goal_weight_low_kg <= clean.goal_weight_high_kg)) errors.push('Goal weights must be 30-300 kg, low first.');
+  if (clean.start_weight_kg != null && !(clean.start_weight_kg >= 30 && clean.start_weight_kg <= 300)) errors.push('Start weight must be 30-300 kg.');
+  if (!p.date_of_birth || p.date_of_birth > today) errors.push('Pick a date of birth in the past.');
+  if (!p.goal_date) errors.push('Pick a goal date.');
+
+  const preview = macroTargets({ ...data, profile: clean }, content.nutrition, today);
+
+  const save = (e) => {
+    e.preventDefault();
+    if (errors.length) return;
+    update((d) => ({ ...d, profile: { ...(d.profile || {}), ...clean } }));
+    setSaved(true);
+  };
+
+  return (
+    <div className="page">
+      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <h1 className="page-title" style={{ marginTop: 4 }}>Profile</h1>
+      <p className="page-sub">Your stats set the daily calorie and macro targets.</p>
+
+      <section className="card">
+        <div className="muted small">Daily target{preview.source === 'plan' ? ' (the plan\'s default until you log a weigh-in)' : ''}</div>
+        <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 8px' }}>
+          <span style={{ fontSize: 30, fontWeight: 700 }}>{preview.kcal}</span><span className="muted">kcal</span>
+        </div>
+        <div className="muted small">Protein {preview.protein} g · carbs {preview.carbs} g · fat {preview.fat} g · fiber {preview.fiber} g</div>
+        {preview.source === 'profile' ? (
+          <div className="muted small" style={{ marginTop: 8 }}>
+            BMR {preview.bmr} × activity = {preview.tdee} kcal maintenance at {preview.weight} kg
+            {preview.rate > 0 ? `, minus the deficit for ${preview.rate} kg a week to reach your goal by the goal date.` : '.'}
+          </div>
+        ) : null}
+      </section>
+
+      <form className="card stack" onSubmit={save}>
+        <div className="row">
+          <label className="field grow"><span>Height (cm)</span><input type="number" inputMode="decimal" value={p.height_cm ?? ''} onChange={set('height_cm')} /></label>
+          <label className="field grow"><span>Sex</span>
+            <select value={p.gender} onChange={set('gender')}>{content.nutrition.tdee.genders.map((g) => <option key={g} value={g}>{g === 'male' ? 'Male' : 'Female'}</option>)}</select>
+          </label>
+        </div>
+        <label className="field"><span>Date of birth</span><input type="date" value={p.date_of_birth || ''} max={today} onChange={set('date_of_birth')} /></label>
+        <label className="field"><span>Activity</span>
+          <select value={p.activity_level} onChange={set('activity_level')}>{Object.keys(ACTIVITY).map((k) => <option key={k} value={k}>{ACTIVITY_LABELS[k]}</option>)}</select>
+        </label>
+        <label className="field"><span>Start weight (kg, blank = first weigh-in)</span><input type="number" inputMode="decimal" step="0.1" value={p.start_weight_kg ?? ''} onChange={set('start_weight_kg')} /></label>
+        <div className="row">
+          <label className="field grow"><span>Goal low (kg)</span><input type="number" inputMode="decimal" step="0.5" value={p.goal_weight_low_kg ?? ''} onChange={set('goal_weight_low_kg')} /></label>
+          <label className="field grow"><span>Goal high (kg)</span><input type="number" inputMode="decimal" step="0.5" value={p.goal_weight_high_kg ?? ''} onChange={set('goal_weight_high_kg')} /></label>
+        </div>
+        <label className="field"><span>Goal date</span><input type="date" value={p.goal_date || ''} onChange={set('goal_date')} /></label>
+        {errors.length ? <div className="small" style={{ color: 'var(--danger)' }} role="alert">{errors[0]}</div> : null}
+        <button type="submit" className="btn" disabled={!!errors.length}>{saved ? <><Icon name="check" /> Saved</> : 'Save'}</button>
+      </form>
+    </div>
+  );
+}

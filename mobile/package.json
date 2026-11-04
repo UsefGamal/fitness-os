@@ -10,7 +10,8 @@
     "build": "npm run content && vite build",
     "preview": "vite preview",
     "test": "npm run content && node --test src/lib/*.test.js",
-    "build:mobile": "npm run build && cap sync android"
+    "build:mobile": "npm run photos && npm run build && cap sync android",
+    "photos": "python3 ../scripts/fetch_exercise_photos.py public/exercise-db"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { addDays, formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
+import { macroTargets } from '../lib/macros.js';
 import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { content, useData } from '../store/useData.js';
@@ -17,11 +19,15 @@ export default function Meals() {
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   const totals = dayTotals(day, picks);
   const training = sessionKeyOn(date, content.training) !== 'rest';
+  const target = macroTargets(data, N, today);
   const done = N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed).length;
 
   return (
     <div className="page">
-      <h1 className="page-title">Meals</h1>
+      <div className="row between">
+        <h1 className="page-title">Meals</h1>
+        <Link to="/shopping" className="btn secondary small"><Icon name="cart" /> Shopping</Link>
+      </div>
       <div className="row between card" style={{ padding: 6 }}>
         <button type="button" className="icon-btn" aria-label="Previous day" onClick={() => setDate(addDays(date, -1))}><Icon name="back" /></button>
         <div style={{ textAlign: 'center' }}>
@@ -32,10 +38,10 @@ export default function Meals() {
       </div>
 
       <div className="stat-grid">
-        <div className="stat"><div className="label">Calories</div><div className="value">{totals.kcal}<span className="unit">kcal</span></div></div>
-        <div className="stat"><div className="label">Protein</div><div className="value">{totals.protein}<span className="unit">/ {N.macro_targets.protein} g</span></div></div>
+        <div className="stat"><div className="label">Calories</div><div className="value">{totals.kcal}<span className="unit">/ {target.kcal}</span></div></div>
+        <div className="stat"><div className="label">Protein</div><div className="value">{totals.protein}<span className="unit">/ {target.protein} g</span></div></div>
       </div>
-      <div className="muted small" style={{ margin: '-4px 4px 12px' }}>Carbs {totals.carbs} g · fat {totals.fat} g · fiber {totals.fiber} g · {done}/{N.meal_slots.length} eaten</div>
+      <div className="muted small" style={{ margin: '-4px 4px 12px' }}>Carbs {totals.carbs}/{target.carbs} g · fat {totals.fat}/{target.fat} g · {done}/{N.meal_slots.length} eaten · <Link to="/profile">{target.source === 'profile' ? 'your targets' : 'set your targets'}</Link></div>
       {training ? <div className="card small"><span className="chip accent">Training day</span> <span className="muted">{N.pre_workout_note}</span></div> : null}
 
       {day.meals.map((meal) => {

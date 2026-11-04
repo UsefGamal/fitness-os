@@ -5,13 +5,18 @@ import RestTimer from './components/RestTimer.jsx';
 import TabBar from './components/TabBar.jsx';
 import { scheduleReminders } from './store/notify.js';
 import { content, useData } from './store/useData.js';
+import CatalogueDetail from './views/CatalogueDetail.jsx';
 import ExerciseDetail from './views/ExerciseDetail.jsx';
 import History from './views/History.jsx';
 import HistoryList from './views/HistoryList.jsx';
 import Library from './views/Library.jsx';
 import Meals from './views/Meals.jsx';
 import Plan from './views/Plan.jsx';
+import Profile from './views/Profile.jsx';
+import Quests from './views/Quests.jsx';
+import Session from './views/Session.jsx';
 import Settings from './views/Settings.jsx';
+import Shopping from './views/Shopping.jsx';
 import Stats from './views/Stats.jsx';
 import Today from './views/Today.jsx';
 import Workout from './views/Workout.jsx';
@@ -41,7 +46,12 @@ const router = createHashRouter([
       { path: '/history/:id', element: <History /> },
       { path: '/library', element: <Library /> },
       { path: '/library/:id', element: <ExerciseDetail /> },
+      { path: '/catalogue/:id', element: <CatalogueDetail /> },
       { path: '/settings', element: <Settings /> },
+      { path: '/shopping', element: <Shopping /> },
+      { path: '/session/:type', element: <Session /> },
+      { path: '/quests', element: <Quests /> },
+      { path: '/profile', element: <Profile /> },
       { path: '*', element: <Today /> },
     ],
   },

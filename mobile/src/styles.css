@@ -136,3 +136,14 @@ details.more > summary::-webkit-details-marker { display: none; }
 .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
 .chart { width: 100%; height: 160px; display: block; }
 .pr { color: var(--warn); font-weight: 700; font-size: 13px; }
+
+/* Exercise photos (free-exercise-db): frames stacked, the current one shown. */
+.photos { position: relative; display: block; width: 100%; aspect-ratio: 3 / 2; border: 0; padding: 0; border-radius: var(--radius); overflow: hidden; background: #fff; margin-bottom: 12px; }
+.photos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.25s ease; }
+.photos img.on { opacity: 1; }
+.photos.compact { aspect-ratio: 16 / 9; margin: 0; }
+.photos-badge { position: absolute; right: 8px; bottom: 8px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 8px; }
+.thumb { width: 56px; height: 44px; border-radius: 8px; object-fit: cover; background: #fff; flex: none; }
+.thumb.blank { background: var(--surface2); }
+.steps { padding: 14px 16px 14px 34px; margin: 0 0 12px; }
+.steps li + li { margin-top: 8px; }

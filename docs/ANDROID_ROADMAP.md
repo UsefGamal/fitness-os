@@ -45,7 +45,8 @@ Fitness OS becomes a sideloaded Android app in five phases. Each phase ends with
 - State in `localStorage` plus a JSON file mirror in app storage. No server and no sync.
 - Local notifications: 30 min before the 07:00 session on training days, meal times, and the end of each rest timer.
 - Import of the old site's data export, and backup export to Documents.
-- Next in this phase: shopping list, home/recovery/cardio/padel sessions, quests, profile and macro targets.
+- Shopping list (seven days from today, both options of every meal, ticks reset each Sunday), home/recovery/cardio/padel sessions, quests (daily habits, weekly quests, milestones, badges), and a profile that drives the macro targets (same Mifflin-St Jeor math as `content/tdee.py`).
+- Exercise photos and instructions from free-exercise-db (public domain, 876 exercises), fetched at build time by `scripts/fetch_exercise_photos.py` at a pinned commit and bundled in the APK. `content/exercise_photos.py` maps the plan's exercises to their closest entry. openGym's own media is Gym visual-licensed and is never used.
 
 **Done when** the app works fully in airplane mode with your imported history.
 

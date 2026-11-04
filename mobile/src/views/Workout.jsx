@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
+import { entryFor } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { content, useData } from '../store/useData.js';
+import { useCatalogue } from '../store/catalogue.js';
 import { useTimer } from '../store/useTimer.js';
 
 function targetReps(reps) {
@@ -56,6 +59,7 @@ function Picker({ onPick }) {
 export default function Workout() {
   const { data, update, activeWorkoutId, setActiveWorkout } = useData();
   const timer = useTimer();
+  const { catalogue } = useCatalogue();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const today = todayISO();
@@ -216,6 +220,7 @@ export default function Workout() {
             </button>
             {isCurrent ? (
               <div className="stack" style={{ marginTop: 12 }}>
+                {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
                 {x.note ? <div className="ex-note">{x.note}</div> : null}
                 {sets.map((s) => (
                   <div key={s.id} className="set-row">

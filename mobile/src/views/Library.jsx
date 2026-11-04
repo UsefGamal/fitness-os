@@ -3,8 +3,11 @@ import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
+import { entryFor } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
-import { useData } from '../store/useData.js';
+import { useCatalogue } from '../store/catalogue.js';
+import { content, useData } from '../store/useData.js';
+import Catalogue from './Catalogue.jsx';
 
 export const MUSCLES = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 
@@ -12,6 +15,8 @@ export default function Library() {
   const { data, update } = useData();
   const [q, setQ] = useState('');
   const [muscle, setMuscle] = useState(null);
+  const [tab, setTab] = useState('mine');
+  const { catalogue } = useCatalogue();
   const [newName, setNewName] = useState('');
   const [newMuscle, setNewMuscle] = useState('Chest');
   const bests = useMemo(() => D.personalBests(data), [data]);
@@ -28,6 +33,10 @@ export default function Library() {
   return (
     <div className="page">
       <h1 className="page-title">Library</h1>
+      <div className="seg" style={{ marginBottom: 12 }}>
+        <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => setTab('mine')}>Your exercises</button>
+        <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>All with photos</button>
+      </div>
       <input type="text" placeholder="Search exercises" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search exercises" style={{ marginBottom: 12 }} />
       <section className="card">
         <BodyMap hit={muscle ? new Set([muscle]) : new Set()} onPick={(g) => setMuscle(muscle === g ? null : g)} label="Tap a muscle group to filter" />
@@ -38,12 +47,15 @@ export default function Library() {
           ))}
         </div>
       </section>
+      {tab === 'all' ? <Catalogue q={q} muscle={muscle} /> : (
+      <>
       <div className="section-label">{list.length} exercises</div>
       <div className="list">
         {list.map((e) => {
           const b = bests.get(e.id);
           return (
             <Link key={e.id} to={`/library/${e.id}`} className="list-row">
+              {catalogue ? (() => { const c = entryFor(e.name, content.training, catalogue.byId); return c?.photos[0] ? <img className="thumb" src={`exercise-db/${c.photos[0]}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />; })() : null}
               <div className="grow"><div>{e.name}</div><div className="meta">{e.muscle_group}{e.equipment ? ` · ${e.equipment}` : ''}</div></div>
               {b ? <span className="meta">{b.weight_kg} × {b.reps}</span> : null}
               <Icon name="chev" className="icon chev" />
@@ -58,6 +70,8 @@ export default function Library() {
         <select value={newMuscle} onChange={(e) => setNewMuscle(e.target.value)} aria-label="Muscle group">{MUSCLES.map((m) => <option key={m}>{m}</option>)}</select>
         <button type="submit" className="btn secondary" disabled={!newName.trim()}>Add</button>
       </form>
+      </>
+      )}
     </div>
   );
 }
