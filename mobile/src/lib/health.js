@@ -29,7 +29,8 @@ export function mergeWeighIns(data, weights) {
 export function healthWorkouts(data, sessionTime = '07:00') {
   const [h, m] = sessionTime.split(':').map(Number);
   return data.workouts
-    .filter((w) => w.finished_at || w.sets.length || w.checklist_items?.length || w.duration_min)
+    // Imported history (Strong, Hevy) came from apps that write their own.
+    .filter((w) => !w.imported && (w.finished_at || w.sets.length || w.checklist_items?.length || w.duration_min))
     .map((w) => {
       let start = w.started_at;
       if (!start) {

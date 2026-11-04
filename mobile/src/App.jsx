@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-router';
 
+import Fanfare from './components/Fanfare.jsx';
 import RestTimer from './components/RestTimer.jsx';
 import TabBar from './components/TabBar.jsx';
 import { scheduleReminders } from './store/notify.js';
@@ -38,6 +39,7 @@ function Shell() {
         </Suspense>
       </div>
       <RestTimer />
+      <Fanfare />
       <TabBar />
     </>
   );

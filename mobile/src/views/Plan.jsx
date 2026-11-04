@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
+import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { longWeekday, todayISO } from '../lib/dates.js';
+import { dayGroups } from '../lib/insights.js';
 import * as P from '../lib/planEdit.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
@@ -134,7 +136,10 @@ export default function Plan() {
             <div className="section-label" style={{ margin: 0 }}>{longWeekday(picked.date)} · {day.label}{day.edited ? ' · edited' : ''}</div>
             <button type="button" className="btn ghost small" style={{ minHeight: 32 }} onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
           </div>
-          <p className="muted small" style={{ margin: '0 4px 10px' }}>{day.focus}</p>
+          <div className="row" style={{ alignItems: 'center', gap: 10, margin: '0 4px 10px' }}>
+            <p className="muted small grow" style={{ margin: 0 }}>{day.focus}</p>
+            <div style={{ width: 96, flex: 'none' }}><BodyMap hit={dayGroups(data, day.exercises)} size={96} label={`${day.label} works ${[...dayGroups(data, day.exercises)].join(', ')}`} /></div>
+          </div>
           {editing ? (
             <EditList day={day} sessionKey={picked.key} />
           ) : (
