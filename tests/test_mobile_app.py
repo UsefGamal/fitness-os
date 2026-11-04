@@ -47,3 +47,22 @@ def test_manifest_declares_the_phase4_pieces():
 def test_health_permissions_are_only_what_the_app_uses():
     health = sorted(line.split('"')[1] for line in MANIFEST.splitlines() if "android.permission.health." in line)
     assert health == ["android.permission.health.READ_WEIGHT", "android.permission.health.WRITE_EXERCISE"]
+
+
+# The classes a home-screen widget layout may use (RemoteViews' whitelist).
+# Anything else, even a plain <View>, makes the launcher show "Can't load widget".
+REMOTE_VIEWS_OK = {
+    "FrameLayout", "LinearLayout", "RelativeLayout", "GridLayout",
+    "AnalogClock", "Button", "Chronometer", "ImageButton", "ImageView", "ProgressBar", "TextView",
+    "ViewFlipper", "ListView", "GridView", "StackView", "AdapterViewFlipper",
+}  # fmt: skip
+
+
+def test_widget_layouts_only_use_remote_views_classes():
+    import re
+
+    for layout in (ANDROID / "res" / "layout").glob("widget_*.xml"):
+        tags = set(
+            re.findall(r"<([A-Za-z][\w.]*)", re.sub(r"<!--.*?-->", "", layout.read_text(encoding="utf-8"), flags=re.S))
+        )
+        assert tags <= REMOTE_VIEWS_OK, f"{layout.name} uses {sorted(tags - REMOTE_VIEWS_OK)}"
