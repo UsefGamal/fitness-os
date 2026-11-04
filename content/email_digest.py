@@ -3,7 +3,7 @@ from datetime import date
 from sqlmodel import Session
 
 from content.eating_out_guide import EATING_OUT_TIPS
-from content.gym_program import next_program_day
+from content.gym_program import SESSION_TIME, program_day_for
 from content.home_program import next_program_day as next_home_program_day
 from edamam_sync import get_active_day
 from routers.meals import PLAN_START_DATE, SLOT_LABELS
@@ -42,10 +42,13 @@ def _wrap_document(body: str) -> str:
 def build_daily_digest_html(session: Session, today: date, training_session_count: int, app_base_url: str) -> tuple[str, str]:
     day_number = (today - PLAN_START_DATE).days + 1
     meal_plan = get_active_day(session, day_number)
-    # Gym and Home share one rotation counter (see training_counter.py) —
-    # both calls need the same combined count so the day letter (and
-    # therefore the movement focus) matches between the two alternatives.
-    gym_day = next_program_day(training_session_count)
+    # The gym session follows the trainer's weekday schedule; the Home
+    # alternative keeps its own Upper/Lower rotation counter.
+    gym_day = program_day_for(today)
+    if gym_day["is_rest_today"]:
+        gym_heading = f"Rest day. Next gym session: {gym_day['label']} on {gym_day['on_date']:%A}"
+    else:
+        gym_heading = f"If you're hitting the gym today: {gym_day['label']} at {SESSION_TIME}"
     home_day = next_home_program_day(training_session_count)
     general_tips = EATING_OUT_TIPS["general"]
     eating_out_tip = general_tips[day_number % len(general_tips)]
@@ -133,7 +136,7 @@ def build_daily_digest_html(session: Session, today: date, training_session_coun
           </p>
 
           <h2 style="color:{TEXT};font-size:16px;border-top:1px solid {BORDER};padding-top:18px;margin:24px 0 4px">
-            If you're hitting the gym today: {gym_day['label']}
+            {gym_heading}
           </h2>
           <p style="color:{MUTED};font-size:13px;margin:0 0 10px">{gym_day['focus']}</p>
           <ul style="padding-left:18px;margin:0 0 10px;font-size:14px;color:{TEXT}">{gym_rows}</ul>

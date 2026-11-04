@@ -1,5 +1,35 @@
-# Seed list for the intermediate 4-day Upper/Lower program. (muscle_group, name, equipment)
+# Seed list of loggable exercises. (muscle_group, name, equipment)
+# The first block is the trainer's Upper / Lower / Push / Pull / Leg plan
+# (content/trainer_plan.json); the second is the earlier 4-day Upper/Lower
+# program, kept so logged history keeps its exercise names.
 SEED_EXERCISES = [
+    ("Chest", "15° Incline DB Press", "Dumbbell"),
+    ("Chest", "30° Incline DB Press", "Dumbbell"),
+    ("Chest", "DB Chest Press", "Dumbbell"),
+    ("Chest", "Fly Machine", "Machine"),
+    ("Back", "NG Lat Pulldown", "Cable"),
+    ("Back", "1-Arm Lat Pulldown", "Cable"),
+    ("Back", "1-Arm Row Machine", "Machine"),
+    ("Back", "Upper Back Pulldown", "Cable"),
+    ("Shoulders", "Y Cable Lateral Raise", "Cable"),
+    ("Shoulders", "Kneeling Cable Lateral Raise", "Cable"),
+    ("Arms", "Incline Cable Curl", "Cable"),
+    ("Arms", "Preacher Curl Machine", "Machine"),
+    ("Arms", "HG Incline Curl", "Dumbbell"),
+    ("Arms", "1-Arm Overhead Cable Extension", "Cable"),
+    ("Arms", "Cable Cross Triceps Extension", "Cable"),
+    ("Legs", "Leg Extension", "Machine"),
+    ("Legs", "Seated Leg Curl", "Machine"),
+    ("Legs", "Lying Leg Curl", "Machine"),
+    ("Legs", "1-Leg Standing Calf Raise", "Bodyweight"),
+    ("Legs", "Seated Calf Raise", "Machine"),
+    ("Legs", "Tibia Wall", "Bodyweight"),
+    ("Legs", "Hip Abduction", "Machine"),
+    ("Legs", "Glute Bridge", "Bodyweight"),
+    ("Legs", "45° Hip Extension", "Bodyweight"),
+    ("Core", "Dead Bug", "Bodyweight"),
+    ("Core", "TVA", "Bodyweight"),
+    ("Core", "Bear Plank", "Bodyweight"),
     ("Legs", "Back Squat", "Barbell"),
     ("Legs", "Leg Press", "Machine"),
     ("Legs", "Romanian Deadlift", "Barbell"),

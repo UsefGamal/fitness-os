@@ -1,0 +1,9 @@
+{# Sunday-start training week. Expects `week` (content.gym_program.week_view). #}
+<div class="train-week" role="list">
+  {% for d in week %}
+  <div class="train-week-day{% if d.is_today %} today{% endif %}{% if d.key == 'rest' %} rest{% endif %}" role="listitem" aria-label="{{ d.date.strftime('%A') }}: {{ d.label }}{% if d.is_today %}, today{% endif %}">
+    <span class="d">{{ d.short }}</span>
+    <span class="s">{{ d.label }}</span>
+  </div>
+  {% endfor %}
+</div>

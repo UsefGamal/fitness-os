@@ -17,49 +17,70 @@
 
 <section class="card">
   <h2><svg class="icon"><use href="#icon-flame"/></svg> Warm-up</h2>
-  <ul style="margin:0;padding-left:18px;font-size:14px">
-    {% for step in program_checklist.warmup %}<li>{{ step }}</li>{% endfor %}
+  <p style="margin:0 0 10px">{{ program_checklist.pre_cardio }}</p>
+  <ul class="plan-list">
+    {% for item in program_checklist.warmup_items %}
+    <li class="plan-row">
+      <div class="plan-row-main">
+        <span class="plan-row-name">{{ item.name }}</span>
+        <span class="plan-row-sub">{{ item.sets }}x{{ item.reps }}{% if item.rest %} · rest {{ item.rest }}{% endif %}{% if item.warm_up_pct %} · {{ item.warm_up_pct }}% of working weight{% endif %}</span>
+        {% if item.note %}<span class="plan-row-note">{{ item.note }}</span>{% endif %}
+      </div>
+      {% if item.video %}<a class="plan-video" href="{{ item.video }}" target="_blank" rel="noopener" aria-label="Form video for {{ item.name }}"><svg class="icon"><use href="#icon-external-link"/></svg> Video</a>{% endif %}
+    </li>
+    {% endfor %}
   </ul>
 </section>
 
 <section class="card card-glow">
-  <h2><svg class="icon"><use href="#icon-check"/></svg> {{ program_checklist.label }} checklist</h2>
-  <p class="muted">{{ program_checklist.focus }}</p>
-  <div class="table-scroll">
-  <table class="log-table">
-    <thead><tr><th>Exercise</th><th>Target</th><th>Rest</th><th>Suggestion</th><th>Form</th></tr></thead>
-    <tbody>
+  <h2><svg class="icon"><use href="#icon-check"/></svg> {{ program_checklist.label }} · working sets</h2>
+  <p class="muted" style="margin-bottom:10px">{{ program_checklist.focus }} · tempo {{ tempo }}</p>
+  <ul class="plan-list">
     {% for ex in program_checklist.exercises %}
-      <tr>
-        <td>{{ ex.name }}</td>
-        <td>{{ ex.sets }}x{{ ex.reps }}</td>
-        <td>{{ ex.rest }}</td>
-        <td>{{ ex.suggestion }}</td>
-        <td><a href="https://www.youtube.com/results?search_query={{ (ex.name ~ ' exercise form') | urlencode }}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px"><svg class="icon" style="width:13px;height:13px"><use href="#icon-external-link"/></svg> Watch</a></td>
-      </tr>
-      {% if ex.alternatives %}
-      <tr><td colspan="5" style="padding-top:0">
-        <details>
-          <summary class="muted" style="font-size:12px;cursor:pointer">Alternatives for {{ ex.name }}</summary>
-          <ul style="margin:6px 0 0;padding-left:18px;font-size:12px" class="muted">
-            {% for alt in ex.alternatives %}<li>{{ alt.name }}{% if alt.equipment %} ({{ alt.equipment }}){% endif %}</li>{% endfor %}
-          </ul>
+    <li class="plan-row">
+      <div class="plan-row-main">
+        <span class="plan-row-name">{% if ex.pair %}<span class="plan-pair">{{ ex.pair }}</span>{% endif %}{{ ex.name }}</span>
+        <span class="plan-row-sub">{{ ex.sets }}x{{ ex.reps }}{% if ex.rir %} · leave {{ ex.rir }} reps in the tank{% endif %}{% if ex.rest %} · rest {{ ex.rest }}{% endif %}</span>
+        {% if ex.warm_up %}<span class="plan-row-sub">First {{ ex.warm_up.sets }} warm-up set{{ 's' if ex.warm_up.sets != '1' }} of {{ ex.warm_up.reps }}{% if ex.warm_up.pct %} at {{ ex.warm_up.pct }}%{% endif %}{% if ex.warm_up.rest %}, rest {{ ex.warm_up.rest }}{% endif %}</span>{% endif %}
+        {% if ex.note %}<span class="plan-row-note">{{ ex.note }}</span>{% endif %}
+        {% if ex.film_form %}<span class="plan-row-note">Film one set to check your form.</span>{% endif %}
+        <span class="plan-row-sub">{{ ex.suggestion }}</span>
+        {% if ex.alternatives %}
+        <details class="plan-alt">
+          <summary>Machine taken? Backups</summary>
+          <ul>{% for alt in ex.alternatives %}<li>{{ alt.name }}{% if alt.equipment %} ({{ alt.equipment }}){% endif %}</li>{% endfor %}</ul>
         </details>
-      </td></tr>
-      {% endif %}
+        {% endif %}
+      </div>
+      <div class="plan-row-actions">
+        {% if ex.exercise_id %}<button type="button" class="plan-log-btn" data-pick-exercise="{{ ex.exercise_id }}" data-target-reps="{{ ex.reps.split('-')[-1] if ex.reps[0].isdigit() else '' }}">Log</button>{% endif %}
+        {% if ex.video %}<a class="plan-video" href="{{ ex.video }}" target="_blank" rel="noopener" aria-label="Form video for {{ ex.name }}"><svg class="icon"><use href="#icon-external-link"/></svg> Video</a>{% endif %}
+        {% if ex.video_alt_angle %}<a class="plan-video" href="{{ ex.video_alt_angle }}" target="_blank" rel="noopener">2nd angle</a>{% endif %}
+      </div>
+    </li>
     {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  <p class="muted" style="margin-top:8px">{{ progression_note }}</p>
+  </ul>
+  <p class="muted" style="margin-top:10px">Letters mark paired sets: alternate A1 and A2, resting the time shown after each. {{ progression_note }}</p>
+  <details class="plan-alt" style="margin-top:8px">
+    <summary>What the trainer's terms mean</summary>
+    <dl class="glossary">
+      <dt>Pre* (reps in reserve)</dt><dd>{{ glossary.rir }}</dd>
+      <dt>*1-F</dt><dd>{{ glossary.rir_last_to_failure }}</dd>
+      <dt>Failure</dt><dd>{{ glossary.failure }}</dd>
+      <dt>Paired set</dt><dd>{{ glossary.paired_set }}</dd>
+      <dt>Normal set</dt><dd>{{ glossary.normal_set }}</dd>
+      <dt>Warm-up 20-90%</dt><dd>{{ glossary.warm_up_ramp }}</dd>
+      <dt>Rest</dt><dd>{{ glossary.rest }}</dd>
+    </dl>
+  </details>
 </section>
 
+{% if program_checklist.cooldown %}
 <section class="card">
-  <h2><svg class="icon"><use href="#icon-snowflake"/></svg> Cool-down</h2>
-  <ul style="margin:0;padding-left:18px;font-size:14px">
-    {% for step in program_checklist.cooldown %}<li>{{ step }}</li>{% endfor %}
-  </ul>
+  <h2><svg class="icon"><use href="#icon-heart-pulse"/></svg> After the session</h2>
+  {% for step in program_checklist.cooldown %}<p style="margin:0">{{ step }}</p>{% endfor %}
 </section>
+{% endif %}
 {% endif %}
 
 <section class="card">
@@ -109,7 +130,7 @@
         <button type="button" class="stepper-btn" data-step-target="weight_kg" data-step="2.5" aria-label="Increase weight"><svg class="icon"><use href="#icon-plus"/></svg></button>
       </div>
     </label>
-    <label>RPE (optional, 1-10) <input type="number" step="0.5" min="1" max="10" name="rpe"></label>
+    <label>RPE (optional, 1-10: 8 means 2 reps left in the tank) <input type="number" step="0.5" min="1" max="10" name="rpe"></label>
     <button type="submit">Add set</button>
   </form>
 </section>
@@ -159,5 +180,6 @@
   </form>
 </section>
 
+<p><a href="/meals?view_date={{ workout.log_date }}" style="color:var(--accent);font-size:15px;font-weight:600;text-decoration:none">This day's meals →</a></p>
 <a class="back-link" href="/gym"><svg class="icon"><use href="#icon-chevron-left"/></svg> Back to gym log</a>
 {% endblock %}

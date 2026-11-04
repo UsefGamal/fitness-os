@@ -940,6 +940,18 @@ h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
   transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .stepper-btn:active { transform: scale(0.9); color: var(--accent); }
+/* Beat the full-width filled ".stack-form button" rule: steppers sit in forms. */
+.stack-form .stepper-btn {
+  align-self: auto;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 15px;
+}
+.stack-form .stepper-btn:active { background: var(--surface2); color: var(--accent); }
 
 @media (hover: hover) and (pointer: fine) {
   .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -1076,3 +1088,54 @@ h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 /* Display numbers (macros, KPIs, timers): system font, tabular, a tight
    600 weight instead of the old bold monospace. */
 .macro-pill .mv, .stat-tile .sv, .kpi-value { font-weight: 600; letter-spacing: -0.02em; }
+
+/* ── Plan rows (today's warm-up and working sets) ─────────────────
+   openGym's inset list: one row per exercise, hairlines between rows,
+   the name at 17/600, details as quiet lines, actions on the right. */
+.plan-list { list-style: none; margin: 0; padding: 0; }
+.plan-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: var(--hair) solid var(--border);
+}
+.plan-row:first-child { border-top: none; padding-top: 4px; }
+.plan-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.plan-row-name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+.plan-row-sub { font-size: 15px; color: var(--muted); line-height: 1.33; }
+.plan-row-note { font-size: 15px; color: var(--gold); line-height: 1.33; }
+.plan-row-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.plan-pair {
+  font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-soft);
+  border-radius: 6px; padding: 2px 6px;
+}
+.plan-log-btn {
+  min-height: 44px; min-width: 64px; padding: 10px 14px; border: none; border-radius: 10px;
+  background: var(--accent); color: var(--on-accent); font: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: transform var(--dur-fast) var(--ease-out);
+}
+.plan-log-btn:active { transform: scale(var(--press-scale)); }
+.plan-video {
+  min-height: 44px; display: inline-flex; align-items: center; gap: 4px;
+  color: var(--accent); font-size: 15px; text-decoration: none; white-space: nowrap;
+}
+.plan-alt summary { min-height: 44px; display: flex; align-items: center; color: var(--accent); font-size: 15px; cursor: pointer; }
+.plan-alt ul { margin: 0 0 4px; padding-left: 18px; color: var(--muted); font-size: 15px; }
+.glossary { margin: 4px 0 0; }
+.glossary dt { font-weight: 600; font-size: 15px; margin-top: 10px; }
+.glossary dd { margin: 2px 0 0; color: var(--muted); font-size: 15px; line-height: 1.38; }
+
+/* Week strip: the Sunday-start training week, today ringed in the accent. */
+.train-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.train-week-day {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 2px;
+  border-radius: 10px; background: var(--surface2); border: 1px solid transparent; min-height: 60px;
+}
+.train-week-day.today { border-color: var(--accent-line); }
+.train-week-day .d { font-size: 12px; color: var(--muted); }
+.train-week-day .s { font-size: 13px; font-weight: 600; }
+.train-week-day.rest .s { color: var(--muted); font-weight: 400; }
+
+.week-day-chip-plan { display: block; font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.week-day-chip-today .week-day-chip-plan { color: var(--accent); }

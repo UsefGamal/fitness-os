@@ -24,6 +24,17 @@
 </section>
 
 <section class="card">
+  {% if training_day.is_rest_today %}
+  <h2><svg class="icon"><use href="#icon-dumbbell"/></svg> Rest day</h2>
+  <p class="muted" style="margin:0">No session today. Next is {{ training_day.label }} on {{ training_day.on_date.strftime('%A') }}.</p>
+  {% else %}
+  <h2><svg class="icon"><use href="#icon-dumbbell"/></svg> Training at {{ session_time }}: {{ training_day.label }}</h2>
+  <p class="muted" style="margin:0 0 8px">{{ pre_workout_note }}</p>
+  {% if is_today %}<a href="/gym" style="color:var(--accent);font-size:15px;font-weight:600;text-decoration:none">Open today's session →</a>{% endif %}
+  {% endif %}
+</section>
+
+<section class="card">
   <h2><svg class="icon"><use href="#icon-droplet"/></svg> Hydration</h2>
   {{ hydration_meter | safe }}
   <div class="drinks-row" style="margin-top:8px">

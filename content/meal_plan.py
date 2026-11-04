@@ -9,15 +9,20 @@ PLAN_START_DATE = date(2026, 9, 1)  # day 1 of the rotation — real program sta
 
 MEAL_SLOTS = ["breakfast", "snack1", "lunch", "snack2", "dinner"]
 
-# Hour windows each slot is meant to be eaten in. Main meals are structured,
-# snacks stay flexible.
+# Hour windows each slot is meant to be eaten in, timed around the 7:00
+# training session (content/gym_program.py SESSION_TIME): breakfast is the
+# post-workout meal, once the session and its cycling finisher are done.
+# Main meals are structured, snacks stay flexible.
 MEAL_SLOT_WINDOWS = {
-    "breakfast": "7:00–9:30",
-    "snack1": "10:30–11:30",
-    "lunch": "13:00–15:00",
-    "snack2": "16:30–17:30",
-    "dinner": "19:00–21:00",
+    "breakfast": "8:30–9:30",
+    "snack1": "11:30–12:30",
+    "lunch": "13:30–15:00",
+    "snack2": "17:00–18:00",
+    "dinner": "19:30–21:00",
 }
+
+# Shown above breakfast on training days.
+PRE_WORKOUT_NOTE = "Before the 7:00 session: water, plus a coffee or a banana if you're hungry. Breakfast is your post-workout meal."
 
 # Drinks selectable alongside any meal — all effectively zero-calorie.
 DRINK_OPTIONS = ["water", "unsweetened_tea", "unsweetened_coffee", "diet_soda", "flavored_sparkling_water"]

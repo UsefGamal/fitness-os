@@ -112,3 +112,26 @@ def test_progress_page_charts_have_accessibility_twin_tables(auth_client):
     assert "2026-08-13" in r.text
     assert "25.0" in r.text  # top set weight for the second session
     assert "8.0" in r.text  # RPE for the second session
+
+
+def test_session_page_shows_the_trainer_plan_for_that_label(auth_client):
+    """A session named after a plan day renders its warm-up, working sets
+    with RIR / pairs / video links, a Log button per exercise, and the
+    glossary."""
+    r = auth_client.post("/gym/new", data={"log_date": date.today().isoformat(), "notes": "Lower"}, follow_redirects=False)
+    page = auth_client.get(r.headers["location"]).text
+    assert "5 min easy on the bike" in page
+    assert "Leg Press" in page and "leave 3-4 reps in the tank" in page
+    assert ">A1</span>Leg Extension" in page and ">A2</span>Seated Leg Curl" in page
+    assert "Lying Leg Curl (trainer&#39;s backup)" in page
+    assert "https://www.youtube.com/watch?v=XWSgxIlhvY4" in page
+    assert page.count("data-pick-exercise=") == 9
+    assert "What the trainer's terms mean" in page
+    assert "10 min" in page  # the cycling finisher
+
+
+def test_new_session_defaults_its_label_from_the_weekday(auth_client):
+    # 2026-10-29 is a Thursday: Pull.
+    r = auth_client.post("/gym/new", data={"log_date": "2026-10-29"}, follow_redirects=False)
+    page = auth_client.get(r.headers["location"]).text
+    assert "Pull · working sets" in page

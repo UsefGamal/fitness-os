@@ -142,6 +142,23 @@ document.addEventListener('click', function (e) {
     return;
   }
 
+  // "Log" on a row of today's plan: pick that exercise in the set form,
+  // prefill it from last time, and bring the form into view, so logging a
+  // planned set is one tap plus "Add set" (openGym's tick-a-set flow).
+  const pickBtn = e.target.closest('[data-pick-exercise]');
+  if (pickBtn) {
+    const select = document.querySelector('.add-set-form [data-prefill-source]');
+    if (select) {
+      select.value = pickBtn.dataset.pickExercise;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      const form = select.closest('form');
+      const reps = form.querySelector('[data-prefill-field="reps"]');
+      if (reps && !reps.value && pickBtn.dataset.targetReps) reps.value = pickBtn.dataset.targetReps;
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return;
+  }
+
   const preset = e.target.closest('.rest-preset-btn');
   if (preset) {
     startRestTimer(parseInt(preset.dataset.timerSeconds, 10));
