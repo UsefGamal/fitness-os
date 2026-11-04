@@ -11,9 +11,20 @@ This app is server-rendered Jinja2 + plain CSS — no JS framework, no build ste
 
 1. **Skim an existing template that does something similar** (`templates/body.html` for a log-with-history page, `templates/gym_detail.html` for a form-heavy detail page) rather than starting from a blank block — every page already follows the same card/table/chart shell.
 
+## Look and feel: match openGym
+
+The app's theme and usability follow [openGym](https://github.com/DuarteSantos8/openGym) (Yusuf's standing rule: when the two differ, openGym's usability wins). In practice:
+
+- **Black page, neutral grey cards** (`--bg` #000, `--surface` #1c1c1e, `--surface2` #2c2c2e for things nested in a card), green accent `--accent` #30d158 with black text on it (`--on-accent`). No gradients, glows or drop shadows.
+- **One system font**, tabular figures for numbers. Weight carries meaning: 700 page title (34px, 30px under 420px), 600 names, 400 content. Section labels (`h2`) are 13px grey sentence case, not uppercase.
+- **Fills, not outlines.** Nested items (pills, chips, inputs, options) are `--surface2` fills; separators are `var(--hair)` hairlines. A selected or "today" item gets `--accent-line` as its border.
+- **Touch first.** Controls are at least 44px tall, inputs at least 16px text (17px by default) so phones never zoom, the main action of a form is a full-width filled button, presses scale to `--press-scale` / `--press-scale-sm` / `--press-scale-card`. Respect `--sat` / `--sab` safe areas.
+- **Bars float.** Topbar and tab bar are `--bg-el` at 94% with a 10px blur and a hairline edge; the active tab is just the accent colour, no pill.
+- Borrow patterns from openGym's `frontend/src/index.css` by reimplementing them; don't paste its AGPL code.
+
 ## Colors and tokens
 
-- **Never hardcode a color.** Everything comes from the custom properties in `static/style.css`'s `:root` block (`--bg`, `--surface`, `--surface2`, `--border`, `--text`, `--muted`, `--accent`, `--gold`, `--purple`, `--danger`).
+- **Never hardcode a color.** Everything comes from the custom properties in `static/style.css`'s `:root` block (`--bg`, `--bg-el`, `--surface`, `--surface2`, `--surface3`, `--border`, `--text`, `--muted`, `--accent`, `--accent-soft`, `--accent-line`, `--on-accent`, `--gold`, `--orange`, `--purple`, `--danger`). For a tint, use `color-mix(in srgb, var(--accent) 16%, transparent)` rather than a raw `rgba()`.
 - **Chart fills use the separate `--chart-*` tokens, never `--accent`/`--gold`/`--purple` directly.** Those bright UI accents are tuned to pop as buttons/badges and fail a categorical-lightness-band check as data marks; the `--chart-*` tokens are darker steps of the same hues, already validated (see the comment block above them in `style.css`). Adding a new chart series color needs the same validation the existing ones went through — don't just pick a new hex.
 - **Never use green-vs-red as a diverging pair** (classic red-green colorblind failure). "Ahead/behind target" is a status chip — icon + label + color together (`--chart-status-good`/`--chart-status-warning`/`--chart-critical`) — never color alone.
 - There is only one theme (dark) — no light-mode variant to maintain.
