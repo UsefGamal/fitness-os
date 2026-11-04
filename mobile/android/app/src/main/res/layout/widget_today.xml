@@ -39,7 +39,10 @@
         android:textColor="#8E8E93"
         android:textSize="14sp" />
 
-    <View
+    <!-- Spacer. A plain <View> isn't allowed in a home-screen widget
+         (RemoteViews only inflates whitelisted layouts and widgets), and
+         using one makes the launcher show "Can't load widget". -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
