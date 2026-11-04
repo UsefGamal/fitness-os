@@ -5,10 +5,15 @@ import { feedback } from '../store/feedback.js';
 import { useTimer } from '../store/useTimer.js';
 import Icon from './Icon.jsx';
 
-/** The rest timer: a floating bar above the tab bar, and a full screen
- * view (tap the time) with big digits and a progress ring. */
+// Quick lengths on the full screen timer.
+const PRESETS = [45, 60, 90, 120, 180];
+
+/** The rest timer: a floating panel above the tab bar with big digits, a
+ * progress bar and labelled controls (-15s, +15s, Pause/Resume, Skip), and a
+ * full screen view (tap the time) with a ring and quick lengths. When the rest
+ * is over it stays up with Restart and Close. */
 export default function RestTimer() {
-  const { endsAt, total, label, pausedLeft, add, pause, resume, skip, stop } = useTimer();
+  const { endsAt, total, label, pausedLeft, add, pause, resume, skip, stop, start } = useTimer();
   const [now, setNow] = useState(Date.now());
   const [full, setFull] = useState(false);
   const beeped = useRef(null);
@@ -33,28 +38,29 @@ export default function RestTimer() {
       feedback('countdown');
     } else if (left === 0) {
       beeped.current = key;
-      feedback('restDone');
-      setFull(false);
+      feedback('restDone', { inShade: useTimer.getState().inShade });
     }
   }, [endsAt, left, paused]);
 
   if (!endsAt) return null;
   const done = left === 0 && !paused;
   const fraction = total ? Math.min(1, leftMs / (total * 1000)) : 0;
+  const restart = (sec = total) => start(sec, label);
 
-  const buttons = (
-    <>
-      <button type="button" className="btn small secondary" onClick={() => add(-15)} disabled={done} aria-label="15 seconds less">-15</button>
-      <button type="button" className="btn small secondary" onClick={() => add(15)} aria-label="15 seconds more">+15</button>
-      {done ? null : (
-        <button type="button" className="icon-btn" aria-label={paused ? 'Resume timer' : 'Pause timer'} onClick={paused ? resume : pause}>
-          <Icon name={paused ? 'play' : 'pause'} />
-        </button>
-      )}
-      <button type="button" className="icon-btn" aria-label={done ? 'Close timer' : 'Skip rest'} onClick={done ? stop : skip}>
-        <Icon name={done ? 'x' : 'skip'} />
+  const controls = done ? (
+    <div className="timer-ctl">
+      <button type="button" className="tbtn" onClick={() => restart()}><Icon name="timer" /><span>Restart {clock(total)}</span></button>
+      <button type="button" className="tbtn go" onClick={stop}><Icon name="check" /><span>Done</span></button>
+    </div>
+  ) : (
+    <div className="timer-ctl">
+      <button type="button" className="tbtn" onClick={() => add(-15)} aria-label="15 seconds less"><b>−15</b><span>sec</span></button>
+      <button type="button" className="tbtn" onClick={() => add(15)} aria-label="15 seconds more"><b>+15</b><span>sec</span></button>
+      <button type="button" className="tbtn" onClick={paused ? resume : pause} aria-label={paused ? 'Start the rest again' : 'Pause the rest'}>
+        <Icon name={paused ? 'play' : 'pause'} /><span>{paused ? 'Start' : 'Pause'}</span>
       </button>
-    </>
+      <button type="button" className="tbtn" onClick={skip} aria-label="Skip the rest"><Icon name="skip" /><span>Skip</span></button>
+    </div>
   );
 
   if (full) {
@@ -63,15 +69,20 @@ export default function RestTimer() {
     return (
       <div className="timer-full" role="timer" aria-live="polite">
         <button type="button" className="icon-btn timer-close" aria-label="Back to the workout" onClick={() => setFull(false)}><Icon name="chev" /></button>
-        <div className="muted">{paused ? 'Paused' : 'Rest'}</div>
+        <div className="muted">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
         <svg viewBox="0 0 280 280" className="ring" aria-hidden="true">
           <circle cx="140" cy="140" r={R} fill="none" stroke="var(--surface2)" strokeWidth="14" />
           <circle cx="140" cy="140" r={R} fill="none" stroke="var(--accent)" strokeWidth="14" strokeLinecap="round"
             strokeDasharray={C} strokeDashoffset={C * (1 - fraction)} transform="rotate(-90 140 140)" />
-          <text x="140" y="160" textAnchor="middle" className="ring-t">{clock(left)}</text>
+          <text x="140" y="160" textAnchor="middle" className="ring-t">{done ? 'Go' : clock(left)}</text>
         </svg>
         <div className="big-next">Next: {label}</div>
-        <div className="row" style={{ justifyContent: 'center', gap: 12 }}>{buttons}</div>
+        {controls}
+        <div className="timer-presets" role="group" aria-label="Start a new rest">
+          {PRESETS.map((sec) => (
+            <button key={sec} type="button" className={`tpre${sec === total ? ' on' : ''}`} onClick={() => restart(sec)}>{clock(sec)}</button>
+          ))}
+        </div>
       </div>
     );
   }
@@ -79,13 +90,15 @@ export default function RestTimer() {
   return (
     <div className={`timer${done ? ' done' : ''}`} role="timer" aria-live="polite">
       <button type="button" className="timer-open" onClick={() => setFull(true)} aria-label="Open the full screen timer">
-        <Icon name="timer" />
-        <div className="grow" style={{ textAlign: 'left' }}>
-          <div className="t">{done ? 'Go' : clock(left)}</div>
-          <div className="muted small">{done ? `Next set: ${label}` : paused ? `Paused · then ${label}` : `Rest · then ${label}`}</div>
+        <div className="t">{done ? 'Go' : clock(left)}</div>
+        <div className="grow">
+          <div className="timer-what">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
+          <div className="muted small">Next: {label}</div>
         </div>
+        <Icon name="chev" className="icon timer-expand" />
       </button>
-      {buttons}
+      <div className="timer-bar" aria-hidden="true"><i style={{ width: `${fraction * 100}%` }} /></div>
+      {controls}
     </div>
   );
 }

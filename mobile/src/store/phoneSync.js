@@ -20,6 +20,19 @@ function pushWidget() {
   }, 800);
 }
 
+// Widget taps open fitnessos://open/<route>; only these screens are allowed.
+const LINKS = { workout: '/workout', plan: '/plan', meals: '/meals' };
+
+export function linkRoute(url) {
+  const m = /^fitnessos:\/\/open\/([a-z]+)/.exec(url || '');
+  return m ? LINKS[m[1]] || null : null;
+}
+
+function openDeepLink(url) {
+  const route = linkRoute(url);
+  if (route) window.location.hash = `#${route}`;
+}
+
 export function healthSettings(data) {
   return { enabled: false, weights_since: 0, workouts_since: 0, ...(data.settings?.health || {}) };
 }
@@ -64,6 +77,8 @@ export function startPhoneSync() {
     useTimer.getState().sync();
     syncHealth().catch(() => {});
   });
+  App.addListener('appUrlOpen', ({ url }) => openDeepLink(url));
+  App.getLaunchUrl().then((r) => openDeepLink(r?.url)).catch(() => {});
   useTimer.getState().sync();
   syncHealth().catch(() => {});
 }

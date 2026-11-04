@@ -14,6 +14,7 @@ let asked = false;
 
 async function toShade(endsAt, label) {
   if (!isNative()) return;
+  useTimer.setState({ inShade: false });
   try {
     if (!asked) {
       asked = true;
@@ -21,6 +22,7 @@ async function toShade(endsAt, label) {
     }
     const { sounds } = trainingSettings(useData.getState().data);
     await RestTimer.start({ endsAt, label, sound: sounds });
+    useTimer.setState({ inShade: true });
   } catch {
     // No notification permission: the in-app timer still works.
   }
@@ -31,6 +33,7 @@ export const useTimer = create((set, get) => ({
   total: 0,
   label: '',
   pausedLeft: null, // ms left while paused, else null
+  inShade: false, // the countdown also runs in the notification shade, which chimes at the end
   start(seconds, label) {
     if (!seconds) return;
     const endsAt = Date.now() + seconds * 1000;
