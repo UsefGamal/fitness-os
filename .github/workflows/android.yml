@@ -1,0 +1,57 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ["android-shell/**", "scripts/build-apk.sh", ".github/workflows/android.yml"]
+  pull_request:
+    branches: [main]
+    paths: ["android-shell/**", "scripts/build-apk.sh", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APK_VERSION_CODE: ${{ github.run_number }}
+      APK_VERSION_NAME: 0.1.${{ github.run_number }}
+      HAS_KEYSTORE: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: android-shell/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      # The runner image ships the Android SDK; ANDROID_HOME is already set.
+      - name: Build debug APK
+        run: scripts/build-apk.sh debug
+
+      # Signed release build, only when the keystore secrets exist.
+      - name: Build signed release APK
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 }}
+          FITNESS_OS_KEYSTORE_PASSWORD: ${{ secrets.FITNESS_OS_KEYSTORE_PASSWORD }}
+          FITNESS_OS_KEY_ALIAS: ${{ secrets.FITNESS_OS_KEY_ALIAS }}
+          FITNESS_OS_KEY_PASSWORD: ${{ secrets.FITNESS_OS_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" scripts/build-apk.sh release
+          rm -f "$RUNNER_TEMP/release.jks"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fitness-os-apk-${{ github.run_number }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 30

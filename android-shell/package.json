@@ -1,0 +1,17 @@
+{
+  "name": "fitness-os-android-shell",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Phase 1: a Capacitor Android app that opens the live Fitness OS site.",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}
