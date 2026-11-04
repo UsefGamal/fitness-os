@@ -8,7 +8,9 @@ import { entryFor } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { activeMs, clock, pauseWorkout, restFor, restoreSet, resumeWorkout, targetProgress, trainingSettings } from '../lib/training.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
+import { feedback, unlockAudio } from '../store/feedback.js';
 import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -19,8 +21,12 @@ function targetReps(reps) {
   return m ? Number(m[0]) : 10;
 }
 
-function elapsed(startedAt, now) {
-  const m = Math.floor((now - startedAt) / 60000);
+// Rest choices for one exercise in this session: 0:15 to 3:00 in 15 s
+// steps, then to 15:00 in 30 s steps.
+const REST_STEPS = [...Array.from({ length: 12 }, (_, i) => (i + 1) * 15), ...Array.from({ length: 24 }, (_, i) => 210 + i * 30)];
+
+function elapsed(ms) {
+  const m = Math.floor(ms / 60000);
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
@@ -41,9 +47,23 @@ function nextIndex(day, workout, data, current) {
   return open >= 0 ? open : current;
 }
 
+function IntervalsLink() {
+  const navigate = useNavigate();
+  return (
+    <div className="list" style={{ marginTop: 12 }}>
+      <button type="button" className="list-row" onClick={() => navigate('/intervals')}>
+        <Icon name="waves" />
+        <div className="grow"><div>Intervals</div><div className="meta">HIIT, Tabata, EMOM or your own</div></div>
+        <Icon name="chev" className="icon chev" />
+      </button>
+    </div>
+  );
+}
+
 function Picker({ onPick }) {
   return (
     <>
+      <IntervalsLink />
       <div className="section-label">Pick a session</div>
       <div className="list">
         {content.training.program.map((d) => (
@@ -80,9 +100,18 @@ export default function Workout() {
   const [rpe, setRpe] = useState('');
   const [pain, setPain] = useState('');
   const [now, setNow] = useState(Date.now());
+  const [restOverride, setRestOverride] = useState({}); // exercise name -> seconds for this session
+  const [undo, setUndo] = useState(null); // { set, label } after a delete
+  const settings = trainingSettings(data);
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30000);
+    if (!undo) return undefined;
+    const id = setTimeout(() => setUndo(null), 5000);
+    return () => clearTimeout(id);
+  }, [undo]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -119,6 +148,8 @@ export default function Workout() {
   }
 
   const start = () => {
+    unlockAudio();
+    feedback('workoutStart');
     let id;
     update((d) => {
       const r = D.startWorkout(d, { date: today, sessionKey: day.key, label: day.label });
@@ -149,6 +180,7 @@ export default function Workout() {
           ))}
         </div>
         {requested ? <button type="button" className="btn ghost" onClick={() => setParams({})}>Back to today's plan</button> : null}
+        <IntervalsLink />
       </div>
     );
   }
@@ -158,18 +190,35 @@ export default function Workout() {
     const set = { exercise_id: exRow.id, reps, weight_kg: weight };
     const pb = D.isPersonalBest(data, active.id, set);
     update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps, weightKg: weight }));
+    unlockAudio();
     if (pb && weight > 0) {
+      feedback('pr');
       setToast(`New best on ${ex.name}: ${weight} kg × ${reps}`);
       setTimeout(() => setToast(''), 2500);
     }
+    if (active.paused_at) update((d) => resumeWorkout(d, active.id));
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
     const ni = nextIndex(day, after, data, current);
-    const restFor = ex.rest_sec || 90;
-    timer.start(restFor, day.exercises[ni].name);
+    const entry = catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
+    const rest = restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] });
+    if (settings.auto_rest && rest > 0) timer.start(rest, day.exercises[ni].name);
     if (ni !== current) setCurrent(ni);
   };
 
+  const removeSet = (s) => {
+    update((d) => D.deleteSet(d, active.id, s.id));
+    setUndo({ set: s, label: `Set ${s.set_number} of ${ex?.name || 'exercise'} deleted` });
+  };
+
+  const discard = () => {
+    if (!window.confirm(`Discard this ${day.label} workout? Its ${active.sets.length} logged sets will be deleted.`)) return;
+    timer.stop();
+    update((d) => D.deleteWorkout(d, active.id));
+    setActiveWorkout(null);
+  };
+
   const finish = () => {
+    feedback('workoutSaved');
     update((d) => D.finishWorkout(d, active.id, { sessionRpe: rpe ? Number(rpe) : null, painNote: pain }));
     syncHealth().catch(() => {});
     timer.stop();
@@ -179,16 +228,34 @@ export default function Workout() {
 
   const totalTarget = day.exercises.reduce((n, x) => n + x.sets, 0);
   const totalDone = Object.values(doneSets).reduce((n, s) => n + s.length, 0);
+  const ms = activeMs(active, now);
+  const target = targetProgress(ms, settings.target_min);
+  const paused = Boolean(active.paused_at);
 
   return (
     <div className="page">
       {toast ? <div className="toast" role="status"><span className="pr">PR</span> {toast}</div> : null}
+      {undo && !toast ? (
+        <div className="toast" role="status">
+          {undo.label}
+          <button type="button" className="undo" onClick={() => { update((d) => restoreSet(d, active.id, undo.set)); setUndo(null); }}><Icon name="undo" className="icon" /> Undo</button>
+        </div>
+      ) : null}
       <div className="row between" style={{ marginTop: 8 }}>
         <div>
           <h1 className="page-title" style={{ margin: '0 4px' }}>{day.label}</h1>
-          <div className="muted small" style={{ margin: '2px 4px 14px' }}>{elapsed(active.started_at, now)} · {totalDone}/{totalTarget} sets · tempo {T.trainer_plan.tempo}</div>
+          <div className="muted small" style={{ margin: '2px 4px 8px' }}>
+            {paused ? 'Paused · ' : ''}{elapsed(ms)}{target ? ` of ${settings.target_min}` : ''} · {totalDone}/{totalTarget} sets · tempo {T.trainer_plan.tempo}
+          </div>
         </div>
         <button type="button" className="btn small" onClick={() => setFinishing(true)}>Finish</button>
+      </div>
+      {target ? <div className={`target-bar${target.over ? ' over' : ''}`} role="progressbar" aria-valuenow={Math.round(target.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, target.fraction * 100)}%` }} /></div> : null}
+      <div className="row" style={{ gap: 8, margin: '0 0 12px' }}>
+        <button type="button" className="btn small secondary grow" onClick={() => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id)))}>
+          <Icon name={paused ? 'play' : 'pause'} /> {paused ? 'Resume' : 'Pause'}
+        </button>
+        <button type="button" className="btn small ghost grow" onClick={discard}><Icon name="trash" /> Discard</button>
       </div>
 
       {finishing ? (
@@ -229,7 +296,7 @@ export default function Workout() {
                     <span className="set-n done">{s.set_number}</span>
                     <span>{s.weight_kg} kg × {s.reps}</span>
                     <span />
-                    <button type="button" className="icon-btn" aria-label={`Delete set ${s.set_number}`} onClick={() => update((d) => D.deleteSet(d, active.id, s.id))}><Icon name="trash" /></button>
+                    <button type="button" className="icon-btn" aria-label={`Delete set ${s.set_number}`} onClick={() => removeSet(s)}><Icon name="trash" /></button>
                   </div>
                 ))}
                 <div className="row" style={{ alignItems: 'flex-end' }}>
@@ -237,6 +304,14 @@ export default function Workout() {
                   <div className="grow"><Stepper label="reps" value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
                 </div>
                 <button type="button" className="btn" onClick={logSet}><Icon name="check" /> Log set {sets.length + 1}</button>
+                <label className="field row" style={{ alignItems: 'center', gap: 10 }}>
+                  <span className="grow">Rest after this exercise</span>
+                  <select style={{ width: 'auto' }} value={restOverride[x.name] ?? ''} onChange={(e) => setRestOverride({ ...restOverride, [x.name]: e.target.value === '' ? undefined : Number(e.target.value) })}>
+                    <option value="">{x.rest_sec ? `Plan (${clock(x.rest_sec)})` : 'Default'}</option>
+                    {REST_STEPS.map((sec) => <option key={sec} value={sec}>{clock(sec)}</option>)}
+                    <option value="0">No timer</option>
+                  </select>
+                </label>
                 <div className="row between">
                   {x.video ? <a href={x.video} target="_blank" rel="noreferrer" className="small"><Icon name="video" className="icon" /> Form video</a> : <span />}
                   {x.alternative ? <span className="muted small">Taken? {x.alternative}</span> : null}

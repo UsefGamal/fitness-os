@@ -36,7 +36,7 @@ public class RestTimerPlugin extends Plugin {
             call.reject("endsAt is required");
             return;
         }
-        RestTimerService.start(getContext(), endsAt.longValue(), call.getString("label", ""));
+        RestTimerService.start(getContext(), endsAt.longValue(), call.getString("label", ""), call.getBoolean("sound", true));
         call.resolve();
     }
 

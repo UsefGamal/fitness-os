@@ -25,6 +25,11 @@ const PATHS = {
   star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
   bell: 'M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4',
+  pause: 'M8 5v14M16 5v14',
+  skip: 'M5 5l9 7-9 7zM19 5v14',
+  undo: 'M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3',
+  sound: 'M4 9h4l5-4v14l-5-4H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12',
+  waves: 'M2 12h3l3-7 4 14 3-9 2 4h5',
 };
 
 export default function Icon({ name, className = 'icon', title }) {
