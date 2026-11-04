@@ -1,4 +1,6 @@
 node_modules/
+dist/
+src/content.json
 android/app/build/
 android/build/
 android/.gradle/
@@ -11,4 +13,3 @@ android/capacitor-cordova-android-plugins/
 *.aab
 *.keystore
 *.jks
-keystore.properties

@@ -1,16 +1,11 @@
 {
   "appId": "com.usefgamal.fitnessos",
   "appName": "Fitness OS",
-  "webDir": "www",
+  "webDir": "dist",
   "server": {
-    "url": "https://fitness-os.onrender.com",
-    "androidScheme": "https",
-    "cleartext": false,
-    "allowNavigation": ["fitness-os.onrender.com"],
-    "errorPath": "offline.html"
+    "androidScheme": "https"
   },
   "android": {
-    "appendUserAgent": "FitnessOS-Android/0.1",
     "backgroundColor": "#000000",
     "allowMixedContent": false,
     "webContentsDebuggingEnabled": false
@@ -20,6 +15,9 @@
       "insetsHandling": "native",
       "initialViewportFitValueHint": "cover",
       "style": "DARK"
+    },
+    "LocalNotifications": {
+      "iconColor": "#30d158"
     }
   }
 }
