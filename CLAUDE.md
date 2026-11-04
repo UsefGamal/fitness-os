@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## What this is, and where it is going
+
+Fitness OS is Yusuf's single-user fitness and nutrition tracker for a body-recomposition program. Today it is a server-rendered FastAPI app used as a PWA. **The goal is an Android app (a sideloaded APK) that works on the phone first**, modelled on [openGym](https://github.com/DuarteSantos8/openGym)'s mobile approach, reached in phases (see [Roadmap: the Android app](#roadmap-the-android-app) below and [`docs/ANDROID_ROADMAP.md`](docs/ANDROID_ROADMAP.md)). Every change should work on a phone screen first; desktop is secondary.
+
 ## Commands
 
 ```bash
@@ -76,3 +80,58 @@ These are the standing rules this codebase leans on when touching the database o
 - **Background sync jobs (`edamam_sync.py`, `fitchef_sync.py`) must never raise out of their background-task entry point** — always land in a `complete`/`error` status row instead, and guard against orphaned in-flight state (see `is_pending_stale()`) since a background task has no durability guarantee across a restart/redeploy.
 - **A sync trigger route must not let a second sync start while one is already in flight** — check `latest_sync(session).status` before calling `start_sync()` (see both `trigger_fitchef_sync` and `trigger_edamam_sync` in `routers/meals.py`), since a duplicate in-flight sync orphans identifiers/wastes API quota.
 - **Validate at the boundary, not throughout.** Type/required-ness is FastAPI/Pydantic's job (`Form(...)`); domain-range sanity is `validation.py`'s job, called once per field at the top of a POST handler. Don't re-validate the same field deeper in the call stack.
+
+## Roadmap: the Android app
+
+The plan, in order. Each phase ends with something usable on the phone, so don't start a later phase's structure early. Detail and exit checks per phase are in [`docs/ANDROID_ROADMAP.md`](docs/ANDROID_ROADMAP.md).
+
+| Phase | What | Where it lives |
+|---|---|---|
+| 0 | RECOMP weekday schedule (Sunday-start week, 7 AM slot + optional 8 PM slot) beside the 4-session rotation; meal windows timed around training; per-day link from workout to that day's meal plan; one-tap check-offs; rest/session timer; phone CSS (16px inputs, safe areas, 44px targets) | existing `content/`, `routers/`, `templates/`, `static/` |
+| 1 | An APK that wraps the live site (Capacitor, `server.url` = the Render URL), icon, keystore, build script, CI debug-APK job | `android-shell/`, `scripts/build-apk.sh` |
+| 2 | JSON API beside the HTML pages, bearer-token login for the app, `GET/PUT /api/v1/state` with a revision | `api/v1/`, `tests/test_api_*.py` |
+| 3 | Offline-first app bundled in the APK: React + Vite + react-router + Zustand, local store + file mirror, sync with merge on conflict, native local notifications (6:30 AM, 7:30 PM, meal times), JSON export/import | `mobile/` (Capacitor `android/` moves here, `android-shell/` is removed) |
+| 4 | Rest timer in the notification shade, Health Connect (read weigh-ins, write workouts), home-screen widget, modules to hide unused areas | `mobile/android/app/src/main/java/...` plugins |
+
+Things that stay in scope throughout: the RECOMP schedule, the high-protein fat-loss meal plan and macro targets, the progress tracker, workout/rest timers, and the weekly shopping list. Nutrition is this app's edge (openGym has none); don't trade it away for gym-tracker features.
+
+### Target structure
+
+```
+fitness-os/
+  main.py, models.py, database.py, ...   # FastAPI app, stays at the root
+  routers/            # HTML pages, one file per feature area
+  api/v1/             # phase 2: JSON routers + Pydantic request/response schemas
+  content/            # plan content in plain Python: the single source of truth
+  templates/, static/ # Jinja pages; remain the desktop/fallback view after phase 3
+  tests/              # pytest, including api/v1
+  android-shell/      # phase 1 only: remote-URL Capacitor wrapper
+  mobile/             # phase 3: the phone app
+    src/views/        # one screen per file (Today, Plan, Workout, Meals, Shopping, Body, Progress, Settings)
+    src/components/   # shared UI (timers, check-off chips, charts)
+    src/store/        # one Zustand store, persisted to localStorage + mirrored to a file on the phone
+    src/lib/          # pure, framework-free helpers, each with a *.test.js beside it
+    android/          # Capacitor Android project
+    capacitor.config.json
+  scripts/            # build-apk.sh, export-content.py (content/ -> JSON for mobile/)
+  docs/               # DATA_MODEL.md, ROUTES.md, ANDROID_ROADMAP.md, later MOBILE.md
+```
+
+### Rules for the mobile work
+
+- **Phone first.** Design every screen at 360-412px wide first. Inputs at 16px or more (smaller makes mobile browsers zoom on focus), touch targets at least 44px, respect `env(safe-area-inset-*)`.
+- **One source of truth for plan content.** Meal plan, programs and the RECOMP week stay in `content/`; `mobile/` reads JSON exported by `scripts/export-content.py`, never a hand-copied duplicate.
+- **Decision logic is a pure helper with a test** (in `mobile/src/lib/` with a `*.test.js`, or in Python with a pytest): what's scheduled today, macro targets, which meal day, shopping-list merging, streaks. When a rule exists in both Python and JS, keep matching test cases on both sides and change them together.
+- **The API is additive.** `api/v1/` reuses `models.py`, `validation.py` and the same session dependency; it does not change the HTML routes' behaviour. Every new endpoint gets a test. Keep the CSP and `no-store` rules from `main.py` for HTML; CORS is allowed only for the app's own origin (`https://localhost` / `capacitor://localhost`).
+- **Dependency-light.** Frontend: React, react-router, Zustand, Capacitor and its official plugins. Anything else needs a reason in the PR.
+- **Data on the phone is the user's only copy when offline.** Every store write also lands in the file mirror; never ship a change that can drop unsynced local edits. Bearer tokens go in Android secure storage, never in synced state or backups.
+- **No telemetry, no third-party SDKs.** This is personal health data.
+- **Signing.** The release keystore is never committed (`*.keystore`, `*.jks` are gitignored). Losing it means the APK can't update in place; say so when touching signing.
+
+### Using openGym as a reference
+
+openGym is a reference for structure and approach, not a code source:
+
+- It is **AGPL-3.0**. Reimplement ideas in our own code; don't paste its files or large chunks in, which would make this repo AGPL too.
+- Its **exercise stills and animations are licensed from Gym visual** separately. Never copy, download into, or link them from this repo.
+- Good places to read there: `CLAUDE.md` and `docs/ARCHITECTURE.md` (overall layout), `docs/MOBILE.md` (Capacitor flavours, file mirror, pairing, APK signing), `frontend/src/lib/mobile.js` (native bridge behind a build flag), `frontend/src/lib/sync-merge.js` (409 merge), `frontend/android/app/src/main/java/.../RestTimerService.java` (rest timer in the shade).
