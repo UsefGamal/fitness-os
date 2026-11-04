@@ -20,13 +20,13 @@ function minus30(hhmm) {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 }
 
-export function plannedReminders(today, content, now = new Date()) {
+export function plannedReminders(today, content, now = new Date(), moves = []) {
   const out = [];
   const { training, nutrition } = content;
   for (let i = 0; i < DAYS_AHEAD; i += 1) {
     const day = addDays(today, i);
-    if (sessionKeyOn(day, training) !== 'rest') {
-      const session = programDayFor(day, training);
+    if (sessionKeyOn(day, training, moves) !== 'rest') {
+      const session = programDayFor(day, training, moves);
       out.push({
         id: 1000 + i,
         at: at(day, minus30(training.session_time)),

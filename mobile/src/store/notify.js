@@ -4,6 +4,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 import { todayISO } from '../lib/dates.js';
 import { plannedReminders } from '../lib/reminders.js';
+import { useData } from './useData.js';
 
 const native = () => Capacitor.isNativePlatform();
 
@@ -20,6 +21,7 @@ export async function scheduleReminders(content, enabled) {
   // The rest timer lives in RestTimerService now, so every pending one here is a reminder.
   if (pending.notifications.length) await LocalNotifications.cancel({ notifications: pending.notifications.map((n) => ({ id: n.id })) });
   if (!enabled) return;
-  const list = plannedReminders(todayISO(), content).map((r) => ({ id: r.id, title: r.title, body: r.body, schedule: { at: r.at, allowWhileIdle: true } }));
+  const moves = useData.getState().data.session_moves || [];
+  const list = plannedReminders(todayISO(), content, new Date(), moves).map((r) => ({ id: r.id, title: r.title, body: r.body, schedule: { at: r.at, allowWhileIdle: true } }));
   if (list.length) await LocalNotifications.schedule({ notifications: list });
 }

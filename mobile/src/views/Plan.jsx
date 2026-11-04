@@ -7,7 +7,7 @@ import { entryFor, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { longWeekday, todayISO } from '../lib/dates.js';
 import * as P from '../lib/planEdit.js';
-import { weekView } from '../lib/schedule.js';
+import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
@@ -104,15 +104,23 @@ function EditList({ day, sessionKey }) {
 }
 
 export default function Plan() {
-  const { data } = useData();
+  const { data, update } = useData();
   const today = todayISO();
   const T = content.training;
-  const week = weekView(today, T);
+  const week = weekView(today, T, data.session_moves || []);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
   const [picked, setPicked] = useState(firstTraining);
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
+  const moves = data.session_moves || [];
+  const movedHere = moves.find((m) => m.to === picked.date);
+  const pick = (date) => setPicked(weekView(today, T, data.session_moves || []).find((d) => d.date === date) || picked);
+  const move = (to) => {
+    if (!to) return;
+    update((d) => moveSession(d, T, picked.date, to));
+    setPicked({ ...picked, date: to });
+  };
 
   return (
     <div className="page">
@@ -137,6 +145,19 @@ export default function Plan() {
               </details>
               <ExerciseList day={day} />
               {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
+              <div className="row" style={{ gap: 8, alignItems: 'center', margin: '0 0 10px' }}>
+                {movedHere ? (
+                  <button type="button" className="btn ghost small grow" onClick={() => { update((d) => undoMove(d, picked.date)); pick(movedHere.from); }}>Moved from {longWeekday(movedHere.from)} · put it back</button>
+                ) : null}
+                {picked.date >= today ? (
+                  <label className="field grow" style={{ margin: 0 }}>
+                    <select value="" aria-label={`Move ${day.label} to another day`} onChange={(e) => move(e.target.value)}>
+                      <option value="">Move {day.label} to…</option>
+                      {moveTargets(picked.date, T, moves).filter((d) => d >= today).map((d) => <option key={d} value={d}>{longWeekday(d)}{d === today ? ' (today)' : ''}</option>)}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
               {picked.date === today ? (
                 <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> Start {day.label}</button>
               ) : (

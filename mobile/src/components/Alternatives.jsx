@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
-import { capitalize } from '../lib/catalogue.js';
+import { capitalize, thumbOf } from '../lib/catalogue.js';
 import { alternatives, byCluster, forGroup, sharedMuscles } from '../lib/similar.js';
 import Icon from './Icon.jsx';
 
@@ -34,7 +34,7 @@ export default function Alternatives({ entry, group, catalogue }) {
           <div className="list">
             {g.items.map(({ entry: alt, score }) => (
               <Link key={alt.id} to={`/catalogue/${encodeURIComponent(alt.id)}`} className="list-row">
-                {alt.photos?.[0] ? <img className="thumb" src={`exercise-db/${alt.photos[0]}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />}
+                {thumbOf(alt) ? <img className="thumb" src={`exercise-db/${thumbOf(alt)}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />}
                 <div className="grow">
                   <div>{alt.name}</div>
                   <div className="meta">

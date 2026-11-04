@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
+import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
@@ -224,6 +225,22 @@ function TrainingSettings({ data, update }) {
           options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your trainer's rest for an exercise always comes first; these are for exercises without one.</p>
+
+      <div className="section-label">Bar and plates</div>
+      <div className="list">
+        <Choice label="Bar" value={t.bar} onChange={(v) => set({ bar: v })} options={Object.entries(BARS).map(([k, b]) => [k, `${b.label} (${b.kg} kg)`])} />
+        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ width: '100%' }}>Plates you have</div>
+          {ALL_PLATES.map((p) => {
+            const on = t.plates.includes(p);
+            return (
+              <button key={p} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on}
+                onClick={() => set({ plates: on ? t.plates.filter((x) => x !== p) : [...t.plates, p].sort((a, b) => b - a) })}>{p} kg</button>
+            );
+          })}
+        </div>
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Used for the plates-per-side line and warm-up sets on barbell lifts.</p>
 
       <div className="section-label">Sounds and vibration</div>
       <div className="list">
