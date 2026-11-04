@@ -940,6 +940,18 @@ h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
   transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .stepper-btn:active { transform: scale(0.9); color: var(--accent); }
+/* Beat the full-width filled ".stack-form button" rule: steppers sit in forms. */
+.stack-form .stepper-btn {
+  align-self: auto;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 15px;
+}
+.stack-form .stepper-btn:active { background: var(--surface2); color: var(--accent); }
 
 @media (hover: hover) and (pointer: fine) {
   .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
