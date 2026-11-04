@@ -63,4 +63,10 @@
   <p class="muted" style="font-size:13px;margin-top:-4px">Not configured on the server yet (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY are unset).</p>
   {% endif %}
 </section>
+
+<section class="card">
+  <h2><svg class="icon"><use href="#icon-calendar"/></svg> Your Data</h2>
+  <p class="muted" style="font-size:13px;margin-top:-4px">Everything you've logged (weigh-ins, workouts and sets, meals, water, quests and your profile) in one JSON file. Keep it as a backup, or import it into the phone app.</p>
+  <a class="link-row" href="/settings/export.json" download>Download my data <span aria-hidden="true">↓</span></a>
+</section>
 {% endblock %}
