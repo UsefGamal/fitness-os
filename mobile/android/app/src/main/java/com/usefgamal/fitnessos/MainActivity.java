@@ -1,5 +1,19 @@
 package com.usefgamal.fitnessos;
 
-import com.getcapacitor.BridgeActivity;
+import android.os.Bundle;
 
-public class MainActivity extends BridgeActivity {}
+import com.getcapacitor.BridgeActivity;
+import com.usefgamal.fitnessos.health.HealthPlugin;
+import com.usefgamal.fitnessos.timer.RestTimerPlugin;
+import com.usefgamal.fitnessos.widget.WidgetPlugin;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        // The app's own plugins (phase 4); registered before the bridge starts.
+        registerPlugin(RestTimerPlugin.class);
+        registerPlugin(WidgetPlugin.class);
+        registerPlugin(HealthPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
+}
