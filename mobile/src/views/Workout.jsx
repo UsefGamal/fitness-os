@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Sheet from '../components/Sheet.jsx';
@@ -13,7 +13,8 @@ import { effectiveDay } from '../lib/planEdit.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { progressionTarget } from '../lib/progression.js';
 import { alternatives } from '../lib/similar.js';
-import { addExtraSet, applyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
+import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
+import { buildSession, buildSwaps, ownedKinds } from '../lib/equipment.js';
 import { activeMs, clock, pauseWorkout, restFor, restoreSet, resumeWorkout, targetProgress, trainingSettings } from '../lib/training.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { useKeepAwake } from '../store/awake.js';
@@ -114,6 +115,7 @@ export default function Workout() {
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
+  const [useBuild, setUseBuild] = useState(true);
   useKeepAwake(Boolean(active));
 
   useEffect(() => {
@@ -178,14 +180,23 @@ export default function Workout() {
     );
   }
 
+  // With limited equipment, swap what can't be done for the closest match.
+  const owned = ownedKinds(settings);
+  const build = !active && owned && planDay && catalogue ? buildSession(planDay, { training: T, catalogue, owned }) : null;
+  const swaps = build && useBuild ? buildSwaps(build) : {};
+
   const start = () => {
     unlockAudio();
     feedback('workoutStart');
     let id;
     update((d) => {
-      const r = D.startWorkout(d, { date: today, sessionKey: day.key, label: day.label });
+      let next = d;
+      for (const b of build || []) {
+        if (b.status === 'swap' && swaps[b.orig]) next = D.addCustomExercise(next, { name: b.to.name, muscle_group: groupOf(b.to), equipment: b.to.equipment });
+      }
+      const r = D.startWorkout(next, { date: today, sessionKey: day.key, label: day.label });
       id = r.workoutId;
-      return r.data;
+      return Object.keys(swaps).length ? setTweaks(r.data, id, { ...emptyTweaks(day.exercises.length), swaps }) : r.data;
     });
     setActiveWorkout(id);
     setCurrent(0);
@@ -198,9 +209,27 @@ export default function Workout() {
         <h1 className="page-title">{day.label}</h1>
         <p className="page-sub">{day.focus}{day.cardio_after ? `, then ${day.cardio_after.minutes} min cycling` : ''}</p>
         {prev?.finished_at ? <div className="card muted small">You already finished a session today ({prev.notes}, {prev.sets.length} sets).</div> : null}
+        {build && build.some((b) => b.status !== 'keep') ? (
+          <section className="card stack">
+            <div className="row between"><strong>With your equipment</strong><Link to="/settings" className="small">Change</Link></div>
+            {build.filter((b) => b.status !== 'keep').map((b) => (
+              <div key={b.orig} className="small">
+                {b.status === 'swap' ? <>{b.name} <span className="muted">→</span> <strong>{b.to.name}</strong></> : null}
+                {b.status === 'none' ? <>{b.name} <span className="muted">· no match without more equipment, skip it or do it as planned</span></> : null}
+                {b.status === 'unknown' ? <span className="muted">{b.name} · kept (can't tell its equipment)</span> : null}
+              </div>
+            ))}
+            {Object.keys(buildSwaps(build)).length ? (
+              <label className="row" style={{ gap: 10, minHeight: 44 }}>
+                <input type="checkbox" checked={useBuild} onChange={(e) => setUseBuild(e.target.checked)} style={{ width: 22, height: 22 }} />
+                <span>Use these swaps today</span>
+              </label>
+            ) : null}
+          </section>
+        ) : null}
         <button type="button" className="btn" onClick={start}><Icon name="play" /> Start {day.label}</button>
         <div className="card" style={{ marginTop: 12 }}>
-          <strong>Warm up first</strong>
+          <div className="row between"><strong>Warm up first</strong><Link to={`/follow?src=warmup:${day.key}`} className="small"><Icon name="play" /> Follow along</Link></div>
           <div className="stack small muted" style={{ marginTop: 8 }}>{day.warmup.map((l) => <div key={l}>{l}</div>)}</div>
         </div>
         <div className="list">

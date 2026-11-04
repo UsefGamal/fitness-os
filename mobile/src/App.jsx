@@ -19,6 +19,8 @@ const ExerciseDetail = lazy(() => import('./views/ExerciseDetail.jsx'));
 const History = lazy(() => import('./views/History.jsx'));
 const HistoryList = lazy(() => import('./views/HistoryList.jsx'));
 const Intervals = lazy(() => import('./views/Intervals.jsx'));
+const FollowAlong = lazy(() => import('./views/FollowAlong.jsx'));
+const Photos = lazy(() => import('./views/Photos.jsx'));
 const Library = lazy(() => import('./views/Library.jsx'));
 const Profile = lazy(() => import('./views/Profile.jsx'));
 const Quests = lazy(() => import('./views/Quests.jsx'));
@@ -55,6 +57,8 @@ const router = createHashRouter([
       { path: '/plan', element: <Plan /> },
       { path: '/workout', element: <Workout /> },
       { path: '/intervals', element: <Intervals /> },
+      { path: '/follow', element: <FollowAlong /> },
+      { path: '/photos', element: <Photos /> },
       { path: '/meals', element: <Meals /> },
       { path: '/stats', element: <Stats /> },
       { path: '/history', element: <HistoryList /> },

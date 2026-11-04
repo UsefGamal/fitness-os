@@ -37,7 +37,7 @@ test('a backup made by the app imports back to the same data', () => {
 });
 
 test('later fields (moved sessions, notes, badges) survive a backup', () => {
-  const data = { ...parseDataFile(JSON.stringify(SERVER_EXPORT), content), session_moves: [{ from: '2026-11-03', to: '2026-11-04', key: 'push' }], exercise_notes: { 'Leg Press': 'Seat 5' }, achievements: { first: '2026-11-04' } };
+  const data = { ...parseDataFile(JSON.stringify(SERVER_EXPORT), content), session_moves: [{ from: '2026-11-03', to: '2026-11-04', key: 'push' }], exercise_notes: { 'Leg Press': 'Seat 5' }, achievements: { first: '2026-11-04' }, evening_plan: { monday: 'tabata' }, progress_photos: [{ id: 1, date: '2026-11-04', pose: 'front', file: 'progress-photos/1.jpg' }] };
   assert.deepEqual(parseDataFile(toDataFile(data), content), data);
 });
 

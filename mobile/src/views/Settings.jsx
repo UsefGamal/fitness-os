@@ -6,6 +6,7 @@ import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
+import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
@@ -308,6 +309,27 @@ function TrainingSettings({ data, update }) {
         </div>
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Used for the plates-per-side line and warm-up sets on barbell lifts.</p>
+
+      <div className="section-label">Equipment you have</div>
+      <div className="list">
+        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+          {PRESETS.map((p) => {
+            const owned = ownedKinds(t);
+            const on = p.kinds === null ? owned === null : owned !== null && owned.length === p.kinds.length && p.kinds.every((k) => owned.includes(k));
+            return <button key={p.key} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on} onClick={() => set({ equipment: p.kinds })}>{p.label}</button>;
+          })}
+        </div>
+        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ width: '100%' }}>Or tick what you have <span className="meta">(bodyweight always counts)</span></div>
+          {KINDS.map((k) => {
+            const owned = ownedKinds(t);
+            const on = owned === null || owned.includes(k);
+            const next = on ? (owned || KINDS).filter((x) => x !== k) : [...(owned || []), k];
+            return <button key={k} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on} onClick={() => set({ equipment: next.length === KINDS.length ? null : next })}>{k}</button>;
+          })}
+        </div>
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>When something is missing, the workout screen offers the closest same-muscle exercise you can do instead.</p>
 
       <div className="section-label">Sounds and vibration</div>
       <div className="list">

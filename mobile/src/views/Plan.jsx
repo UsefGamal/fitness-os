@@ -4,14 +4,18 @@ import { Link, useNavigate } from 'react-router';
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
-import { entryFor, groupOf } from '../lib/catalogue.js';
+import { entryFor, groupOf, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
-import { longWeekday, todayISO } from '../lib/dates.js';
+import { longWeekday, todayISO, weekdayName } from '../lib/dates.js';
+import { EVENING_OPTIONS, EVENING_TIME, eveningOn, setEvening } from '../lib/evening.js';
+import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
 import * as P from '../lib/planEdit.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
+import { saveExport } from '../store/mirror.js';
+import { dataUrlOf, shareFile, shareText } from '../store/share.js';
 import { content, useData } from '../store/useData.js';
 
 function ExerciseList({ day }) {
@@ -123,6 +127,34 @@ export default function Plan() {
     update((d) => moveSession(d, T, picked.date, to));
     setPicked({ ...picked, date: to });
   };
+  const { catalogue } = useCatalogue();
+  const [shareMsg, setShareMsg] = useState('');
+  const night = eveningOn(data, picked.date);
+  const weekDays = () => week.map((w) => ({ date: w.date, day: w.key === 'rest' ? null : P.effectiveDay(w.key, T, data), evening: eveningOn(data, w.date) }));
+  const shareWeek = async () => {
+    const r = await shareText('My training week', weekText(weekDays(), { time: T.session_time }));
+    setShareMsg(r === 'copied' ? 'Copied the week; paste it into a message.' : '');
+  };
+  const printWeek = async () => {
+    setShareMsg('Making the page…');
+    const days = weekDays();
+    const photos = new Map();
+    if (catalogue) {
+      for (const name of new Set(days.flatMap((d) => d.day?.exercises.map((x) => x.name) || []))) {
+        const e = entryFor(name, T, catalogue.byId);
+        const src = e ? thumbOf(e) : null;
+        if (src) photos.set(name, await dataUrlOf(src));
+      }
+    }
+    const html = weekHtml(days, { time: T.session_time, tempo: T.trainer_plan.tempo, photoOf: (n) => photos.get(n) || null });
+    try {
+      const uri = await saveExport(`training-week-${week[0].date}.html`, html, 'text/html');
+      if (uri) await shareFile('My training week', uri);
+      setShareMsg(uri ? 'Saved to Documents. Open it in a browser and choose Print to make a PDF.' : 'Downloaded. Open it and choose Print to make a PDF.');
+    } catch {
+      setShareMsg('Could not save the page. Check storage permission and try again.');
+    }
+  };
 
   return (
     <div className="page">
@@ -147,6 +179,7 @@ export default function Plan() {
               <details className="card more">
                 <summary>Warm-up: {day.pre_cardio}, then {day.warmup_items.length} drills</summary>
                 <div className="stack" style={{ marginTop: 8 }}>{day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}</div>
+                <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> Follow along</Link>
               </details>
               <ExerciseList day={day} />
               {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
@@ -174,6 +207,21 @@ export default function Plan() {
       ) : (
         <div className="card empty">Rest day. Walk, stretch, sleep well.</div>
       )}
+
+      <label className="field" style={{ marginTop: 12 }}>
+        <span>{longWeekday(picked.date)} at {EVENING_TIME} (every week)</span>
+        <select value={night?.key || ''} onChange={(e) => update((d) => setEvening(d, weekdayName(picked.date), e.target.value || null))}>
+          <option value="">Nothing at {EVENING_TIME}</option>
+          {EVENING_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+        </select>
+      </label>
+      {night && picked.date === today ? <button type="button" className="btn secondary" style={{ marginTop: 8 }} onClick={() => navigate(night.route)}><Icon name="play" /> {night.label} now</button> : null}
+
+      <div className="row" style={{ gap: 8, marginTop: 12 }}>
+        <button type="button" className="btn secondary small grow" onClick={shareWeek}><Icon name="upload" /> Share the week</button>
+        <button type="button" className="btn secondary small grow" onClick={printWeek}><Icon name="download" /> Printable page</button>
+      </div>
+      {shareMsg ? <p className="muted small" role="status" style={{ margin: '8px 4px 0' }}>{shareMsg}</p> : null}
 
       <div className="list" style={{ marginTop: 12 }}>
         <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>

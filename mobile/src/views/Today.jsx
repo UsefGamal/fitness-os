@@ -6,6 +6,7 @@ import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups } from '../lib/insights.js';
+import { EVENING_TIME, eveningDone, eveningOn } from '../lib/evening.js';
 import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, totalPoints } from '../lib/quests.js';
@@ -23,6 +24,7 @@ export default function Today() {
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
+  const tonight = eveningOn(data, today);
   const nextGroups = dayGroups(data, P.effectiveDay(next.key, T, data)?.exercises);
   const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
@@ -74,6 +76,17 @@ export default function Today() {
           </>
         )}
       </section>
+
+      {tonight ? (
+        <section className="card row" style={{ gap: 12 }}>
+          <div className="grow">
+            <span className="chip">Tonight at {EVENING_TIME}</span>
+            <div style={{ fontWeight: 600, marginTop: 6 }}>{tonight.label}</div>
+            <div className="muted small">{tonight.note}</div>
+          </div>
+          {eveningDone(data, today, tonight) ? <span className="chip accent"><Icon name="check" /> Done</span> : <button type="button" className="btn secondary small" style={{ width: 'auto' }} onClick={() => navigate(tonight.route)}><Icon name="play" /> Start</button>}
+        </section>
+      ) : null}
 
       <section className="card">
         <div className="row between" style={{ marginBottom: 10 }}>

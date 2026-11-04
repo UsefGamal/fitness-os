@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
@@ -24,8 +24,10 @@ function Num({ label, value, onChange, unit }) {
  * sounds as the rest timer and saved as a cardio session. */
 export default function Intervals() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { update } = useData();
-  const [config, setConfig] = useState(INTERVAL_PRESETS[0]);
+  // ?preset=tabata opens with that preset picked (the 8 PM session links here).
+  const [config, setConfig] = useState(() => INTERVAL_PRESETS.find((p) => p.key === params.get('preset')) || INTERVAL_PRESETS[0]);
   const [run, setRun] = useState(null); // { startedAt, pausedAt, pausedMs }
   const [now, setNow] = useState(Date.now());
   const [saved, setSaved] = useState(false);

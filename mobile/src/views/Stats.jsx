@@ -183,6 +183,9 @@ function Body({ data, update, today }) {
         {more ? null : <button type="button" className="btn ghost small" onClick={() => setMore(true)}><Icon name="plus" /> Chest, arm, hips, thigh</button>}
         <button type="submit" className="btn">Save</button>
       </form>
+      <div className="list">
+        <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
+      </div>
       {MEASURES.some(([k]) => lastOf(k)) ? (
         <>
           <div className="section-label">Measurements</div>

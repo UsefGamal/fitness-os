@@ -24,3 +24,13 @@ test('nothing in the past is scheduled', () => {
   assert.ok(r.every((x) => x.at > now));
   assert.ok(!r.some((x) => x.title.startsWith('Push') && x.at.getDate() === 4));
 });
+
+test('an 8 PM session gets a reminder at 19:30', () => {
+  const now = new Date(2026, 10, 4, 6, 0);
+  const r = plannedReminders('2026-11-04', content, now, [], { wednesday: 'tabata' });
+  const night = r.filter((x) => x.id >= 3000 && x.id < 4000);
+  assert.ok(night.length >= 1);
+  assert.equal(night[0].at.getHours(), 19);
+  assert.equal(night[0].at.getMinutes(), 30);
+  assert.match(night[0].title, /Tabata at 20:00/);
+});
