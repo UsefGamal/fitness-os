@@ -1,49 +1,58 @@
-// Front and back body outline with the six muscle groups the app uses.
-// Same drawing as the old site's templates/_body_map.html (our own SVG).
-const R = (x, y, w, h, rx, g) => ({ t: 'rect', x, y, width: w, height: h, rx, g });
-const C = (cx, cy, r, g) => ({ t: 'circle', cx, cy, r, g });
+// Front and back muscle map. Outlines from react-body-highlighter (MIT, see
+// muscleShapes.js); which ones light up comes from lib/muscleMap.js.
+//   hit:       Set of app groups to light (Library filter, plan exercises)
+//   primary:   catalogue muscles the exercise mainly works (bright)
+//   secondary: helper muscles (dim)
+//   onPick:    called with the app group of a tapped outline
+import { GROUP_OF_SHAPE, shading } from '../lib/muscleMap.js';
+import { BACK, FRONT } from './muscleShapes.js';
 
-function half(dx, back) {
-  return [
-    C(26 + dx, 39, 10, 'Shoulders'),
-    C(74 + dx, 39, 10, 'Shoulders'),
-    back ? R(30 + dx, 33, 40, 42, 14, 'Back') : R(32 + dx, 33, 36, 28, 12, 'Chest'),
-    R(14 + dx, 40, 12, 34, 6, 'Arms'),
-    R(74 + dx, 40, 12, 34, 6, 'Arms'),
-    R(15 + dx, 74, 10, 32, 5, 'Arms'),
-    R(75 + dx, 74, 10, 32, 5, 'Arms'),
-    ...(back ? [] : [R(35 + dx, 61, 30, 34, 10, 'Core')]),
-    R(30 + dx, 96, 15, 42, 7.5, 'Legs'),
-    R(55 + dx, 96, 15, 42, 7.5, 'Legs'),
-    R(32 + dx, 142, 11, 42, 5.5, 'Legs'),
-    R(57 + dx, 142, 11, 42, 5.5, 'Legs'),
-  ];
+const FILL = { primary: 'rgba(48,209,88,0.85)', secondary: 'rgba(48,209,88,0.35)' };
+const BODY = '#3a3a3c';
+const HEAD = '#2c2c2e';
+
+function Figure({ shapes, dx, lit, onPick }) {
+  return (
+    <g transform={`translate(${dx} 0)`}>
+      {shapes.map(([muscle, polys]) => polys.map((points, i) => {
+        const tone = lit.get(muscle);
+        const group = GROUP_OF_SHAPE[muscle];
+        const pickable = onPick && group;
+        return (
+          <polygon
+            key={`${muscle}-${i}`}
+            points={points}
+            fill={tone ? FILL[tone] : muscle === 'head' ? HEAD : BODY}
+            stroke="#000"
+            strokeWidth={0.4}
+            style={pickable ? { cursor: 'pointer' } : undefined}
+            onClick={pickable ? () => onPick(group) : undefined}
+          >
+            {group ? <title>{group}</title> : null}
+          </polygon>
+        );
+      }))}
+    </g>
+  );
 }
 
-const SHAPES = [...half(0, false), ...half(100, true)];
-
-export default function BodyMap({ hit = new Set(), onPick, label = 'Muscle map' }) {
+export default function BodyMap({ hit = null, primary = [], secondary = [], onPick, label = 'Muscle map' }) {
+  const lit = shading({ primary, secondary, groups: hit });
+  const showKey = secondary.length > 0;
   return (
-    <svg viewBox="0 0 200 236" style={{ width: '100%', maxWidth: 320, display: 'block', margin: '0 auto' }} role="img" aria-label={label}>
-      {[0, 100].map((dx) => (
-        <g key={dx}>
-          <ellipse cx={50 + dx} cy={16} rx={12} ry={13} fill="#2c2c2e" />
-          <rect x={44 + dx} y={27} width={12} height={7} fill="#2c2c2e" />
-          <text x={50 + dx} y={228} textAnchor="middle" fill="#8e8e93" fontSize="8" letterSpacing="1">{dx ? 'BACK' : 'FRONT'}</text>
-        </g>
-      ))}
-      {SHAPES.map((s, i) => {
-        const on = hit.has(s.g);
-        const props = {
-          fill: on ? 'rgba(48,209,88,0.55)' : '#3a3a3c',
-          stroke: on ? '#30d158' : 'none',
-          strokeWidth: 1.5,
-          style: onPick ? { cursor: 'pointer' } : undefined,
-          onClick: onPick ? () => onPick(s.g) : undefined,
-        };
-        const { t, g, ...geo } = s;
-        return t === 'rect' ? <rect key={i} {...geo} {...props}><title>{g}</title></rect> : <circle key={i} {...geo} {...props}><title>{g}</title></circle>;
-      })}
-    </svg>
+    <figure style={{ margin: 0 }}>
+      <svg viewBox="0 0 210 212" style={{ width: '100%', maxWidth: 320, display: 'block', margin: '0 auto' }} role="img" aria-label={label}>
+        <Figure shapes={FRONT} dx={0} lit={lit} onPick={onPick} />
+        <Figure shapes={BACK} dx={110} lit={lit} onPick={onPick} />
+        <text x={50} y={210} textAnchor="middle" fill="#8e8e93" fontSize="7" letterSpacing="1">FRONT</text>
+        <text x={160} y={210} textAnchor="middle" fill="#8e8e93" fontSize="7" letterSpacing="1">BACK</text>
+      </svg>
+      {showKey ? (
+        <figcaption className="row muted small" style={{ justifyContent: 'center', gap: 14, marginTop: 6 }}>
+          <span className="row" style={{ gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: FILL.primary }} />Main</span>
+          <span className="row" style={{ gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: FILL.secondary }} />Helps</span>
+        </figcaption>
+      ) : null}
+    </figure>
   );
 }

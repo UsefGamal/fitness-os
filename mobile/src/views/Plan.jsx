@@ -3,9 +3,13 @@ import { Link, useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
+import { entryFor, groupOf } from '../lib/catalogue.js';
+import * as D from '../lib/data.js';
 import { longWeekday, todayISO } from '../lib/dates.js';
 import * as P from '../lib/planEdit.js';
 import { weekView } from '../lib/schedule.js';
+import { alternatives } from '../lib/similar.js';
+import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 
 function ExerciseList({ day }) {
@@ -32,6 +36,19 @@ function EditList({ day, sessionKey }) {
   const { data, update } = useData();
   const T = content.training;
   const [adding, setAdding] = useState('');
+  const { catalogue } = useCatalogue();
+  // Up to 8 catalogue exercises that work the same muscles, best first.
+  const recommended = (name) => {
+    const entry = catalogue ? entryFor(name, T, catalogue.byId) : null;
+    return entry ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : [];
+  };
+  const swap = (i, value) => {
+    if (!value) return;
+    if (!value.startsWith('cat:')) return update((d) => P.swapExercise(d, sessionKey, T, i, value));
+    const e = catalogue.byId.get(value.slice(4));
+    // Catalogue exercises join the Library first so sets can be logged against them.
+    return update((d) => P.swapExercise(D.addCustomExercise(d, { name: e.name, muscle_group: groupOf(e), equipment: e.equipment }), sessionKey, T, i, e.name));
+  };
   const byMuscle = (name) => data.exercises.find((e) => e.name === name)?.muscle_group;
   const options = (current) => {
     const m = byMuscle(current);
@@ -55,9 +72,16 @@ function EditList({ day, sessionKey }) {
           </div>
           <label className="field">
             <span>Swap for</span>
-            <select value="" onChange={(e) => e.target.value && update((d) => P.swapExercise(d, sessionKey, T, i, e.target.value))}>
+            <select value="" onChange={(e) => swap(i, e.target.value)}>
               <option value="">Keep {ex.name}</option>
-              {options(ex.name).map((o) => <option key={o.id} value={o.name}>{o.name} · {o.muscle_group}</option>)}
+              {recommended(ex.name).length ? (
+                <optgroup label="Same muscles (recommended)">
+                  {recommended(ex.name).map((o) => <option key={o.id} value={`cat:${o.id}`}>{o.name} · {o.equipment || 'body only'}</option>)}
+                </optgroup>
+              ) : null}
+              <optgroup label="Your Library">
+                {options(ex.name).map((o) => <option key={o.id} value={o.name}>{o.name} · {o.muscle_group}</option>)}
+              </optgroup>
             </select>
           </label>
         </div>
