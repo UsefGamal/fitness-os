@@ -37,6 +37,7 @@ function Heat({ data, today }) {
 
 function Muscles({ data, today }) {
   const [mode, setMode] = useState('volume');
+  const [group, setGroup] = useState(null);
   const sets = setsByGroup(data, today, 7);
   const state = recoveryState(data, today);
   const last = lastTrained(data, today);
@@ -50,18 +51,38 @@ function Muscles({ data, today }) {
       <div className="seg" style={{ marginBottom: 10 }}>
         {MODES.map(([k, l]) => <button key={k} type="button" className={mode === k ? 'on' : ''} onClick={() => setMode(k)}>{l}</button>)}
       </div>
-      <BodyMap groupFill={fill} label={caption} />
+      <BodyMap groupFill={fill} label={caption} onPick={(g) => setGroup(group === g ? null : g)} />
       <p className="muted small" style={{ textAlign: 'center', margin: '8px 0 0' }}>{caption}</p>
       <div className="group-rows">
         {GROUPS.map((g) => (
-          <div key={g} className="group-row">
+          <button key={g} type="button" className={`group-row${group === g ? ' on' : ''}`} onClick={() => setGroup(group === g ? null : g)}>
             <span>{g}</span>
             <div className="progress"><span style={{ width: `${Math.min(100, (sets[g] / 12) * 100)}%` }} /></div>
             <span className="muted small" style={{ textAlign: 'right' }}>{mode === 'volume' ? `${sets[g]} sets` : last[g] ? formatDate(last[g]).split(',')[0] : 'never'}</span>
-          </div>
+          </button>
         ))}
       </div>
+      {group ? <GroupExercises data={data} group={group} /> : <p className="muted small" style={{ textAlign: 'center', margin: '10px 0 0' }}>Tap a muscle to see its exercises.</p>}
     </section>
+  );
+}
+
+/** A group's exercises, most recently trained first; each opens its page
+ * with the same-muscle replacements. */
+function GroupExercises({ data, group }) {
+  const last = new Map();
+  for (const w of data.workouts) for (const st of w.sets) if (!last.has(st.exercise_id) || w.log_date > last.get(st.exercise_id)) last.set(st.exercise_id, w.log_date);
+  const list = data.exercises.filter((e) => e.muscle_group === group)
+    .sort((a, b) => (last.get(b.id) || '').localeCompare(last.get(a.id) || '') || a.name.localeCompare(b.name)).slice(0, 12);
+  return (
+    <div className="list" style={{ marginTop: 12, background: 'var(--surface2)' }}>
+      {list.map((e) => (
+        <Link key={e.id} to={`/library/${e.id}`} className="list-row">
+          <div className="grow"><div>{e.name}</div><div className="meta">{last.get(e.id) ? `Last ${formatDate(last.get(e.id))}` : 'Not done yet'}</div></div>
+          <Icon name="chev" className="icon chev" />
+        </Link>
+      ))}
+    </div>
   );
 }
 

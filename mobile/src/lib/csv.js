@@ -22,7 +22,21 @@ export function toCsv(data) {
       rows.push([w.log_date, w.notes || w.workout_type, e?.name || 'Exercise', e?.muscle_group || '', s.set_number, s.weight_kg ?? '', s.reps ?? '', s.rpe ?? '']);
     }
   }
-  return rows.map((r) => r.map(cell).join(',')).join('\n') + '\n';
+  return rowsToCsv(rows);
+}
+
+const rowsToCsv = (rows) => rows.map((r) => r.map(cell).join(',')).join('\n') + '\n';
+
+/** Weigh-ins and measurements, one row per day. */
+export function bodyCsv(data) {
+  const cols = ['date', 'weight_kg', 'waist_cm', 'chest_cm', 'arm_cm', 'hips_cm', 'thigh_cm', 'sleep_hours'];
+  return rowsToCsv([cols, ...data.body_logs.map((b) => [b.log_date, ...cols.slice(1).map((c) => b[c] ?? '')])]);
+}
+
+/** Meal ticks, one row per meal slot logged. */
+export function mealsCsv(data) {
+  const rows = [...(data.meal_logs || [])].sort((a, b) => (a.log_date < b.log_date ? -1 : 1));
+  return rowsToCsv([['date', 'meal', 'eaten', 'option', 'drink'], ...rows.map((m) => [m.log_date, m.meal_slot, m.completed ? 'yes' : 'no', m.option_key ?? '', m.drink_key ?? ''])]);
 }
 
 /** RFC 4180 parsing with a guessed delimiter (Strong uses ";" in some locales). */

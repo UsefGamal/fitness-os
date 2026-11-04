@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyImport, csvDate, guessGroup, parseCsv, previewImport, readWorkoutCsv, toCsv } from './csv.js';
+import { applyImport, bodyCsv, csvDate, mealsCsv, guessGroup, parseCsv, previewImport, readWorkoutCsv, toCsv } from './csv.js';
 
 const base = () => ({
   exercises: [{ id: 1, name: 'Bench Press', muscle_group: 'Chest' }],
@@ -74,4 +74,9 @@ test('preview skips duplicates; import adds workouts and new exercises only', ()
   assert.deepEqual(added.sets.map((s) => [s.id, s.set_number]), [[2, 1], [3, 2]]);
   assert.equal(out.exercises.find((e) => e.name === 'Squat (Barbell)').muscle_group, 'Legs');
   assert.equal(guessGroup('Lat Pulldown'), 'Back');
+});
+
+test('body and meal CSVs', () => {
+  assert.equal(bodyCsv({ body_logs: [{ log_date: '2026-11-01', weight_kg: 82, waist_cm: 90 }] }), 'date,weight_kg,waist_cm,chest_cm,arm_cm,hips_cm,thigh_cm,sleep_hours\n2026-11-01,82,90,,,,,\n');
+  assert.match(mealsCsv({ meal_logs: [{ log_date: '2026-11-01', meal_slot: 'lunch', completed: true, option_key: 'option_a' }] }), /2026-11-01,lunch,yes,option_a,\n$/);
 });

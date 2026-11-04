@@ -7,7 +7,7 @@ import { MODULES } from '../lib/data.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
-import { applyImport, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
+import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { Health, isNative } from '../store/native.js';
@@ -108,8 +108,11 @@ export default function Settings() {
 
   const exportCsv = async () => {
     try {
-      const where = await saveExport(`fitness-os-workouts-${todayISO()}.csv`, toCsv(data), 'text/csv');
-      setMsg(where ? 'Workouts CSV saved to Documents on your phone.' : 'Workouts CSV downloaded.');
+      const day = todayISO();
+      const where = await saveExport(`fitness-os-workouts-${day}.csv`, toCsv(data), 'text/csv');
+      await saveExport(`fitness-os-body-${day}.csv`, bodyCsv(data), 'text/csv');
+      await saveExport(`fitness-os-meals-${day}.csv`, mealsCsv(data), 'text/csv');
+      setMsg(where ? 'Workouts, body and meals CSVs saved to Documents on your phone.' : 'Workouts, body and meals CSVs downloaded.');
     } catch {
       setMsg('Could not save the CSV. Check storage permission and try again.');
     }
@@ -153,7 +156,7 @@ export default function Settings() {
         <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow">Export a backup</div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export workouts as CSV</div><div className="meta">One row per set, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={pick} />
       <input ref={csvRef} type="file" accept="text/csv,.csv,text/plain" hidden onChange={pickCsv} />

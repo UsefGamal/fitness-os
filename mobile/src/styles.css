@@ -212,7 +212,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .group-rows { display: grid; gap: 8px; margin-top: 12px; }
-.group-row { display: grid; grid-template-columns: 84px 1fr 56px; align-items: center; gap: 10px; font-size: 15px; }
+.group-row { border: 0; background: none; color: var(--text); text-align: left; padding: 4px 0; min-height: 36px; width: 100%; display: grid; grid-template-columns: 84px 1fr 56px; align-items: center; gap: 10px; font-size: 15px; }
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
 .badge { background: var(--surface); border-radius: 14px; padding: 14px 8px; text-align: center; display: grid; gap: 6px; justify-items: center; }
 .badge .medal { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--surface2); color: var(--muted); }
@@ -227,3 +227,4 @@ details.more > summary::-webkit-details-marker { display: none; }
 @media (prefers-reduced-motion: reduce) { .fanfare { animation: none; } }
 .measure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .preview-list { max-height: 220px; overflow-y: auto; }
+.group-row.on span:first-child { color: var(--accent); font-weight: 600; }

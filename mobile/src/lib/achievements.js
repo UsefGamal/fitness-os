@@ -20,6 +20,12 @@ export const BADGES = [
   { id: 'ton100', label: '100 tonnes', note: 'Lift 100,000 kg in total', goal: 100000, value: (s) => s.volume },
   { id: 'early10', label: 'Early bird', note: 'Start 10 workouts before 8 AM', goal: 10, value: (s) => s.early },
   { id: 'full', label: 'Head to toe', note: 'Train all six muscle groups in one week', goal: 6, value: (s) => s.bestWeekGroups },
+  { id: 'bench1', label: 'Bodyweight bench', note: 'Bench press your bodyweight (est. 1RM)', goal: 1, value: (s) => s.ratio.bench, unit: '× BW' },
+  { id: 'squat15', label: 'Strong legs', note: 'Squat 1.5 × your bodyweight (est. 1RM)', goal: 1.5, value: (s) => s.ratio.squat, unit: '× BW' },
+  { id: 'dead2', label: 'Double deadlift', note: 'Deadlift 2 × your bodyweight (est. 1RM)', goal: 2, value: (s) => s.ratio.deadlift, unit: '× BW' },
+  { id: 'lost5', label: '5 kg down', note: 'Weigh 5 kg less than your first weigh-in', goal: 5, value: (s) => s.lost, unit: 'kg' },
+  { id: 'waist5', label: 'Belt notch', note: 'Waist 5 cm smaller than your first measure', goal: 5, value: (s) => s.waist, unit: 'cm' },
+  { id: 'meals7', label: 'Clean week', note: 'Tick every meal for a whole week', goal: 1, value: (s) => s.mealWeeks },
   { id: 'weigh30', label: 'On the scale', note: 'Log 30 weigh-ins', goal: 30, value: (s) => s.weighIns },
 ];
 
@@ -54,6 +60,45 @@ function bestWeekGroups(data) {
   return Math.max(0, ...[...weeks.values()].map((s) => s.size));
 }
 
+// Big lifts by name: the plan's own and common catalogue names.
+const LIFTS = {
+  bench: /bench press/i,
+  squat: /^(?!.*(split|goblet|jump|sissy|pistol)).*squat/i,
+  deadlift: /deadlift/i,
+};
+
+/** Best estimated 1RM of each big lift divided by the latest bodyweight. */
+export function liftRatios(data) {
+  const out = { bench: 0, squat: 0, deadlift: 0 };
+  const bw = data.body_logs.length ? data.body_logs[data.body_logs.length - 1].weight_kg : null;
+  if (!bw) return out;
+  const names = new Map(data.exercises.map((e) => [e.id, e.name]));
+  for (const w of data.workouts) {
+    for (const s of w.sets) {
+      const name = names.get(s.exercise_id) || '';
+      const score = s.reps === 1 ? s.weight_kg : (s.weight_kg || 0) * (1 + (s.reps || 0) / 30);
+      for (const [k, re] of Object.entries(LIFTS)) if (re.test(name)) out[k] = Math.max(out[k], Math.round((score / bw) * 100) / 100);
+    }
+  }
+  return out;
+}
+
+/** Drop from the first value of a body field to the latest one (0 if up). */
+function drop(logs, field) {
+  const rows = logs.filter((b) => b[field] != null);
+  if (rows.length < 2) return 0;
+  return Math.max(0, Math.round((rows[0][field] - rows[rows.length - 1][field]) * 10) / 10);
+}
+
+/** Sunday-start weeks in which every meal slot was ticked on all 7 days. */
+export function fullMealWeeks(data, slots = 5) {
+  const perDay = new Map();
+  for (const m of data.meal_logs || []) if (m.completed) perDay.set(m.log_date, (perDay.get(m.log_date) || 0) + 1);
+  const perWeek = new Map();
+  for (const [d, n] of perDay) if (n >= slots) perWeek.set(weekStart(d), (perWeek.get(weekStart(d)) || 0) + 1);
+  return [...perWeek.values()].filter((n) => n >= 7).length;
+}
+
 export function badgeStats(data, today) {
   return {
     gym: data.workouts.filter((w) => w.workout_type === 'gym' && w.sets.length).length,
@@ -63,6 +108,10 @@ export function badgeStats(data, today) {
     early: data.workouts.filter((w) => w.started_at && new Date(w.started_at).getHours() < 8).length,
     bestWeekGroups: bestWeekGroups(data),
     weighIns: data.body_logs.length,
+    ratio: liftRatios(data),
+    lost: drop(data.body_logs, 'weight_kg'),
+    waist: drop(data.body_logs, 'waist_cm'),
+    mealWeeks: fullMealWeeks(data),
   };
 }
 
