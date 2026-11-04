@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
@@ -6,6 +6,8 @@ import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
+import { Health, isNative } from '../store/native.js';
+import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
 
@@ -18,6 +20,41 @@ export default function Settings() {
   const [msg, setMsg] = useState('');
   const [pendingImport, setPendingImport] = useState(null);
   const s = summarize(data);
+  const health = healthSettings(data);
+  const [hcStatus, setHcStatus] = useState(isNative() ? 'checking' : 'unavailable');
+  useEffect(() => {
+    if (!isNative()) return;
+    Health.status().then((r) => setHcStatus(r.status), () => setHcStatus('unavailable'));
+  }, []);
+
+  const setHealth = (changes) => update((d) => ({ ...d, settings: { ...d.settings, health: { ...healthSettings(d), ...changes } } }));
+  const toggleHealth = async () => {
+    if (health.enabled) {
+      setHealth({ enabled: false });
+      setMsg('Health Connect off. Nothing already shared is deleted; remove it in Health Connect if you want.');
+      return;
+    }
+    try {
+      const { granted } = await Health.connect();
+      if (!granted) {
+        setMsg('Health Connect needs both permissions: read weight and write exercise.');
+        return;
+      }
+      setHealth({ enabled: true, weights_since: 0, workouts_since: 0 });
+      const r = await syncHealth({ all: true });
+      setMsg(r ? `Health Connect on. Added ${n(r.weighIns, 'weigh-in')} and shared ${n(r.workouts, 'workout')}.` : 'Health Connect on.');
+    } catch (err) {
+      setMsg(err?.message || 'Could not connect to Health Connect.');
+    }
+  };
+  const syncNow = async () => {
+    try {
+      const r = await syncHealth();
+      setMsg(r ? `Synced: ${n(r.weighIns, 'new weigh-in')}, ${n(r.workouts, 'workout')} shared.` : 'Health Connect is off.');
+    } catch (err) {
+      setMsg(err?.message || 'Sync failed.');
+    }
+  };
 
   const pick = async (e) => {
     const file = e.target.files?.[0];
@@ -99,6 +136,28 @@ export default function Settings() {
           <span className={`check${data.settings.notifications ? ' on' : ''}`}>{data.settings.notifications ? <Icon name="check" /> : null}</span>
         </button>
       </div>
+
+      <div className="section-label">Health Connect</div>
+      <div className="list">
+        {hcStatus === 'available' ? (
+          <>
+            <button type="button" className="list-row" onClick={toggleHealth} aria-pressed={health.enabled}>
+              <Icon name="scale" />
+              <div className="grow"><div>Sync with Health Connect</div><div className="meta">Read weigh-ins from your scale, share finished workouts</div></div>
+              <span className={`check${health.enabled ? ' on' : ''}`}>{health.enabled ? <Icon name="check" /> : null}</span>
+            </button>
+            {health.enabled ? (
+              <button type="button" className="list-row" onClick={syncNow}><Icon name="download" /><div className="grow">Sync now</div><Icon name="chev" className="icon chev" /></button>
+            ) : null}
+          </>
+        ) : (
+          <div className="list-row"><div className="grow"><div>Sync with Health Connect</div><div className="meta">{
+            hcStatus === 'update_required' ? 'Update the Health Connect app from the Play Store first.'
+              : hcStatus === 'checking' ? 'Checking…' : 'Available in the phone app on Android 9 and newer with Health Connect installed.'
+          }</div></div></div>
+        )}
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Health Connect is Android's on-phone health store. Nothing goes to a server.</p>
 
       <div className="section-label">Modules</div>
       <div className="list">

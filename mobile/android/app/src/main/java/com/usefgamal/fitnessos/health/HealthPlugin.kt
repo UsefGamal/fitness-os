@@ -69,7 +69,7 @@ class HealthPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun requestPermissions(call: PluginCall) {
+    fun connect(call: PluginCall) {
         if (client(call) == null) return
         startActivityForResult(call, contract.createIntent(context, permissions), "permissionsResult")
     }

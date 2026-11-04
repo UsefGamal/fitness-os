@@ -19,6 +19,7 @@ The tab bar follows openGym: **Home**, **Plan**, **Start**, **Meals** and **Stat
 - **Sessions:** log a home workout (its warm-up, exercises and cool-down as a checklist), recovery, cardio or padel (with the result).
 - **Quests:** tick daily habits; weekly quests and milestones are earned from what you log, adding up to levels and badges.
 - **Profile:** height, age, sex, activity and goal set the daily calorie and macro targets, worked out like the old site.
+- **Phone extras:** the rest timer also counts down in the notification shade with +15s and Stop, so you can run a workout without opening the app between sets. Add the **Fitness OS today** widget to your home screen for today's session, streak and meals. Switch on **Health Connect** in Settings to bring in weigh-ins from a scale and share finished workouts.
 - **Settings:** import your data, export a backup, turn reminders on (30 min before each 07:00 session and at every meal time), and switch **Modules** (Meals, Water, Weight) off to hide them. With Meals off, Library takes its place in the tab bar.
 
 ## Moving your data in
@@ -67,5 +68,6 @@ npm run build      # dist/
 - Plan content comes from `content/` through `scripts/export_content.py`. Never edit `src/content.json` by hand; it's generated and gitignored.
 - Decision logic lives in `src/lib/` as pure functions, each with a `*.test.js` beside it. `schedule.test.js` mirrors `tests/test_gym_program.py`, so change both together.
 - Exercise photos land in `public/exercise-db/` (gitignored). `npm run build:mobile` fetches them; install Pillow (`pip install pillow`) to get WebP at half the size.
+- The app's own Android plugins live in `android/app/src/main/java/com/usefgamal/fitnessos/` (`timer/`, `widget/`, `health/`) and are registered in `MainActivity`. `src/store/native.js` is the JS side; in a browser they're no-ops.
 - `src/store/useData.js` is the one Zustand store. `src/store/mirror.js` keeps the file copy and `src/store/notify.js` handles local notifications.
 - After changing `capacitor.config.json` or a Capacitor plugin, run `npx cap sync android` and commit the result.

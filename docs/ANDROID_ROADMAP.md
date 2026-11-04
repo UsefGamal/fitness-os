@@ -52,10 +52,10 @@ Fitness OS becomes a sideloaded Android app in five phases. Each phase ends with
 
 ## Phase 4: phone extras
 
-- Rest timer in the notification shade (foreground service).
-- Health Connect: read weigh-ins, write finished workouts.
-- Home-screen widget: today's workout and the next meal.
-- Modules: hide areas you don't use (padel, simulator).
+- Rest timer in the notification shade: `timer/RestTimerService.java`, a short-lived foreground service whose notification counts down on its own (Android's chronometer), with +15s and Stop buttons, and a buzzing "Rest done" alert. `RestTimerPlugin` keeps it and the in-app timer in step.
+- Health Connect (`health/HealthPlugin.kt`): read weigh-ins (added only for dates the app has none for) and write finished workouts as exercise sessions, keyed by workout id so a resend updates instead of duplicating. Off until switched on in Settings; `HealthPrivacyActivity` is the rationale screen Android requires. minSdk goes to 26 for the client library.
+- Home-screen widget (`widget/TodayWidget.java`): today's session or the next one, the focus, streak and meals. The app writes a week of lines (`lib/widget.js`), so it stays right after midnight.
+- Modules: done in phase 3 (Meals, Water, Weight).
 
 **Done when** a workout can be run without opening the app between sets.
 

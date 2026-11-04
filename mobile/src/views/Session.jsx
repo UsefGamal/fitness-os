@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router';
 import Icon from '../components/Icon.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
+import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
 
 const T = content.training;
@@ -74,6 +75,7 @@ export default function Session() {
       date, type, label, durationMin: mins, sessionRpe: rpeN, result: type === 'padel' ? result : null, notes: notes.trim() || null,
       checklist: items.map((name) => ({ item_name: name, completed: ticked.has(name) })),
     }));
+    syncHealth().catch(() => {});
     navigate('/history');
   };
 

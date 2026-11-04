@@ -93,7 +93,7 @@ The plan, in order. Each phase ends with something usable on the phone, so don't
 | 1 | Done, then replaced: an APK that wrapped the live site | (`android-shell/`, removed in phase 3) |
 | 2 | Dropped: no server to talk to | — |
 | 3 | Standalone app bundled in the APK: React + Vite + react-router + Zustand, local store + file mirror, local notifications (30 min before the 07:00 session, meal times), import of the old site's export, backup export, shopping list, home/recovery/cardio/padel sessions, quests, profile and macro targets, public-domain exercise photos (free-exercise-db) | `mobile/` (see `mobile/README.md`), `scripts/build-apk.sh` |
-| 4 | Rest timer in the notification shade, Health Connect (read weigh-ins, write workouts), home-screen widget, modules to hide unused areas | `mobile/android/app/src/main/java/...` plugins |
+| 4 | Rest timer in the notification shade, Health Connect (read weigh-ins, write workouts), home-screen widget (modules were done in phase 3) | `mobile/android/app/src/main/java/com/usefgamal/fitnessos/{timer,widget,health}/`, bridged by `mobile/src/store/native.js` |
 
 Things that stay in scope throughout: the RECOMP schedule, the high-protein fat-loss meal plan and macro targets, the progress tracker, workout/rest timers, and the weekly shopping list. Nutrition is this app's edge (openGym has none); don't trade it away for gym-tracker features.
 
