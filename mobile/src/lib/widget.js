@@ -2,6 +2,7 @@
 // week, so it stays right after midnight without the app running.
 import { addDays, longWeekday } from './dates.js';
 import * as D from './data.js';
+import { timesOf } from './times.js';
 import { programDayFor, sessionKeyOn } from './schedule.js';
 
 export const WIDGET_DAYS = 7;
@@ -10,6 +11,7 @@ export function widgetDays(data, content, today) {
   const T = content.training;
   const slots = content.nutrition.meal_slots.length;
   const moves = data.session_moves || [];
+  const time = timesOf(data, content).session_time;
   const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T, moves) === 'rest');
   const out = [];
   for (let i = 0; i < WIDGET_DAYS; i += 1) {
@@ -22,10 +24,10 @@ export function widgetDays(data, content, today) {
     if (D.moduleOn(data, 'meals')) bits.push(`Meals ${i === 0 ? meals : 0}/${slots}`);
     out.push(
       next.isRestToday
-        ? { date, kicker: 'Rest day', title: `Next: ${next.label}`, subtitle: `${longWeekday(next.onDate)} at ${T.session_time}`, footer: bits.join(' · ') }
+        ? { date, kicker: 'Rest day', title: `Next: ${next.label}`, subtitle: `${longWeekday(next.onDate)} at ${time}`, footer: bits.join(' · ') }
         : {
             date,
-            kicker: done?.finished_at && i === 0 ? 'Done today' : `Today at ${T.session_time}`,
+            kicker: done?.finished_at && i === 0 ? 'Done today' : `Today at ${time}`,
             title: next.label,
             subtitle: next.focus,
             footer: bits.join(' · '),

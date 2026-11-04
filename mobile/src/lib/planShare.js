@@ -6,14 +6,14 @@ import { longWeekday } from './dates.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /** `days`: [{ date, day: effective plan day | null, evening: option | null }]. */
-export function weekText(days, { title = 'My training week', time = '07:00' } = {}) {
+export function weekText(days, { title = 'My training week', time = '07:00', eveningTime = '20:00' } = {}) {
   const lines = [title, ''];
   for (const { date, day, evening } of days) {
     if (!day) {
-      lines.push(`${longWeekday(date)}: rest${evening ? ` · ${evening.label} at 20:00` : ''}`, '');
+      lines.push(`${longWeekday(date)}: rest${evening ? ` · ${evening.label} at ${eveningTime}` : ''}`, '');
       continue;
     }
-    lines.push(`${longWeekday(date)}: ${day.label} at ${time}${evening ? ` · ${evening.label} at 20:00` : ''}`);
+    lines.push(`${longWeekday(date)}: ${day.label} at ${time}${evening ? ` · ${evening.label} at ${eveningTime}` : ''}`);
     for (const ex of day.exercises) lines.push(`  • ${ex.name}: ${ex.sets} × ${ex.reps}${ex.rest ? `, rest ${ex.rest}` : ''}${ex.rir ? `, RIR ${ex.rir}` : ''}`);
     lines.push('');
   }
@@ -22,9 +22,9 @@ export function weekText(days, { title = 'My training week', time = '07:00' } = 
 
 /** A printable page. `photoOf(name)` gives an image URL (a data: URL in the
  * saved file) or null. */
-export function weekHtml(days, { title = 'My training week', time = '07:00', tempo = '', photoOf = () => null } = {}) {
+export function weekHtml(days, { title = 'My training week', time = '07:00', eveningTime = '20:00', tempo = '', photoOf = () => null } = {}) {
   const blocks = days.map(({ date, day, evening }) => {
-    const night = evening ? `<span class="night">${esc(evening.label)} at 20:00</span>` : '';
+    const night = evening ? `<span class="night">${esc(evening.label)} at ${esc(eveningTime)}</span>` : '';
     if (!day) return `<section class="rest"><h2>${esc(longWeekday(date))} <small>Rest</small>${night}</h2></section>`;
     const rows = day.exercises.map((ex) => {
       const img = photoOf(ex.name);

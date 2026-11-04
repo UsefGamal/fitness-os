@@ -7,9 +7,10 @@ import WeekStrip from '../components/WeekStrip.jsx';
 import { entryFor, groupOf, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { longWeekday, todayISO, weekdayName } from '../lib/dates.js';
-import { EVENING_OPTIONS, EVENING_TIME, eveningOn, setEvening } from '../lib/evening.js';
+import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
 import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
+import { timesOf } from '../lib/times.js';
 import * as P from '../lib/planEdit.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
@@ -113,6 +114,7 @@ export default function Plan() {
   const { data, update } = useData();
   const today = todayISO();
   const T = content.training;
+  const times = timesOf(data, content);
   const week = weekView(today, T, data.session_moves || []);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
   const [picked, setPicked] = useState(firstTraining);
@@ -132,7 +134,7 @@ export default function Plan() {
   const night = eveningOn(data, picked.date);
   const weekDays = () => week.map((w) => ({ date: w.date, day: w.key === 'rest' ? null : P.effectiveDay(w.key, T, data), evening: eveningOn(data, w.date) }));
   const shareWeek = async () => {
-    const r = await shareText('My training week', weekText(weekDays(), { time: T.session_time }));
+    const r = await shareText('My training week', weekText(weekDays(), { time: times.session_time, eveningTime: times.evening_time }));
     setShareMsg(r === 'copied' ? 'Copied the week; paste it into a message.' : '');
   };
   const printWeek = async () => {
@@ -146,7 +148,7 @@ export default function Plan() {
         if (src) photos.set(name, await dataUrlOf(src));
       }
     }
-    const html = weekHtml(days, { time: T.session_time, tempo: T.trainer_plan.tempo, photoOf: (n) => photos.get(n) || null });
+    const html = weekHtml(days, { time: times.session_time, eveningTime: times.evening_time, tempo: T.trainer_plan.tempo, photoOf: (n) => photos.get(n) || null });
     try {
       const uri = await saveExport(`training-week-${week[0].date}.html`, html, 'text/html');
       if (uri) await shareFile('My training week', uri);
@@ -159,7 +161,7 @@ export default function Plan() {
   return (
     <div className="page">
       <h1 className="page-title">Plan</h1>
-      <p className="page-sub">Your trainer's Upper / Lower / Push / Pull / Leg week, {T.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
+      <p className="page-sub">Your trainer's Upper / Lower / Push / Pull / Leg week, {times.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
       <section className="card"><WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} /></section>
 
       {day ? (
@@ -209,9 +211,9 @@ export default function Plan() {
       )}
 
       <label className="field" style={{ marginTop: 12 }}>
-        <span>{longWeekday(picked.date)} at {EVENING_TIME} (every week)</span>
+        <span>{longWeekday(picked.date)} at {times.evening_time} (every week)</span>
         <select value={night?.key || ''} onChange={(e) => update((d) => setEvening(d, weekdayName(picked.date), e.target.value || null))}>
-          <option value="">Nothing at {EVENING_TIME}</option>
+          <option value="">Nothing at {times.evening_time}</option>
           {EVENING_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
         </select>
       </label>

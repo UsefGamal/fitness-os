@@ -6,7 +6,8 @@ import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups } from '../lib/insights.js';
-import { EVENING_TIME, eveningDone, eveningOn } from '../lib/evening.js';
+import { timesOf } from '../lib/times.js';
+import { eveningDone, eveningOn } from '../lib/evening.js';
 import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, totalPoints } from '../lib/quests.js';
@@ -21,6 +22,7 @@ export default function Today() {
   const navigate = useNavigate();
   const today = todayISO();
   const T = content.training;
+  const times = timesOf(data, content);
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
@@ -52,13 +54,13 @@ export default function Today() {
           <>
             <span className="chip">Rest day</span>
             <h2 style={{ marginTop: 10 }}>Next: {next.label}</h2>
-            <p className="muted" style={{ margin: 0 }}>{longWeekday(next.onDate)} at {T.session_time} · {next.focus}</p>
+            <p className="muted" style={{ margin: 0 }}>{longWeekday(next.onDate)} at {times.session_time} · {next.focus}</p>
           </>
         ) : (
           <>
             <div className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
               <div className="grow">
-                <span className="chip accent">Today at {T.session_time}</span>
+                <span className="chip accent">Today at {times.session_time}</span>
                 <h2 style={{ marginTop: 10 }}>{next.label}</h2>
                 <p className="muted" style={{ margin: '0 0 14px' }}>
                   {next.focus}{next.cardio_after ? `, then ${next.cardio_after.minutes} min cycling` : ''}
@@ -80,7 +82,7 @@ export default function Today() {
       {tonight ? (
         <section className="card row" style={{ gap: 12 }}>
           <div className="grow">
-            <span className="chip">Tonight at {EVENING_TIME}</span>
+            <span className="chip">Tonight at {times.evening_time}</span>
             <div style={{ fontWeight: 600, marginTop: 6 }}>{tonight.label}</div>
             <div className="muted small">{tonight.note}</div>
           </div>

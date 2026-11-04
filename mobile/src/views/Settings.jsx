@@ -11,6 +11,8 @@ import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
+import { slotLabel } from '../lib/meals.js';
+import { isTime, leadText, REMIND_CHOICES, setTimes, timesOf } from '../lib/times.js';
 import { Health, isNative } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
@@ -136,7 +138,8 @@ export default function Settings() {
     }
     update((d) => ({ ...d, settings: { ...d.settings, notifications: on } }));
     await scheduleReminders(content, on);
-    setMsg(on ? `Reminders on: 30 min before each ${content.training.session_time} session and at meal times.` : 'Reminders off.');
+    const t = timesOf(data, content);
+    setMsg(on ? `Reminders on: ${leadText(t.remind_before)} each ${t.session_time} session and at meal times.` : 'Reminders off.');
   };
 
   return (
@@ -201,14 +204,7 @@ export default function Settings() {
 
       <TrainingSettings data={data} update={update} />
 
-      <div className="section-label">Reminders</div>
-      <div className="list">
-        <button type="button" className="list-row" onClick={toggleReminders} aria-pressed={data.settings.notifications}>
-          <Icon name="bell" />
-          <div className="grow"><div>Workout and meal reminders</div><div className="meta">30 min before {content.training.session_time} on training days, and at each meal time</div></div>
-          <span className={`check${data.settings.notifications ? ' on' : ''}`}>{data.settings.notifications ? <Icon name="check" /> : null}</span>
-        </button>
-      </div>
+      <TimesSettings data={data} update={update} toggleReminders={toggleReminders} />
 
       <div className="section-label">Health Connect</div>
       <div className="list">
@@ -343,6 +339,51 @@ function TrainingSettings({ data, update }) {
         ) : null}
         <Toggle on={t.vibrate} onClick={() => set({ vibrate: !t.vibrate })} title="Vibrate" note="Buzz at rest done, new records and saved workouts" />
       </div>
+    </>
+  );
+}
+
+function TimeRow({ label, value, onChange, note }) {
+  return (
+    <label className="list-row">
+      <div className="grow"><div>{label}</div>{note ? <div className="meta">{note}</div> : null}</div>
+      <input type="time" step="300" style={{ width: 'auto', minWidth: 112 }} value={value} onChange={(e) => isTime(e.target.value) && onChange(e.target.value)} />
+    </label>
+  );
+}
+
+/** Settings → Times and reminders: when you train and eat, and how early
+ * the reminders come. Reminders reschedule themselves after a change. */
+function TimesSettings({ data, update, toggleReminders }) {
+  const t = timesOf(data, content);
+  const set = (changes) => update((d) => setTimes(d, changes));
+  const on = Boolean(data.settings.notifications);
+  return (
+    <>
+      <div className="section-label">Training times</div>
+      <div className="list">
+        <TimeRow label="Morning session" note="Every training day in the plan" value={t.session_time} onChange={(v) => set({ session_time: v })} />
+        <TimeRow label="Evening session" note="The optional slot you fill on Plan" value={t.evening_time} onChange={(v) => set({ evening_time: v })} />
+      </div>
+
+      <div className="section-label">Reminders</div>
+      <div className="list">
+        <Toggle icon="bell" on={on} onClick={toggleReminders} title="Reminders" note={on ? 'On for the next two weeks, kept up to date' : 'Off: nothing is scheduled'} />
+        {on ? (
+          <>
+            <Choice label="Before a session" value={t.remind_before} onChange={(v) => set({ remind_before: Number(v) })} options={REMIND_CHOICES.map((m) => [m, m ? `${m} min` : 'At start time'])} />
+            <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />
+            <Toggle on={t.remind_evening !== false} onClick={() => set({ remind_evening: t.remind_evening === false })} title="Evening session" note={`${leadText(t.remind_before)} ${t.evening_time} when one is planned`} />
+            <Toggle on={t.remind_meals !== false} onClick={() => set({ remind_meals: t.remind_meals === false })} title="Meals" note="At each meal time below" />
+          </>
+        ) : null}
+      </div>
+
+      <div className="section-label">Meal times</div>
+      <div className="list">
+        {Object.entries(t.meal_times).map(([slot, v]) => <TimeRow key={slot} label={slotLabel(slot)} value={v} onChange={(x) => set({ meal_times: { [slot]: x } })} />)}
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Times are used for reminders, the Today and Plan screens, the widget and Health Connect.</p>
     </>
   );
 }
