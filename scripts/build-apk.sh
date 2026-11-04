@@ -6,8 +6,9 @@
 #   scripts/build-apk.sh            debug APK (debug-signed, for sideloading)
 #   scripts/build-apk.sh release    release APK, signed with your keystore
 #
-# Needs Node 22+, Python 3.12 (to export content/), JDK 21 and the Android
-# SDK (ANDROID_HOME or ANDROID_SDK_ROOT).
+# Needs Node 22+, Python 3.12 (to export content/), git (to fetch the
+# public-domain exercise photos; Pillow, if installed, shrinks them to WebP),
+# JDK 21 and the Android SDK (ANDROID_HOME or ANDROID_SDK_ROOT).
 #
 # Release signing reads these environment variables; nothing is stored in
 # the repo:
@@ -18,7 +19,7 @@
 #
 # Make a keystore once and back it up somewhere safe. If it is lost, the
 # phone can't install updates over the old app; you'd have to uninstall
-# first, which wipes the app's login:
+# first, which deletes the app's data on the phone (export a backup first):
 #   keytool -genkeypair -v -keystore fitness-os.jks -alias fitnessos \
 #     -keyalg RSA -keysize 2048 -validity 10000
 #

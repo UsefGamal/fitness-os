@@ -83,3 +83,23 @@ test('exercise history, custom exercises, editing a workout and modules', () => 
   d = { ...d, settings: { ...d.settings, modules: { ...d.settings.modules, meals: false } } };
   assert.equal(D.moduleOn(d, 'meals'), false);
 });
+
+test('logSession records a finished non-gym session with its checklist', () => {
+  const d = D.logSession(D.emptyData(content), {
+    date: '2026-11-04', type: 'recovery', label: 'Recovery', durationMin: 30,
+    checklist: [{ item_name: 'Walk', completed: true }, { item_name: 'Stretch', completed: false }],
+  });
+  const w = d.workouts[0];
+  assert.equal(w.workout_type, 'recovery');
+  assert.ok(w.finished_at);
+  assert.deepEqual(w.checklist_items.map((c) => [c.item_name, c.completed, c.workout_id]), [['Walk', true, w.id], ['Stretch', false, w.id]]);
+  assert.equal(D.workoutOn(d, '2026-11-04'), null); // still no gym workout that day
+});
+
+test('shopping ticks belong to one week and reset the next', () => {
+  let d = D.toggleShopping(fresh(), '2026-11-01', 'boiled_egg|unit');
+  assert.ok(D.shoppingChecked(d, '2026-11-01').has('boiled_egg|unit'));
+  assert.equal(D.shoppingChecked(d, '2026-11-08').size, 0);
+  d = D.toggleShopping(d, '2026-11-01', 'boiled_egg|unit');
+  assert.equal(D.shoppingChecked(d, '2026-11-01').size, 0);
+});

@@ -19,6 +19,7 @@ export function emptyData(content) {
     meal_logs: [],
     bonus_logs: [],
     plan_overrides: {},
+    shopping: { week: null, checked: [] },
     settings: defaultSettings(),
   };
 }
@@ -136,6 +137,32 @@ export function deleteWorkout(data, workoutId) {
   return { ...data, workouts: data.workouts.filter((w) => w.id !== workoutId) };
 }
 
+/** Session types other than gym that are logged in one go (old site's Home,
+ * Recovery, Cardio and Padel pages). */
+export const SESSION_TYPES = ['home', 'recovery', 'cardio', 'padel'];
+
+export function logSession(data, { date, type, label, durationMin = null, sessionRpe = null, result = null, notes = null, checklist = [], now = Date.now() }) {
+  const id = nextId(data.workouts);
+  let itemId = nextId(data.workouts.flatMap((w) => w.checklist_items || []));
+  const workout = {
+    id,
+    log_date: date,
+    workout_type: type,
+    duration_min: durationMin,
+    notes: notes ? `${label} · ${notes}` : label,
+    session_rpe: sessionRpe,
+    is_deload: false,
+    pain_note: null,
+    result,
+    session_key: null,
+    started_at: null,
+    finished_at: now,
+    sets: [],
+    checklist_items: checklist.map((c) => ({ id: itemId++, workout_id: id, item_name: c.item_name, completed: !!c.completed, reps_achieved: c.reps_achieved ?? null })),
+  };
+  return { ...data, workouts: [...data.workouts, workout] };
+}
+
 export function workoutOn(data, date, type = 'gym') {
   return data.workouts.find((w) => w.log_date === date && w.workout_type === type) || null;
 }
@@ -200,6 +227,19 @@ export function addCustomExercise(data, { name, muscle_group, equipment = null }
   const clean = name.trim();
   if (!clean || exerciseByName(data, clean)) return data;
   return { ...data, exercises: [...data.exercises, { id: nextId(data.exercises), name: clean, muscle_group, equipment, custom: true }] };
+}
+
+// ── Shopping list ticks (reset each Sunday-start week) ───────────────
+
+export function shoppingChecked(data, week) {
+  return new Set(data.shopping?.week === week ? data.shopping.checked : []);
+}
+
+export function toggleShopping(data, week, key) {
+  const checked = shoppingChecked(data, week);
+  if (checked.has(key)) checked.delete(key);
+  else checked.add(key);
+  return { ...data, shopping: { week, checked: [...checked] } };
 }
 
 // ── Meals, water, body ───────────────────────────────────────────────

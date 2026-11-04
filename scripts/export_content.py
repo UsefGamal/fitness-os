@@ -18,6 +18,7 @@ from content import (  # noqa: E402
     bonus_tasks,
     cardio_program,
     eating_out_guide,
+    exercise_photos,
     food_items,
     gym_exercises,
     gym_program,
@@ -45,6 +46,17 @@ def _plain(value):
     return value
 
 
+def _day_with_items(n: int) -> dict:
+    """get_day(n) plus each option's raw food keys, which the phone app's
+    shopping list needs (get_day only carries display names)."""
+    day = meal_plan.get_day(n)
+    raw = meal_plan.MEAL_PLAN_14_DAY[(n - 1) % MEAL_CYCLE_DAYS]["meals"]
+    for meal in day["meals"]:
+        for option in meal["options"]:
+            option["items"] = list(raw[meal["slot"]][option["key"]]["items"])
+    return day
+
+
 def build_content() -> dict:
     return _plain(
         {
@@ -61,6 +73,7 @@ def build_content() -> dict:
                 "recovery_checklist": recovery_program.RECOVERY_CHECKLIST,
                 "cardio_session": cardio_program.CARDIO_SESSION,
                 "cardio_alternatives": cardio_program.ALTERNATIVES,
+                "exercise_photos": exercise_photos.EXERCISE_PHOTOS,
             },
             "nutrition": {
                 "plan_start_date": meal_plan.PLAN_START_DATE,
@@ -70,7 +83,7 @@ def build_content() -> dict:
                 "macro_targets": meal_plan.MACRO_TARGETS,
                 "drink_options": meal_plan.DRINK_OPTIONS,
                 "drinks": food_items.DRINKS,
-                "days": [meal_plan.get_day(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
+                "days": [_day_with_items(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
                 "foods": food_items.FOODS,
                 "food_categories": food_items.FOOD_CATEGORIES,
                 "category_order": food_items.CATEGORY_ORDER,

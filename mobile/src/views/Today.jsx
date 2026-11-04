@@ -5,8 +5,10 @@ import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { mealDayFor } from '../lib/meals.js';
+import { doneKeys, totalPoints } from '../lib/quests.js';
 import { programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
 import { content, useData } from '../store/useData.js';
+import { SESSIONS } from './Session.jsx';
 
 const WATER_GOAL = 3000;
 
@@ -24,6 +26,9 @@ export default function Today() {
   const weight = D.latestWeight(data);
   const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T) === 'rest');
   const mealDay = mealDayFor(today, content.nutrition);
+  const dailyQuests = content.quests.bonus_tasks.filter((t) => t.frequency === 'daily');
+  const questsDone = dailyQuests.filter((t) => doneKeys(data, today, content.quests).has(t.key)).length;
+  const otherToday = data.workouts.filter((w) => w.log_date === today && w.workout_type !== 'gym');
 
   return (
     <div className="page">
@@ -67,6 +72,28 @@ export default function Today() {
         </div>
         <WeekStrip week={week} doneDates={done} />
       </section>
+
+      <div className="section-label">Other sessions</div>
+      <div className="list">
+        {Object.entries(SESSIONS).map(([key, s]) => {
+          const logged = otherToday.find((w) => w.workout_type === key);
+          return (
+            <Link key={key} to={logged ? `/history/${logged.id}` : `/session/${key}`} className="list-row">
+              <div className="grow"><div>{s.label}</div><div className="meta">{logged ? `Logged today${logged.duration_min ? ` · ${logged.duration_min} min` : ''}` : s.note}</div></div>
+              {logged ? <span className="chip accent"><Icon name="check" className="icon" /></span> : null}
+              <Icon name="chev" className="icon chev" />
+            </Link>
+          );
+        })}
+      </div>
+
+      <Link to="/quests" className="card" style={{ display: 'block', color: 'inherit' }}>
+        <div className="row between">
+          <strong><Icon name="star" className="icon" /> Quests</strong>
+          <span className="muted small">{questsDone}/{dailyQuests.length} habits · {totalPoints(data)} pts <Icon name="chev" className="icon" /></span>
+        </div>
+        <div className="progress" style={{ marginTop: 10 }}><span style={{ width: `${(questsDone / dailyQuests.length) * 100}%` }} /></div>
+      </Link>
 
       {D.moduleOn(data, 'meals') ? (
       <Link to="/meals" className="card" style={{ display: 'block', color: 'inherit' }}>

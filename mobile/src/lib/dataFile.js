@@ -40,6 +40,7 @@ export function parseDataFile(text, content) {
     meal_logs: raw.meal_logs,
     bonus_logs: raw.bonus_logs,
     plan_overrides: raw.plan_overrides && typeof raw.plan_overrides === 'object' ? raw.plan_overrides : {},
+    shopping: raw.shopping && Array.isArray(raw.shopping.checked) ? raw.shopping : { week: null, checked: [] },
     settings: { ...defaultSettings(), ...(raw.settings || {}), modules: { ...defaultSettings().modules, ...(raw.settings?.modules || {}) } },
   };
 }
