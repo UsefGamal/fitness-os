@@ -3,6 +3,7 @@ import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-rou
 
 import Fanfare from './components/Fanfare.jsx';
 import RestTimer from './components/RestTimer.jsx';
+import { useTimer } from './store/useTimer.js';
 import TabBar from './components/TabBar.jsx';
 import { scheduleReminders } from './store/notify.js';
 import { startPhoneSync } from './store/phoneSync.js';
@@ -33,9 +34,10 @@ const TABS = new Set(['/', '/plan', '/workout', '/meals', '/stats']);
 
 function Shell() {
   const { pathname } = useLocation();
+  const timing = useTimer((t) => Boolean(t.endsAt));
   return (
     <>
-      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : 'push-in'}`}>
+      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : 'push-in'}${timing ? ' with-timer' : ''}`}>
         <Suspense fallback={<div className="page" />}>
           <Outlet />
         </Suspense>

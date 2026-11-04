@@ -110,22 +110,38 @@ label.field > span { display: block; color: var(--muted); font-size: 14px; margi
 .ex-note { color: var(--warn); font-size: 14px; margin-top: 6px; }
 .pair { color: var(--accent); font-weight: 700; margin-right: 6px; }
 
-.timer { position: fixed; left: 12px; right: 12px; bottom: calc(var(--tabbar) + var(--sab) + 10px); z-index: 30; max-width: 536px; margin: 0 auto;
-  background: rgba(44, 44, 46, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 18px; padding: 10px 12px 10px 18px; display: flex; align-items: center; gap: 10px; }
-.timer .t { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.timer.done .t { color: var(--accent); }
+.timer { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30; max-width: 540px; margin: 0 auto;
+  background: rgba(44, 44, 46, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+.timer .t { font-size: 44px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.3ch; }
+.timer.done .t, .timer.done .timer-what { color: var(--accent); }
+.timer-open { display: flex; align-items: center; gap: 14px; width: 100%; min-width: 0; background: none; border: 0; padding: 0 4px; color: inherit; font: inherit; text-align: left; min-height: 48px; }
 .timer-open .grow { min-width: 0; }
+.timer-what { font-size: 17px; font-weight: 600; }
 .timer-open .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.timer-open { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; }
-.timer .btn.small { min-height: 40px; padding: 0 10px; width: auto; }
-.timer-full { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+.timer-expand { transform: rotate(-90deg); color: var(--muted); }
+.timer-bar { height: 4px; border-radius: 2px; background: var(--surface2); overflow: hidden; }
+.timer-bar i { display: block; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+.timer-ctl { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; width: 100%; }
+.tbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; border: 0; border-radius: 14px; background: var(--surface2); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; }
+.tbtn b { font-size: 19px; line-height: 1.1; }
+.tbtn .icon { width: 22px; height: 22px; }
+.tbtn.go { background: var(--accent); color: var(--on-accent); }
+.tbtn:active { transform: scale(0.96); }
+.timer-full { position: fixed; inset: 0; z-index: 60; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
   padding: calc(var(--sat) + 16px) 16px calc(var(--sab) + 24px); text-align: center; }
-.timer-full .ring { width: min(78vw, 320px); height: auto; }
-.timer-full .ring-t { fill: var(--text); font-size: 64px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.timer-full .btn.small { min-height: 52px; min-width: 64px; width: auto; font-size: 18px; }
-.timer-full .icon-btn { width: 52px; height: 52px; }
+.timer-full .ring { width: min(80vw, 340px); height: auto; }
+.timer-full .ring-t { fill: var(--text); font-size: 68px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.timer-full .timer-ctl { max-width: 420px; }
+.timer-full .tbtn { min-height: 64px; font-size: 14px; }
+.timer-full .tbtn b { font-size: 22px; }
+.timer-presets { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 420px; }
+.tpre { min-height: 44px; min-width: 64px; padding: 0 12px; border: 0; border-radius: 22px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tpre.on { background: var(--accent-dim); color: var(--accent); }
 .timer-close { position: absolute; top: calc(var(--sat) + 12px); left: 12px; transform: rotate(90deg); }
 .big-next { font-size: 20px; font-weight: 600; }
+.with-timer .page { padding-bottom: calc(var(--tabbar) + var(--sab) + 190px); }
+.rest-now { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.rest-now .btn.secondary { width: auto; padding: 0 16px; }
 .toast .undo { margin-left: 12px; background: none; border: 0; color: var(--accent); font: inherit; font-weight: 700; padding: 6px; }
 .target-bar { height: 4px; border-radius: 2px; background: var(--surface2); margin: 0 4px 12px; overflow: hidden; }
 .target-bar > span { display: block; height: 100%; background: var(--accent); }

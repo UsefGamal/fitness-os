@@ -54,6 +54,9 @@ public class RestTimerService extends Service {
     static volatile long endsAt = 0;
     static volatile String label = "";
     static volatile boolean sound = true;
+    /** The app is on screen: play the "rest done" chime directly instead of relying on the notification sound. */
+    static volatile boolean foreground = false;
+    private static final String DONE_NOTES = "[[660,0,0.35],[990,0.18,0.5]]";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable finish = this::finish;
@@ -132,7 +135,15 @@ public class RestTimerService extends Service {
     }
 
     private void finish() {
-        Notification done = new NotificationCompat.Builder(this, sound ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
+        boolean chime = sound && foreground;
+        if (chime) {
+            try {
+                TonePlayer.play(new org.json.JSONArray(DONE_NOTES), 0.9, false);
+            } catch (org.json.JSONException ignored) {
+                // Fixed notes: can't happen.
+            }
+        }
+        Notification done = new NotificationCompat.Builder(this, sound && !chime ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
             .setContentTitle("Rest done")
