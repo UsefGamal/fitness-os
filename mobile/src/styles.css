@@ -166,3 +166,13 @@ details.more > summary::-webkit-details-marker { display: none; }
 .thumb.blank { background: var(--surface2); }
 .steps { padding: 14px 16px 14px 34px; margin: 0 0 12px; }
 .steps li + li { margin-top: 8px; }
+
+/* Page changes: a quick fade between tabs, a slide for detail pages. */
+@keyframes tab-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes push-in { from { opacity: 0.4; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+.route.tab-in { animation: tab-in 160ms ease-out; }
+.route.push-in { animation: push-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .route.tab-in, .route.push-in { animation: none; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}

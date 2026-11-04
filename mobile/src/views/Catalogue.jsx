@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { capitalize, filterCatalogue } from '../lib/catalogue.js';
+import { capitalize, filterCatalogue, thumbOf } from '../lib/catalogue.js';
 import { useCatalogue } from '../store/catalogue.js';
 
 const PAGE = 40;
@@ -26,7 +26,7 @@ export default function Catalogue({ q, muscle }) {
       <div className="list">
         {list.slice(0, limit).map((e) => (
           <Link key={e.id} to={`/catalogue/${encodeURIComponent(e.id)}`} className="list-row">
-            {e.photos[0] ? <img className="thumb" src={`exercise-db/${e.photos[0]}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />}
+            {thumbOf(e) ? <img className="thumb" src={`exercise-db/${thumbOf(e)}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />}
             <div className="grow"><div>{e.name}</div><div className="meta">{capitalize(e.primary.join(', '))}{e.equipment ? ` · ${e.equipment}` : ''}</div></div>
             <Icon name="chev" className="icon chev" />
           </Link>

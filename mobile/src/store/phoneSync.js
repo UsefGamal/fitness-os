@@ -6,7 +6,7 @@ import { todayISO } from '../lib/dates.js';
 import { healthWorkouts, mergeWeighIns } from '../lib/health.js';
 import { widgetDays } from '../lib/widget.js';
 import { Health, isNative, Widget } from './native.js';
-import { content, useData } from './useData.js';
+import { content, flushSave, useData } from './useData.js';
 import { useTimer } from './useTimer.js';
 
 let widgetTimer = null;
@@ -53,7 +53,10 @@ export function startPhoneSync() {
     if (s.data !== prev.data) pushWidget();
   });
   App.addListener('appStateChange', ({ isActive }) => {
-    if (!isActive) return;
+    if (!isActive) {
+      flushSave(); // the app may be killed in the background: write now
+      return;
+    }
     pushWidget();
     useTimer.getState().sync();
     syncHealth().catch(() => {});

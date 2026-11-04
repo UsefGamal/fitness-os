@@ -29,6 +29,7 @@ from content.exercise_photos import EXERCISE_DB_COMMIT, EXERCISE_DB_REPO, EXERCI
 
 WEBP_QUALITY = 70
 MAX_WIDTH = 850  # the dataset's photos are 750-850 px wide; never upscale
+THUMB_WIDTH = 112  # list rows show photos at 56 px; 2x for sharp screens
 
 try:
     from PIL import Image
@@ -45,6 +46,21 @@ def _clone(dest: Path) -> None:
     git("remote", "add", "origin", EXERCISE_DB_REPO)
     git("fetch", "-q", "--depth", "1", "origin", EXERCISE_DB_COMMIT)
     git("checkout", "-q", "FETCH_HEAD")
+
+
+def _write_thumb(src: Path, dest_stem: Path) -> str | None:
+    """A small WebP for list rows, so lists don't decode full photos.
+    Without Pillow there is no thumbnail and rows use the photo itself."""
+    if Image is None:
+        return None
+    dest_stem.parent.mkdir(parents=True, exist_ok=True)
+    out = dest_stem.with_suffix(".webp")
+    with Image.open(src) as im:
+        im = im.convert("RGB")
+        if im.width > THUMB_WIDTH:
+            im = im.resize((THUMB_WIDTH, round(im.height * THUMB_WIDTH / im.width)))
+        im.save(out, "WEBP", quality=WEBP_QUALITY, method=6)
+    return out.name
 
 
 def _write_photo(src: Path, dest_stem: Path) -> str:
@@ -72,6 +88,7 @@ def build(source: Path, out: Path) -> dict:
     entries = []
     for e in exercises:
         photos = []
+        thumb = None
         for i, rel in enumerate(e.get("images", [])):
             src = source / "exercises" / rel
             if not src.is_file():
@@ -79,6 +96,9 @@ def build(source: Path, out: Path) -> dict:
                 continue
             name = _write_photo(src, out / "img" / e["id"] / str(i))
             photos.append(f"img/{e['id']}/{name}")
+            if thumb is None:
+                t = _write_thumb(src, out / "img" / e["id"] / "thumb")
+                thumb = f"img/{e['id']}/{t}" if t else None
         entries.append(
             {
                 "id": e["id"],
@@ -92,6 +112,7 @@ def build(source: Path, out: Path) -> dict:
                 "secondary": e.get("secondaryMuscles", []),
                 "instructions": e.get("instructions", []),
                 "photos": photos,
+                "thumb": thumb,
             }
         )
     entries.sort(key=lambda x: x["name"].lower())

@@ -1,9 +1,11 @@
+import { tap } from '../store/feedback.js';
 import Icon from './Icon.jsx';
 
 /** Big +/- buttons so a set can be logged one-handed without the keyboard. */
 export default function Stepper({ value, onChange, step = 1, min = 0, max = 1000, label, decimals = 0 }) {
   const set = (v) => {
     const n = Math.min(max, Math.max(min, Number.isFinite(v) ? v : 0));
+    if (n !== value) tap();
     onChange(Number(n.toFixed(decimals)));
   };
   return (

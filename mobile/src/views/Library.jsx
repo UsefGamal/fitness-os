@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
-import { entryFor } from '../lib/catalogue.js';
+import { entryFor, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
@@ -15,13 +15,14 @@ export default function Library() {
   const { data, update } = useData();
   const [q, setQ] = useState('');
   const [muscle, setMuscle] = useState(null);
+  const query = useDeferredValue(q); // typing stays instant while the list catches up
   const [tab, setTab] = useState('mine');
   const { catalogue } = useCatalogue();
   const [newName, setNewName] = useState('');
   const [newMuscle, setNewMuscle] = useState('Chest');
   const bests = useMemo(() => D.personalBests(data), [data]);
   const list = data.exercises
-    .filter((e) => (!muscle || e.muscle_group === muscle) && e.name.toLowerCase().includes(q.trim().toLowerCase()))
+    .filter((e) => (!muscle || e.muscle_group === muscle) && e.name.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const add = (e) => {
@@ -47,7 +48,7 @@ export default function Library() {
           ))}
         </div>
       </section>
-      {tab === 'all' ? <Catalogue q={q} muscle={muscle} /> : (
+      {tab === 'all' ? <Catalogue q={query} muscle={muscle} /> : (
       <>
       <div className="section-label">{list.length} exercises</div>
       <div className="list">
@@ -55,7 +56,7 @@ export default function Library() {
           const b = bests.get(e.id);
           return (
             <Link key={e.id} to={`/library/${e.id}`} className="list-row">
-              {catalogue ? (() => { const c = entryFor(e.name, content.training, catalogue.byId); return c?.photos[0] ? <img className="thumb" src={`exercise-db/${c.photos[0]}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />; })() : null}
+              {catalogue ? (() => { const c = entryFor(e.name, content.training, catalogue.byId); return thumbOf(c) ? <img className="thumb" src={`exercise-db/${thumbOf(c)}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />; })() : null}
               <div className="grow"><div>{e.name}</div><div className="meta">{e.muscle_group}{e.equipment ? ` · ${e.equipment}` : ''}</div></div>
               {b ? <span className="meta">{b.weight_kg} × {b.reps}</span> : null}
               <Icon name="chev" className="icon chev" />

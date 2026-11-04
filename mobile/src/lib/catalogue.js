@@ -43,6 +43,11 @@ export function entryFor(name, training, byId) {
   return null;
 }
 
+/** The small list-row image: the thumbnail when the build made one. */
+export function thumbOf(entry) {
+  return entry?.thumb || entry?.photos?.[0] || null;
+}
+
 export function capitalize(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }

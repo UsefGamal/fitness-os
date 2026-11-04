@@ -1,10 +1,12 @@
-// Sounds and vibration for workout moments, in one place:
+// Sounds and haptics for workout moments, in one place:
 //   feedback('restStart' | 'countdown' | 'restDone' | 'stop' | 'workoutStart'
 //            | 'workoutSaved' | 'pr' | 'work' | 'rest' | 'test')
 // Sounds are synthesised with the Web Audio API (no audio files to license
 // or bundle) and follow Settings → Training. On the phone the "rest done"
 // sound comes from the notification (RestTimerService), so it plays with the
 // screen off too; the app doesn't play it a second time there.
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+
 import { trainingSettings, VOLUMES } from '../lib/training.js';
 import { isNative } from './native.js';
 import { useData } from './useData.js';
@@ -23,13 +25,39 @@ const SOUNDS = {
   test: [[660, 0, 0.35], [990, 0.18, 0.5]],
 };
 
+// Browser fallback patterns (ms) when there is no native haptics engine.
 const VIBRATION = {
   restDone: [200, 100, 200],
   workoutSaved: [60, 60, 120],
   pr: [80, 60, 80, 60, 160],
   work: [120],
   rest: [60],
+  restStart: [20],
+  tap: [8],
 };
+
+// The phone's haptics engine: short, crisp taps instead of a motor buzz.
+const HAPTIC = {
+  tap: () => Haptics.impact({ style: ImpactStyle.Light }),
+  restStart: () => Haptics.impact({ style: ImpactStyle.Medium }),
+  stop: () => Haptics.impact({ style: ImpactStyle.Light }),
+  work: () => Haptics.impact({ style: ImpactStyle.Heavy }),
+  rest: () => Haptics.impact({ style: ImpactStyle.Light }),
+  workoutStart: () => Haptics.impact({ style: ImpactStyle.Medium }),
+  workoutSaved: () => Haptics.notification({ type: NotificationType.Success }),
+  pr: async () => {
+    await Haptics.impact({ style: ImpactStyle.Heavy });
+    setTimeout(() => Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {}), 140);
+  },
+};
+
+function buzz(event) {
+  if (isNative()) {
+    if (HAPTIC[event]) Promise.resolve(HAPTIC[event]()).catch(() => {});
+  } else if (VIBRATION[event] && globalThis.navigator?.vibrate) {
+    navigator.vibrate(VIBRATION[event]);
+  }
+}
 
 let ctx = null;
 
@@ -73,7 +101,12 @@ export function feedback(event, { force = false } = {}) {
       // No audio on this device: stay silent.
     }
   }
-  if (s.vibrate && VIBRATION[event] && !nativeDone && globalThis.navigator?.vibrate) navigator.vibrate(VIBRATION[event]);
+  if (s.vibrate && !nativeDone) buzz(event);
+}
+
+/** A light tap for steppers and chips (haptics only, no sound). */
+export function tap() {
+  if (trainingSettings(useData.getState().data).vibrate) buzz('tap');
 }
 
 /** Browsers only allow sound after a tap: call this from the first one. */

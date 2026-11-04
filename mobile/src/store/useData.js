@@ -1,6 +1,8 @@
 // The one store. Data lives in localStorage and, on the phone, is also
-// mirrored to a file in the app's private storage after every change, so a
-// cleared WebView cache can't lose it (store/mirror.js). There is no
+// mirrored to a file in the app's private storage, so a cleared WebView
+// cache can't lose it (store/mirror.js). Writes are batched: the screen
+// updates at once, the disk a moment later (at most SAVE_DELAY ms) or
+// straight away when the app goes to the background. There is no
 // server: this is the only copy, so "Export a backup" in Settings matters.
 import { create } from 'zustand';
 
@@ -9,6 +11,31 @@ import * as D from '../lib/data.js';
 import { readMirror, writeMirror } from './mirror.js';
 
 const KEY = 'fitness-os-data-v1';
+const SAVE_DELAY = 400;
+
+let pending = null; // data waiting to be written
+let timer = null;
+
+/** Write anything waiting now (also called when the app is hidden). */
+export function flushSave() {
+  if (timer) clearTimeout(timer);
+  timer = null;
+  if (!pending) return;
+  const data = pending;
+  pending = null;
+  saveLocal(data);
+  writeMirror(data);
+}
+
+function scheduleSave(data) {
+  pending = data;
+  if (!timer) timer = setTimeout(flushSave, SAVE_DELAY);
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
+  window.addEventListener('pagehide', flushSave);
+}
 
 function loadLocal() {
   try {
@@ -47,14 +74,13 @@ export const useData = create((set, get) => ({
   update(fn) {
     const data = fn(get().data);
     set({ data });
-    saveLocal(data);
-    writeMirror(data);
+    scheduleSave(data);
   },
 
   replaceAll(data) {
     set({ data, activeWorkoutId: null });
-    saveLocal(data);
-    writeMirror(data);
+    pending = data;
+    flushSave(); // an import or reset is written at once
   },
 
   setActiveWorkout(id) {
