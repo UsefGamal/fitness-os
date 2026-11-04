@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Build the Phase 1 Android app (android-shell/): a Capacitor WebView that
-# opens the live site at https://fitness-os.onrender.com.
+# Build the Android app (mobile/): the standalone Fitness OS phone app.
+# Everything runs inside the APK and data is saved on the phone; there is
+# no server.
 #
 #   scripts/build-apk.sh            debug APK (debug-signed, for sideloading)
 #   scripts/build-apk.sh release    release APK, signed with your keystore
 #
-# Needs Node 22+, JDK 21 and the Android SDK (ANDROID_HOME or ANDROID_SDK_ROOT).
+# Needs Node 22+, Python 3.12 (to export content/), JDK 21 and the Android
+# SDK (ANDROID_HOME or ANDROID_SDK_ROOT).
 #
 # Release signing reads these environment variables; nothing is stored in
 # the repo:
@@ -26,7 +28,7 @@ set -euo pipefail
 
 mode="${1:-debug}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
-shell="$root/android-shell"
+app="$root/mobile"
 out="$root/dist"
 
 case "$mode" in
@@ -40,9 +42,10 @@ case "$mode" in
   *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac
 
-cd "$shell"
+cd "$app"
 npm ci --no-audit --no-fund
-npx cap sync android
+npm test
+npm run build:mobile
 
 cd android
 chmod +x gradlew

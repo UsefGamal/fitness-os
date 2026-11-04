@@ -1,5 +1,9 @@
 # Android app roadmap
 
+Fitness OS becomes a sideloaded Android app in phases.
+
+> **2026-11-04 change of plan:** Render hosting is being stopped, so the app is standalone. It runs entirely inside the APK with data on the phone. Phase 2 is dropped, phase 1's `android-shell/` is replaced by `mobile/`, and phase 3 has no sync. Logs move over through the old site's Settings > "Download my data" file, which the app imports.
+
 Fitness OS becomes a sideloaded Android app in five phases. Each phase ends with something usable on the phone. The gap analysis behind this plan (fitness-os vs openGym) is in the planning doc shared in the project; the short version of each gap is in the table at the end.
 
 ## Phase 0: fix today's app for the RECOMP week (days)
@@ -23,7 +27,7 @@ Fitness OS becomes a sideloaded Android app in five phases. Each phase ends with
 
 **Done when** the APK installs on the phone and opens the dashboard.
 
-## Phase 2: a JSON API beside the pages
+## Phase 2: a JSON API beside the pages (dropped 2026-11-04: no server)
 
 - `api/v1/` routers for body, workouts and sets, meals, hydration, quests, settings and the plan content, reusing `models.py` and `validation.py`.
 - Bearer-token login for the app: a long-lived token created from Settings, revocable.
@@ -32,18 +36,18 @@ Fitness OS becomes a sideloaded Android app in five phases. Each phase ends with
 
 **Done when** every page's data can be read and written as JSON, with tests passing in CI.
 
-## Phase 3: offline-first app inside the APK (the big one)
+## Phase 3: the standalone app inside the APK
 
 - `mobile/`: React + Vite + react-router + Zustand, Capacitor Android project in `mobile/android/`. `android-shell/` is removed.
-- Screens: Today, Plan (RECOMP week), Workout (sets + rest timer), Meals, Shopping list, Body, Progress, Settings.
-- Plan content comes from `scripts/export-content.py` (JSON from `content/`).
-- Decision logic as pure helpers with tests in `mobile/src/lib/`.
-- State in `localStorage` plus a JSON file mirror in app storage; sync with `api/v1/state` when online, merging field by field on a 409.
-- Native local notifications: 6:30 AM and 7:30 PM workout reminders, meal-time reminders.
-- JSON export and import through the share sheet.
-- The Jinja pages stay as the desktop and fallback view.
+- Screens, following openGym's tab bar: Home, Plan (trainer's week), Start (guided workout with prefilled sets, rest timer and PRs), Meals, Stats (weight, history with edit, records) and Settings.
+- Plan content comes from `scripts/export_content.py` (JSON from `content/`), generated on every build.
+- Decision logic as pure helpers with `node --test` tests in `mobile/src/lib/`.
+- State in `localStorage` plus a JSON file mirror in app storage. No server and no sync.
+- Local notifications: 30 min before the 07:00 session on training days, meal times, and the end of each rest timer.
+- Import of the old site's data export, and backup export to Documents.
+- Next in this phase: shopping list, home/recovery/cardio/padel sessions, quests, profile and macro targets.
 
-**Done when** the app works fully in airplane mode and catches up once back online.
+**Done when** the app works fully in airplane mode with your imported history.
 
 ## Phase 4: phone extras
 

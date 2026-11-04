@@ -87,10 +87,12 @@ The plan, in order. Each phase ends with something usable on the phone, so don't
 
 | Phase | What | Where it lives |
 |---|---|---|
+**2026-11-04: the app is going standalone.** Yusuf is stopping the Render hosting, so the phone app runs entirely inside the APK with data on the phone. Phase 2 (the JSON API) is dropped and there is no sync. The FastAPI site stays in the repo as the old web version and as the source of `content/` and the data export (`data_export.py`), but new features go into `mobile/`.
+
 | 0 | RECOMP weekday schedule (Sunday-start week, 7 AM slot + optional 8 PM slot) beside the 4-session rotation; meal windows timed around training; per-day link from workout to that day's meal plan; one-tap check-offs; rest/session timer; phone CSS (16px inputs, safe areas, 44px targets) | existing `content/`, `routers/`, `templates/`, `static/` |
-| 1 | An APK that wraps the live site (Capacitor, `server.url` = the Render URL), icon, keystore, build script, CI debug-APK job | `android-shell/`, `scripts/build-apk.sh` |
-| 2 | JSON API beside the HTML pages, bearer-token login for the app, `GET/PUT /api/v1/state` with a revision | `api/v1/`, `tests/test_api_*.py` |
-| 3 | Offline-first app bundled in the APK: React + Vite + react-router + Zustand, local store + file mirror, sync with merge on conflict, native local notifications (6:30 AM, 7:30 PM, meal times), JSON export/import | `mobile/` (Capacitor `android/` moves here, `android-shell/` is removed) |
+| 1 | Done, then replaced: an APK that wrapped the live site | (`android-shell/`, removed in phase 3) |
+| 2 | Dropped: no server to talk to | — |
+| 3 | Standalone app bundled in the APK: React + Vite + react-router + Zustand, local store + file mirror, local notifications (30 min before the 07:00 session, meal times), import of the old site's export, backup export. Next: shopping list, home/recovery/cardio/padel sessions, quests, profile and macro targets | `mobile/` (see `mobile/README.md`), `scripts/build-apk.sh` |
 | 4 | Rest timer in the notification shade, Health Connect (read weigh-ins, write workouts), home-screen widget, modules to hide unused areas | `mobile/android/app/src/main/java/...` plugins |
 
 Things that stay in scope throughout: the RECOMP schedule, the high-protein fat-loss meal plan and macro targets, the progress tracker, workout/rest timers, and the weekly shopping list. Nutrition is this app's edge (openGym has none); don't trade it away for gym-tracker features.
@@ -101,11 +103,9 @@ Things that stay in scope throughout: the RECOMP schedule, the high-protein fat-
 fitness-os/
   main.py, models.py, database.py, ...   # FastAPI app, stays at the root
   routers/            # HTML pages, one file per feature area
-  api/v1/             # phase 2: JSON routers + Pydantic request/response schemas
   content/            # plan content in plain Python: the single source of truth
   templates/, static/ # Jinja pages; remain the desktop/fallback view after phase 3
-  tests/              # pytest, including api/v1
-  android-shell/      # phase 1 only: remote-URL Capacitor wrapper
+  tests/              # pytest
   mobile/             # phase 3: the phone app
     src/views/        # one screen per file (Today, Plan, Workout, Meals, Shopping, Body, Progress, Settings)
     src/components/   # shared UI (timers, check-off chips, charts)
@@ -113,18 +113,17 @@ fitness-os/
     src/lib/          # pure, framework-free helpers, each with a *.test.js beside it
     android/          # Capacitor Android project
     capacitor.config.json
-  scripts/            # build-apk.sh, export-content.py (content/ -> JSON for mobile/)
+  scripts/            # build-apk.sh, export_content.py (content/ -> JSON for mobile/), export_data.py
   docs/               # DATA_MODEL.md, ROUTES.md, ANDROID_ROADMAP.md, later MOBILE.md
 ```
 
 ### Rules for the mobile work
 
 - **Phone first.** Design every screen at 360-412px wide first. Inputs at 16px or more (smaller makes mobile browsers zoom on focus), touch targets at least 44px, respect `env(safe-area-inset-*)`.
-- **One source of truth for plan content.** Meal plan, programs and the RECOMP week stay in `content/`; `mobile/` reads JSON exported by `scripts/export-content.py`, never a hand-copied duplicate.
-- **Decision logic is a pure helper with a test** (in `mobile/src/lib/` with a `*.test.js`, or in Python with a pytest): what's scheduled today, macro targets, which meal day, shopping-list merging, streaks. When a rule exists in both Python and JS, keep matching test cases on both sides and change them together.
-- **The API is additive.** `api/v1/` reuses `models.py`, `validation.py` and the same session dependency; it does not change the HTML routes' behaviour. Every new endpoint gets a test. Keep the CSP and `no-store` rules from `main.py` for HTML; CORS is allowed only for the app's own origin (`https://localhost` / `capacitor://localhost`).
+- **One source of truth for plan content.** Meal plan, programs and the trainer's week stay in `content/`; `mobile/` reads `src/content.json`, generated by `scripts/export_content.py` on every `npm run dev/build/test`, never a hand-copied duplicate.
+- **Decision logic is a pure helper with a test** (in `mobile/src/lib/` with a `*.test.js` run by `node --test`, or in Python with a pytest): what's scheduled today, macro targets, which meal day, shopping-list merging, streaks. When a rule exists in both Python and JS, keep matching test cases on both sides and change them together.
 - **Dependency-light.** Frontend: React, react-router, Zustand, Capacitor and its official plugins. Anything else needs a reason in the PR.
-- **Data on the phone is the user's only copy when offline.** Every store write also lands in the file mirror; never ship a change that can drop unsynced local edits. Bearer tokens go in Android secure storage, never in synced state or backups.
+- **Data on the phone is the user's only copy.** Every store write also lands in the file mirror (`mobile/src/store/mirror.js`); never ship a change that can drop local data, and keep the import/export format (`fitness-os-export` v1) readable. A format change needs a version bump and an upgrade path in `lib/dataFile.js`.
 - **No telemetry, no third-party SDKs.** This is personal health data.
 - **Signing.** The release keystore is never committed (`*.keystore`, `*.jks` are gitignored). Losing it means the APK can't update in place; say so when touching signing.
 

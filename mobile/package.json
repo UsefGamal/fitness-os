@@ -1,0 +1,31 @@
+{
+  "name": "fitness-os-mobile",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "description": "Phase 3: the standalone Fitness OS phone app. Runs inside the APK, data saved on the phone.",
+  "scripts": {
+    "content": "python3 ../scripts/export_content.py src/content.json",
+    "dev": "npm run content && vite",
+    "build": "npm run content && vite build",
+    "preview": "vite preview",
+    "test": "npm run content && node --test src/lib/*.test.js",
+    "build:mobile": "npm run build && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/local-notifications": "8.3.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.0",
+    "zustand": "5.0.15"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.4"
+  }
+}
