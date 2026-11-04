@@ -4,6 +4,7 @@ import { Outlet, createHashRouter, RouterProvider } from 'react-router';
 import RestTimer from './components/RestTimer.jsx';
 import TabBar from './components/TabBar.jsx';
 import { scheduleReminders } from './store/notify.js';
+import { startPhoneSync } from './store/phoneSync.js';
 import { content, useData } from './store/useData.js';
 import CatalogueDetail from './views/CatalogueDetail.jsx';
 import ExerciseDetail from './views/ExerciseDetail.jsx';
@@ -63,6 +64,7 @@ export default function App() {
     hydrate().then(() => {
       // Keep two weeks of reminders queued on every open.
       scheduleReminders(content, useData.getState().data.settings.notifications);
+      startPhoneSync();
     });
   }, [hydrate]);
   if (!ready) return null;

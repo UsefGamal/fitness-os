@@ -4,4 +4,5 @@
     <string name="title_activity_main">Fitness OS</string>
     <string name="package_name">com.usefgamal.fitnessos</string>
     <string name="custom_url_scheme">com.usefgamal.fitnessos</string>
+    <string name="widget_description">Today\'s session, your streak and meals</string>
 </resources>

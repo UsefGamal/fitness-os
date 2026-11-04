@@ -9,6 +9,7 @@ import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
+import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { useTimer } from '../store/useTimer.js';
@@ -170,6 +171,7 @@ export default function Workout() {
 
   const finish = () => {
     update((d) => D.finishWorkout(d, active.id, { sessionRpe: rpe ? Number(rpe) : null, painNote: pain }));
+    syncHealth().catch(() => {});
     timer.stop();
     setActiveWorkout(null);
     navigate(`/history/${active.id}`);
