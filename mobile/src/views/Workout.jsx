@@ -10,6 +10,7 @@ import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { activeMs, clock, pauseWorkout, restFor, restoreSet, resumeWorkout, targetProgress, trainingSettings } from '../lib/training.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
+import { useKeepAwake } from '../store/awake.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
@@ -103,6 +104,7 @@ export default function Workout() {
   const [restOverride, setRestOverride] = useState({}); // exercise name -> seconds for this session
   const [undo, setUndo] = useState(null); // { set, label } after a delete
   const settings = trainingSettings(data);
+  useKeepAwake(Boolean(active));
 
   useEffect(() => {
     if (!undo) return undefined;

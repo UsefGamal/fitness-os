@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { clock, COUNTDOWN_BEEPS, INTERVAL_PRESETS, intervalSteps, normalizeIntervals, stepAt, totalSeconds } from '../lib/training.js';
+import { useKeepAwake } from '../store/awake.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { useData } from '../store/useData.js';
 
@@ -29,6 +30,7 @@ export default function Intervals() {
   const [now, setNow] = useState(Date.now());
   const [saved, setSaved] = useState(false);
   const last = useRef(null);
+  useKeepAwake(Boolean(run));
 
   const steps = useMemo(() => intervalSteps(config), [config]);
   const total = totalSeconds(steps);

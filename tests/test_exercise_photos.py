@@ -71,6 +71,8 @@ def test_build_writes_slim_index_and_photos(tmp_path):
     first = next(e for e in index["exercises"] if e["id"] == ids[0])
     assert len(first["photos"]) == 2
     assert all((out / p).is_file() for p in first["photos"])
+    if first["thumb"]:  # only when Pillow is installed
+        assert (out / first["thumb"]).is_file()
     assert json.loads((out / "index.json").read_text())["exercises"][0]["instructions"] == ["Do it."]
 
 
