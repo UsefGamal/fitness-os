@@ -10,6 +10,7 @@ import CatalogueDetail from './views/CatalogueDetail.jsx';
 import ExerciseDetail from './views/ExerciseDetail.jsx';
 import History from './views/History.jsx';
 import HistoryList from './views/HistoryList.jsx';
+import Intervals from './views/Intervals.jsx';
 import Library from './views/Library.jsx';
 import Meals from './views/Meals.jsx';
 import Plan from './views/Plan.jsx';
@@ -41,6 +42,7 @@ const router = createHashRouter([
       { path: '/', element: <Today /> },
       { path: '/plan', element: <Plan /> },
       { path: '/workout', element: <Workout /> },
+      { path: '/intervals', element: <Intervals /> },
       { path: '/meals', element: <Meals /> },
       { path: '/stats', element: <Stats /> },
       { path: '/history', element: <HistoryList /> },

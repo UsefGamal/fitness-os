@@ -23,8 +23,9 @@ import com.usefgamal.fitnessos.R;
 /**
  * The rest timer in the notification shade: an ongoing notification that
  * counts down (Android draws the countdown itself, so nothing ticks here),
- * with +15s and Stop buttons. When the time is up it posts a "Rest done"
- * notification that buzzes, then stops. Running as a foreground service
+ * with +15s and Skip buttons. When the time is up it posts a "Rest done"
+ * notification that buzzes and plays the notification sound (or stays
+ * silent when sounds are off in the app's settings), then stops. Running as a foreground service
  * keeps the process alive for the few minutes of a rest, so the alert fires
  * on time with the screen off.
  */
@@ -35,9 +36,11 @@ public class RestTimerService extends Service {
     public static final String EXTRA_ENDS_AT = "endsAt";
     public static final String EXTRA_LABEL = "label";
     public static final String EXTRA_SECONDS = "seconds";
+    public static final String EXTRA_SOUND = "sound";
 
     static final String CHANNEL_RUNNING = "rest_timer";
     static final String CHANNEL_DONE = "rest_done";
+    static final String CHANNEL_DONE_SILENT = "rest_done_silent";
     static final int ID_RUNNING = 9101;
     static final int ID_DONE = 9102;
 
@@ -50,13 +53,14 @@ public class RestTimerService extends Service {
     static volatile Listener listener;
     static volatile long endsAt = 0;
     static volatile String label = "";
+    static volatile boolean sound = true;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable finish = this::finish;
 
-    public static void start(Context context, long endsAt, String label) {
+    public static void start(Context context, long endsAt, String label, boolean sound) {
         Intent i = new Intent(context, RestTimerService.class).setAction(ACTION_START)
-            .putExtra(EXTRA_ENDS_AT, endsAt).putExtra(EXTRA_LABEL, label);
+            .putExtra(EXTRA_ENDS_AT, endsAt).putExtra(EXTRA_LABEL, label).putExtra(EXTRA_SOUND, sound);
         androidx.core.content.ContextCompat.startForegroundService(context, i);
     }
 
@@ -72,6 +76,7 @@ public class RestTimerService extends Service {
             endsAt = intent.getLongExtra(EXTRA_ENDS_AT, 0);
             String l = intent.getStringExtra(EXTRA_LABEL);
             label = l != null ? l : "";
+            sound = intent.getBooleanExtra(EXTRA_SOUND, true);
             nm().cancel(ID_DONE);
             show(true);
         } else if (ACTION_ADD.equals(action) && endsAt > 0) {
@@ -114,7 +119,7 @@ public class RestTimerService extends Service {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(openApp())
             .addAction(0, "+15s", self(ACTION_ADD, 1).putExtra(EXTRA_SECONDS, 15).let())
-            .addAction(0, "Stop", self(ACTION_STOP, 2).putExtra("fromShade", true).let())
+            .addAction(0, "Skip", self(ACTION_STOP, 2).putExtra("fromShade", true).let())
             .build();
         if (first) {
             int type = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
@@ -127,7 +132,7 @@ public class RestTimerService extends Service {
     }
 
     private void finish() {
-        Notification done = new NotificationCompat.Builder(this, CHANNEL_DONE)
+        Notification done = new NotificationCompat.Builder(this, sound ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
             .setContentTitle("Rest done")
@@ -167,6 +172,14 @@ public class RestTimerService extends Service {
             c.setDescription("Buzzes when a rest is over");
             c.enableVibration(true);
             c.setVibrationPattern(new long[] {0, 300, 150, 300});
+            m.createNotificationChannel(c);
+        }
+        if (m.getNotificationChannel(CHANNEL_DONE_SILENT) == null) {
+            NotificationChannel c = new NotificationChannel(CHANNEL_DONE_SILENT, "Rest done (no sound)", NotificationManager.IMPORTANCE_HIGH);
+            c.setDescription("Buzzes when a rest is over, used when sounds are off in the app");
+            c.enableVibration(true);
+            c.setVibrationPattern(new long[] {0, 300, 150, 300});
+            c.setSound(null, null);
             m.createNotificationChannel(c);
         }
     }

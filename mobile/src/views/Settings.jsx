@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router';
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
+import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
+import { feedback, unlockAudio } from '../store/feedback.js';
 import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { Health, isNative } from '../store/native.js';
@@ -128,6 +130,8 @@ export default function Settings() {
         </section>
       ) : null}
 
+      <TrainingSettings data={data} update={update} />
+
       <div className="section-label">Reminders</div>
       <div className="list">
         <button type="button" className="list-row" onClick={toggleReminders} aria-pressed={data.settings.notifications}>
@@ -180,5 +184,59 @@ export default function Settings() {
         <div className="list-row"><div className="grow">Version</div><span className="meta">0.3.0</span></div>
       </div>
     </div>
+  );
+}
+
+function Toggle({ on, onClick, title, note, icon }) {
+  return (
+    <button type="button" className="list-row" onClick={onClick} aria-pressed={on}>
+      {icon ? <Icon name={icon} /> : null}
+      <div className="grow"><div>{title}</div>{note ? <div className="meta">{note}</div> : null}</div>
+      <span className={`check${on ? ' on' : ''}`}>{on ? <Icon name="check" /> : null}</span>
+    </button>
+  );
+}
+
+function Choice({ label, value, onChange, options }) {
+  return (
+    <label className="list-row">
+      <div className="grow">{label}</div>
+      <select style={{ width: 'auto' }} value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map(([v, text]) => <option key={v} value={v}>{text}</option>)}
+      </select>
+    </label>
+  );
+}
+
+/** Settings → Training: rest defaults, auto-start, sounds, vibration, target length. */
+function TrainingSettings({ data, update }) {
+  const t = trainingSettings(data);
+  const set = (changes) => update((d) => setTraining(d, changes));
+  const rest = REST_CHOICES.map((sec) => [sec, clock(sec)]);
+  return (
+    <>
+      <div className="section-label">Training</div>
+      <div className="list">
+        <Choice label="Rest for big lifts" value={t.rest_compound} onChange={(v) => set({ rest_compound: Number(v) })} options={rest} />
+        <Choice label="Rest for small lifts" value={t.rest_isolation} onChange={(v) => set({ rest_isolation: Number(v) })} options={rest} />
+        <Toggle on={t.auto_rest} onClick={() => set({ auto_rest: !t.auto_rest })} title="Start rest after each set" note="The timer starts when you log a set" />
+        <Choice label="Target workout length" value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
+          options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your trainer's rest for an exercise always comes first; these are for exercises without one.</p>
+
+      <div className="section-label">Sounds and vibration</div>
+      <div className="list">
+        <Toggle icon="sound" on={t.sounds} onClick={() => set({ sounds: !t.sounds })} title="Sounds" note="Rest start, 3-2-1, rest done, workout start and save, new records" />
+        {t.sounds ? (
+          <>
+            <Choice label="Volume" value={t.volume} onChange={(v) => set({ volume: v })} options={Object.keys(VOLUMES).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} />
+            <Choice label="Sound set" value={t.sound_set} onChange={(v) => set({ sound_set: v })} options={Object.entries(SOUND_SETS)} />
+            <button type="button" className="list-row" onClick={() => { unlockAudio(); feedback('test', { force: true }); }}><Icon name="play" /><div className="grow">Play a test sound</div></button>
+          </>
+        ) : null}
+        <Toggle on={t.vibrate} onClick={() => set({ vibrate: !t.vibrate })} title="Vibrate" note="Buzz at rest done, new records and saved workouts" />
+      </div>
+    </>
   );
 }
