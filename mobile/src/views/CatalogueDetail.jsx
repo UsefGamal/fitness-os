@@ -1,9 +1,10 @@
 import { Link, useNavigate, useParams } from 'react-router';
 
+import Alternatives from '../components/Alternatives.jsx';
 import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
-import { capitalize, groupOf, groupsOf } from '../lib/catalogue.js';
+import { capitalize, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { useData } from '../store/useData.js';
@@ -49,7 +50,7 @@ export default function CatalogueDetail() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{entry.name}</h1>
       <ExercisePhotos entry={entry} />
       <HowTo entry={entry} />
-      <section className="card"><BodyMap hit={groupsOf(entry)} label={`Works ${[...groupsOf(entry)].join(', ')}`} /></section>
+      <section className="card"><BodyMap primary={entry.primary} secondary={entry.secondary} label={`Works ${entry.primary.join(', ')}`} /></section>
       {mine ? (
         <Link to={`/library/${mine.id}`} className="btn secondary"><Icon name="book" /> In your Library</Link>
       ) : (
@@ -57,6 +58,7 @@ export default function CatalogueDetail() {
           <Icon name="plus" /> Add to your Library
         </button>
       )}
+      <Alternatives key={entry.id} entry={entry} catalogue={catalogue} />
     </div>
   );
 }

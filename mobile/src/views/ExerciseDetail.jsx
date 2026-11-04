@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router';
 
+import Alternatives from '../components/Alternatives.jsx';
 import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
@@ -37,7 +38,7 @@ export default function ExerciseDetail() {
           {photo.name.toLowerCase() !== ex.name.toLowerCase() ? <p className="muted small" style={{ margin: '-6px 4px 12px' }}>Photos show {photo.name}, the closest match.</p> : null}
         </>
       ) : null}
-      <section className="card"><BodyMap hit={new Set([ex.muscle_group])} label={`Works ${ex.muscle_group}`} /></section>
+      <section className="card">{photo ? <BodyMap primary={photo.primary} secondary={photo.secondary} label={`Works ${photo.primary.join(', ')}`} /> : <BodyMap hit={new Set([ex.muscle_group])} label={`Works ${ex.muscle_group}`} />}</section>
       <div className="stat-grid">
         <div className="stat"><div className="label">Best set</div><div className="value">{best ? `${best.weight_kg}×${best.reps}` : '–'}</div></div>
         <div className="stat"><div className="label">Est. 1RM</div><div className="value">{best ? Math.round(best.score) : '–'}<span className="unit">kg</span></div></div>
@@ -50,6 +51,7 @@ export default function ExerciseDetail() {
         </div>
       ) : null}
       {photo ? <HowTo entry={photo} /> : null}
+      <Alternatives key={ex.id} entry={photo} group={ex.muscle_group} catalogue={catalogue} />
       <div className="section-label">History</div>
       {history.length ? (
         <div className="list">
