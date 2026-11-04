@@ -1,14 +1,16 @@
+import json
 import os
 from datetime import date
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from auth import require_login
 from clock import today as get_today
 from content.tdee import ACTIVITY_LEVELS, GENDERS
+from data_export import build_export
 from database import get_session
 from macro_targets import get_macro_targets
 from models import Profile
@@ -85,3 +87,15 @@ def update_settings(
     session.add(profile)
     session.commit()
     return RedirectResponse(url="/settings?saved=1", status_code=303)
+
+
+@router.get("/settings/export.json", dependencies=[Depends(require_login)])
+def export_data(session: Session = Depends(get_session)):
+    """Every logged entry as one JSON file (see data_export.py)."""
+    body = json.dumps(build_export(session), indent=2, ensure_ascii=False)
+    filename = f"fitness-os-export-{get_today().isoformat()}.json"
+    return Response(
+        content=body,
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
