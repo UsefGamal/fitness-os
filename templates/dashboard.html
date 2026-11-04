@@ -42,7 +42,11 @@
       <svg class="icon icon-fill"><use href="#icon-check"/></svg> Training logged for today
     </p>
     {% else %}
-    <p class="muted" style="font-size:12px;margin-bottom:8px">Next up: <strong style="color:var(--text)">{{ next_training_day.label }}</strong> — pick Gym or Home, whichever you have access to today.</p>
+    {% if next_training_day.is_rest_today %}
+    <p class="muted" style="margin-bottom:8px">Rest day. Next: <strong style="color:var(--text)">{{ next_training_day.label }}</strong> on {{ next_training_day.on_date.strftime('%A') }} at {{ session_time }}.</p>
+    {% else %}
+    <p class="muted" style="margin-bottom:8px">Today at {{ session_time }}: <strong style="color:var(--text)">{{ next_training_day.label }}</strong> · {{ next_training_day.focus }}{% if next_training_day.cardio_after %}, then {{ next_training_day.cardio_after.minutes }} min cycling{% endif %}.</p>
+    {% endif %}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <a href="/gym" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-dumbbell"/></svg> Gym</a>
       <a href="/home" class="meal-check-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px"><svg class="icon"><use href="#icon-house"/></svg> Home</a>
@@ -69,6 +73,7 @@
     {% for day in day_cards %}
     <a href="/meals?view_date={{ day.date }}" class="week-day-chip{% if day.is_today %} week-day-chip-today{% endif %}">
       <span class="week-day-chip-label">{{ day.weekday }}</span>
+      <span class="week-day-chip-plan">{{ day.plan_label }}</span>
       <span class="week-day-chip-marks">
         {% if day.workouts %}<svg class="icon" style="width:12px;height:12px"><use href="#icon-{{ day.workouts[0].icon }}"/></svg>{% endif %}
         {% if day.is_refeed %}<span class="week-day-chip-refeed" title="Refeed day"></span>{% endif %}

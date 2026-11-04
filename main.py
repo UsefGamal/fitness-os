@@ -28,7 +28,7 @@ from charting import build_heatmap_html, build_line_svg, build_meter_html, statu
 from clock import today as get_today
 from content.bonus_tasks import BONUS_TASKS
 from content.gym_exercises import SEED_EXERCISES
-from content.gym_program import next_program_day
+from content.gym_program import SESSION_TIME, program_day_for, week_view
 from content.milestones import badge_progress, level_for_points
 from content.projections import (
     compute_streak,
@@ -36,9 +36,6 @@ from content.projections import (
     meal_adherence_pct,
     slack_impact_date,
     training_adherence_pct,
-)
-from content.projections import (
-    week_start as get_week_start,
 )
 from database import engine, get_session, init_db
 from models import BodyLog, BonusLog, Exercise, HydrationLog, MealLog, Profile, Workout, WorkoutSet
@@ -60,7 +57,7 @@ from routers import (
     webhooks,
 )
 from routers.meals import HYDRATION_TARGET_ML, PLAN_START_DATE, SLOT_ICONS, SLOT_LABELS
-from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
+from training_counter import deload_due, weeks_since_last_deload
 from validation import ValidationError, error_redirect
 
 load_dotenv()
@@ -353,7 +350,8 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     # ── Today's Routine: single next-training recommendation, plus the
     # same deload nudge shown on /training and /gym, so "what's next" is
     # answerable from the dashboard alone. ───────────────────────────
-    next_training_day = next_program_day(count_training_sessions(session))
+    next_training_day = program_day_for(today)
+    training_week = week_view(today)
     deload_flag = deload_due(session, PLAN_START_DATE)
     weeks_since_deload = weeks_since_last_deload(session, PLAN_START_DATE)
 
@@ -466,7 +464,8 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
     streak_heatmap_html = build_heatmap_html(heatmap_cells)
 
     # ── This week ────────────────────────────────────────────────
-    week_start = get_week_start(today)
+    # Sunday-start week, matching the trainer's schedule (training_week).
+    week_start = training_week[0]["date"]
     week_workouts = session.exec(
         select(Workout).where(Workout.log_date >= week_start, Workout.log_date < week_start + timedelta(days=7))
     ).all()
@@ -484,6 +483,7 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
                 "date": day_date,
                 "is_today": day_date == today,
                 "weekday": day_date.strftime("%a"),
+                "plan_label": training_week[i]["label"],
                 "meal_label": meal_day["label"],
                 "meal_kcal": meal_day["totals"]["kcal"],
                 "is_refeed": meal_day.get("is_refeed", False),
@@ -545,6 +545,8 @@ def dashboard(request: Request, session: Session = Depends(get_session)):
             "days_until_start": days_until_start,
             "plan_start_date": PLAN_START_DATE.isoformat(),
             "next_training_day": next_training_day,
+            "training_week": training_week,
+            "session_time": SESSION_TIME,
             "deload_flag": deload_flag,
             "weeks_since_deload": weeks_since_deload,
         },

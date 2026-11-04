@@ -9,11 +9,11 @@ from sqlmodel import Session, select
 from auth import require_login
 from charting import build_bar_svg, build_sparkline_svg
 from clock import today as get_today
-from content.gym_program import PROGRAM, PROGRESSION_NOTE, next_program_day
+from content.gym_program import GLOSSARY, PROGRAM, PROGRESSION_NOTE, SESSION_TIME, TEMPO, program_day_for
 from database import get_session
 from models import Exercise, Workout, WorkoutSet
 from routers.meals import PLAN_START_DATE
-from training_counter import count_training_sessions, deload_due, weeks_since_last_deload
+from training_counter import deload_due, weeks_since_last_deload
 from validation import ValidationError, require_max_length, require_not_future, require_range
 
 router = APIRouter()
@@ -32,8 +32,8 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
         set_count = len(session.exec(select(WorkoutSet).where(WorkoutSet.workout_id == w.id)).all())
         summaries.append({"workout": w, "set_count": set_count})
 
-    next_day = next_program_day(count_training_sessions(session))
     today = get_today()
+    next_day = program_day_for(today)
     today_session = next((s["workout"] for s in summaries if s["workout"].log_date == today), None)
 
     return templates.TemplateResponse(
@@ -46,6 +46,7 @@ def gym_list(request: Request, session: Session = Depends(get_session)):
             "today": today.isoformat(),
             "today_session": today_session,
             "next_day": next_day,
+            "session_time": SESSION_TIME,
             "deload_due": deload_due(session, PLAN_START_DATE),
             "weeks_since_deload": weeks_since_last_deload(session, PLAN_START_DATE),
         },
@@ -139,7 +140,7 @@ def create_gym_session(
     require_max_length(notes, 200, "Notes")
 
     if not notes:
-        notes = next_program_day(count_training_sessions(session))["label"]
+        notes = program_day_for(log_date)["label"]
 
     # Upsert by date — matches body/cardio/padel's own convention (see
     # new-logged-entity skill). Without this, re-submitting "Start a
@@ -245,36 +246,62 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
 
     program_checklist = None
     targeted_muscles = []
-    rest_seconds_by_exercise = {}
+    rest_seconds_by_exercise: dict[int, int] = {}
     if workout.notes in PROGRAM_LABELS:
         program_day = next(d for d in PROGRAM if d["label"] == workout.notes)
         checklist = []
         muscle_set = set()
+        pair_seen: dict[str, int] = {}
         for spec in program_day["exercises"]:
             spec_ex = exercise_by_name.get(spec["name"])
-            suggestion = "no prior data yet — pick a comfortable starting weight"
+            suggestion = "no prior data yet: pick a weight that leaves the Pre* reps in the tank"
             if spec_ex and spec_ex.id in last_performance_raw:
                 last_reps, last_weight, last_rpe = last_performance_raw[spec_ex.id]
                 suggestion = _suggest_next_weight(spec_ex, last_reps, last_weight, spec["reps"], last_rpe)
             alternatives = []
+            if spec.get("alternative"):
+                alternatives.append({"name": spec["alternative"], "equipment": "trainer's backup"})
             if spec_ex:
                 muscle_set.add(spec_ex.muscle_group)
-                alternatives = [
+                alternatives += [
                     {"name": other.name, "equipment": other.equipment}
                     for other in exercises
-                    if other.muscle_group == spec_ex.muscle_group and other.name != spec_ex.name
+                    if other.muscle_group == spec_ex.muscle_group and other.name not in (spec_ex.name, spec.get("alternative"))
                 ]
-                # Rest timer default per exercise — spec["rest"] is always "<N>s" (see
-                # content/gym_program.py); exercises outside today's program fall back
+                # Rest timer default per exercise, parsed from the plan's
+                # "2m" / "1.5-2m" / "45s per arm" (content/gym_program.py's
+                # rest_seconds); exercises outside today's program fall back
                 # to a flat default in the template instead of guessing.
-                if spec["rest"].rstrip("s").isdigit():
-                    rest_seconds_by_exercise[spec_ex.id] = int(spec["rest"].rstrip("s"))
+                if spec["rest_sec"]:
+                    rest_seconds_by_exercise.setdefault(spec_ex.id, spec["rest_sec"])
+            pair = spec.get("pair") if spec.get("type") == "paired" else None
+            pair_index = None
+            if pair:
+                pair_index = pair_seen.get(pair, 0) + 1
+                pair_seen[pair] = pair_index
             checklist.append(
                 {
                     "name": spec["name"],
+                    "exercise_id": spec_ex.id if spec_ex else None,
                     "sets": spec["sets"],
                     "reps": spec["reps"],
-                    "rest": spec["rest"],
+                    "rest": spec.get("rest", ""),
+                    "rir": spec.get("rir"),
+                    "pair": f"{pair}{pair_index}" if pair else None,
+                    "note": spec.get("note"),
+                    "video": spec.get("video"),
+                    "video_alt_angle": spec.get("video_alt_angle"),
+                    "film_form": spec.get("film_form", False),
+                    "warm_up": (
+                        {
+                            "sets": spec["warm_up_sets"],
+                            "reps": spec.get("warm_up_reps", spec["reps"]),
+                            "rest": spec.get("warm_up_rest", ""),
+                            "pct": spec.get("warm_up_pct"),
+                        }
+                        if spec.get("warm_up_sets")
+                        else None
+                    ),
                     "suggestion": suggestion,
                     "alternatives": alternatives,
                 }
@@ -282,7 +309,8 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
         program_checklist = {
             "label": program_day["label"],
             "focus": program_day["focus"],
-            "warmup": program_day.get("warmup", []),
+            "pre_cardio": program_day["pre_cardio"],
+            "warmup_items": program_day["warmup_items"],
             "cooldown": program_day.get("cooldown", []),
             "exercises": checklist,
         }
@@ -303,6 +331,8 @@ def gym_detail(workout_id: int, request: Request, session: Session = Depends(get
             "next_set_number": next_set_number,
             "program_checklist": program_checklist,
             "progression_note": PROGRESSION_NOTE,
+            "glossary": GLOSSARY,
+            "tempo": TEMPO,
             "targeted_muscles": targeted_muscles,
             "session_volume": round(session_volume),
         },

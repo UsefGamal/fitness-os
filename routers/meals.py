@@ -18,8 +18,16 @@ from content.food_items import (
     format_shopping_qty,
     parse_shopping_unit,
 )
+from content.gym_program import SESSION_TIME, program_day_for
 from content.maintenance_plan import MAINTENANCE_INTRO, MAINTENANCE_STEPS
-from content.meal_plan import DRINK_OPTIONS, MEAL_PLAN_14_DAY, MEAL_SLOTS, PLAN_START_DATE, display_name
+from content.meal_plan import (
+    DRINK_OPTIONS,
+    MEAL_PLAN_14_DAY,
+    MEAL_SLOTS,
+    PLAN_START_DATE,
+    PRE_WORKOUT_NOTE,
+    display_name,
+)
 from content.meal_plan import get_day as get_static_day
 from database import get_session
 from edamam_sync import get_active_day, get_active_shopping_products, is_pending_stale, run_sync_in_background
@@ -239,6 +247,9 @@ def meals_page(request: Request, view_date: str | None = None, session: Session 
             "prev_date": (current - timedelta(days=1)).isoformat(),
             "next_date": (current + timedelta(days=1)).isoformat(),
             "is_today": current == get_today(),
+            "training_day": program_day_for(current),
+            "session_time": SESSION_TIME,
+            "pre_workout_note": PRE_WORKOUT_NOTE,
             "eating_out_general": EATING_OUT_TIPS["general"],
             "hydration_ml": hydration_ml,
             "hydration_target_ml": HYDRATION_TARGET_ML,

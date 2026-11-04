@@ -27,16 +27,21 @@ def test_digest_includes_both_gym_and_home_sessions_for_the_same_slot(client):
         assert 'href="https://fitness-os.onrender.com/home"' in html
 
 
-def test_digest_gym_and_home_sessions_are_the_same_rotation_slot(client):
-    """Gym and Home share one rotation counter — for the same session
-    count, both sections must show the same movement focus (Upper B /
-    Lower A / etc.), not two unrelated days."""
+def test_digest_gym_follows_weekday_schedule_and_home_keeps_its_rotation(client):
+    """The gym section follows the trainer's weekday plan (2026-08-14 is a
+    Friday: Leg day); the Home alternative keeps its own rotation counter
+    (count=2 is "Upper B")."""
     with Session(engine) as db:
         _, html = build_daily_digest_html(db, date(2026, 8, 14), 2, "https://fitness-os.onrender.com")
-        # Both content/gym_program.py and content/home_program.py index
-        # PROGRAM[count % len(PROGRAM)] — count=2 is "Upper B" in both.
-        assert "hitting the gym today: Upper B" in html
+        assert "hitting the gym today: Leg at 07:00" in html
         assert "home session instead: Upper B (Home)" in html
+
+
+def test_digest_on_a_rest_day_names_the_next_session(client):
+    with Session(engine) as db:
+        # 2026-08-15 is a Saturday, a rest day; Sunday is Upper.
+        _, html = build_daily_digest_html(db, date(2026, 8, 15), 0, "https://fitness-os.onrender.com")
+        assert "Rest day. Next gym session: Upper on Sunday" in html
 
 
 def test_digest_home_exercises_render_without_a_sets_field(client):
@@ -85,8 +90,7 @@ def test_reminders_route_uses_combined_gym_and_home_count(auth_client, test_cron
 
     auth_client.get("/cron/daily-digest", headers={"X-Cron-Secret": test_cron_secret})
 
-    # 3 combined gym+home sessions -> PROGRAM[3 % 4] == "Lower B" in both
-    # content/gym_program.py and content/home_program.py. A gym-only count
-    # of 2 would have shown "Upper B" instead -- the wrong day.
-    assert "hitting the gym today: Lower B" in captured["html"]
+    # 3 combined gym+home sessions -> home PROGRAM[3 % 4] == "Lower B". A
+    # gym-only count of 2 would have shown "Upper B" instead -- the wrong
+    # day. (The gym section itself follows the weekday schedule now.)
     assert "home session instead: Lower B (Home)" in captured["html"]

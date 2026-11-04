@@ -11,14 +11,13 @@
 {% endif %}
 
 <section class="card card-glow">
-  <h2><svg class="icon"><use href="#icon-target"/></svg> Next up: {{ next_day.label }}</h2>
-  <p class="muted">{{ next_day.focus }}</p>
+  {% set nd = next_day %}{% include "_today_session.html" %}
   <div class="table-scroll">
   <table class="log-table">
-    <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Rest</th></tr></thead>
+    <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>RIR</th><th>Rest</th></tr></thead>
     <tbody>
     {% for ex in next_day.exercises %}
-      <tr><td>{{ ex.name }}</td><td>{{ ex.sets }}</td><td>{{ ex.reps }}</td><td>{{ ex.rest }}</td></tr>
+      <tr><td>{% if ex.type == 'paired' %}<span class="plan-pair">{{ ex.pair }}</span> {% endif %}{{ ex.name }}</td><td>{{ ex.sets }}</td><td>{{ ex.reps }}</td><td>{{ ex.rir or "" }}</td><td>{{ ex.rest }}</td></tr>
     {% endfor %}
     </tbody>
   </table>

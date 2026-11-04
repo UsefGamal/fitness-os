@@ -1,80 +1,138 @@
-# Intermediate 4-day Upper/Lower split. Rotates UpperA -> LowerA -> UpperB ->
-# LowerB -> repeat, regardless of calendar day, since frequency flexes around
-# padel/work. Exercise names must match content/gym_exercises.py entries.
+# The gym program is Yusuf's trainer's Upper / Lower / Push / Pull / Leg plan,
+# on a fixed weekday schedule (Sunday-start week, 7 AM sessions), the way
+# openGym plans a routine per weekday. The plan itself lives in
+# content/trainer_plan.json, transcribed from the trainer's PDF: exercises,
+# warm-ups with their weight ramps, RIR targets ("Pre*"), paired sets, rest,
+# tempo, notes and form-video links. JSON so the phone app (phase 3) can read
+# the very same file. Exercise names must match content/gym_exercises.py.
 
-PROGRAM = [
-    {
-        "day_letter": "UA",
-        "label": "Upper A",
-        "focus": "Horizontal push + pull",
-        "warmup": ["5 min light cardio (bike or brisk walk)", "Band pull-aparts x15", "Arm circles x10 each direction", "Empty-bar or light-dumbbell bench press x10"],
-        "cooldown": ["Chest doorway stretch, 30s/side", "Overhead lat stretch, 30s/side", "Cross-body shoulder stretch, 30s/side"],
-        "exercises": [
-            {"name": "Bench Press", "sets": 4, "reps": "6-8", "rest": "120s"},
-            {"name": "Bent-over Row", "sets": 4, "reps": "8-10", "rest": "90s"},
-            {"name": "Overhead Press", "sets": 3, "reps": "8-10", "rest": "90s"},
-            {"name": "Lat Pulldown", "sets": 3, "reps": "10-12", "rest": "75s"},
-            {"name": "Lateral Raise", "sets": 3, "reps": "12-15", "rest": "60s"},
-            {"name": "Triceps Pushdown", "sets": 3, "reps": "10-12", "rest": "60s"},
-            {"name": "Dumbbell Curl", "sets": 2, "reps": "10-12", "rest": "45s"},
-        ],
-    },
-    {
-        "day_letter": "LA",
-        "label": "Lower A",
-        "focus": "Squat focus",
-        "warmup": ["5 min light cardio (bike or brisk walk)", "Bodyweight squats x15", "Walking lunges x10/leg", "Leg swings x10/leg"],
-        "cooldown": ["Quad stretch, 30s/side", "Hamstring stretch, 30s/side", "Hip flexor stretch, 30s/side"],
-        "exercises": [
-            {"name": "Back Squat", "sets": 4, "reps": "6-8", "rest": "120s"},
-            {"name": "Romanian Deadlift", "sets": 3, "reps": "8-10", "rest": "90s"},
-            {"name": "Leg Press", "sets": 3, "reps": "10-12", "rest": "90s"},
-            {"name": "Leg Curl", "sets": 3, "reps": "10-12", "rest": "60s"},
-            {"name": "Standing Calf Raise", "sets": 4, "reps": "12-15", "rest": "45s"},
-            {"name": "Pallof Press", "sets": 3, "reps": "10-12/side", "rest": "45s"},
-        ],
-    },
-    {
-        "day_letter": "UB",
-        "label": "Upper B",
-        "focus": "Incline push + vertical pull",
-        "warmup": ["5 min light cardio (bike or brisk walk)", "Band pull-aparts x15", "Scapular pull-ups or dead hangs x5", "Light push-ups x10"],
-        "cooldown": ["Overhead lat stretch, 30s/side", "Overhead triceps stretch, 30s/side", "Chest doorway stretch, 30s/side"],
-        "exercises": [
-            {"name": "Incline Dumbbell Press", "sets": 4, "reps": "8-10", "rest": "90s"},
-            {"name": "Pull-up", "sets": 4, "reps": "6-10", "rest": "90s"},
-            {"name": "Seated Cable Row", "sets": 3, "reps": "10-12", "rest": "75s"},
-            {"name": "Face Pull", "sets": 3, "reps": "12-15", "rest": "60s"},
-            {"name": "Hammer Curl", "sets": 3, "reps": "10-12", "rest": "45s"},
-            {"name": "Push-up", "sets": 2, "reps": "AMRAP", "rest": "45s"},
-        ],
-    },
-    {
-        "day_letter": "LB",
-        "label": "Lower B",
-        "focus": "Hinge + deadlift focus",
-        "warmup": ["5 min light cardio (bike or brisk walk)", "Glute bridges x15", "Bodyweight Romanian deadlift pattern x10", "Leg swings x10/leg"],
-        "cooldown": ["Hamstring stretch, 30s/side", "Calf stretch, 30s/side", "Glute/piriformis stretch, 30s/side"],
-        "exercises": [
-            {"name": "Deadlift", "sets": 4, "reps": "5-6", "rest": "150s"},
-            {"name": "Hip Thrust", "sets": 3, "reps": "8-10", "rest": "90s"},
-            {"name": "Leg Press", "sets": 3, "reps": "10-12", "rest": "90s"},
-            {"name": "Leg Curl", "sets": 3, "reps": "10-12", "rest": "60s"},
-            {"name": "Standing Calf Raise", "sets": 4, "reps": "12-15", "rest": "45s"},
-            {"name": "Plank", "sets": 3, "reps": "45-60s hold", "rest": "45s"},
-        ],
-    },
-]
+import json
+import re
+from datetime import date, timedelta
+from pathlib import Path
+
+_PLAN_PATH = Path(__file__).with_name("trainer_plan.json")
+TRAINER_PLAN: dict = json.loads(_PLAN_PATH.read_text(encoding="utf-8"))
+
+SESSION_TIME: str = TRAINER_PLAN["session_time"]
+TEMPO: str = TRAINER_PLAN["tempo"]
+TEMPO_NOTE: str = TRAINER_PLAN["tempo_note"]
+GLOSSARY: dict = TRAINER_PLAN["glossary"]
+
+SESSION_LABELS = {"upper": "Upper", "lower": "Lower", "push": "Push", "pull": "Pull", "leg": "Leg"}
+SESSION_FOCUS = {
+    "upper": "Incline press, lat pulldown, lateral raises, arms",
+    "lower": "Leg press, quads and hamstrings, glutes, calves, core",
+    "push": "Shoulders, incline press, chest, triceps",
+    "pull": "Lats, rows, upper back, biceps",
+    "leg": "Quads and hamstrings, calves, glutes, core",
+}
+WEEKDAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+
+def rest_seconds(rest: str | None) -> int | None:
+    """'2m' -> 120, '1.5-2m' -> 90 (the lower bound), '30s' -> 30,
+    '1.5m per arm' -> 90. None when there is nothing to parse."""
+    if not rest:
+        return None
+    match = re.match(r"\s*(\d+(?:\.\d+)?)(?:-\d+(?:\.\d+)?)?\s*([ms])", rest)
+    if not match:
+        return None
+    value = float(match.group(1))
+    return int(value * 60) if match.group(2) == "m" else int(value)
+
+
+def _warmup_lines(session: dict) -> list[str]:
+    lines = [session["pre_cardio"]]
+    for block in session["blocks"]:
+        if block["phase"] == "warm_up":
+            for item in block["items"]:
+                ramp = f" at {item['warm_up_pct']}%" if item.get("warm_up_pct") else ""
+                lines.append(f"{item['name']} {item['sets']}x{item['reps']}{ramp}")
+    return lines
+
+
+def _build_day(key: str) -> dict:
+    session = TRAINER_PLAN["sessions"][key]
+    exercises = []
+    warmup_items = []
+    for block in session["blocks"]:
+        if block["phase"] == "work":
+            for item in block["items"]:
+                exercises.append({**item, "rest_sec": rest_seconds(item.get("rest"))})
+        elif block["phase"] == "warm_up":
+            warmup_items.extend(block["items"])
+    cardio_key = next((d["cardio_after"] for d in TRAINER_PLAN["schedule"] if d["session"] == key), None)
+    return {
+        "key": key,
+        "day_letter": key[0].upper(),
+        "label": SESSION_LABELS[key],
+        "focus": SESSION_FOCUS[key],
+        "warmup": _warmup_lines(session),
+        "warmup_items": warmup_items,
+        "pre_cardio": session["pre_cardio"],
+        "cooldown": (
+            [f"{TRAINER_PLAN['cardio'][cardio_key]['minutes']} min cycling. {TRAINER_PLAN['cardio'][cardio_key]['note']}"]
+            if cardio_key
+            else []
+        ),
+        "cardio_after": TRAINER_PLAN["cardio"][cardio_key] if cardio_key else None,
+        "exercises": exercises,
+    }
+
+
+PROGRAM = [_build_day(key) for key in SESSION_LABELS]
+_PROGRAM_BY_KEY = {day["key"]: day for day in PROGRAM}
+_SCHEDULE_BY_WEEKDAY = {entry["day"]: entry["session"] for entry in TRAINER_PLAN["schedule"]}
 
 PROGRESSION_NOTE = (
-    "If you hit the top of the rep range on every set with good form, add "
-    "2.5kg for upper-body lifts or 5kg for lower-body lifts next session. "
-    "Otherwise repeat the same weight. On an aggressive cut, fatigue builds "
-    "up faster than usual — if lifts stall or feel unusually heavy for "
-    "1-2 weeks straight, take a deload: same exercises, about a third fewer "
-    "sets, same or slightly lighter weight, for one week."
+    "Work in the rep range at the Pre* target: stop with that many reps left "
+    "in the tank. When every working set reaches the top of the range at the "
+    "target, add weight next time (2.5kg upper body, 5kg lower body). Tempo "
+    f"{TEMPO} on everything: {TEMPO_NOTE.lower()}"
 )
 
 
+def session_key_on(day: date) -> str:
+    """'upper', 'lower', 'push', 'pull', 'leg' or 'rest' for that date."""
+    return _SCHEDULE_BY_WEEKDAY[WEEKDAY_NAMES[day.weekday()]]
+
+
+def program_day_for(day: date) -> dict:
+    """The session planned for `day`. On a rest day: the next planned
+    session, with is_rest_today and the date it falls on, so "what's next"
+    always has an answer."""
+    key = session_key_on(day)
+    if key != "rest":
+        return {**_PROGRAM_BY_KEY[key], "is_rest_today": False, "on_date": day}
+    for offset in range(1, 8):
+        later = day + timedelta(days=offset)
+        later_key = session_key_on(later)
+        if later_key != "rest":
+            return {**_PROGRAM_BY_KEY[later_key], "is_rest_today": True, "on_date": later}
+    raise ValueError("The schedule has no training day")
+
+
+def week_view(day: date) -> list[dict]:
+    """The Sunday-start week containing `day`, one entry per weekday."""
+    start = day - timedelta(days=(day.weekday() + 1) % 7)
+    days = []
+    for offset in range(7):
+        d = start + timedelta(days=offset)
+        key = session_key_on(d)
+        days.append(
+            {
+                "date": d,
+                "short": WEEKDAY_NAMES[d.weekday()][:3].title(),
+                "key": key,
+                "label": "Rest" if key == "rest" else SESSION_LABELS[key],
+                "is_today": d == day,
+            }
+        )
+    return days
+
+
 def next_program_day(completed_gym_sessions: int) -> dict:
+    """Kept for callers that still count sessions; the weekday schedule in
+    program_day_for() is the source of truth now."""
     return PROGRAM[completed_gym_sessions % len(PROGRAM)]
