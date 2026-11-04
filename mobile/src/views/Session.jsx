@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
@@ -105,6 +105,13 @@ export default function Session() {
         </section>
       ) : null}
 
+      {type === 'recovery' ? <Link className="btn secondary" to="/follow?src=recovery" style={{ marginBottom: 12 }}><Icon name="play" /> Follow along with timers</Link> : null}
+      {type === 'home' ? (
+        <div className="row" style={{ gap: 8, marginBottom: 12 }}>
+          <Link className="btn secondary small grow" to={`/follow?src=home-warmup:${homeDay}`}><Icon name="play" /> Warm-up</Link>
+          <Link className="btn secondary small grow" to={`/follow?src=home-cooldown:${homeDay}`}><Icon name="play" /> Cool-down</Link>
+        </div>
+      ) : null}
       {sections.map(([title, list]) => <Checklist key={title} title={title} items={list} ticked={ticked} onTick={tick} />)}
 
       <section className="card stack">

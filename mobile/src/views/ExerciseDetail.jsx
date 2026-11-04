@@ -4,9 +4,11 @@ import Alternatives from '../components/Alternatives.jsx';
 import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
+import LineChart from '../components/LineChart.jsx';
 import { formatDate } from '../lib/dates.js';
 import { entryFor } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
+import { e1rmSeries } from '../lib/insights.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
@@ -43,6 +45,7 @@ export default function ExerciseDetail() {
         <div className="stat"><div className="label">Best set</div><div className="value">{best ? `${best.weight_kg}×${best.reps}` : '–'}</div></div>
         <div className="stat"><div className="label">Est. 1RM</div><div className="value">{best ? Math.round(best.score) : '–'}<span className="unit">kg</span></div></div>
       </div>
+      {history.length > 1 ? <section className="card stack"><strong>Estimated 1RM</strong><LineChart points={e1rmSeries(data, ex.id)} label={`${ex.name} estimated one-rep max`} /></section> : null}
       {inPlan.length ? (
         <div className="card small">
           <div className="muted">In your plan</div>

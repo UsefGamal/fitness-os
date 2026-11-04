@@ -41,6 +41,13 @@ export function parseDataFile(text, content) {
     bonus_logs: raw.bonus_logs,
     plan_overrides: raw.plan_overrides && typeof raw.plan_overrides === 'object' ? raw.plan_overrides : {},
     shopping: raw.shopping && Array.isArray(raw.shopping.checked) ? raw.shopping : { week: null, checked: [] },
+    // Added later, all optional: a missing one is left out, not defaulted.
+    ...(Array.isArray(raw.session_moves) ? { session_moves: raw.session_moves } : {}),
+    ...(raw.exercise_notes && typeof raw.exercise_notes === 'object' ? { exercise_notes: raw.exercise_notes } : {}),
+    ...(raw.achievements && typeof raw.achievements === 'object' ? { achievements: raw.achievements } : {}),
+    ...(raw.evening_plan && typeof raw.evening_plan === 'object' ? { evening_plan: raw.evening_plan } : {}),
+    // The photo list only; the images stay on the phone that took them.
+    ...(Array.isArray(raw.progress_photos) ? { progress_photos: raw.progress_photos } : {}),
     settings: { ...defaultSettings(), ...(raw.settings || {}), modules: { ...defaultSettings().modules, ...(raw.settings?.modules || {}) } },
   };
 }

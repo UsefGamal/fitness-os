@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { addDays, formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { macroTargets } from '../lib/macros.js';
+import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { content, useData } from '../store/useData.js';
@@ -18,7 +19,7 @@ export default function Meals() {
   const day = mealDayFor(date, N);
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   const totals = dayTotals(day, picks);
-  const training = sessionKeyOn(date, content.training) !== 'rest';
+  const training = sessionKeyOn(date, content.training, data.session_moves || []) !== 'rest';
   const target = macroTargets(data, N, today);
   const done = N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed).length;
 
@@ -42,6 +43,12 @@ export default function Meals() {
         <div className="stat"><div className="label">Protein</div><div className="value">{totals.protein}<span className="unit">/ {target.protein} g</span></div></div>
       </div>
       <div className="muted small" style={{ margin: '-4px 4px 12px' }}>Carbs {totals.carbs}/{target.carbs} g · fat {totals.fat}/{target.fat} g · {done}/{N.meal_slots.length} eaten · <Link to="/profile">{target.source === 'profile' ? 'your targets' : 'set your targets'}</Link></div>
+      {dayDrift(totals, target).map((r) => (
+        <div key={r.key} className="warn" role="note">
+          {r.label} with these picks: {r.total} {r.unit}, {Math.round(Math.abs(r.diff) * 100)}% {r.over ? 'over' : 'under'} your {r.target} {r.unit} target.
+          {day.is_refeed && r.key === 'kcal' && r.over ? ' It is a refeed day, so a little over is planned.' : r.key === 'protein' && !r.over ? ' Try the other option on a meal, or add a protein snack.' : ''}
+        </div>
+      ))}
       {training ? <div className="card small"><span className="chip accent">Training day</span> <span className="muted">{N.pre_workout_note}</span></div> : null}
 
       {day.meals.map((meal) => {
