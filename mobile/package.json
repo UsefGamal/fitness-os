@@ -3,13 +3,14 @@
   "private": true,
   "version": "0.3.0",
   "type": "module",
-  "description": "Phase 3: the standalone Fitness OS phone app. Runs inside the APK, data saved on the phone.",
+  "description": "The standalone Fitness OS phone app. Runs inside the APK, data saved on the phone.",
   "scripts": {
     "content": "python3 ../scripts/export_content.py src/content.json",
     "dev": "npm run content && vite",
     "build": "npm run content && vite build",
     "preview": "vite preview",
     "test": "npm run content && node --test src/lib/*.test.js",
+    "coverage": "npm run content && node scripts/coverage.mjs",
     "build:mobile": "npm run photos && npm run build && cap sync android",
     "photos": "python3 ../scripts/fetch_exercise_photos.py public/exercise-db"
   },
