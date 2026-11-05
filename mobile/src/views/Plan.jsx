@@ -12,6 +12,7 @@ import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
 import * as P from '../lib/planEdit.js';
+import { activePlan } from '../lib/plan.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -41,7 +42,7 @@ function ExerciseList({ day }) {
 
 function EditList({ day, sessionKey }) {
   const { data, update } = useData();
-  const T = content.training;
+  const T = activePlan(data, content);
   const [adding, setAdding] = useState('');
   const { catalogue } = useCatalogue();
   // Up to 8 catalogue exercises that work the same muscles, best first.
@@ -113,7 +114,7 @@ function EditList({ day, sessionKey }) {
 export default function Plan() {
   const { data, update } = useData();
   const today = todayISO();
-  const T = content.training;
+  const T = activePlan(data, content);
   const times = timesOf(data, content);
   const week = weekView(today, T, data.session_moves || []);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');

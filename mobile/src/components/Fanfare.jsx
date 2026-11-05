@@ -8,9 +8,11 @@ import Icon from './Icon.jsx';
 
 /** Watches for newly earned badges, records them, and shows a card with a
  * fanfare. The very first check (data from before badges existed) records
- * what's already earned quietly. */
+ * what's already earned quietly. During a workout the card waits until it
+ * is finished or discarded, so it never covers the rest timer (E6-S1). */
 export default function Fanfare() {
-  const { data, update } = useData();
+  const { data, update, activeWorkoutId } = useData();
+  const [queued, setQueued] = useState([]);
   const [shown, setShown] = useState(null);
 
   useEffect(() => {
@@ -20,9 +22,15 @@ export default function Fanfare() {
     if (!fresh.length && !first) return;
     update((d) => recordBadges({ ...d, achievements: d.achievements || {} }, fresh.map((b) => b.id), today));
     if (first || !fresh.length) return;
-    setShown(fresh);
-    feedback('pr');
+    setQueued((q) => [...q, ...fresh]);
   }, [data, update]);
+
+  useEffect(() => {
+    if (activeWorkoutId || !queued.length) return;
+    setShown(queued);
+    setQueued([]);
+    feedback('pr');
+  }, [activeWorkoutId, queued]);
 
   useEffect(() => {
     if (!shown) return undefined;

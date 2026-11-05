@@ -13,6 +13,8 @@ import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, totalPoints } from '../lib/quests.js';
 import { programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
+import { activePlan } from '../lib/plan.js';
+import { backupDue } from '../lib/durable.js';
 import { content, useData } from '../store/useData.js';
 import { SESSIONS } from './Session.jsx';
 
@@ -22,7 +24,7 @@ export default function Today() {
   const { data, update } = useData();
   const navigate = useNavigate();
   const today = todayISO();
-  const T = content.training;
+  const T = activePlan(data, content);
   const times = timesOf(data, content);
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
@@ -42,6 +44,7 @@ export default function Today() {
   const healthOn = data.settings?.health?.enabled;
   const ready = healthOn ? readiness(data.health_daily, today) : null;
   const moved = healthOn ? data.health_daily?.[today] : null;
+  const backup = backupDue(data);
 
   return (
     <div className="page">
@@ -82,6 +85,20 @@ export default function Today() {
           </>
         )}
       </section>
+
+      {backup ? (
+        <section className="card row" style={{ gap: 10 }} role="status">
+          <Icon name="download" />
+          <div className="grow small">
+            <strong>Back up your data</strong>
+            <div className="muted">{backup.days == null ? "You haven't saved a backup yet." : `Last backup ${backup.days} days ago.`} It's the only copy, so keep one somewhere safe.</div>
+          </div>
+          <div className="stack" style={{ gap: 4 }}>
+            <Link className="btn small" to="/settings">Back up</Link>
+            <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}>Later</button>
+          </div>
+        </section>
+      ) : null}
 
       {ready && (ready.level !== 'unknown' || moved?.steps != null) ? (
         <section className="card">

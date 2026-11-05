@@ -2,23 +2,28 @@
 // and returns a new one (or a derived value), so the store stays a thin
 // shell and all of this is tested in data.test.js.
 //
-// The data shape is the server's export format (data_export.py,
-// "fitness-os-export" v1) with snake_case fields, so an export from the old
-// site imports as is.
-
-export const DATA_VERSION = 1;
+// The data shape grew out of the old server's export format
+// ("fitness-os-export" v1, snake_case fields). lib/migrate.js upgrades any
+// older copy to the current schema; this is what a new install starts with.
+import { blockFromContent, CURRENT_SCHEMA, defaultDiet, defaultSafety } from './migrate.js';
 
 export function emptyData(content) {
+  const planStart = content.nutrition.plan_start_date;
   return {
-    version: DATA_VERSION,
+    schemaVersion: CURRENT_SCHEMA,
     profile: null,
+    goals: [],
+    safety: defaultSafety(),
+    diet: defaultDiet(planStart),
+    program: { schedule_mode: 'weekdays', active_block: 'b1', blocks: [blockFromContent(content, { startedOn: planStart })] },
+    checkins: [],
+    rewards: { ledger: [] },
     exercises: seedExercises(content),
     body_logs: [],
     hydration_logs: [],
     workouts: [],
     meal_logs: [],
     bonus_logs: [],
-    plan_overrides: {},
     shopping: { week: null, checked: [] },
     settings: defaultSettings(),
   };
@@ -79,6 +84,7 @@ export function startWorkout(data, { date, sessionKey, label, type = 'gym' }) {
     pain_note: null,
     result: null,
     session_key: sessionKey,
+    block_id: data.program?.active_block ?? null,
     started_at: Date.now(),
     finished_at: null,
     sets: [],
@@ -95,7 +101,7 @@ export function addSet(data, workoutId, { exerciseId, reps, weightKg, rpe = null
   const nextSetId = nextId(allSets(data));
   return updateWorkout(data, workoutId, (w) => {
     const setNumber = w.sets.filter((s) => s.exercise_id === exerciseId).length + 1;
-    const set = { id: nextSetId, exercise_id: exerciseId, set_number: setNumber, reps, weight_kg: weightKg, rpe };
+    const set = { id: nextSetId, exercise_id: exerciseId, set_number: setNumber, reps, weight_kg: weightKg, rpe, rir: null, is_warmup: false };
     return { ...w, sets: [...w.sets, set] };
   });
 }

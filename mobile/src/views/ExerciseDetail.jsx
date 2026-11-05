@@ -10,6 +10,7 @@ import { entryFor } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries } from '../lib/insights.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { activePlan } from '../lib/plan.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 import { HowTo } from './CatalogueDetail.jsx';
@@ -23,8 +24,9 @@ export default function ExerciseDetail() {
   if (!ex) return <div className="page"><div className="card empty">Exercise not found.</div></div>;
   const history = D.exerciseHistory(data, ex.id);
   const best = D.personalBests(data).get(ex.id);
-  const inPlan = content.training.program
-    .map((d) => ({ d, x: effectiveDay(d.key, content.training, data).exercises.find((e) => e.name === ex.name) }))
+  const plan = activePlan(data, content);
+  const inPlan = plan.program
+    .map((d) => ({ d, x: effectiveDay(d.key, plan, data).exercises.find((e) => e.name === ex.name) }))
     .filter((r) => r.x);
   const photo = ex && catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
   const video = inPlan.find((r) => r.x.video)?.x.video;

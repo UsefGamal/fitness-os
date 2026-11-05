@@ -1,3 +1,5 @@
+# FROZEN, NOT AUTHORITATIVE: kept from the retired web app as a reference for
+# porting. The phone app's mobile/src/lib/macros.js is the source of truth.
 """Mifflin-St Jeor BMR/TDEE calculation and deficit-based macro targeting.
 
 Replaces the old fixed MACRO_TARGETS constant (a hand-picked "~1900-2050

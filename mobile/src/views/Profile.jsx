@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
-import { ACTIVITY, macroTargets, profileOf } from '../lib/macros.js';
+import { ACTIVITY, macroTargets, profileOf, saveProfile } from '../lib/macros.js';
 import { content, useData } from '../store/useData.js';
 
 const ACTIVITY_LABELS = {
@@ -20,7 +20,7 @@ export default function Profile() {
   const { data, update } = useData();
   const navigate = useNavigate();
   const today = todayISO();
-  const [p, setP] = useState(() => profileOf(data));
+  const [p, setP] = useState(() => ({ gender: '', activity_level: 'moderate', ...profileOf(data) }));
   const [saved, setSaved] = useState(false);
   const set = (k) => (e) => { setP({ ...p, [k]: e.target.value }); setSaved(false); };
 
@@ -35,15 +35,16 @@ export default function Profile() {
   if (!(clean.height_cm >= 100 && clean.height_cm <= 250)) errors.push('Height must be between 100 and 250 cm.');
   if (!(clean.goal_weight_low_kg >= 30 && clean.goal_weight_high_kg <= 300 && clean.goal_weight_low_kg <= clean.goal_weight_high_kg)) errors.push('Goal weights must be 30-300 kg, low first.');
   if (clean.start_weight_kg != null && !(clean.start_weight_kg >= 30 && clean.start_weight_kg <= 300)) errors.push('Start weight must be 30-300 kg.');
+  if (!p.gender) errors.push('Pick the sex used for the calorie formula.');
   if (!p.date_of_birth || p.date_of_birth > today) errors.push('Pick a date of birth in the past.');
   if (!p.goal_date) errors.push('Pick a goal date.');
 
-  const preview = macroTargets({ ...data, profile: clean }, content.nutrition, today);
+  const preview = macroTargets(saveProfile(data, clean, today), content.nutrition, today);
 
   const save = (e) => {
     e.preventDefault();
     if (errors.length) return;
-    update((d) => ({ ...d, profile: { ...(d.profile || {}), ...clean } }));
+    update((d) => saveProfile(d, clean, today));
     setSaved(true);
   };
 
@@ -54,7 +55,7 @@ export default function Profile() {
       <p className="page-sub">Your stats set the daily calorie and macro targets.</p>
 
       <section className="card">
-        <div className="muted small">Daily target{preview.source === 'plan' ? ' (the plan\'s default until you log a weigh-in)' : ''}</div>
+        <div className="muted small">Daily target{preview.source === 'plan' ? ' (the plan\'s default until your profile is filled in and you log a weigh-in)' : ''}</div>
         <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 8px' }}>
           <span style={{ fontSize: 30, fontWeight: 700 }}>{preview.kcal}</span><span className="muted">kcal</span>
         </div>
@@ -77,7 +78,7 @@ export default function Profile() {
         <div className="row">
           <label className="field grow"><span>Height (cm)</span><input type="number" inputMode="decimal" value={p.height_cm ?? ''} onChange={set('height_cm')} /></label>
           <label className="field grow"><span>Sex</span>
-            <select value={p.gender} onChange={set('gender')}>{content.nutrition.tdee.genders.map((g) => <option key={g} value={g}>{g === 'male' ? 'Male' : 'Female'}</option>)}</select>
+            <select value={p.gender} onChange={set('gender')}><option value="" disabled>Choose</option>{content.nutrition.tdee.genders.map((g) => <option key={g} value={g}>{g === 'male' ? 'Male' : 'Female'}</option>)}</select>
           </label>
         </div>
         <label className="field"><span>Date of birth</span><input type="date" value={p.date_of_birth || ''} max={today} onChange={set('date_of_birth')} /></label>
