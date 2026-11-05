@@ -46,7 +46,16 @@ def test_manifest_declares_the_phase4_pieces():
 
 def test_health_permissions_are_only_what_the_app_uses():
     health = sorted(line.split('"')[1] for line in MANIFEST.splitlines() if "android.permission.health." in line)
-    assert health == ["android.permission.health.READ_WEIGHT", "android.permission.health.WRITE_EXERCISE"]
+    assert health == [
+        # Optional, each can be refused: daily activity, sleep and recovery.
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_STEPS",
+        # Required: weigh-ins in, workouts out.
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.WRITE_EXERCISE",
+    ]
 
 
 # The classes a home-screen widget layout may use (RemoteViews' whitelist).

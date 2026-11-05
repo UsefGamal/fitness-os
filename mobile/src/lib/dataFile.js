@@ -48,6 +48,7 @@ export function parseDataFile(text, content) {
     ...(raw.evening_plan && typeof raw.evening_plan === 'object' ? { evening_plan: raw.evening_plan } : {}),
     // The photo list only; the images stay on the phone that took them.
     ...(Array.isArray(raw.progress_photos) ? { progress_photos: raw.progress_photos } : {}),
+    ...(raw.health_daily && typeof raw.health_daily === 'object' ? { health_daily: raw.health_daily } : {}),
     settings: { ...defaultSettings(), ...(raw.settings || {}), modules: { ...defaultSettings().modules, ...(raw.settings?.modules || {}) } },
   };
 }

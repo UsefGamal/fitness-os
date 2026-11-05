@@ -20,6 +20,12 @@ import { content, useData } from '../store/useData.js';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
+const EXTRA_NAMES = { steps: 'steps', active_kcal: 'active calories', sleep: 'sleep', resting_hr: 'resting heart rate' };
+function extrasText(list) {
+  const names = list.map((k) => EXTRA_NAMES[k] || k);
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+}
+
 export default function Settings() {
   const { data, update, replaceAll } = useData();
   const navigate = useNavigate();
@@ -31,9 +37,10 @@ export default function Settings() {
   const s = summarize(data);
   const health = healthSettings(data);
   const [hcStatus, setHcStatus] = useState(isNative() ? 'checking' : 'unavailable');
+  const [hcExtras, setHcExtras] = useState([]); // allowed optional reads: steps, active_kcal, sleep, resting_hr
   useEffect(() => {
     if (!isNative()) return;
-    Health.status().then((r) => setHcStatus(r.status), () => setHcStatus('unavailable'));
+    Health.status().then((r) => { setHcStatus(r.status); setHcExtras(r.extras || []); }, () => setHcStatus('unavailable'));
   }, []);
 
   const setHealth = (changes) => update((d) => ({ ...d, settings: { ...d.settings, health: { ...healthSettings(d), ...changes } } }));
@@ -44,7 +51,8 @@ export default function Settings() {
       return;
     }
     try {
-      const { granted } = await Health.connect();
+      const { granted, extras } = await Health.connect();
+      setHcExtras(extras || []);
       if (!granted) {
         setMsg('Health Connect needs both permissions: read weight and write exercise.');
         return;
@@ -54,6 +62,16 @@ export default function Settings() {
       setMsg(r ? `Health Connect on. Added ${n(r.weighIns, 'weigh-in')} and shared ${n(r.workouts, 'workout')}.` : 'Health Connect on.');
     } catch (err) {
       setMsg(err?.message || 'Could not connect to Health Connect.');
+    }
+  };
+  const allowActivity = async () => {
+    try {
+      const { extras } = await Health.connect();
+      setHcExtras(extras || []);
+      const r = await syncHealth({ all: true });
+      setMsg(extras?.length ? `Reading ${extrasText(extras)}. ${n(r?.days || 0, 'day')} found.` : 'Nothing extra allowed. You can change this in Health Connect any time.');
+    } catch (err) {
+      setMsg(err?.message || 'Could not open Health Connect.');
     }
   };
   const syncNow = async () => {
@@ -216,7 +234,19 @@ export default function Settings() {
               <span className={`check${health.enabled ? ' on' : ''}`}>{health.enabled ? <Icon name="check" /> : null}</span>
             </button>
             {health.enabled ? (
-              <button type="button" className="list-row" onClick={syncNow}><Icon name="download" /><div className="grow">Sync now</div><Icon name="chev" className="icon chev" /></button>
+              <>
+                <button type="button" className="list-row" onClick={allowActivity}>
+                  <Icon name="heart" />
+                  <div className="grow"><div>Steps, sleep and heart rate</div><div className="meta">{hcExtras.length ? `Reading ${extrasText(hcExtras)}. Tap to change.` : 'Optional, from your phone or watch. Tap to allow.'}</div></div>
+                  <Icon name="chev" className="icon chev" />
+                </button>
+                <button type="button" className="list-row" aria-pressed={health.adaptive === true} onClick={() => setHealth({ adaptive: health.adaptive !== true })}>
+                  <Icon name="flame" />
+                  <div className="grow"><div>Calorie target follows activity</div><div className="meta">Uses the last week's active calories, only on days with 2,000+ steps. Off: the activity level in Profile.</div></div>
+                  <span className={`check${health.adaptive === true ? ' on' : ''}`}>{health.adaptive === true ? <Icon name="check" /> : null}</span>
+                </button>
+                <button type="button" className="list-row" onClick={syncNow}><Icon name="download" /><div className="grow">Sync now</div><Icon name="chev" className="icon chev" /></button>
+              </>
             ) : null}
           </>
         ) : (

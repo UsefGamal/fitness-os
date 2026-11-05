@@ -65,6 +65,12 @@ export default function Profile() {
             {preview.rate > 0 ? `, minus the deficit for ${preview.rate} kg a week to reach your goal by the goal date.` : '.'}
           </div>
         ) : null}
+        {preview.source === 'watch' ? (
+          <div className="muted small" style={{ marginTop: 8 }}>
+            BMR {preview.bmr} × 1.2 + ¾ of your {preview.active_avg} active kcal a day (last week, days with the phone or watch on) = {preview.tdee} kcal maintenance at {preview.weight} kg
+            {preview.rate > 0 ? `, minus the deficit for ${preview.rate} kg a week.` : '.'} Switch this off in Settings → Health Connect.
+          </div>
+        ) : null}
       </section>
 
       <form className="card stack" onSubmit={save}>
