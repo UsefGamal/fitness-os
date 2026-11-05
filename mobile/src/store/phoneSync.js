@@ -7,7 +7,7 @@ import { mergeDaily } from '../lib/activity.js';
 import { healthWorkouts, mergeWeighIns } from '../lib/health.js';
 import { timesOf } from '../lib/times.js';
 import { widgetDays } from '../lib/widget.js';
-import { watchReminders } from './notify.js';
+import { openFromReminders, watchReminders } from './notify.js';
 import { Health, isNative, Widget } from './native.js';
 import { content, flushSave, useData } from './useData.js';
 import { useTimer } from './useTimer.js';
@@ -78,6 +78,7 @@ async function readDaily(n) {
 
 export function startPhoneSync() {
   if (!isNative()) return;
+  openFromReminders();
   watchReminders(content);
   pushWidget();
   useData.subscribe((s, prev) => {
