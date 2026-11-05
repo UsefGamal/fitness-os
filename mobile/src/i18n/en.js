@@ -1,0 +1,48 @@
+// English strings, by key. Every new user-facing string goes here and is
+// read with t() (lib/i18n.js). Arabic (ar.js) arrives in phase 13 for
+// setup, safety and the chrome, and everywhere in phase 18.
+export default {
+  'tab.home': 'Home',
+  'tab.plan': 'Plan',
+  'tab.start': 'Start',
+  'tab.meals': 'Meals',
+  'tab.library': 'Library',
+  'tab.stats': 'Stats',
+  'nav.main': 'Main',
+  'nav.back': 'Back',
+
+  'crash.title': 'Something went wrong',
+  'crash.body': 'Your data is safe on this phone. Save a backup first, then send the bug report so it can be fixed.',
+  'crash.backup': 'Save a backup',
+  'crash.backupSaved': 'Backup saved to Documents.',
+  'crash.backupDownloaded': 'Backup downloaded.',
+  'crash.backupFailed': 'Could not save the backup.',
+  'crash.report': 'Send a bug report',
+  'crash.reportNote': 'The report has the app version, your phone model, counts (how many workouts, weigh-ins) and the last errors. No weights, notes, photos or health data.',
+  'crash.reload': 'Reload the app',
+
+  'update.title': 'Update Fitness OS',
+  'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
+
+  'snap.title': 'Snapshots',
+  'snap.intro': 'The app keeps a copy of your data before each update, import or restore. The newest 7 are kept, on this phone only.',
+  'snap.none': 'No snapshots yet. One is kept automatically before the next update or import.',
+  'snap.unreadable': "That snapshot can't be read.",
+  'snap.confirm': 'Go back to {when}?',
+  'snap.detail': 'This snapshot has {workouts}, {sets} and {weighIns}. Anything logged since then is replaced, but kept as a new snapshot first.',
+  'snap.restore': 'Restore this snapshot',
+  'snap.restored': 'Restored: {workouts} and {weighIns}. What was here before is kept as a new snapshot.',
+  'common.cancel': 'Cancel',
+  'count.workout': '{n} workout',
+  'count.workouts': '{n} workouts',
+  'count.set': '{n} set',
+  'count.sets': '{n} sets',
+  'count.weighIn': '{n} weigh-in',
+  'count.weighIns': '{n} weigh-ins',
+
+  'about.title': 'About',
+  'about.version': 'Version {version}',
+  'about.data': 'Data version {schema}',
+  'about.report': 'Send a bug report',
+  'about.reportNote': 'Versions, counts and recent errors only; nothing personal.',
+};

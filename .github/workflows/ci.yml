@@ -40,6 +40,9 @@ jobs:
       - name: Tests with coverage gate
         run: npm run coverage
 
+      - name: No new hard-coded strings (i18n)
+        run: npm run lint:i18n
+
   # content/ and the export scripts.
   python:
     runs-on: ubuntu-latest

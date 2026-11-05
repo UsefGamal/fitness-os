@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "npm run content && node --test src/lib/*.test.js",
     "coverage": "npm run content && node scripts/coverage.mjs",
+    "lint:i18n": "node scripts/i18n-lint.mjs",
     "build:mobile": "npm run photos && npm run build && cap sync android",
     "photos": "python3 ../scripts/fetch_exercise_photos.py public/exercise-db"
   },

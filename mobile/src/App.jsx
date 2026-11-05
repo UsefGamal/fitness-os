@@ -1,16 +1,21 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-router';
 
+import ErrorBoundary from './components/CrashScreen.jsx';
 import Fanfare from './components/Fanfare.jsx';
 import Intro from './components/Intro.jsx';
 import RestTimer from './components/RestTimer.jsx';
 import { useTimer } from './store/useTimer.js';
 import TabBar from './components/TabBar.jsx';
 import { todayISO } from './lib/dates.js';
+import { routesFor } from './lib/flags.js';
+import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
 import { introLine, shouldPlayIntro } from './lib/intro.js';
 import { programDayFor } from './lib/schedule.js';
 import { activePlan } from './lib/plan.js';
 import { timesOf } from './lib/times.js';
+import { APP } from './lib/version.js';
+import { catchErrors } from './store/errors.js';
 import { scheduleReminders } from './store/notify.js';
 import { startPhoneSync } from './store/phoneSync.js';
 import { content, useData } from './store/useData.js';
@@ -31,6 +36,9 @@ const Photos = lazy(() => import('./views/Photos.jsx'));
 const Library = lazy(() => import('./views/Library.jsx'));
 const Profile = lazy(() => import('./views/Profile.jsx'));
 const Snapshots = lazy(() => import('./views/Snapshots.jsx'));
+const Lab = lazy(() => import('./views/Lab.jsx'));
+
+catchErrors();
 const Quests = lazy(() => import('./views/Quests.jsx'));
 const Shopping = lazy(() => import('./views/Shopping.jsx'));
 const Stats = lazy(() => import('./views/Stats.jsx'));
@@ -45,9 +53,11 @@ function Shell() {
   return (
     <>
       <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : 'push-in'}${timing ? ' with-timer' : ''}`}>
-        <Suspense fallback={<div className="page" />}>
-          <Outlet />
-        </Suspense>
+        <ErrorBoundary key={pathname}>
+          <Suspense fallback={<div className="page" />}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </div>
       <RestTimer />
       <Fanfare />
@@ -61,7 +71,8 @@ function Shell() {
 const router = createHashRouter([
   {
     element: <Shell />,
-    children: [
+    // Routes with a flag are left out of builds where the flag is off.
+    children: routesFor([
       { path: '/', element: <Today /> },
       { path: '/plan', element: <Plan /> },
       { path: '/workout', element: <Workout /> },
@@ -81,8 +92,9 @@ const router = createHashRouter([
       { path: '/quests', element: <Quests /> },
       { path: '/profile', element: <Profile /> },
       { path: '/snapshots', element: <Snapshots /> },
+      { path: '/lab', element: <Lab />, flag: 'example_lab' },
       { path: '*', element: <Today /> },
-    ],
+    ], APP),
   },
 ]);
 
@@ -107,6 +119,9 @@ export default function App() {
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   useEffect(() => {
     hydrate().then(() => {
+      const loc = setLocale(localeOf(useData.getState().data));
+      document.documentElement.lang = loc;
+      document.documentElement.dir = dirOf(loc);
       if (useData.getState().loadError) return;
       setIntro(introFor());
       // Keep two weeks of reminders queued on every open.
@@ -121,9 +136,9 @@ export default function App() {
     // written until a version that reads it is installed.
     return (
       <div className="page" role="alert">
-        <h1 className="page-title">Update Fitness OS</h1>
+        <h1 className="page-title">{t('update.title')}</h1>
         <p className="page-sub">{loadError}</p>
-        <p className="muted small">Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.</p>
+        <p className="muted small">{t('update.safe')}</p>
       </div>
     );
   }
