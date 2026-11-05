@@ -18,6 +18,10 @@ import { Health, isNative } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
+import { t } from '../lib/i18n.js';
+import { APP } from '../lib/version.js';
+import { currentReport } from '../store/errors.js';
+import { shareText } from '../store/share.js';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -291,7 +295,8 @@ export default function Settings() {
       <div className="section-label">About</div>
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name || "Trainer's U-L-PPL"}</span></div>
-        <div className="list-row"><div className="grow">Version</div><span className="meta">0.3.0</span></div>
+        <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t('about.data', { schema: data.schemaVersion })}</span></div>
+        <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
     </div>
   );

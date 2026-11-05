@@ -6,10 +6,12 @@ import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { ImportError, parseSnapshot, summarize } from '../lib/dataFile.js';
+import { t } from '../lib/i18n.js';
 import { listSnapshots, readSnapshot } from '../store/snapshots.js';
 import { content, useData } from '../store/useData.js';
 
-const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+// count.workout / count.workouts and so on; Arabic plurals get their own keys later.
+const n = (count, key) => t(count === 1 ? `count.${key}` : `count.${key}s`, { n: count });
 
 function when(at) {
   return new Date(at).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -30,43 +32,43 @@ export default function Snapshots() {
     setMsg('');
     const text = await readSnapshot(snap.name);
     if (!text) {
-      setMsg("That snapshot can't be read.");
+      setMsg(t('snap.unreadable'));
       return;
     }
     try {
       setPicked({ snap, data: parseSnapshot(text, content) });
     } catch (err) {
-      setMsg(err instanceof ImportError ? err.message : "That snapshot can't be read.");
+      setMsg(err instanceof ImportError ? err.message : t('snap.unreadable'));
     }
   };
 
   const restore = async () => {
-    const t = summarize(picked.data);
+    const c = summarize(picked.data);
     await replaceAll(picked.data, 'restore');
     setPicked(null);
-    setMsg(`Restored: ${n(t.workouts, 'workout')} and ${n(t.weighIns, 'weigh-in')}. What was here before is kept as a new snapshot.`);
+    setMsg(t('snap.restored', { workouts: n(c.workouts, 'workout'), weighIns: n(c.weighIns, 'weighIn') }));
     setList(await listSnapshots());
   };
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
-      <h1 className="page-title" style={{ marginTop: 4 }}>Snapshots</h1>
-      <p className="page-sub">The app keeps a copy of your data before each update, import or restore. The newest 7 are kept, on this phone only.</p>
+      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> {t('nav.back')}</button>
+      <h1 className="page-title" style={{ marginTop: 4 }}>{t('snap.title')}</h1>
+      <p className="page-sub">{t('snap.intro')}</p>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
 
       {picked ? (
         <section className="card stack">
-          <strong>Go back to {when(picked.snap.at)}?</strong>
+          <strong>{t('snap.confirm', { when: when(picked.snap.at) })}</strong>
           <div className="muted small">
-            This snapshot has {n(summarize(picked.data).workouts, 'workout')}, {n(summarize(picked.data).sets, 'set')} and {n(summarize(picked.data).weighIns, 'weigh-in')}. Anything logged since then is replaced, but kept as a new snapshot first.
+            {t('snap.detail', { workouts: n(summarize(picked.data).workouts, 'workout'), sets: n(summarize(picked.data).sets, 'set'), weighIns: n(summarize(picked.data).weighIns, 'weighIn') })}
           </div>
-          <button type="button" className="btn" onClick={restore}>Restore this snapshot</button>
-          <button type="button" className="btn ghost" onClick={() => setPicked(null)}>Cancel</button>
+          <button type="button" className="btn" onClick={restore}>{t('snap.restore')}</button>
+          <button type="button" className="btn ghost" onClick={() => setPicked(null)}>{t('common.cancel')}</button>
         </section>
       ) : null}
 
-      {list && !list.length ? <div className="card muted small">No snapshots yet. One is kept automatically before the next update or import.</div> : null}
+      {list && !list.length ? <div className="card muted small">{t('snap.none')}</div> : null}
       {list && list.length ? (
         <div className="list">
           {list.map((s) => (
