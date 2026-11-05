@@ -118,6 +118,15 @@ function Strength({ data }) {
   );
 }
 
+const ROMAN = ['', 'I', 'II', 'III', 'IV'];
+
+/** "3 / 10", "0.8 / 1 × BW", "2.5 / 5 kg" */
+function progressText(b) {
+  const round = (v) => (b.goal >= 1000 ? Math.round(v).toLocaleString() : Math.round(v * 10) / 10);
+  const goal = b.goal >= 1000 ? b.goal.toLocaleString() : b.goal;
+  return `${round(Math.max(0, b.value || 0))} / ${goal}${b.unit ? ` ${b.unit}` : b.goal >= 1000 ? ' kg' : ''}`;
+}
+
 function Badges({ data, today }) {
   const all = badges(data, today);
   const earned = all.filter((b) => b.earned).length;
@@ -126,11 +135,14 @@ function Badges({ data, today }) {
       <p className="muted small" style={{ margin: '0 4px 10px' }}>{earned} of {all.length} earned</p>
       <div className="badges">
         {all.map((b) => (
-          <div key={b.id} className={`badge${b.earned ? ' on' : ''}`}>
-            <span className="medal"><Icon name="trophy" /></span>
+          <div key={b.id} className={`badge tone-${b.tone}${b.earned ? ' on' : ''}`} style={{ '--p': `${Math.round(b.fraction * 360)}deg` }}>
+            <span className="medal" aria-hidden="true">
+              <span className="medal-in"><Icon name={b.icon} /></span>
+              {b.tier > 1 ? <span className="tier">{ROMAN[b.tier]}</span> : null}
+            </span>
             <span className="name">{b.label}</span>
             <span className="meta">{b.earned && b.date ? formatDate(b.date) : b.note}</span>
-            {b.earned ? null : <div className="progress" aria-label={`${Math.round(b.fraction * 100)}%`}><span style={{ width: `${b.fraction * 100}%` }} /></div>}
+            {b.earned ? <span className="got"><Icon name="check" /> Earned</span> : <span className="count">{progressText(b)}</span>}
           </div>
         ))}
       </div>

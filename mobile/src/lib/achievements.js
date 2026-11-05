@@ -7,26 +7,28 @@ import { weekStart } from './dates.js';
 
 const gymCount = (s) => s.gym;
 
+// Each badge has its own icon, a colour per family (workouts, streaks, bests,
+// volume, lifts, body…) and a tier within its family (1 = first step).
 export const BADGES = [
-  { id: 'first', label: 'First step', note: 'Log your first workout', goal: 1, value: gymCount },
-  { id: 'w10', label: 'Ten in', note: '10 workouts', goal: 10, value: gymCount },
-  { id: 'w50', label: 'Regular', note: '50 workouts', goal: 50, value: gymCount },
-  { id: 'w100', label: 'Hundred club', note: '100 workouts', goal: 100, value: gymCount },
-  { id: 'streak4', label: 'A month strong', note: 'Train 4 weeks in a row', goal: 4, value: (s) => s.longestWeeks },
-  { id: 'streak12', label: 'Habit', note: 'Train 12 weeks in a row', goal: 12, value: (s) => s.longestWeeks },
-  { id: 'pr1', label: 'New best', note: 'Set your first personal best', goal: 1, value: (s) => s.prs },
-  { id: 'pr25', label: 'Getting stronger', note: '25 personal bests', goal: 25, value: (s) => s.prs },
-  { id: 'ton10', label: '10 tonnes', note: 'Lift 10,000 kg in total', goal: 10000, value: (s) => s.volume },
-  { id: 'ton100', label: '100 tonnes', note: 'Lift 100,000 kg in total', goal: 100000, value: (s) => s.volume },
-  { id: 'early10', label: 'Early bird', note: 'Start 10 workouts before 8 AM', goal: 10, value: (s) => s.early },
-  { id: 'full', label: 'Head to toe', note: 'Train all six muscle groups in one week', goal: 6, value: (s) => s.bestWeekGroups },
-  { id: 'bench1', label: 'Bodyweight bench', note: 'Bench press your bodyweight (est. 1RM)', goal: 1, value: (s) => s.ratio.bench, unit: '× BW' },
-  { id: 'squat15', label: 'Strong legs', note: 'Squat 1.5 × your bodyweight (est. 1RM)', goal: 1.5, value: (s) => s.ratio.squat, unit: '× BW' },
-  { id: 'dead2', label: 'Double deadlift', note: 'Deadlift 2 × your bodyweight (est. 1RM)', goal: 2, value: (s) => s.ratio.deadlift, unit: '× BW' },
-  { id: 'lost5', label: '5 kg down', note: 'Weigh 5 kg less than your first weigh-in', goal: 5, value: (s) => s.lost, unit: 'kg' },
-  { id: 'waist5', label: 'Belt notch', note: 'Waist 5 cm smaller than your first measure', goal: 5, value: (s) => s.waist, unit: 'cm' },
-  { id: 'meals7', label: 'Clean week', note: 'Tick every meal for a whole week', goal: 1, value: (s) => s.mealWeeks },
-  { id: 'weigh30', label: 'On the scale', note: 'Log 30 weigh-ins', goal: 30, value: (s) => s.weighIns },
+  { id: 'first', label: 'First step', note: 'Log your first workout', goal: 1, value: gymCount, icon: 'dumbbell', tone: 'blue', tier: 1 },
+  { id: 'w10', label: 'Ten in', note: '10 workouts', goal: 10, value: gymCount, icon: 'dumbbell', tone: 'blue', tier: 2 },
+  { id: 'w50', label: 'Regular', note: '50 workouts', goal: 50, value: gymCount, icon: 'dumbbell', tone: 'blue', tier: 3 },
+  { id: 'w100', label: 'Hundred club', note: '100 workouts', goal: 100, value: gymCount, icon: 'dumbbell', tone: 'blue', tier: 4 },
+  { id: 'streak4', label: 'A month strong', note: 'Train 4 weeks in a row', goal: 4, value: (s) => s.longestWeeks, icon: 'flame', tone: 'orange', tier: 1 },
+  { id: 'streak12', label: 'Habit', note: 'Train 12 weeks in a row', goal: 12, value: (s) => s.longestWeeks, icon: 'flame', tone: 'orange', tier: 2 },
+  { id: 'pr1', label: 'New best', note: 'Set your first personal best', goal: 1, value: (s) => s.prs, icon: 'medal', tone: 'gold', tier: 1 },
+  { id: 'pr25', label: 'Getting stronger', note: '25 personal bests', goal: 25, value: (s) => s.prs, icon: 'medal', tone: 'gold', tier: 2 },
+  { id: 'ton10', label: '10 tonnes', note: 'Lift 10,000 kg in total', goal: 10000, value: (s) => s.volume, icon: 'kettlebell', tone: 'purple', tier: 1 },
+  { id: 'ton100', label: '100 tonnes', note: 'Lift 100,000 kg in total', goal: 100000, value: (s) => s.volume, icon: 'kettlebell', tone: 'purple', tier: 2 },
+  { id: 'early10', label: 'Early bird', note: 'Start 10 workouts before 8 AM', goal: 10, value: (s) => s.early, icon: 'sunrise', tone: 'pink', tier: 1 },
+  { id: 'full', label: 'Head to toe', note: 'Train all six muscle groups in one week', goal: 6, value: (s) => s.bestWeekGroups, icon: 'person', tone: 'teal', tier: 1 },
+  { id: 'bench1', label: 'Bodyweight bench', note: 'Bench press your bodyweight (est. 1RM)', goal: 1, value: (s) => s.ratio.bench, unit: '× BW', icon: 'barbell', tone: 'indigo', tier: 1 },
+  { id: 'squat15', label: 'Strong legs', note: 'Squat 1.5 × your bodyweight (est. 1RM)', goal: 1.5, value: (s) => s.ratio.squat, unit: '× BW', icon: 'barbell', tone: 'indigo', tier: 2 },
+  { id: 'dead2', label: 'Double deadlift', note: 'Deadlift 2 × your bodyweight (est. 1RM)', goal: 2, value: (s) => s.ratio.deadlift, unit: '× BW', icon: 'barbell', tone: 'indigo', tier: 3 },
+  { id: 'lost5', label: '5 kg down', note: 'Weigh 5 kg less than your first weigh-in', goal: 5, value: (s) => s.lost, unit: 'kg', icon: 'scale', tone: 'green', tier: 1 },
+  { id: 'waist5', label: 'Belt notch', note: 'Waist 5 cm smaller than your first measure', goal: 5, value: (s) => s.waist, unit: 'cm', icon: 'tape', tone: 'green', tier: 1 },
+  { id: 'meals7', label: 'Clean week', note: 'Tick every meal for a whole week', goal: 1, value: (s) => s.mealWeeks, icon: 'meals', tone: 'green', tier: 1 },
+  { id: 'weigh30', label: 'On the scale', note: 'Log 30 weigh-ins', goal: 30, value: (s) => s.weighIns, icon: 'scale', tone: 'green', tier: 2 },
 ];
 
 /** Count of sets that beat every earlier set of the same exercise. */
