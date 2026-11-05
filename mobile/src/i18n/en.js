@@ -40,6 +40,14 @@ export default {
   'count.weighIn': '{n} weigh-in',
   'count.weighIns': '{n} weigh-ins',
 
+  'more.label': 'More actions',
+  'workout.more': 'Workout',
+  'workout.discard': 'Discard workout',
+  'workout.discardNote': 'Deletes this session and its {sets}',
+  'workout.discardConfirm': 'Discard this {label} workout? Its {sets} will be deleted.',
+  'workout.undo': 'Undo',
+  'workout.planBackup': "Plan's backup",
+
   'about.title': 'About',
   'about.version': 'Version {version}',
   'about.data': 'Data version {schema}',

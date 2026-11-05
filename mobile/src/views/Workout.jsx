@@ -24,6 +24,12 @@ import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { useTimer } from '../store/useTimer.js';
+import MoreMenu from '../components/MoreMenu.jsx';
+import { t } from '../lib/i18n.js';
+
+// Long enough to notice and reach the button (E6-S2: at least 6 s).
+const UNDO_MS = 7000;
+const setsText = (n) => `${n} logged set${n === 1 ? '' : 's'}`;
 
 function targetReps(reps) {
   const m = /\d+/.exec(String(reps || ''));
@@ -122,7 +128,7 @@ export default function Workout() {
 
   useEffect(() => {
     if (!undo) return undefined;
-    const id = setTimeout(() => setUndo(null), 5000);
+    const id = setTimeout(() => setUndo(null), UNDO_MS);
     return () => clearTimeout(id);
   }, [undo]);
 
@@ -276,6 +282,19 @@ export default function Workout() {
     ));
     setSheet(null);
   };
+  // The plan's own backup is a name: use the catalogue entry when there is
+  // one, otherwise add it to the Library under the same muscle group.
+  const swapToName = (name) => {
+    const hit = catalogue?.exercises.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    if (hit) return swapTo(hit);
+    update((d) => setTweaks(
+      D.addCustomExercise(d, { name, muscle_group: D.exerciseByName(d, ex.swapped_from || ex.name)?.muscle_group || 'Other', equipment: null }),
+      active.id,
+      swapFor(active.tweaks, planDay.exercises.length, ex.orig, name),
+    ));
+    setSheet(null);
+    return undefined;
+  };
   const swapOptions = entry && catalogue ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : [];
 
   const removeSet = (s) => {
@@ -284,7 +303,7 @@ export default function Workout() {
   };
 
   const discard = () => {
-    if (!window.confirm(`Discard this ${day.label} workout? Its ${active.sets.length} logged sets will be deleted.`)) return;
+    if (!window.confirm(t('workout.discardConfirm', { label: day.label, sets: setsText(active.sets.length) }))) return;
     timer.stop();
     update((d) => D.deleteWorkout(d, active.id));
     setActiveWorkout(null);
@@ -309,9 +328,9 @@ export default function Workout() {
     <div className="page">
       {toast ? <div className="toast" role="status"><span className="pr">PR</span> {toast}</div> : null}
       {undo && !toast ? (
-        <div className="toast" role="status">
+        <div className="toast undo-toast" role="status">
           {undo.label}
-          <button type="button" className="undo" onClick={() => { update((d) => restoreSet(d, active.id, undo.set)); setUndo(null); }}><Icon name="undo" className="icon" /> Undo</button>
+          <button type="button" className="undo" onClick={() => { update((d) => restoreSet(d, active.id, undo.set)); setUndo(null); }}><Icon name="undo" className="icon" /> {t('workout.undo')}</button>
         </div>
       ) : null}
       <div className="row between" style={{ marginTop: 8 }}>
@@ -321,14 +340,16 @@ export default function Workout() {
             {paused ? 'Paused · ' : ''}{elapsed(ms)}{lengthTarget ? ` of ${settings.target_min}` : ''} · {totalDone}/{totalTarget} sets · tempo {T.trainer_plan.tempo}
           </div>
         </div>
-        <button type="button" className="btn small" onClick={() => setFinishing(true)}>Finish</button>
+        <div className="row" style={{ gap: 4 }}>
+          <button type="button" className="btn small" onClick={() => setFinishing(true)}>Finish</button>
+          <MoreMenu title={t('workout.more')} actions={[{ key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: discard }]} />
+        </div>
       </div>
       {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
       <div className="row" style={{ gap: 8, margin: '0 0 12px' }}>
         <button type="button" className="btn small secondary grow" onClick={() => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id)))}>
           <Icon name={paused ? 'play' : 'pause'} /> {paused ? 'Resume' : 'Pause'}
         </button>
-        <button type="button" className="btn small ghost grow" onClick={discard}><Icon name="trash" /> Discard</button>
       </div>
 
       {finishing ? (
@@ -430,7 +451,12 @@ export default function Workout() {
           <p className="muted small" style={{ marginTop: 0 }}>For today only; your plan stays the same.</p>
           <div className="list">
             {ex.swapped_from ? <button type="button" className="list-row" onClick={() => swapTo(null)}><div className="grow">Back to {ex.swapped_from}</div></button> : null}
-            {ex.alternative ? <div className="list-row"><div className="grow"><div>Trainer's backup</div><div className="meta">{ex.alternative}</div></div></div> : null}
+            {ex.alternative ? (
+              <button type="button" className="list-row" onClick={() => swapToName(ex.alternative)}>
+                <div className="grow"><div>{t('workout.planBackup')}</div><div className="meta">{ex.alternative}</div></div>
+                <Icon name="chev" className="icon chev" />
+              </button>
+            ) : null}
             {swapOptions.map((o) => (
               <button key={o.id} type="button" className="list-row" onClick={() => swapTo(o)}>
                 <div className="grow"><div>{o.name}</div><div className="meta">{o.equipment || 'body only'}</div></div>
