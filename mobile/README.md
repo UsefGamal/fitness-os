@@ -28,8 +28,14 @@ The tab bar follows openGym: **Home**, **Plan**, **Start**, **Meals** and **Stat
 2. In the app, open Settings > "Import your data" and pick that file.
 
 Backups made with "Export a backup" are in the same format and import the
-same way. Data lives in the app's storage plus a file mirror in its private
-folder. **Uninstalling the app deletes it**, so export a backup now and then.
+same way, from any older version of the app. Data lives in the app's storage
+plus a file mirror in its private folder; the newest copy wins when the app
+starts. When an update changes the data format, the app upgrades it
+automatically and keeps a **snapshot** of the old data first (Settings >
+Snapshots keeps the newest 7, also taken before every import or restore). A
+backup from a newer app version is refused instead of guessed at. **Uninstalling
+the app deletes everything**, snapshots included, so export a backup now and
+then; Home reminds you after 14 days.
 
 ## Getting the APK
 

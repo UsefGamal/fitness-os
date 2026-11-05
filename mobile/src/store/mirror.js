@@ -1,27 +1,32 @@
 // File mirror of the data on the phone (Capacitor Filesystem, app-private
-// Data directory). In a plain browser (dev, tests) these are no-ops.
+// Data directory). Written atomically (tmp + rename, lib/durable.js). In a
+// plain browser (dev, tests) these are no-ops.
 import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 
+import { atomicWrite, parseCopy } from '../lib/durable.js';
 import { alternateName } from '../lib/fileNames.js';
+import { privateFs } from './fs.js';
 
 const PATH = 'fitness-os-data.json';
 let pending = null;
 let timer = null;
 
+/** The mirror's raw text and parsed copy. Falls back to the .tmp file if
+ * a write was cut off between deleting the old file and the rename. */
 export async function readMirror() {
-  if (!Capacitor.isNativePlatform()) return null;
-  try {
-    const { data } = await Filesystem.readFile({ path: PATH, directory: Directory.Data, encoding: Encoding.UTF8 });
-    return JSON.parse(data);
-  } catch {
-    return null;
+  if (!privateFs) return null;
+  for (const path of [PATH, `${PATH}.tmp`]) {
+    const text = await privateFs.read(path);
+    const data = parseCopy(text);
+    if (data) return { text, data };
   }
+  return null;
 }
 
 /** Coalesces bursts (tapping + on a stepper) into one write. */
 export function writeMirror(data) {
-  if (!Capacitor.isNativePlatform()) return;
+  if (!privateFs) return;
   pending = data;
   clearTimeout(timer);
   timer = setTimeout(flush, 300);
@@ -32,7 +37,7 @@ async function flush() {
   pending = null;
   if (!data) return;
   try {
-    await Filesystem.writeFile({ path: PATH, directory: Directory.Data, encoding: Encoding.UTF8, data: JSON.stringify(data) });
+    await atomicWrite(privateFs, PATH, JSON.stringify(data));
   } catch (err) {
     console.error('Could not write the data mirror', err);
   }

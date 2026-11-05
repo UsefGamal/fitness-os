@@ -1,0 +1,68 @@
+{
+ "format": "fitness-os-export",
+ "version": 1,
+ "exported_at": "2026-11-04T11:51:51Z",
+ "profile": {
+  "id": 1,
+  "height_cm": 180,
+  "date_of_birth": "1994-03-02",
+  "gender": "male",
+  "activity_level": "light",
+  "start_weight_kg": 95,
+  "goal_weight_low_kg": 82,
+  "goal_weight_high_kg": 85,
+  "goal_date": "2027-03-01"
+ },
+ "exercises": [
+  {
+   "id": 7,
+   "name": "Leg Press",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  }
+ ],
+ "body_logs": [
+  {
+   "id": 2,
+   "log_date": "2026-10-30",
+   "weight_kg": 92
+  },
+  {
+   "id": 1,
+   "log_date": "2026-10-01",
+   "weight_kg": 95
+  }
+ ],
+ "hydration_logs": [],
+ "workouts": [
+  {
+   "id": 3,
+   "log_date": "2026-10-29",
+   "workout_type": "gym",
+   "notes": "Pull",
+   "sets": [
+    {
+     "id": 9,
+     "workout_id": 3,
+     "exercise_id": 7,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 60,
+     "rpe": 8
+    }
+   ],
+   "checklist_items": []
+  }
+ ],
+ "meal_logs": [
+  {
+   "id": 1,
+   "log_date": "2026-10-29",
+   "meal_slot": "breakfast",
+   "completed": true,
+   "option_key": "option_a",
+   "drink_key": null
+  }
+ ],
+ "bonus_logs": []
+}

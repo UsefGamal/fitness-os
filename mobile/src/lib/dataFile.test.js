@@ -44,6 +44,7 @@ test('later fields (moved sessions, notes, badges) survive a backup', () => {
 test('rejects files that are not a Fitness OS export', () => {
   assert.throws(() => parseDataFile('not json', content), ImportError);
   assert.throws(() => parseDataFile('{"format":"other"}', content), ImportError);
-  assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, version: 2 }), content), ImportError);
+  assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, version: 99 }), content), ImportError);
+  assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, schemaVersion: 3 }), content), /newer version/);
   assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, workouts: null }), content), ImportError);
 });

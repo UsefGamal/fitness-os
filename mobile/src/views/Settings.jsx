@@ -27,6 +27,13 @@ function extrasText(list) {
   return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
 }
 
+function lastBackupText(data) {
+  const at = data.settings?.last_backup_at;
+  if (!at) return 'No backup yet';
+  const days = Math.floor((Date.now() - at) / 86400000);
+  return days === 0 ? 'Last backup today' : `Last backup ${n(days, 'day')} ago`;
+}
+
 export default function Settings() {
   const { data, update, replaceAll } = useData();
   const navigate = useNavigate();
@@ -97,11 +104,11 @@ export default function Settings() {
     }
   };
 
-  const confirmImport = () => {
-    replaceAll(pendingImport);
+  const confirmImport = async () => {
     const t = summarize(pendingImport);
+    await replaceAll(pendingImport, 'import');
     setPendingImport(null);
-    setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}.`);
+    setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}. What was here before is kept in Snapshots.`);
   };
 
   const readCsv = (text, unit) => {
@@ -143,6 +150,7 @@ export default function Settings() {
   const exportNow = async () => {
     try {
       const where = await saveExport(`fitness-os-backup-${todayISO()}.json`, toDataFile(data));
+      update((d) => ({ ...d, settings: { ...d.settings, last_backup_at: Date.now() } }));
       setMsg(where ? 'Saved to Documents on your phone.' : 'Backup downloaded.');
     } catch {
       setMsg('Could not save the backup. Check storage permission and try again.');
@@ -177,7 +185,8 @@ export default function Settings() {
       <div className="list">
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
         <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow">Export a backup</div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>Export a backup</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => navigate('/snapshots')}><Icon name="undo" /><div className="grow"><div>Snapshots</div><div className="meta">Copies kept before each update, import or restore</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
       </div>

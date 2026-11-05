@@ -47,7 +47,7 @@ test('watch TDEE adds a share of active calories, within bounds', () => {
 
 test('targets follow the watch only when switched on', () => {
   let data = D.logBody(D.emptyData(content), { log_date: back(10), weight_kg: 90 });
-  data.profile = { date_of_birth: '1995-01-01' };
+  data.profile = { date_of_birth: '1995-01-01', height_cm: 173, gender: 'male', activity_level: 'moderate' };
   const daily = {};
   for (let i = 1; i <= 7; i += 1) daily[back(i)] = { steps: 10000, active_kcal: 800 };
   data = { ...data, health_daily: daily };
