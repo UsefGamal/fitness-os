@@ -3,6 +3,8 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 
+import { alternateName } from '../lib/fileNames.js';
+
 const PATH = 'fitness-os-data.json';
 let pending = null;
 let timer = null;
@@ -36,11 +38,18 @@ async function flush() {
   }
 }
 
-/** Save a file the person can find (Documents), or download it in a browser. */
+/** Save a file the person can find (Documents), or download it in a browser.
+ * Android only lets an app overwrite files it created itself, and a
+ * reinstalled app counts as another app, so a file left by an earlier
+ * install can't be replaced: then it's saved under a new name instead. */
 export async function saveExport(filename, text, type = 'application/json') {
   if (Capacitor.isNativePlatform()) {
-    const res = await Filesystem.writeFile({ path: filename, directory: Directory.Documents, encoding: Encoding.UTF8, data: text, recursive: true });
-    return res.uri;
+    const write = (path) => Filesystem.writeFile({ path, directory: Directory.Documents, encoding: Encoding.UTF8, data: text, recursive: true });
+    try {
+      return (await write(filename)).uri;
+    } catch {
+      return (await write(alternateName(filename, new Date()))).uri;
+    }
   }
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement('a');
