@@ -282,3 +282,19 @@ details.more > summary::-webkit-details-marker { display: none; }
 .warn { background: rgba(255, 159, 10, 0.14); color: #ffb340; border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
 .fill-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .list-row input[type=time] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 40px; color-scheme: dark; }
+
+/* Intro on open (components/Intro.jsx, 1.8 s). The bolt sits where the
+   Android splash draws it, so the hand-over is seamless. */
+.intro { position: fixed; inset: 0; z-index: 100; background: var(--bg); border: 0; padding: 0; margin: 0; color: var(--text); width: 100%; animation: intro-out 0.35s ease-in 1.45s forwards; }
+.intro-mark { position: absolute; left: 50%; top: 50%; width: 160px; height: 160px; transform: translate(-50%, -50%); overflow: visible; }
+.intro-ring-bg { fill: none; stroke: var(--accent-dim); stroke-width: 6; opacity: 0; animation: intro-fade 0.3s ease-out 0.1s forwards; }
+.intro-ring { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transform: rotate(-90deg); transform-origin: 80px 80px; animation: intro-ring 0.65s cubic-bezier(.6, 0, .2, 1) 0.15s forwards; }
+.intro-bolt { fill: var(--accent); transform-origin: 80px 80px; animation: intro-charge 0.45s ease-out 0.55s; }
+.intro-text { position: absolute; left: 0; right: 0; top: calc(50% + 100px); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 24px; }
+.intro-name { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; opacity: 0; animation: intro-up 0.4s ease-out 0.65s forwards; }
+.intro-line { font-size: 17px; color: var(--muted); opacity: 0; animation: intro-up 0.4s ease-out 0.9s forwards; }
+@keyframes intro-ring { to { stroke-dashoffset: 0; } }
+@keyframes intro-fade { to { opacity: 1; } }
+@keyframes intro-charge { 0% { transform: scale(1); } 40% { transform: scale(1.14); filter: drop-shadow(0 0 14px rgba(48, 209, 88, 0.7)); } 100% { transform: scale(1); } }
+@keyframes intro-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes intro-out { to { opacity: 0; transform: scale(1.04); visibility: hidden; } }
