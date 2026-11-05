@@ -1,10 +1,15 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-router';
 
 import Fanfare from './components/Fanfare.jsx';
+import Intro from './components/Intro.jsx';
 import RestTimer from './components/RestTimer.jsx';
 import { useTimer } from './store/useTimer.js';
 import TabBar from './components/TabBar.jsx';
+import { todayISO } from './lib/dates.js';
+import { introLine, shouldPlayIntro } from './lib/intro.js';
+import { programDayFor } from './lib/schedule.js';
+import { timesOf } from './lib/times.js';
 import { scheduleReminders } from './store/notify.js';
 import { startPhoneSync } from './store/phoneSync.js';
 import { content, useData } from './store/useData.js';
@@ -78,15 +83,39 @@ const router = createHashRouter([
   },
 ]);
 
+/** Decides once per launch whether the intro plays, and what it says. */
+function introFor() {
+  const { data, activeWorkoutId } = useData.getState();
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (!shouldPlayIntro({ data, hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
+  const today = todayISO();
+  let next = null;
+  try {
+    next = programDayFor(today, content.training, data.session_moves || []);
+  } catch {
+    next = null;
+  }
+  const doneToday = data.workouts.some((w) => w.log_date === today && w.finished_at && (w.workout_type || 'gym') === 'gym');
+  return introLine({ next, time: timesOf(data, content).session_time, doneToday, firstRun: data.workouts.length === 0 });
+}
+
 export default function App() {
   const { ready, hydrate } = useData();
+  const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   useEffect(() => {
     hydrate().then(() => {
+      setIntro(introFor());
       // Keep two weeks of reminders queued on every open.
       scheduleReminders(content, useData.getState().data.settings.notifications);
       startPhoneSync();
     });
   }, [hydrate]);
+  const endIntro = useCallback(() => setIntro(null), []);
   if (!ready) return null;
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
+    </>
+  );
 }

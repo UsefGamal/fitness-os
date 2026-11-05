@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
+import { introOn, setIntro } from '../lib/intro.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
@@ -242,6 +243,11 @@ export default function Settings() {
         })}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Switching a module off only hides it. Nothing is deleted.</p>
+
+      <div className="section-label">App</div>
+      <div className="list">
+        <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped after a reminder tap and during a workout" />
+      </div>
 
       <div className="section-label">About</div>
       <div className="list">
