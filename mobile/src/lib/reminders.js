@@ -16,7 +16,8 @@ function at(iso, hhmm, lead = 0) {
   return d;
 }
 
-/** `evening` is data.evening_plan ({ weekday: option key }); `times` is
+/** Each reminder: { id, at, title, body, route } where `route` is the
+ * screen a tap opens. `evening` is data.evening_plan ({ weekday: option key }); `times` is
  * lib/times.js timesOf() (defaults when left out). */
 export function plannedReminders(today, content, now = new Date(), moves = [], evening = {}, times = defaultTimes(content)) {
   const out = [];
@@ -32,14 +33,15 @@ export function plannedReminders(today, content, now = new Date(), moves = [], e
         at: at(day, times.session_time, lead),
         title: `${session.label} at ${times.session_time}`,
         body: `${when(times.session_time)} · ${session.focus}`,
+        route: '/workout',
       });
     }
     const night = times.remind_evening !== false ? eveningOption(evening?.[weekdayName(day)]) : null;
-    if (night) out.push({ id: 3000 + i, at: at(day, times.evening_time, lead), title: `${night.label} at ${times.evening_time}`, body: `${when(times.evening_time)} · ${night.note}` });
+    if (night) out.push({ id: 3000 + i, at: at(day, times.evening_time, lead), title: `${night.label} at ${times.evening_time}`, body: `${when(times.evening_time)} · ${night.note}`, route: night.route });
     if (times.remind_meals !== false) {
       nutrition.meal_slots.forEach((slot, j) => {
         const start = times.meal_times?.[slot] || nutrition.meal_slot_windows[slot].split('–')[0];
-        out.push({ id: 2000 + i * 10 + j, at: at(day, start), title: slotLabel(slot), body: 'Time to eat. Tap to see today’s meal.' });
+        out.push({ id: 2000 + i * 10 + j, at: at(day, start), title: slotLabel(slot), body: 'Time to eat. Tap to see today’s meal.', route: '/meals' });
       });
     }
   }

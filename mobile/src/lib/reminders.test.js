@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import * as D from './data.js';
+import { setEvening } from './evening.js';
 import { plannedReminders } from './reminders.js';
 import { content } from './testContent.js';
 
@@ -58,4 +60,16 @@ test('a reminder before a just-after-midnight time lands the evening before', as
   assert.equal(push.at.getDate(), 3);
   assert.equal(push.at.getHours(), 23);
   assert.equal(push.at.getMinutes(), 40);
+});
+
+test('every reminder says which screen a tap opens', () => {
+  const data = setEvening(D.emptyData(content), 'monday', 'recovery');
+  const list = plannedReminders('2026-11-01', content, new Date(2026, 10, 1, 0, 0), [], data.evening_plan);
+  assert.ok(list.length > 0);
+  for (const r of list) {
+    if (r.id >= 3000) assert.equal(r.route, '/session/recovery');
+    else if (r.id >= 2000) assert.equal(r.route, '/meals');
+    else assert.equal(r.route, '/workout');
+  }
+  assert.ok(list.some((r) => r.id >= 3000));
 });

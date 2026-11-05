@@ -24,8 +24,18 @@ export async function scheduleReminders(content, enabled) {
   if (!enabled) return;
   const data = useData.getState().data;
   const { session_moves: moves = [], evening_plan: evening = {} } = data;
-  const list = plannedReminders(todayISO(), content, new Date(), moves, evening, timesOf(data, content)).map((r) => ({ id: r.id, title: r.title, body: r.body, schedule: { at: r.at, allowWhileIdle: true } }));
+  const list = plannedReminders(todayISO(), content, new Date(), moves, evening, timesOf(data, content)).map((r) => ({ id: r.id, title: r.title, body: r.body, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
   if (list.length) await LocalNotifications.schedule({ notifications: list });
+}
+
+/** A tapped reminder opens its screen (the workout, the 8 PM session, Meals).
+ * Only in-app routes, never a URL from outside. */
+export function openFromReminders() {
+  if (!native()) return;
+  LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
+    const route = notification?.extra?.route;
+    if (typeof route === 'string' && route.startsWith('/') && !route.startsWith('//')) window.location.hash = `#${route}`;
+  });
 }
 
 /** Keep reminders in step with the data: reschedule (once things settle)
