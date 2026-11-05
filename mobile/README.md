@@ -39,25 +39,51 @@ then; Home reminds you after 14 days.
 
 ## Getting the APK
 
-The **Android APK** workflow builds it on every PR and push to `main` that
-touches `mobile/`, `content/` or the build files. Download the
-`fitness-os-apk-<n>` artifact from the run in the Actions tab and open
-`fitness-os-debug.apk` on the phone.
+There are two kinds of build, and they are separate apps on the phone.
 
-A debug APK from CI is signed with that run's throwaway key, so to install a
-newer one you uninstall the old one first. Export a backup before you do, then
-import it again. To install updates in place instead, set up release signing
-once:
+- **Releases (the one to use).** Each release is a tag like `v0.4.1`. On
+  GitHub, open Releases > Draft a new release, type the new tag and publish.
+  The **Android APK** workflow builds `fitness-os-0.4.1.apk`, signs it,
+  checks it and attaches it to that release, so you can download it from the
+  release page on the phone. Each release installs over the last one and
+  keeps your data. Its versionCode comes from the tag (v0.4.1 is 4001), so a
+  later tag is always higher.
+- **Debug builds.** Every PR and push to `main` builds `fitness-os-debug.apk`
+  (in the run's `fitness-os-apk-<n>` artifact in the Actions tab). It is
+  called **Fitness OS debug**, uses its own app ID
+  (`com.usefgamal.fitnessos.debug`) and its own empty data, and installs
+  *beside* the real app. It can never replace or break it.
 
-1. Make a keystore and back it up with its password. If it's lost, updates
-   can't install over the old app.
+### Releases: one-time setup
+
+1. Make a keystore and keep two copies offline (a USB stick and a cloud
+   drive), with its password. If it's lost, no update can ever install over
+   the app again.
    `keytool -genkeypair -v -keystore fitness-os.jks -alias fitnessos -keyalg RSA -keysize 2048 -validity 10000`
-2. In the repo's Settings > Secrets and variables > Actions, add
+2. In the repo's Settings > Secrets and variables > Actions > **Secrets**, add
    `FITNESS_OS_KEYSTORE_BASE64` (from `base64 -w0 fitness-os.jks`) and
    `FITNESS_OS_KEYSTORE_PASSWORD`. Add `FITNESS_OS_KEY_ALIAS` and
    `FITNESS_OS_KEY_PASSWORD` too if they differ from the defaults.
+3. Under **Variables**, add `FITNESS_OS_CERT_SHA256`, the key's certificate
+   fingerprint:
+   `keytool -list -v -keystore fitness-os.jks -alias fitnessos | grep SHA256`.
+   Every release is checked against it with `apksigner`, so a build signed
+   with the wrong key fails in CI instead of on the phone.
+
+If the app on the phone today was signed with a different key (for example
+an old debug build), Android won't install the first release over it. Export
+a backup, uninstall, install the release, and import the backup. That's
+needed once; after that every release updates in place.
 
 Never commit the keystore (`*.jks` and `*.keystore` are gitignored).
+
+### Backups by Android
+
+Android's own backup may copy the app's data file to Google Drive, so a new
+phone can restore it. **Progress photos are excluded**
+(`res/xml/data_extraction_rules.xml`, `backup_rules.xml`): they never leave
+the phone. To check on the phone: Settings > Google > Backup > App data
+lists Fitness OS; its size should not grow when you add photos.
 
 ## Developing
 

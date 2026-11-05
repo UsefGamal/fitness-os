@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older: the same rule as data_extraction_rules.xml.
+     Progress photos are never part of Android's backup (E8-S1). -->
+<full-backup-content>
+    <exclude domain="file" path="progress-photos/" />
+</full-backup-content>

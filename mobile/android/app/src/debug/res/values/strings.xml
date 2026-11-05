@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Debug builds install beside the real app (applicationIdSuffix .debug),
+     so they get their own name on the home screen. -->
+<resources>
+    <string name="app_name">Fitness OS debug</string>
+    <string name="title_activity_main">Fitness OS debug</string>
+</resources>
