@@ -3,6 +3,7 @@
 import { App } from '@capacitor/app';
 
 import { todayISO } from '../lib/dates.js';
+import { mergeDaily } from '../lib/activity.js';
 import { healthWorkouts, mergeWeighIns } from '../lib/health.js';
 import { timesOf } from '../lib/times.js';
 import { widgetDays } from '../lib/widget.js';
@@ -58,7 +59,21 @@ export async function syncHealth({ all = false } = {}) {
   const workouts = healthWorkouts(useData.getState().data, timesOf(useData.getState().data, content).session_time).filter((w) => w.version > since);
   if (workouts.length) await Health.writeWorkouts({ workouts });
   setHealth({ weights_since: startedAt, workouts_since: startedAt });
-  return { weighIns: added, workouts: workouts.length };
+  const days = await readDaily(all ? 60 : 15);
+  return { weighIns: added, workouts: workouts.length, days };
+}
+
+/** Steps, active calories, sleep and resting heart rate, when allowed. An
+ * older APK without readDaily, or no permission, just gives nothing. */
+async function readDaily(n) {
+  try {
+    const { days } = await Health.readDaily({ days: n });
+    if (!days?.length) return 0;
+    useData.getState().update((d) => mergeDaily(d, days, todayISO()));
+    return days.length;
+  } catch {
+    return 0;
+  }
 }
 
 export function startPhoneSync() {

@@ -7,6 +7,7 @@ import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
+import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
@@ -38,6 +39,9 @@ export default function Today() {
   const dailyQuests = content.quests.bonus_tasks.filter((t) => t.frequency === 'daily');
   const questsDone = dailyQuests.filter((t) => doneKeys(data, today, content.quests).has(t.key)).length;
   const otherToday = data.workouts.filter((w) => w.log_date === today && w.workout_type !== 'gym');
+  const healthOn = data.settings?.health?.enabled;
+  const ready = healthOn ? readiness(data.health_daily, today) : null;
+  const moved = healthOn ? data.health_daily?.[today] : null;
 
   return (
     <div className="page">
@@ -78,6 +82,33 @@ export default function Today() {
           </>
         )}
       </section>
+
+      {ready && (ready.level !== 'unknown' || moved?.steps != null) ? (
+        <section className="card">
+          {ready.level !== 'unknown' ? (
+            <>
+              <div className="row between" style={{ gap: 8 }}>
+                <strong>Recovery</strong>
+                <span className={`chip${ready.level === 'good' ? ' accent' : ' warn'}`}>
+                  <Icon name={ready.level === 'good' ? 'check' : 'heart'} className="icon" /> {ready.level === 'good' ? 'Ready' : ready.level === 'easy' ? 'Take it easy' : 'Go steady'}
+                </span>
+              </div>
+              <div style={{ margin: '6px 0 2px' }}>{READINESS_TEXT[ready.level]}</div>
+              <div className="muted small">
+                {[
+                  ready.sleep_min != null ? `Slept ${hm(ready.sleep_min)}${ready.sleep_base != null ? ` (usual ${hm(ready.sleep_base)})` : ''}` : null,
+                  ready.resting_hr != null ? `resting heart rate ${ready.resting_hr}${ready.hr_base != null ? ` (usual ${Math.round(ready.hr_base)})` : ''}` : null,
+                ].filter(Boolean).join(' · ')}
+              </div>
+            </>
+          ) : null}
+          {moved?.steps != null ? (
+            <div className="muted small" style={ready.level !== 'unknown' ? { marginTop: 6 } : undefined}>
+              {moved.steps.toLocaleString()} steps today{moved.active_kcal != null ? ` · ${moved.active_kcal} active kcal` : ''}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {tonight ? (
         <section className="card row" style={{ gap: 12 }}>

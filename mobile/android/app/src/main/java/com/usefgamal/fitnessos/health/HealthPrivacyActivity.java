@@ -22,7 +22,9 @@ public class HealthPrivacyActivity extends Activity {
         t.setText(
             "Fitness OS and Health Connect\n\n"
                 + "Fitness OS reads your weight so weigh-ins from a scale or another app show up in your progress, "
-                + "and writes your finished workouts as exercise sessions.\n\n"
+                + "and writes your finished workouts as exercise sessions. If you allow it, it also reads daily steps, "
+                + "active calories, sleep and resting heart rate (from your phone or a watch) to show your recovery "
+                + "and, only if you switch it on, to adjust your calorie target.\n\n"
                 + "Everything stays on this phone. Fitness OS has no server, no account, no analytics and no ads, "
                 + "and it never sends your health data anywhere.\n\n"
                 + "You can turn this off any time in Health Connect's settings or in Fitness OS > Settings.");
