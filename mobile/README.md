@@ -56,6 +56,12 @@ There are two kinds of build, and they are separate apps on the phone.
 
 ### Releases: one-time setup
 
+**From a phone:** add the secret `FITNESS_OS_KEYSTORE_PASSWORD`, then run
+Actions > **Make signing key** > Run workflow. Its summary gives the
+`FITNESS_OS_CERT_SHA256` value and its artifact holds the keystore and the
+text for `FITNESS_OS_KEYSTORE_BASE64`. It refuses to run once that secret
+exists. The steps below do the same on a computer.
+
 1. Make a keystore and keep two copies offline (a USB stick and a cloud
    drive), with its password. If it's lost, no update can ever install over
    the app again.
