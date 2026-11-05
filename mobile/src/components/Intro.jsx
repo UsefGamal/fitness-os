@@ -14,11 +14,18 @@ const BOLT = 'M13 2 3 14h9l-1 8 10-12h-9z';
 export default function Intro({ line, onDone }) {
   useEffect(() => {
     const id = setTimeout(onDone, INTRO_MS);
-    return () => clearTimeout(id);
+    // A reminder or widget tap opens its screen by changing the hash, often
+    // just after the intro has started (the launch link arrives async). End
+    // the intro then, so it never sits in front of the screen asked for.
+    window.addEventListener('hashchange', onDone);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener('hashchange', onDone);
+    };
   }, [onDone]);
 
   return (
-    <button type="button" className="intro" onClick={onDone} aria-label="Skip intro">
+    <button type="button" className="intro" onClick={onDone} aria-label={line ? `${line}. Tap to skip the intro` : 'Tap to skip the intro'}>
       <svg className="intro-mark" viewBox="0 0 160 160" aria-hidden="true">
         <circle className="intro-ring-bg" cx="80" cy="80" r="70" />
         <circle className="intro-ring" cx="80" cy="80" r="70" />

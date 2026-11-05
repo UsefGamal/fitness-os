@@ -276,7 +276,7 @@ export default function Settings() {
 
       <div className="section-label">App</div>
       <div className="list">
-        <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped after a reminder tap and during a workout" />
+        <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped during a workout, and ends at once when a reminder or the widget opens another screen" />
       </div>
 
       <div className="section-label">About</div>
