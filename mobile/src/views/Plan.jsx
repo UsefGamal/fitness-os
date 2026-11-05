@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
-import { entryFor, groupOf, thumbOf } from '../lib/catalogue.js';
+import { entryFor, groupOf, photoSrc, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { longWeekday, todayISO, weekdayName } from '../lib/dates.js';
 import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
@@ -145,7 +145,7 @@ export default function Plan() {
       for (const name of new Set(days.flatMap((d) => d.day?.exercises.map((x) => x.name) || []))) {
         const e = entryFor(name, T, catalogue.byId);
         const src = e ? thumbOf(e) : null;
-        if (src) photos.set(name, await dataUrlOf(src));
+        if (src) photos.set(name, await dataUrlOf(photoSrc(src)));
       }
     }
     const html = weekHtml(days, { time: times.session_time, eveningTime: times.evening_time, tempo: T.trainer_plan.tempo, photoOf: (n) => photos.get(n) || null });
