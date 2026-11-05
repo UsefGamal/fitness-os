@@ -75,3 +75,67 @@ def test_widget_layouts_only_use_remote_views_classes():
             re.findall(r"<([A-Za-z][\w.]*)", re.sub(r"<!--.*?-->", "", layout.read_text(encoding="utf-8"), flags=re.S))
         )
         assert tags <= REMOTE_VIEWS_OK, f"{layout.name} uses {sorted(tags - REMOTE_VIEWS_OK)}"
+
+
+# ── Phase 11: release builds and backups (E1-S3, E8-S1) ──────────────────
+
+import subprocess  # noqa: E402
+import xml.etree.ElementTree as ET  # noqa: E402
+
+RES_XML = ANDROID / "res" / "xml"
+GRADLE = (ROOT / "mobile" / "android" / "app" / "build.gradle").read_text(encoding="utf-8")
+
+
+def test_progress_photos_never_go_to_android_backup():
+    # Android 12+ (cloud backup and device transfer) and Android 11-.
+    assert 'android:dataExtractionRules="@xml/data_extraction_rules"' in MANIFEST
+    assert 'android:fullBackupContent="@xml/backup_rules"' in MANIFEST
+    rules = ET.parse(RES_XML / "data_extraction_rules.xml").getroot()
+    for section in ("cloud-backup", "device-transfer"):
+        excludes = [(e.get("domain"), e.get("path")) for e in rules.find(section).findall("exclude")]
+        assert ("file", "progress-photos/") in excludes, section
+    legacy = ET.parse(RES_XML / "backup_rules.xml").getroot()
+    assert ("file", "progress-photos/") in [(e.get("domain"), e.get("path")) for e in legacy.findall("exclude")]
+
+
+def test_the_photo_folder_in_the_rules_is_the_one_the_app_uses():
+    photos = (ROOT / "mobile" / "src" / "store" / "photos.js").read_text(encoding="utf-8")
+    assert "const DIR = 'progress-photos';" in photos
+    assert "Directory.Data" in photos  # Capacitor's Data directory is files/, the "file" domain
+
+
+def test_debug_builds_install_beside_the_real_app():
+    assert 'applicationId "com.usefgamal.fitnessos"' in GRADLE
+    assert 'applicationIdSuffix ".debug"' in GRADLE
+    debug_name = (ROOT / "mobile" / "android" / "app" / "src" / "debug" / "res" / "values" / "strings.xml").read_text(encoding="utf-8")
+    assert "Fitness OS debug" in debug_name
+    # Providers must follow the ID, or the two apps can't be installed together.
+    assert "${applicationId}.fileprovider" in MANIFEST
+    assert 'android:authorities="com.usefgamal' not in MANIFEST
+
+
+def _version(tag):
+    return subprocess.run(["bash", str(ROOT / "scripts" / "version-from-tag.sh"), tag], capture_output=True, text=True)
+
+
+def test_release_versions_come_from_the_tag_and_only_go_up():
+    out = _version("v0.4.1")
+    assert out.returncode == 0
+    assert out.stdout.split() == ["APK_VERSION_NAME=0.4.1", "APK_VERSION_CODE=4001"]
+    codes = [int(_version(t).stdout.split("=")[-1]) for t in ("v0.4.1", "v0.4.2", "v0.5.0", "v0.10.0", "v1.0.0")]
+    assert codes == sorted(codes) and len(set(codes)) == len(codes)
+    assert codes[0] > 1000  # above every run-number build installed before tags
+
+
+def test_bad_tags_are_refused():
+    for tag in ("0.4.1", "v0.4", "v0.4.1-beta", "v0.0.9"):
+        assert _version(tag).returncode != 0, tag
+
+
+def test_only_tags_build_a_signed_release():
+    wf = (ROOT / ".github" / "workflows" / "android.yml").read_text(encoding="utf-8")
+    assert 'tags: ["v*"]' in wf
+    assert "scripts/build-apk.sh release" in wf
+    assert "if: env.IS_TAG == 'true'" in wf
+    assert "check-apk.sh dist/fitness-os-release.apk com.usefgamal.fitnessos" in wf
+    assert "check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug" in wf

@@ -8,7 +8,8 @@ android {
         applicationId "com.usefgamal.fitnessos"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // CI passes the run number so each build installs over the last one.
+        // Release tags set these from the tag (v0.4.1 -> 4001, see
+        // scripts/version-from-tag.sh); debug builds from the run number.
         versionCode((System.getenv("APK_VERSION_CODE") ?: "1") as Integer)
         versionName System.getenv("APK_VERSION_NAME") ?: "0.3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -39,6 +40,12 @@ android {
         jvmTarget = '21'
     }
     buildTypes {
+        // Debug builds install beside the real app instead of over it, so a
+        // test build can never replace (or be refused over) the release.
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
         release {
             if (releaseKeystore) {
                 signingConfig signingConfigs.release

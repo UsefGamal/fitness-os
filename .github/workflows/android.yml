@@ -1,22 +1,30 @@
 name: Android APK
 
+# Two kinds of build (E1-S3):
+# - every PR and push to main: a DEBUG APK (com.usefgamal.fitnessos.debug),
+#   which installs beside the real app and never over it;
+# - a tag like v0.4.1 (Releases > Draft a new release > new tag): the only
+#   SIGNED RELEASE APK. Its versionCode comes from the tag, its signing
+#   certificate is checked against the one on Yusuf's phone, and it is
+#   attached to the GitHub release.
 on:
   push:
     branches: [main]
-    paths: ["mobile/**", "content/**", "scripts/build-apk.sh", "scripts/export_content.py", "scripts/fetch_exercise_photos.py", ".github/workflows/android.yml"]
+    tags: ["v*"]
+    paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml"]
   pull_request:
     branches: [main]
-    paths: ["mobile/**", "content/**", "scripts/build-apk.sh", "scripts/export_content.py", "scripts/fetch_exercise_photos.py", ".github/workflows/android.yml"]
+    paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
 jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write # to attach the release APK to its GitHub release
     env:
-      APK_VERSION_CODE: ${{ github.run_number }}
-      APK_VERSION_NAME: 0.3.${{ github.run_number }}
-      HAS_KEYSTORE: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 != '' }}
+      IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -48,22 +56,58 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      # The runner image ships the Android SDK; ANDROID_HOME is already set.
+      # ── Debug: every PR and main push ─────────────────────────────────
       - name: Build debug APK
+        if: env.IS_TAG != 'true'
+        env:
+          APK_VERSION_CODE: ${{ github.run_number }}
+          APK_VERSION_NAME: 0.4.${{ github.run_number }}
         run: scripts/build-apk.sh debug
 
-      # Signed release build, only when the keystore secrets exist.
+      - name: Check debug APK installs beside the real app
+        if: env.IS_TAG != 'true'
+        run: scripts/check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug
+
+      # ── Release: tags only ────────────────────────────────────────────
+      - name: Version from the tag
+        if: env.IS_TAG == 'true'
+        run: scripts/version-from-tag.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
       - name: Build signed release APK
-        if: env.HAS_KEYSTORE == 'true'
+        if: env.IS_TAG == 'true'
         env:
           KEYSTORE_B64: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 }}
           FITNESS_OS_KEYSTORE_PASSWORD: ${{ secrets.FITNESS_OS_KEYSTORE_PASSWORD }}
           FITNESS_OS_KEY_ALIAS: ${{ secrets.FITNESS_OS_KEY_ALIAS }}
           FITNESS_OS_KEY_PASSWORD: ${{ secrets.FITNESS_OS_KEY_PASSWORD }}
         run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$FITNESS_OS_KEYSTORE_PASSWORD" ]; then
+            echo "::error::A release needs the FITNESS_OS_KEYSTORE_BASE64 and FITNESS_OS_KEYSTORE_PASSWORD secrets (see mobile/README.md, Releases)."
+            exit 1
+          fi
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
           FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" scripts/build-apk.sh release
           rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: Check release ID, version and signing key
+        if: env.IS_TAG == 'true'
+        env:
+          CERT_SHA256: ${{ vars.FITNESS_OS_CERT_SHA256 }}
+        run: |
+          if [ -z "$CERT_SHA256" ]; then
+            echo "::error::Set the repository variable FITNESS_OS_CERT_SHA256 to the certificate of the APK on the phone (see mobile/README.md, Releases), so a wrong key can't ship."
+            exit 1
+          fi
+          scripts/check-apk.sh dist/fitness-os-release.apk com.usefgamal.fitnessos "$CERT_SHA256" "$APK_VERSION_CODE"
+          mv dist/fitness-os-release.apk "dist/fitness-os-${APK_VERSION_NAME}.apk"
+
+      - name: Attach the APK to the GitHub release
+        if: env.IS_TAG == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "Fitness OS $APK_VERSION_NAME"
+          gh release upload "$GITHUB_REF_NAME" dist/*.apk --clobber
 
       - uses: actions/upload-artifact@v4
         with:
