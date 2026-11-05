@@ -1,0 +1,71 @@
+name: Make signing key
+
+# Run once, from the Actions tab on a phone (Run workflow). It makes the
+# release keystore so nobody needs keytool on a computer (see
+# mobile/README.md, Releases):
+# 1. Before running, add the secret FITNESS_OS_KEYSTORE_PASSWORD
+#    (12+ characters, saved in your password manager).
+# 2. Run this workflow. Its summary shows the certificate fingerprint for
+#    the FITNESS_OS_CERT_SHA256 variable, and its artifact holds the
+#    keystore (fitness-os.jks) and the text for FITNESS_OS_KEYSTORE_BASE64.
+# 3. Keep fitness-os.jks in two safe places, add the secret and variable,
+#    then delete the artifact (it also expires after a day).
+# It refuses to run once FITNESS_OS_KEYSTORE_BASE64 exists, so a second
+# run can't make a new key by mistake: a new key means no update installs
+# over the app.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      EXISTING: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 }}
+      FITNESS_OS_KEYSTORE_PASSWORD: ${{ secrets.FITNESS_OS_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Make the keystore
+        run: |
+          if [ -n "$EXISTING" ]; then
+            echo "::error::FITNESS_OS_KEYSTORE_BASE64 is already set, so a key exists. Making a new one would stop updates installing over the app. Delete that secret first only if you really mean to start over."
+            exit 1
+          fi
+          if [ "${#FITNESS_OS_KEYSTORE_PASSWORD}" -lt 12 ]; then
+            echo "::error::Add the secret FITNESS_OS_KEYSTORE_PASSWORD (at least 12 characters) first, then run this again."
+            exit 1
+          fi
+          out="$RUNNER_TEMP/key"
+          mkdir -p "$out"
+          keytool -genkeypair -keystore "$out/fitness-os.jks" -storetype PKCS12 \
+            -alias fitnessos -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass:env FITNESS_OS_KEYSTORE_PASSWORD \
+            -dname "CN=Fitness OS" -noprompt
+          base64 -w0 "$out/fitness-os.jks" > "$out/FITNESS_OS_KEYSTORE_BASE64.txt"
+          sha=$(keytool -list -v -keystore "$out/fitness-os.jks" -alias fitnessos \
+            -storepass:env FITNESS_OS_KEYSTORE_PASSWORD | sed -n 's/^.*SHA256: *//p' | head -1)
+          {
+            echo "## Signing key made"
+            echo
+            echo "Add this as the repository **variable** \`FITNESS_OS_CERT_SHA256\`:"
+            echo
+            echo '```'
+            echo "$sha"
+            echo '```'
+            echo
+            echo "Then download the **signing-key** artifact below: keep \`fitness-os.jks\` in two safe places, paste the text of \`FITNESS_OS_KEYSTORE_BASE64.txt\` into the **secret** \`FITNESS_OS_KEYSTORE_BASE64\`, and delete the artifact."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signing-key
+          path: ${{ runner.temp }}/key/
+          retention-days: 1
+          if-no-files-found: error
