@@ -39,6 +39,8 @@ case "$mode" in
     : "${FITNESS_OS_KEYSTORE_PASSWORD:?set FITNESS_OS_KEYSTORE_PASSWORD}"
     FITNESS_OS_KEYSTORE="$(cd "$(dirname "$FITNESS_OS_KEYSTORE")" && pwd)/$(basename "$FITNESS_OS_KEYSTORE")"
     export FITNESS_OS_KEYSTORE
+    # Release builds leave flagged, unfinished features out (mobile/src/lib/flags.js).
+    export FITNESS_OS_RELEASE=1
     task=assembleRelease; built="app/build/outputs/apk/release/app-release.apk" ;;
   *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
 esac

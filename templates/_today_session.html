@@ -1,9 +1,0 @@
-{# The day's training line, shared by Home, Training and Gym. Expects `nd`
-   (content.gym_program.program_day_for) and `session_time`. #}
-{% if nd.is_rest_today %}
-<h2><svg class="icon"><use href="#icon-target"/></svg> Rest day today</h2>
-<p class="muted">Next: <strong style="color:var(--text)">{{ nd.label }}</strong> on {{ nd.on_date.strftime('%A') }} at {{ session_time }} · {{ nd.focus }}</p>
-{% else %}
-<h2><svg class="icon"><use href="#icon-target"/></svg> Today at {{ session_time }}</h2>
-<p class="muted"><strong style="color:var(--text)">{{ nd.label }}</strong> · {{ nd.focus }}{% if nd.cardio_after %} · then {{ nd.cardio_after.minutes }} min cycling{% endif %}</p>
-{% endif %}

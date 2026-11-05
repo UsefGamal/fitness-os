@@ -1,6 +1,4 @@
-# Test-only dependencies — not needed in production, so kept separate
-# from requirements.txt (which Render's build uses directly).
--r requirements.txt
+# Only content/ and the export scripts are Python now (the web app was
+# retired in phase 11), so these are dev/CI tools only.
 pytest==9.1.1
 ruff==0.16.3
-mypy==2.3.0

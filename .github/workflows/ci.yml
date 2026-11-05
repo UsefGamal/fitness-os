@@ -7,7 +7,44 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  # The phone app's logic: every lib test with the coverage gate, run in
+  # UTC and in Cairo so date maths can't pass by luck of the runner's zone.
+  js:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: ["UTC", "Africa/Cairo"]
+    name: js (${{ matrix.tz }})
+    env:
+      TZ: ${{ matrix.tz }}
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # export_content.py turns content/ into src/content.json for the tests.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Tests with coverage gate
+        run: npm run coverage
+
+      - name: No new hard-coded strings (i18n)
+        run: npm run lint:i18n
+
+  # content/ and the export scripts.
+  python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +59,6 @@ jobs:
 
       - name: Lint (ruff)
         run: ruff check .
-
-      - name: Type check (mypy)
-        run: mypy .
 
       - name: Tests (pytest)
         run: pytest

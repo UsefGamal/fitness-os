@@ -8,6 +8,7 @@ import { macroTargets } from '../lib/macros.js';
 import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
+import { activePlan } from '../lib/plan.js';
 import { content, useData } from '../store/useData.js';
 
 const N = content.nutrition;
@@ -19,7 +20,7 @@ export default function Meals() {
   const day = mealDayFor(date, N);
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   const totals = dayTotals(day, picks);
-  const training = sessionKeyOn(date, content.training, data.session_moves || []) !== 'rest';
+  const training = sessionKeyOn(date, activePlan(data, content), data.session_moves || []) !== 'rest';
   const target = macroTargets(data, N, today);
   const done = N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed).length;
 

@@ -1,3 +1,6 @@
+# FROZEN, NOT AUTHORITATIVE: kept from the retired web app as a reference for
+# porting its trend, goal-date and adherence maths into mobile/src/lib/.
+# Nothing imports this module any more.
 from datetime import date, timedelta
 
 

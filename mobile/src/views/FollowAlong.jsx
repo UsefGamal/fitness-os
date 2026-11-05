@@ -7,6 +7,7 @@ import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { amountOf, followSteps, startOf } from '../lib/followAlong.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { activePlan } from '../lib/plan.js';
 import { clock, COUNTDOWN_BEEPS, stepAt, totalSeconds } from '../lib/training.js';
 import { useKeepAwake } from '../store/awake.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -16,7 +17,7 @@ import { content, useData } from '../store/useData.js';
 /** What to play for `src`: recovery | warmup:<day> | cooldown:<day> |
  * home-warmup:<i> | home-cooldown:<i>. */
 function source(src, data) {
-  const T = content.training;
+  const T = activePlan(data, content);
   const [kind, arg] = (src || 'recovery').split(':');
   if (kind === 'recovery') return { title: 'Recovery', lines: T.recovery_checklist, log: 'recovery' };
   if (kind === 'warmup' || kind === 'cooldown') {

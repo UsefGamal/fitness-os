@@ -18,6 +18,10 @@ import { Health, isNative } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
+import { t } from '../lib/i18n.js';
+import { APP } from '../lib/version.js';
+import { currentReport } from '../store/errors.js';
+import { shareText } from '../store/share.js';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -25,6 +29,13 @@ const EXTRA_NAMES = { steps: 'steps', active_kcal: 'active calories', sleep: 'sl
 function extrasText(list) {
   const names = list.map((k) => EXTRA_NAMES[k] || k);
   return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+}
+
+function lastBackupText(data) {
+  const at = data.settings?.last_backup_at;
+  if (!at) return 'No backup yet';
+  const days = Math.floor((Date.now() - at) / 86400000);
+  return days === 0 ? 'Last backup today' : `Last backup ${n(days, 'day')} ago`;
 }
 
 export default function Settings() {
@@ -97,11 +108,11 @@ export default function Settings() {
     }
   };
 
-  const confirmImport = () => {
-    replaceAll(pendingImport);
+  const confirmImport = async () => {
     const t = summarize(pendingImport);
+    await replaceAll(pendingImport, 'import');
     setPendingImport(null);
-    setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}.`);
+    setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}. What was here before is kept in Snapshots.`);
   };
 
   const readCsv = (text, unit) => {
@@ -143,6 +154,7 @@ export default function Settings() {
   const exportNow = async () => {
     try {
       const where = await saveExport(`fitness-os-backup-${todayISO()}.json`, toDataFile(data));
+      update((d) => ({ ...d, settings: { ...d.settings, last_backup_at: Date.now() } }));
       setMsg(where ? 'Saved to Documents on your phone.' : 'Backup downloaded.');
     } catch {
       setMsg('Could not save the backup. Check storage permission and try again.');
@@ -177,7 +189,8 @@ export default function Settings() {
       <div className="list">
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
         <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow">Export a backup</div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>Export a backup</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => navigate('/snapshots')}><Icon name="undo" /><div className="grow"><div>Snapshots</div><div className="meta">Copies kept before each update, import or restore</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
@@ -282,7 +295,8 @@ export default function Settings() {
       <div className="section-label">About</div>
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name || "Trainer's U-L-PPL"}</span></div>
-        <div className="list-row"><div className="grow">Version</div><span className="meta">0.3.0</span></div>
+        <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t('about.data', { schema: data.schemaVersion })}</span></div>
+        <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
     </div>
   );

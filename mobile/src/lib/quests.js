@@ -4,6 +4,7 @@
 // app (the old site used ISO Monday weeks).
 import { addDays, daysBetween, weekStart } from './dates.js';
 import { nextId } from './data.js';
+import { profileOf } from './macros.js';
 
 const byKey = (quests) => Object.fromEntries(quests.bonus_tasks.map((t) => [t.key, t]));
 
@@ -63,7 +64,7 @@ export function weeklyConditions(data, today) {
 export function onceConditions(data) {
   let lost5 = false;
   if (data.body_logs.length) {
-    const start = data.profile?.start_weight_kg || data.body_logs[0].weight_kg;
+    const start = profileOf(data).start_weight_kg || data.body_logs[0].weight_kg;
     const lowest = Math.min(...data.body_logs.map((b) => b.weight_kg));
     lost5 = start - lowest >= 5;
   }

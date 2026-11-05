@@ -13,20 +13,38 @@ const KCAL_PER_KG_FAT = 7700;
 const MAX_DAILY_DEFICIT = 1000;
 const MIN_DAILY_KCAL = 1200;
 
-// models.py's Profile defaults, used until the profile is filled in.
-export const DEFAULT_PROFILE = {
-  height_cm: 173,
-  date_of_birth: '1999-01-01',
-  goal_weight_low_kg: 75,
-  goal_weight_high_kg: 80,
-  goal_date: '2027-01-18',
-  start_weight_kg: null,
-  gender: 'male',
-  activity_level: 'moderate',
-};
+/** The goal being worked towards: the latest one that hasn't ended. */
+export function currentGoal(data) {
+  const goals = Array.isArray(data.goals) ? data.goals : [];
+  for (let i = goals.length - 1; i >= 0; i -= 1) if (!goals[i].ended_on) return goals[i];
+  return null;
+}
 
+/** The profile and the current goal as one flat object (the shape the
+ * Profile form and the maths use). No defaults: what isn't filled in is
+ * missing, and the targets fall back to the plan's band until it is. */
 export function profileOf(data) {
-  return { ...DEFAULT_PROFILE, ...(data.profile || {}) };
+  const g = currentGoal(data);
+  const goal = g ? { start_weight_kg: g.start_weight_kg ?? null, goal_weight_low_kg: g.target_low_kg ?? null, goal_weight_high_kg: g.target_high_kg ?? null, goal_date: g.target_date ?? null } : {};
+  return { ...(data.profile || {}), ...goal };
+}
+
+/** Save the Profile form: body facts to profile, goal fields to the
+ * current goal (a first goal is created if there is none). */
+export function saveProfile(data, form, today) {
+  const { start_weight_kg, goal_weight_low_kg, goal_weight_high_kg, goal_date, ...body } = form;
+  const goalFields = { start_weight_kg: start_weight_kg ?? null, target_low_kg: goal_weight_low_kg ?? null, target_high_kg: goal_weight_high_kg ?? null, target_date: goal_date ?? null };
+  const goals = Array.isArray(data.goals) ? data.goals : [];
+  const g = currentGoal(data);
+  const nextGoals = g
+    ? goals.map((x) => (x === g ? { ...x, ...goalFields } : x))
+    : [...goals, { id: `g${goals.length + 1}`, set_on: today, direction: 'lose', rate_pct_bw_wk: null, ended_on: null, ...goalFields }];
+  return { ...data, profile: { ...(data.profile || {}), ...body }, goals: nextGoals };
+}
+
+/** The date the plan's pace is counted from. */
+export function planStartOf(data, nutrition) {
+  return data.diet?.plan_start_date || nutrition.plan_start_date;
 }
 
 export function bmr(weightKg, heightCm, ageYears, gender) {
@@ -70,13 +88,14 @@ export function macroTargets(data, nutrition, today) {
   const current = logs.length ? logs[logs.length - 1].weight_kg : null;
   const start = p.start_weight_kg || (logs.length ? logs[0].weight_kg : null);
   const weight = current ?? start;
-  const age = daysBetween(p.date_of_birth, today) / 365.25;
-  if (weight == null || age < 10 || age > 100) {
+  const age = p.date_of_birth ? daysBetween(p.date_of_birth, today) / 365.25 : NaN;
+  if (weight == null || !p.height_cm || !p.gender || !(age >= 10 && age <= 100)) {
     const m = nutrition.macro_targets;
     return { ...m, kcal: pyRound(m.protein * 4 + m.carbs * 4 + m.fat * 9), source: 'plan' };
   }
-  const goalMid = (p.goal_weight_low_kg + p.goal_weight_high_kg) / 2;
-  const rate = start != null ? targetRate(start, goalMid, nutrition.plan_start_date, p.goal_date) : null;
+  const hasGoal = p.goal_weight_low_kg != null && p.goal_weight_high_kg != null && p.goal_date;
+  const goalMid = hasGoal ? (p.goal_weight_low_kg + p.goal_weight_high_kg) / 2 : null;
+  const rate = start != null && hasGoal ? targetRate(start, goalMid, planStartOf(data, nutrition), p.goal_date) : null;
   const b = bmr(weight, p.height_cm, age, p.gender);
   const activeAvg = data.settings?.health?.adaptive === true ? activeKcalAverage(data.health_daily, today) : null;
   const t = activeAvg != null ? watchTdee(b, activeAvg) : tdee(b, p.activity_level);
