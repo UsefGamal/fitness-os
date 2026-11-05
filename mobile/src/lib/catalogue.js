@@ -48,6 +48,11 @@ export function thumbOf(entry) {
   return entry?.thumb || entry?.photos?.[0] || null;
 }
 
+/** The URL of a bundled photo: catalogue paths are relative to exercise-db/. */
+export function photoSrc(path) {
+  return path ? `exercise-db/${path}` : null;
+}
+
 export function capitalize(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }

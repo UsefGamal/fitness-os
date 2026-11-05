@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { entryFor, thumbOf } from '../lib/catalogue.js';
+import { entryFor, photoSrc, thumbOf } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
-import { followSteps, startOf } from '../lib/followAlong.js';
+import { amountOf, followSteps, startOf } from '../lib/followAlong.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { clock, COUNTDOWN_BEEPS, stepAt, totalSeconds } from '../lib/training.js';
 import { useKeepAwake } from '../store/awake.js';
@@ -95,7 +95,7 @@ export default function FollowAlong() {
   };
   const photo = (name) => {
     const e = catalogue ? entryFor(name, content.training, catalogue.byId) : null;
-    return e ? e.photos?.[0] || thumbOf(e) : null;
+    return e ? photoSrc(e.photos?.[0] || thumbOf(e)) : null;
   };
 
   if (run) {
@@ -116,9 +116,9 @@ export default function FollowAlong() {
     return (
       <div className="timer-full follow" role="timer" aria-live="polite">
         <div className="muted small">{src.title} · {at.index + 1} of {steps.length}</div>
-        {img ? <img className="follow-photo" src={img} alt="" /> : null}
+        {img ? <img key={img} className="follow-photo" src={img} alt="" onError={(e) => { e.currentTarget.hidden = true; }} /> : null}
         <div className="follow-name">{step.name}</div>
-        {step.side ? <div className="interval-phase rest">{step.side}</div> : <div className="muted small follow-line">{step.label}</div>}
+        {step.side ? <div className="interval-phase rest">{step.side}</div> : <div className="muted small follow-line">{amountOf(step)}</div>}
         <div style={{ fontSize: 80, fontWeight: 800, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock(at.left)}</div>
         <div className="muted">{next ? `Next: ${next.name}${next.side ? ` (${next.side.toLowerCase()})` : ''}` : 'Last one'}</div>
         <div className="row" style={{ gap: 12 }}>

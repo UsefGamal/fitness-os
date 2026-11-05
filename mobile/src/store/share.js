@@ -35,7 +35,10 @@ export async function shareFile(title, uri) {
 /** An image as a data: URL, for files that must stand on their own. */
 export async function dataUrlOf(src) {
   try {
-    const blob = await (await fetch(src)).blob();
+    const res = await fetch(src);
+    const blob = await res.blob();
+    // A missing file can come back as the app's own page: only keep images.
+    if (!res.ok || !blob.type.startsWith('image/')) return null;
     return await new Promise((resolve) => {
       const r = new FileReader();
       r.onload = () => resolve(r.result);

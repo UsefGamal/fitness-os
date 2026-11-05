@@ -22,6 +22,13 @@ export function moveName(line) {
   return line.replace(/[,(].*$/, '').replace(/\s+\d.*$/, '').replace(/\s+x\d.*$/i, '').trim();
 }
 
+/** The line without the move's name, for under the name: "1x10-12",
+ * "30s/side". Empty when the line is only the name. */
+export function amountOf(step) {
+  const rest = step.label.startsWith(step.name) ? step.label.slice(step.name.length) : step.label;
+  return rest.replace(/^[\s,:-]+/, '').trim();
+}
+
 /** Steps for a list of lines: [{ label, name, seconds, side? }]. A short
  * "Switch" isn't added: the side label and the new-step chime say it. */
 export function followSteps(lines, { hold = DEFAULT_HOLD } = {}) {
