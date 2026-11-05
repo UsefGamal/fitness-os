@@ -1,33 +1,41 @@
-// The one store. Data lives in localStorage and, on the phone, is also
-// mirrored to a file in the app's private storage, so a cleared WebView
-// cache can't lose it (store/mirror.js). Writes are batched: the screen
+// The one store. Data lives in localStorage and, on the phone, also in a
+// file in the app's private storage (store/mirror.js). Each save stamps
+// saved_at, and on start the newest readable copy wins (lib/durable.js),
+// so a failed localStorage write can't bring back stale data. Every copy
+// goes through lib/migrate.js; before an upgrade a snapshot of the old
+// data is kept (store/snapshots.js). Writes are batched: the screen
 // updates at once, the disk a moment later (at most SAVE_DELAY ms) or
-// straight away when the app goes to the background. There is no
-// server: this is the only copy, so "Export a backup" in Settings matters.
+// straight away when the app goes to the background. There is no server:
+// this is the only copy, so "Export a backup" in Settings matters.
 import { create } from 'zustand';
 
 import content from '../content.json';
 import * as D from '../lib/data.js';
+import { loadNewest, parseCopy, stamp } from '../lib/durable.js';
+import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { readMirror, writeMirror } from './mirror.js';
+import { snapshot } from './snapshots.js';
 
-const KEY = 'fitness-os-data-v1';
+const KEY = 'fitness-os-data-v1'; // the key name predates schema versions; it stays
 const SAVE_DELAY = 400;
 
 let pending = null; // data waiting to be written
 let timer = null;
+let blocked = false; // data from a newer app version: never overwrite it
 
 /** Write anything waiting now (also called when the app is hidden). */
 export function flushSave() {
   if (timer) clearTimeout(timer);
   timer = null;
-  if (!pending) return;
-  const data = pending;
+  if (!pending || blocked) return;
+  const data = stamp(pending);
   pending = null;
   saveLocal(data);
   writeMirror(data);
 }
 
 function scheduleSave(data) {
+  if (blocked) return;
   pending = data;
   if (!timer) timer = setTimeout(flushSave, SAVE_DELAY);
 }
@@ -37,10 +45,9 @@ if (typeof document !== 'undefined') {
   window.addEventListener('pagehide', flushSave);
 }
 
-function loadLocal() {
+function readLocalText() {
   try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : null;
+    return localStorage.getItem(KEY);
   } catch {
     return null;
   }
@@ -50,20 +57,48 @@ function saveLocal(data) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
-    // Storage full or blocked: the file mirror still has it.
+    // Storage full or blocked: the file mirror still has it, and its newer
+    // saved_at makes it win on the next start.
+  }
+}
+
+/** First paint uses localStorage straight away; hydrate() then checks the
+ * file too and settles which copy wins. */
+function initialData() {
+  const local = parseCopy(readLocalText());
+  if (!local) return D.emptyData(content);
+  try {
+    return migrate(local, content);
+  } catch {
+    return D.emptyData(content);
   }
 }
 
 export const useData = create((set, get) => ({
-  data: loadLocal() || D.emptyData(content),
+  data: initialData(),
   ready: false,
   activeWorkoutId: null,
+  /** Set when the saved data is from a newer app version (see App.jsx). */
+  loadError: null,
 
-  /** Run once at start: if localStorage was wiped, restore from the file. */
+  /** Run once at start: pick the newest copy, upgrade it if needed. */
   async hydrate() {
-    if (!loadLocal()) {
-      const fromFile = await readMirror();
-      if (fromFile) set({ data: fromFile });
+    const file = await readMirror();
+    try {
+      const start = loadNewest({ localText: readLocalText(), fileText: file?.text ?? null }, content);
+      if (start) {
+        if (start.snapshotText) await snapshot(start.snapshotText, 'migrate');
+        set({ data: start.data });
+        // Write the winner back to both stores, so the one that was behind
+        // (cleared, full, or not yet upgraded) catches up.
+        pending = start.data;
+        flushSave();
+      }
+    } catch (err) {
+      if (!(err instanceof NewerSchemaError)) throw err;
+      blocked = true;
+      set({ loadError: err.message, ready: true });
+      return;
     }
     const data = get().data;
     const active = data.workouts.find((w) => w.started_at && !w.finished_at);
@@ -72,15 +107,20 @@ export const useData = create((set, get) => ({
 
   /** Apply a pure change from lib/data.js and persist it. */
   update(fn) {
+    if (blocked) return;
     const data = fn(get().data);
     set({ data });
     scheduleSave(data);
   },
 
-  replaceAll(data) {
+  /** Replace everything (import, restore, reset), after a snapshot of what
+   * is there now. Written at once. */
+  async replaceAll(data, reason = 'import') {
+    if (blocked) return;
+    await snapshot(JSON.stringify(stamp(get().data)), reason);
     set({ data, activeWorkoutId: null });
     pending = data;
-    flushSave(); // an import or reset is written at once
+    flushSave();
   },
 
   setActiveWorkout(id) {

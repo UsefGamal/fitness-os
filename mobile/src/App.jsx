@@ -9,6 +9,7 @@ import TabBar from './components/TabBar.jsx';
 import { todayISO } from './lib/dates.js';
 import { introLine, shouldPlayIntro } from './lib/intro.js';
 import { programDayFor } from './lib/schedule.js';
+import { activePlan } from './lib/plan.js';
 import { timesOf } from './lib/times.js';
 import { scheduleReminders } from './store/notify.js';
 import { startPhoneSync } from './store/phoneSync.js';
@@ -29,6 +30,7 @@ const FollowAlong = lazy(() => import('./views/FollowAlong.jsx'));
 const Photos = lazy(() => import('./views/Photos.jsx'));
 const Library = lazy(() => import('./views/Library.jsx'));
 const Profile = lazy(() => import('./views/Profile.jsx'));
+const Snapshots = lazy(() => import('./views/Snapshots.jsx'));
 const Quests = lazy(() => import('./views/Quests.jsx'));
 const Shopping = lazy(() => import('./views/Shopping.jsx'));
 const Stats = lazy(() => import('./views/Stats.jsx'));
@@ -78,6 +80,7 @@ const router = createHashRouter([
       { path: '/session/:type', element: <Session /> },
       { path: '/quests', element: <Quests /> },
       { path: '/profile', element: <Profile /> },
+      { path: '/snapshots', element: <Snapshots /> },
       { path: '*', element: <Today /> },
     ],
   },
@@ -91,7 +94,7 @@ function introFor() {
   const today = todayISO();
   let next = null;
   try {
-    next = programDayFor(today, content.training, data.session_moves || []);
+    next = programDayFor(today, activePlan(data, content), data.session_moves || []);
   } catch {
     next = null;
   }
@@ -100,10 +103,11 @@ function introFor() {
 }
 
 export default function App() {
-  const { ready, hydrate } = useData();
+  const { ready, hydrate, loadError } = useData();
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   useEffect(() => {
     hydrate().then(() => {
+      if (useData.getState().loadError) return;
       setIntro(introFor());
       // Keep two weeks of reminders queued on every open.
       scheduleReminders(content, useData.getState().data.settings.notifications);
@@ -112,6 +116,17 @@ export default function App() {
   }, [hydrate]);
   const endIntro = useCallback(() => setIntro(null), []);
   if (!ready) return null;
+  if (loadError) {
+    // The saved data is from a newer version of the app. Nothing is
+    // written until a version that reads it is installed.
+    return (
+      <div className="page" role="alert">
+        <h1 className="page-title">Update Fitness OS</h1>
+        <p className="page-sub">{loadError}</p>
+        <p className="muted small">Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.</p>
+      </div>
+    );
+  }
   return (
     <>
       <RouterProvider router={router} />

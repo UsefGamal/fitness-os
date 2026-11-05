@@ -10,6 +10,7 @@ import { entryFor, groupOf } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { progressionTarget } from '../lib/progression.js';
 import { alternatives } from '../lib/similar.js';
@@ -69,12 +70,13 @@ function IntervalsLink() {
 }
 
 function Picker({ onPick }) {
+  const { data } = useData();
   return (
     <>
       <IntervalsLink />
       <div className="section-label">Pick a session</div>
       <div className="list">
-        {content.training.program.map((d) => (
+        {activePlan(data, content).program.map((d) => (
           <button key={d.key} type="button" className="list-row" onClick={() => onPick(d.key)}>
             <div className="grow"><div>{d.label}</div><div className="meta">{d.focus}</div></div>
             <Icon name="chev" className="icon chev" />
@@ -92,7 +94,7 @@ export default function Workout() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const today = todayISO();
-  const T = content.training;
+  const T = activePlan(data, content);
 
   const active = data.workouts.find((w) => w.id === activeWorkoutId && !w.finished_at) || null;
   const requested = params.get('session');

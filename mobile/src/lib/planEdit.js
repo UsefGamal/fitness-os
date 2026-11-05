@@ -1,8 +1,9 @@
-// Your own version of the trainer's plan. The trainer's plan in content/
-// is the starter plan and never changes; edits are stored per session in
-// data.plan_overrides[key] as a full exercise list, and "Reset" deletes
-// the override. Same idea as openGym's starter plans with editable
+// Your own version of the plan. The plan's sessions (the active block's
+// copy, see lib/plan.js) are the starter plan and never change; edits are
+// stored per session on the active block (overrides[key]) as a full
+// exercise list, and "Reset" deletes the override. Same idea as openGym's starter plans with editable
 // routines, written for this data shape.
+import { planOverrides, withPlanOverrides } from './plan.js';
 import { programDay } from './schedule.js';
 
 export const DEFAULT_REST = '1.5m';
@@ -10,18 +11,18 @@ export const DEFAULT_REST = '1.5m';
 export function effectiveDay(key, training, data) {
   const day = programDay(key, training);
   if (!day) return null;
-  const override = data?.plan_overrides?.[key];
+  const override = planOverrides(data)[key];
   return override ? { ...day, exercises: override, edited: true } : { ...day, edited: false };
 }
 
 export function isEdited(key, data) {
-  return Boolean(data?.plan_overrides?.[key]);
+  return Boolean(planOverrides(data)[key]);
 }
 
 function withExercises(data, key, training, fn) {
   const current = effectiveDay(key, training, data).exercises;
   const next = fn(current.map((e) => ({ ...e })));
-  return { ...data, plan_overrides: { ...(data.plan_overrides || {}), [key]: next } };
+  return withPlanOverrides(data, { ...planOverrides(data), [key]: next });
 }
 
 function restSec(rest) {
@@ -74,7 +75,7 @@ export function moveExercise(data, key, training, index, delta) {
 }
 
 export function resetDay(data, key) {
-  const rest = { ...(data.plan_overrides || {}) };
+  const rest = { ...planOverrides(data) };
   delete rest[key];
-  return { ...data, plan_overrides: rest };
+  return withPlanOverrides(data, rest);
 }

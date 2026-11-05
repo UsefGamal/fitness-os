@@ -8,6 +8,7 @@ import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
 import { formatDate, todayISO } from '../lib/dates.js';
+import { profileOf } from '../lib/macros.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
 import { useData } from '../store/useData.js';
@@ -154,8 +155,8 @@ function Body({ data, update, today }) {
   const latest = D.latestWeight(data);
   const [form, setForm] = useState({ weight: latest ? String(latest.weight_kg) : '' });
   const [more, setMore] = useState(false);
-  const goalLow = data.profile?.goal_weight_low_kg;
-  const goalHigh = data.profile?.goal_weight_high_kg;
+  const goalLow = profileOf(data).goal_weight_low_kg;
+  const goalHigh = profileOf(data).goal_weight_high_kg;
   const first = data.body_logs[0];
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const lastOf = (k) => [...data.body_logs].reverse().find((b) => b[k] != null);

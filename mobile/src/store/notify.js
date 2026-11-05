@@ -4,6 +4,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 import { todayISO } from '../lib/dates.js';
 import { plannedReminders } from '../lib/reminders.js';
+import { activePlan } from '../lib/plan.js';
 import { timesOf } from '../lib/times.js';
 import { useData } from './useData.js';
 
@@ -24,7 +25,7 @@ export async function scheduleReminders(content, enabled) {
   if (!enabled) return;
   const data = useData.getState().data;
   const { session_moves: moves = [], evening_plan: evening = {} } = data;
-  const list = plannedReminders(todayISO(), content, new Date(), moves, evening, timesOf(data, content)).map((r) => ({ id: r.id, title: r.title, body: r.body, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
+  const list = plannedReminders(todayISO(), { ...content, training: activePlan(data, content) }, new Date(), moves, evening, timesOf(data, content)).map((r) => ({ id: r.id, title: r.title, body: r.body, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
   if (list.length) await LocalNotifications.schedule({ notifications: list });
 }
 

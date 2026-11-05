@@ -15,6 +15,7 @@ import { addDays, longWeekday, shortWeekday } from './dates.js';
 import * as D from './data.js';
 import { eveningDone, eveningOn } from './evening.js';
 import { macroTargets } from './macros.js';
+import { activePlan } from './plan.js';
 import { mealDayFor, slotLabel } from './meals.js';
 import { programDayFor, sessionKeyOn, weekView } from './schedule.js';
 import { timesOf } from './times.js';
@@ -34,7 +35,7 @@ export function mealWhat(option) {
 }
 
 export function widgetDays(data, content, today) {
-  const T = content.training;
+  const T = activePlan(data, content);
   const N = content.nutrition;
   const moves = data.session_moves || [];
   const times = timesOf(data, content);
