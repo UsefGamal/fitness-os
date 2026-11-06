@@ -18,6 +18,7 @@ import { doneKeys, totalPoints } from '../lib/quests.js';
 import { isChangedOn, programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
+import { MUSCLE, dayMuscles } from '../lib/muscles.js';
 import { backupDue } from '../lib/durable.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { content, useData } from '../store/useData.js';
@@ -35,7 +36,8 @@ export default function Today() {
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
   const tonight = eveningOn(data, today);
-  const nextGroups = dayGroups(data, P.effectiveDay(next.key, T, data)?.exercises);
+  const nextHits = dayMuscles(P.effectiveDay(next.key, T, data)?.exercises, T);
+  const nextGroups = dayGroups(data, nextHits.unknown);
   const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
@@ -85,7 +87,7 @@ export default function Today() {
                   {next.focus}{next.cardio_after ? `, then ${next.cardio_after.minutes} min cycling` : ''}
                 </p>
               </div>
-              <div style={{ width: 104, flex: 'none' }}><BodyMap hit={nextGroups} size={104} label={`${next.label} works ${[...nextGroups].join(', ')}`} /></div>
+              <div style={{ width: 104, flex: 'none' }}><BodyMap primary={nextHits.muscles} hit={nextGroups} size={104} label={`${next.label} works ${[...nextHits.muscles.map((m) => MUSCLE[m]?.label || m), ...nextGroups].join(', ')}`} /></div>
             </div>
             {todays?.finished_at ? (
               <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> Done · {todays.sets.length} sets</Link>

@@ -325,3 +325,5 @@ details.more > summary::-webkit-details-marker { display: none; }
 .chip-btn { flex: none; min-height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: var(--surface2); color: var(--text); font-size: 15px; font-weight: 600; }
 .chip-btn.on { background: var(--accent-dim); color: var(--accent); }
 .chip-btn:active { transform: scale(0.97); }
+/* The muscle or angle an exercise works, on Plan's exercise cards. */
+.ex-target { color: var(--accent); font-size: 14px; font-weight: 600; margin-top: 2px; }

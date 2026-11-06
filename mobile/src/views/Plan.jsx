@@ -16,6 +16,7 @@ import { timesOf } from '../lib/times.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activePlan } from '../lib/plan.js';
+import { MUSCLE, dayMuscles, targetFor, targetLabel } from '../lib/muscles.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -23,12 +24,13 @@ import { saveExport } from '../store/mirror.js';
 import { dataUrlOf, shareFile, shareText } from '../store/share.js';
 import { content, useData } from '../store/useData.js';
 
-function ExerciseList({ day }) {
+function ExerciseList({ day, training }) {
   return day.exercises.map((ex, i) => (
     <div key={`${ex.name}-${i}`} className="ex-card">
       <div className="row between">
         <div className="grow">
           <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
+          {targetFor(ex.name, training) ? <div className="ex-target">{targetLabel(targetFor(ex.name, training))}</div> : null}
           <div className="ex-meta">
             {ex.sets} × {ex.reps}{ex.rir ? ` · leave ${ex.rir} in the tank` : ''}{ex.rest ? ` · rest ${ex.rest}` : ''}
           </div>
@@ -127,6 +129,7 @@ export default function Plan() {
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
+  const dayHits = dayMuscles(day?.exercises, T);
   const moves = data.session_moves || [];
   const movedHere = moves.find((m) => m.to === picked.date && m.from);
   const pick = (date) => setPicked(weekView(today, T, data.session_moves || []).find((d) => d.date === date) || picked);
@@ -178,7 +181,7 @@ export default function Plan() {
           </div>
           <div className="row" style={{ alignItems: 'center', gap: 10, margin: '0 4px 10px' }}>
             <p className="muted small grow" style={{ margin: 0 }}>{day.focus}</p>
-            <div style={{ width: 96, flex: 'none' }}><BodyMap hit={dayGroups(data, day.exercises)} size={96} label={`${day.label} works ${[...dayGroups(data, day.exercises)].join(', ')}`} /></div>
+            <div style={{ width: 96, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={96} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
           </div>
           {editing ? (
             <EditList day={day} sessionKey={picked.key} />
@@ -189,7 +192,7 @@ export default function Plan() {
                 <div className="stack" style={{ marginTop: 8 }}>{day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}</div>
                 <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> Follow along</Link>
               </details>
-              <ExerciseList day={day} />
+              <ExerciseList day={day} training={T} />
               {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
               <div className="row" style={{ gap: 8, alignItems: 'center', margin: '0 0 10px' }}>
                 {movedHere ? (
