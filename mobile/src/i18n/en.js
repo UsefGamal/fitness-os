@@ -304,6 +304,12 @@ export default {
   'setup.noBodyNote': 'Fill in your profile any time for protein and calorie targets.',
   'setup.go': 'Start',
   'setup.changeLater': 'Change any of this later in Profile and Plan.',
+  'setup.err.age': 'Check the year: the app is for ages 16 to 90.',
+  'setup.err.height': 'Height in centimetres, between 120 and 230 (for example 178).',
+  'setup.err.weight': 'Weight in kilograms, between 35 and 250.',
+  'setup.err.goal': 'The goal weight should be below your weight now, and at least 35 kg.',
+  'setup.minorNote': 'Under 18: the app gives you maintenance targets, never a calorie cut.',
+  'setup.minorGoal': 'Under 18, weight-loss goals are off. Train, eat well and grow.',
   'setup.finishTitle': 'Finish your setup',
   'setup.finishNote': 'Add your height, weight and age for your own targets.',
 };

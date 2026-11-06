@@ -36,9 +36,36 @@ export function setupGoalDate(weightKg, goalKg, today) {
   return addDays(today, Math.ceil(weeks * 7));
 }
 
-/** True when the answers have everything the kcal maths needs. */
-export function bodyComplete(a) {
-  return Boolean(a.gender && a.birth_year && a.height_cm > 0 && a.weight_kg > 0);
+// Safe ranges for setup (QA-06). Outside them the field shows an error and
+// Next stays off, so a typo (17.8 for 178 cm) never becomes a target.
+export const LIMITS = { age: [16, 90], height_cm: [120, 230], weight_kg: [35, 250] };
+// Under 18 the app never sets a calorie deficit: maintenance targets only.
+export const ADULT_AGE = 18;
+
+export function ageIn(birthYear, today) {
+  return Number(today.slice(0, 4)) - Number(birthYear);
+}
+
+/** Field -> i18n key of what's wrong, for the fields filled in. */
+export function bodyErrors(a, today) {
+  const out = {};
+  const inRange = (v, [lo, hi]) => Number.isFinite(Number(v)) && Number(v) >= lo && Number(v) <= hi;
+  if (a.birth_year != null && !inRange(ageIn(a.birth_year, today), LIMITS.age)) out.birth_year = 'setup.err.age';
+  if (a.height_cm != null && !inRange(a.height_cm, LIMITS.height_cm)) out.height_cm = 'setup.err.height';
+  if (a.weight_kg != null && !inRange(a.weight_kg, LIMITS.weight_kg)) out.weight_kg = 'setup.err.weight';
+  if (a.goal_kg != null && a.weight_kg != null && !(a.goal_kg >= LIMITS.weight_kg[0] && a.goal_kg < a.weight_kg)) out.goal_kg = 'setup.err.goal';
+  return out;
+}
+
+export function isMinor(a, today) {
+  return a.birth_year != null && ageIn(a.birth_year, today) < ADULT_AGE;
+}
+
+/** True when the answers have everything the kcal maths needs, all in the
+ * safe ranges. `today` defaults to now for callers that only check presence. */
+export function bodyComplete(a, today = new Date().toISOString().slice(0, 10)) {
+  const errors = bodyErrors({ ...a, goal_kg: null }, today);
+  return Boolean(a.gender && a.birth_year && a.height_cm > 0 && a.weight_kg > 0) && !Object.keys(errors).length;
 }
 
 /** Apply the answers. `a`: { gender, birth_year, height_cm, weight_kg,
@@ -46,11 +73,14 @@ export function bodyComplete(a) {
  * Skipping the body facts hides kcal until the profile is filled in. */
 export function finishSetup(data, content, a, today) {
   let d = data;
-  const body = bodyComplete(a);
-  const goal = GOALS.includes(a.goal) ? a.goal : 'maintain';
+  const body = bodyComplete(a, today);
+  const minor = isMinor(a, today);
+  // Under 18: no deficit, whatever was picked.
+  const picked = GOALS.includes(a.goal) ? a.goal : 'maintain';
+  const goal = minor && (picked === 'lose' || picked === 'recomp') ? 'maintain' : picked;
   if (body) {
     const dateOfGoal = goal === 'lose' || goal === 'recomp' ? setupGoalDate(a.weight_kg, a.goal_kg, today) : null;
-    const hasGoal = dateOfGoal && a.goal_kg > 0;
+    const hasGoal = dateOfGoal && a.goal_kg > 0 && !bodyErrors(a, today).goal_kg;
     d = saveProfile(d, {
       gender: a.gender,
       date_of_birth: `${a.birth_year}-07-01`,
@@ -71,7 +101,7 @@ export function finishSetup(data, content, a, today) {
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },
-    setup: { done_on: today, routine, needs_body: !body, skipped: false },
+    setup: { done_on: today, routine, needs_body: !body, skipped: false, ...(minor ? { minor: true } : {}) },
   };
 }
 
