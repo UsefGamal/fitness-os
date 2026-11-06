@@ -6,6 +6,7 @@ import { addDays, formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { macroTargets } from '../lib/macros.js';
+import { mealsView, proteinPerMeal, servingsFor, setMealsView } from '../lib/mealsView.js';
 import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
@@ -14,7 +15,77 @@ import { content, useData } from '../store/useData.js';
 
 const N = content.nutrition;
 
+const WATER_GOAL = 3000;
+
+/** Meals opens on the simple targets view or the full plan (E3-S9). */
 export default function Meals() {
+  const { data } = useData();
+  return mealsView(data, N) === 'targets' ? <Targets /> : <MealPlan />;
+}
+
+function SwitchView({ to }) {
+  const { update } = useData();
+  return (
+    <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={() => update((d) => setMealsView(d, to))}>
+      {t(to === 'plan' ? 'mealsSimple.toPlan' : 'mealsSimple.toTargets')}
+    </button>
+  );
+}
+
+/** Targets only: protein (and kcal unless hidden), water, everyday foods. */
+function Targets() {
+  const { data, update } = useData();
+  const today = todayISO();
+  const target = macroTargets(data, N, today);
+  const S = N.simple;
+  const perMeal = proteinPerMeal(target.protein, S.meals_per_day);
+  const water = D.waterOn(data, today);
+  const showKcal = !data.safety?.hide_kcal && target.source !== 'plan';
+  return (
+    <div className="page">
+      <h1 className="page-title">{t('mealsSimple.title')}</h1>
+      <p className="page-sub">{t('mealsSimple.sub')}</p>
+      <section className="card">
+        <div className="muted small">{t('mealsSimple.proteinLabel')}</div>
+        <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 6px' }}>
+          <span style={{ fontSize: 30, fontWeight: 700 }}>{target.protein}</span><span className="muted">{t('mealsSimple.gramsDay')}</span>
+        </div>
+        <div className="small">{t('mealsSimple.perMeal', { g: perMeal, n: S.meals_per_day })}</div>
+        {showKcal ? <div className="muted small" style={{ marginTop: 6 }}>{t('mealsSimple.kcal', { kcal: target.kcal })}</div> : null}
+        {target.source === 'plan' ? <div className="muted small" style={{ marginTop: 6 }}><Link to="/profile">{t('mealsSimple.setUp')}</Link></div> : null}
+        <div className="row between" style={{ marginTop: 14 }}>
+          <strong><Icon name="drop" className="icon" /> {t('mealsSimple.water')}</strong>
+          <span className="muted small">{water} / {WATER_GOAL} ml</span>
+        </div>
+        <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ width: `${Math.min(100, (water / WATER_GOAL) * 100)}%` }} /></div>
+        <div className="row">
+          <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 250))}>{t('mealsSimple.add250')}</button>
+          <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 500))}>{t('mealsSimple.add500')}</button>
+        </div>
+      </section>
+
+      <div className="section-label">{t('mealsSimple.foodsTitle', { g: perMeal })}</div>
+      <div className="list">
+        {S.protein_foods.map((f) => (
+          <div key={f.name} className="list-row">
+            <div className="grow"><div>{f.name}</div><div className="meta small">{t('mealsSimple.serving', { serving: f.serving, g: f.protein_g })}</div></div>
+            {perMeal ? <span className="chip">{t('mealsSimple.times', { n: servingsFor(f, perMeal) })}</span> : null}
+          </div>
+        ))}
+      </div>
+
+      <div className="section-label">{t('mealsSimple.plateTitle')}</div>
+      <section className="card">
+        <ul className="small" style={{ margin: 0, paddingInlineStart: 18 }}>
+          {S.plate_guide.map((line) => <li key={line} style={{ margin: '4px 0' }}>{line}</li>)}
+        </ul>
+      </section>
+      <SwitchView to="plan" />
+    </div>
+  );
+}
+
+function MealPlan() {
   const { data, update } = useData();
   const today = todayISO();
   const [date, setDate] = useState(today);
@@ -83,6 +154,7 @@ export default function Meals() {
           </section>
         );
       })}
+      <SwitchView to="targets" />
     </div>
   );
 }

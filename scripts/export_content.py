@@ -28,6 +28,7 @@ from content import (  # noqa: E402
     meal_plan,
     milestones,
     recovery_program,
+    simple_meals,
 )
 from content.tdee import ACTIVITY_LEVELS, ACTIVITY_MULTIPLIERS, GENDERS  # noqa: E402
 
@@ -86,6 +87,14 @@ def build_content() -> dict:
                 "meal_slot_windows": meal_plan.MEAL_SLOT_WINDOWS,
                 "pre_workout_note": meal_plan.PRE_WORKOUT_NOTE,
                 "macro_targets": meal_plan.MACRO_TARGETS,
+                # E3-S9: friends open Meals on targets and guidance; Yusuf's
+                # build keeps the full 14-day plan. Either can switch.
+                "meals_default": "targets" if gym_program.FLAVOR == "friends" else "plan",
+                "simple": {
+                    "protein_foods": simple_meals.PROTEIN_FOODS,
+                    "plate_guide": simple_meals.PLATE_GUIDE,
+                    "meals_per_day": simple_meals.MEALS_PER_DAY,
+                },
                 "drink_options": meal_plan.DRINK_OPTIONS,
                 "drinks": food_items.DRINKS,
                 "days": [_day_with_items(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
