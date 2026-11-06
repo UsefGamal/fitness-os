@@ -7,7 +7,7 @@ import LineChart from '../components/LineChart.jsx';
 import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
-import { formatDate, todayISO } from '../lib/dates.js';
+import { formatDate } from '../lib/dates.js';
 import { profileOf } from '../lib/macros.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
@@ -15,6 +15,7 @@ import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 const MEASURES = [
   ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
@@ -276,7 +277,7 @@ function Body({ data, update, today }) {
 
 export default function Stats() {
   const { data, update } = useData();
-  const today = todayISO();
+  const today = useToday();
   const weightOn = D.moduleOn(data, 'weight');
   const tabs = [['muscles', 'Muscles'], ['strength', 'Strength'], ...(weightOn ? [['body', 'Body']] : []), ['badges', 'Badges']];
   const [tab, setTab] = useState('muscles');

@@ -3,12 +3,14 @@
   "appName": "Fitness OS",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "errorPath": "webview-update.html"
   },
   "android": {
     "backgroundColor": "#000000",
     "allowMixedContent": false,
-    "webContentsDebuggingEnabled": false
+    "webContentsDebuggingEnabled": false,
+    "minWebViewVersion": 111
   },
   "plugins": {
     "SystemBars": {

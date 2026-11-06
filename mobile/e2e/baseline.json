@@ -6,8 +6,8 @@
   "errors": 0
  },
  "/plan 360 ltr": {
-  "axe": 4,
-  "taps": 8,
+  "axe": 3,
+  "taps": 1,
   "overflow": 0,
   "errors": 0
  },
@@ -114,8 +114,8 @@
   "errors": 0
  },
  "/plan 390 ltr": {
-  "axe": 4,
-  "taps": 8,
+  "axe": 3,
+  "taps": 1,
   "overflow": 0,
   "errors": 0
  },
@@ -222,7 +222,7 @@
   "errors": 0
  },
  "/plan 412 ltr": {
-  "axe": 4,
+  "axe": 3,
   "taps": 1,
   "overflow": 0,
   "errors": 0
@@ -330,8 +330,8 @@
   "errors": 0
  },
  "/plan 360 rtl": {
-  "axe": 4,
-  "taps": 8,
+  "axe": 3,
+  "taps": 1,
   "overflow": 0,
   "errors": 0
  },
@@ -438,8 +438,8 @@
   "errors": 0
  },
  "/plan 390 rtl": {
-  "axe": 4,
-  "taps": 8,
+  "axe": 3,
+  "taps": 1,
   "overflow": 0,
   "errors": 0
  },
@@ -546,7 +546,7 @@
   "errors": 0
  },
  "/plan 412 rtl": {
-  "axe": 4,
+  "axe": 3,
   "taps": 1,
   "overflow": 0,
   "errors": 0

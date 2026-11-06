@@ -28,7 +28,7 @@ export function plannedReminders(today, content, now = new Date(), moves = [], e
     const day = addDays(today, i);
     if (times.remind_workouts !== false && sessionKeyOn(day, training, moves) !== 'rest') {
       const session = programDayFor(day, training, moves);
-      out.push({
+      if (session) out.push({
         id: 1000 + i,
         at: at(day, times.session_time, lead),
         title: `${session.label} at ${times.session_time}`,

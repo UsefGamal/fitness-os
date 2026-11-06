@@ -8,6 +8,8 @@ import { t } from '../lib/i18n.js';
 
 // Quick lengths on the full screen timer.
 const PRESETS = [45, 60, 90, 120, 180];
+const RING_R = 120;
+const RING_C = 2 * Math.PI * RING_R;
 
 /** The rest timer: a floating panel above the tab bar with big digits, a
  * progress bar and labelled controls (-15s, +15s, Pause/Resume, Skip), and a
@@ -18,7 +20,25 @@ export default function RestTimer() {
   const [now, setNow] = useState(Date.now());
   const [full, setFull] = useState(false);
   const beeped = useRef(null);
+  const ringRef = useRef(null);
+  const barRef = useRef(null);
   const paused = pausedLeft != null;
+
+  // The ring and the bar move every frame, so they glide instead of jumping
+  // in 200 ms steps. They're set on the elements directly: no React render
+  // per frame, only the digits re-render (5 times a second, above).
+  useEffect(() => {
+    if (!endsAt || paused) return undefined;
+    let raf = 0;
+    const frame = () => {
+      const f = total ? Math.min(1, Math.max(0, endsAt - Date.now()) / (total * 1000)) : 0;
+      if (ringRef.current) ringRef.current.style.strokeDashoffset = String(RING_C * (1 - f));
+      if (barRef.current) barRef.current.style.transform = `scaleX(${f})`;
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [endsAt, paused, total]);
 
   useEffect(() => {
     if (!endsAt || paused) return undefined;
@@ -65,17 +85,15 @@ export default function RestTimer() {
   );
 
   if (full) {
-    const R = 120;
-    const C = 2 * Math.PI * R;
     return (
       <div className="timer-full" role="timer" aria-live="off">
         <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
         <button type="button" className="icon-btn timer-close" aria-label="Back to the workout" onClick={() => setFull(false)}><Icon name="chev" /></button>
         <div className="muted">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
         <svg viewBox="0 0 280 280" className="ring" aria-hidden="true">
-          <circle cx="140" cy="140" r={R} fill="none" stroke="var(--surface2)" strokeWidth="14" />
-          <circle cx="140" cy="140" r={R} fill="none" stroke="var(--accent)" strokeWidth="14" strokeLinecap="round"
-            strokeDasharray={C} strokeDashoffset={C * (1 - fraction)} transform="rotate(-90 140 140)" />
+          <circle cx="140" cy="140" r={RING_R} fill="none" stroke="var(--surface2)" strokeWidth="14" />
+          <circle ref={ringRef} className="ring-fill" cx="140" cy="140" r={RING_R} fill="none" stroke="var(--accent)" strokeWidth="14" strokeLinecap="round"
+            strokeDasharray={RING_C} style={{ strokeDashoffset: RING_C * (1 - fraction) }} transform="rotate(-90 140 140)" />
           <text x="140" y="160" textAnchor="middle" className="ring-t">{done ? 'Go' : clock(left)}</text>
         </svg>
         <div className="big-next">Next: {label}</div>
@@ -100,7 +118,7 @@ export default function RestTimer() {
         </div>
         <Icon name="chev" className="icon timer-expand" />
       </button>
-      <div className="timer-bar" aria-hidden="true"><i style={{ width: `${fraction * 100}%` }} /></div>
+      <div className="timer-bar" aria-hidden="true"><i ref={barRef} style={{ transform: `scaleX(${fraction})` }} /></div>
       {controls}
     </div>
   );
