@@ -62,3 +62,6 @@ jobs:
 
       - name: Tests (pytest)
         run: pytest
+
+      - name: Friends build has no trainer plan (E4-S2)
+        run: python scripts/check_friends_build.py
