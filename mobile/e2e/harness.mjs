@@ -48,13 +48,19 @@ function smallTaps(min) {
   return n;
 }
 
+function stop(child) {
+  try { process.kill(-child.pid, 'SIGTERM'); } catch { child.kill(); }
+}
+
 async function serve() {
-  const child = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: new URL('..', HERE), stdio: 'pipe' });
+  // Its own process group, so stop() ends vite too and not just npx;
+  // otherwise vite keeps the pipe open and node never exits.
+  const child = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: new URL('..', HERE), stdio: 'ignore', detached: true });
   for (let i = 0; i < 100; i += 1) {
     try { if ((await fetch(`http://localhost:${PORT}/`)).ok) return child; } catch { /* not up yet */ }
     await new Promise((r) => setTimeout(r, 200));
   }
-  child.kill();
+  stop(child);
   throw new Error('vite preview did not start');
 }
 
@@ -104,7 +110,7 @@ export async function run({ shots = false } = {}) {
     }
   } finally {
     await browser.close();
-    server.kill();
+    stop(server);
   }
   return report;
 }
@@ -135,4 +141,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (worse.length) process.exit(1);
     console.log('No screen got worse.');
   }
+  process.exit(0);
 }

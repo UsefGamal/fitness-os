@@ -71,6 +71,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
 
       - name: Phone harness
+        timeout-minutes: 15
         run: npm run e2e -- --shots
 
       - name: Keep the screenshots
