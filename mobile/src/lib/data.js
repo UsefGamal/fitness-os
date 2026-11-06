@@ -202,10 +202,23 @@ export function personalBests(data, excludeWorkoutId = null) {
   return best;
 }
 
-export function isPersonalBest(data, workoutId, set) {
-  const prev = personalBests(data, workoutId).get(set.exercise_id);
+/** What a new set means (E7-S2): 'baseline' the first time an exercise is
+ * ever logged (nothing to beat yet, so not a best), 'best' when it beats
+ * every earlier workout, else null. */
+export function setKind(data, workoutId, set) {
   const score = e1rm(set.weight_kg, set.reps);
-  return score > 0 && (!prev || score > prev.score);
+  if (!(score > 0)) return null;
+  const prev = personalBests(data, workoutId).get(set.exercise_id);
+  if (!prev) {
+    const workout = data.workouts.find((w) => w.id === workoutId);
+    return workout?.sets.some((s) => s.exercise_id === set.exercise_id) ? null : 'baseline';
+  }
+  return score > prev.score ? 'best' : null;
+}
+
+/** Only a real best: beats an earlier workout. A first-ever set is a baseline. */
+export function isPersonalBest(data, workoutId, set) {
+  return setKind(data, workoutId, set) === 'best';
 }
 
 /** The weight to suggest for the next set of an exercise in a workout. */
