@@ -1,0 +1,578 @@
+{
+ "/ 360 ltr": {
+  "axe": 10,
+  "taps": 5,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan 360 ltr": {
+  "axe": 12,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/workout 360 ltr": {
+  "axe": 2,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/meals 360 ltr": {
+  "axe": 2,
+  "taps": 16,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/stats 360 ltr": {
+  "axe": 2,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/history 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/library 360 ltr": {
+  "axe": 6,
+  "taps": 9,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings 360 ltr": {
+  "axe": 2,
+  "taps": 24,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/shopping 360 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/quests 360 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/profile 360 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/snapshots 360 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/photos 360 ltr": {
+  "axe": 3,
+  "taps": 4,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/intervals 360 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/home 360 ltr": {
+  "axe": 0,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/recovery 360 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/ 390 ltr": {
+  "axe": 11,
+  "taps": 5,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan 390 ltr": {
+  "axe": 13,
+  "taps": 14,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/workout 390 ltr": {
+  "axe": 2,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/meals 390 ltr": {
+  "axe": 3,
+  "taps": 16,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/stats 390 ltr": {
+  "axe": 3,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/history 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/library 390 ltr": {
+  "axe": 6,
+  "taps": 9,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings 390 ltr": {
+  "axe": 2,
+  "taps": 24,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/shopping 390 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/quests 390 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/profile 390 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/snapshots 390 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/photos 390 ltr": {
+  "axe": 3,
+  "taps": 4,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/intervals 390 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/home 390 ltr": {
+  "axe": 0,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/recovery 390 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/ 412 ltr": {
+  "axe": 11,
+  "taps": 5,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan 412 ltr": {
+  "axe": 13,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/workout 412 ltr": {
+  "axe": 2,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/meals 412 ltr": {
+  "axe": 3,
+  "taps": 16,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/stats 412 ltr": {
+  "axe": 3,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/history 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/library 412 ltr": {
+  "axe": 6,
+  "taps": 9,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings 412 ltr": {
+  "axe": 2,
+  "taps": 24,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/shopping 412 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/quests 412 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/profile 412 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/snapshots 412 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/photos 412 ltr": {
+  "axe": 3,
+  "taps": 4,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/intervals 412 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/home 412 ltr": {
+  "axe": 0,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/recovery 412 ltr": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/ 360 rtl": {
+  "axe": 10,
+  "taps": 5,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan 360 rtl": {
+  "axe": 12,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/workout 360 rtl": {
+  "axe": 2,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/meals 360 rtl": {
+  "axe": 2,
+  "taps": 16,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/stats 360 rtl": {
+  "axe": 2,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/history 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/library 360 rtl": {
+  "axe": 6,
+  "taps": 9,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings 360 rtl": {
+  "axe": 2,
+  "taps": 24,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/shopping 360 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/quests 360 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/profile 360 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/snapshots 360 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/photos 360 rtl": {
+  "axe": 3,
+  "taps": 4,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/intervals 360 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/home 360 rtl": {
+  "axe": 0,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/recovery 360 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/ 390 rtl": {
+  "axe": 11,
+  "taps": 5,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan 390 rtl": {
+  "axe": 13,
+  "taps": 14,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/workout 390 rtl": {
+  "axe": 2,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/meals 390 rtl": {
+  "axe": 3,
+  "taps": 16,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/stats 390 rtl": {
+  "axe": 3,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/history 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/library 390 rtl": {
+  "axe": 6,
+  "taps": 9,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings 390 rtl": {
+  "axe": 2,
+  "taps": 24,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/shopping 390 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/quests 390 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/profile 390 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/snapshots 390 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/photos 390 rtl": {
+  "axe": 3,
+  "taps": 4,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/intervals 390 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/home 390 rtl": {
+  "axe": 0,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/recovery 390 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/ 412 rtl": {
+  "axe": 11,
+  "taps": 5,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan 412 rtl": {
+  "axe": 13,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/workout 412 rtl": {
+  "axe": 2,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/meals 412 rtl": {
+  "axe": 3,
+  "taps": 16,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/stats 412 rtl": {
+  "axe": 3,
+  "taps": 13,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/history 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/library 412 rtl": {
+  "axe": 6,
+  "taps": 9,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings 412 rtl": {
+  "axe": 2,
+  "taps": 24,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/shopping 412 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/quests 412 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/profile 412 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/snapshots 412 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/photos 412 rtl": {
+  "axe": 3,
+  "taps": 4,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/intervals 412 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/home 412 rtl": {
+  "axe": 0,
+  "taps": 7,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/session/recovery 412 rtl": {
+  "axe": 0,
+  "taps": 1,
+  "overflow": 0,
+  "errors": 0
+ }
+}
