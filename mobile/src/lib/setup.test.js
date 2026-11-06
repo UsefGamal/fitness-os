@@ -5,7 +5,7 @@ import test from 'node:test';
 import { emptyData } from './data.js';
 import { macroTargets } from './macros.js';
 import { activeBlock } from './plan.js';
-import { finishSetup, needsSetup, pickRoutine, settleSetup, setupGoalDate, skipSetup } from './setup.js';
+import { bodyComplete, bodyErrors, finishSetup, needsSetup, pickRoutine, settleSetup, setupGoalDate, skipSetup } from './setup.js';
 import { content } from './testContent.js';
 
 const TODAY = '2026-11-10';
@@ -79,4 +79,38 @@ test('skip all: nothing set, kcal hidden', () => {
   assert.equal(d.profile, null);
   assert.equal(d.safety.hide_kcal, true);
   assert.equal(d.setup.skipped, true);
+});
+
+test('impossible body facts are caught at the boundaries (QA-06)', () => {
+  const e = (a) => Object.keys(bodyErrors(a, TODAY)).sort();
+  assert.deepEqual(e({ birth_year: 2010 }), [], 'age 16 is in');
+  assert.deepEqual(e({ birth_year: 2011 }), ['birth_year'], 'age 15 is out');
+  assert.deepEqual(e({ birth_year: 2015 }), ['birth_year'], 'QA repro: age 11');
+  assert.deepEqual(e({ birth_year: 1936 }), [], 'age 90 is in');
+  assert.deepEqual(e({ birth_year: 1935 }), ['birth_year']);
+  assert.deepEqual(e({ height_cm: 17.8 }), ['height_cm'], 'QA repro: 17.8 for 178');
+  assert.deepEqual(e({ height_cm: 120 }), []);
+  assert.deepEqual(e({ height_cm: 231 }), ['height_cm']);
+  assert.deepEqual(e({ weight_kg: 6 }), ['weight_kg'], 'QA repro: 6 kg');
+  assert.deepEqual(e({ weight_kg: 35 }), []);
+  assert.deepEqual(e({ weight_kg: 251 }), ['weight_kg']);
+  assert.deepEqual(e({ weight_kg: 84, goal_kg: 84 }), ['goal_kg'], 'a goal at your weight is not a cut');
+  assert.deepEqual(e({ weight_kg: 84, goal_kg: 30 }), ['goal_kg']);
+  assert.deepEqual(e({ weight_kg: 84, goal_kg: 78 }), []);
+});
+
+test('out-of-range facts never become targets', () => {
+  assert.equal(bodyComplete({ ...BODY, weight_kg: 6 }, TODAY), false);
+  const d = finishSetup(emptyData(content), content, { ...BODY, weight_kg: 6, goal: 'lose' }, TODAY);
+  assert.equal(d.safety.hide_kcal, true, 'kcal hidden, never Yusuf\'s plan numbers');
+  assert.equal(d.setup.needs_body, true);
+});
+
+test('under 18: no deficit, whatever goal was picked', () => {
+  const d = finishSetup(emptyData(content), content, { ...BODY, birth_year: 2009, weight_kg: 70, goal: 'lose', goal_kg: 62 }, TODAY);
+  assert.equal(d.setup.minor, true);
+  assert.equal(d.goals.at(-1).direction, 'maintain');
+  const m = macroTargets(d, content.nutrition, TODAY);
+  assert.notEqual(m.mode, 'lose');
+  assert.ok(m.kcal >= m.tdee - 1, `kcal ${m.kcal} is maintenance (tdee ${m.tdee})`);
 });
