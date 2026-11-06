@@ -15,6 +15,8 @@ import { todayISO } from './lib/dates.js';
 import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
 import { introLine, shouldPlayIntro } from './lib/intro.js';
+import { needsSetup } from './lib/setup.js';
+import Setup from './views/Setup.jsx';
 import { programDayFor } from './lib/schedule.js';
 import { activePlan } from './lib/plan.js';
 import { timesOf } from './lib/times.js';
@@ -138,13 +140,15 @@ function listenBackButton() {
 export default function App() {
   const { ready, hydrate, loadError } = useData();
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
+  const [setup, setSetup] = useState(false);
   useEffect(() => {
     hydrate().then(() => {
       const loc = setLocale(localeOf(useData.getState().data));
       document.documentElement.lang = loc;
       document.documentElement.dir = dirOf(loc);
       if (useData.getState().loadError) return;
-      setIntro(introFor());
+      // A fresh phone gets the first-time setup instead of the intro (E5-S2).
+      if (needsSetup(useData.getState().data)) { setSetup(true); setIntro(null); } else setIntro(introFor());
       // Keep two weeks of reminders queued on every open.
       scheduleReminders(content, useData.getState().data.settings.notifications);
       startPhoneSync();
@@ -164,6 +168,7 @@ export default function App() {
       </div>
     );
   }
+  if (setup) return <Setup onDone={() => setSetup(false)} />;
   return (
     <>
       <RouterProvider router={router} />

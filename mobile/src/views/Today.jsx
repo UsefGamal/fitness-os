@@ -103,6 +103,13 @@ export default function Today() {
 
       {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <GoalCard data={data} today={today} /> : null}
 
+      {data.setup?.needs_body ? (
+        <Link to="/profile" className="card row" style={{ gap: 10, color: 'inherit', textDecoration: 'none' }} role="note">
+          <Icon name="user" />
+          <div className="grow"><strong>{t('setup.finishTitle')}</strong><div className="muted small">{t('setup.finishNote')}</div></div>
+          <Icon name="chev" className="icon chev" />
+        </Link>
+      ) : null}
       {backup ? (
         <section className="card row" style={{ gap: 10 }} role="status">
           <Icon name="download" />
