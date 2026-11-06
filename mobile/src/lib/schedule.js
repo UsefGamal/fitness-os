@@ -6,19 +6,24 @@ import { addDays, shortWeekday, weekStart, weekdayName } from './dates.js';
 /** The session on `iso`. `moves` ([{ from, to, key }], data.session_moves)
  * shift a session to another day without touching the weekly plan. */
 export function sessionKeyOn(iso, training, moves = []) {
+  // A key the running plan doesn't have (a one-off change kept from the plan
+  // before a routine switch, or a deleted session) reads as rest, never as a
+  // crash (QA-01).
+  const known = (key) => (key && key !== 'rest' && programDay(key, training) ? key : 'rest');
   const moved = moves.find((m) => m.to === iso);
-  if (moved) return moved.key;
+  if (moved) return known(moved.key);
   if (moves.some((m) => m.from === iso)) return 'rest';
   const entry = training.trainer_plan.schedule.find((d) => d.day === weekdayName(iso));
-  return entry ? entry.session : 'rest';
+  return entry ? known(entry.session) : 'rest';
 }
 
 export function programDay(key, training) {
   return training.program.find((d) => d.key === key) || null;
 }
 
-/** The session on `iso`. On a rest day, the next session with isRestToday
- * and the date it falls on, so "what's next" always has an answer. */
+/** The session on `iso`. On a rest day, the next session in the coming
+ * week with isRestToday and the date it falls on. null when the next 7 days
+ * are all rest (a sick week or a holiday set to Rest, QA-02). */
 export function programDayFor(iso, training, moves = []) {
   const key = sessionKeyOn(iso, training, moves);
   if (key !== 'rest') return { ...programDay(key, training), isRestToday: false, onDate: iso };
@@ -27,7 +32,7 @@ export function programDayFor(iso, training, moves = []) {
     const laterKey = sessionKeyOn(later, training, moves);
     if (laterKey !== 'rest') return { ...programDay(laterKey, training), isRestToday: true, onDate: later };
   }
-  throw new Error('The schedule has no training day');
+  return null;
 }
 
 export function weekView(iso, training, moves = []) {
