@@ -73,3 +73,52 @@ test('a moved session shows on its new day and leaves a rest day behind', () => 
   // A rest day has nothing to move.
   assert.equal(moveSession({}, T, '2026-11-03', '2026-11-04').session_moves, undefined);
 });
+
+// ── Picking the session for one day (friend feedback, 6 Nov 2026) ───────
+import { isChangedOn, setSessionOn } from './schedule.js';
+
+test('picking another session for today changes only today', () => {
+  const d = setSessionOn({ session_moves: [] }, T, '2026-11-05', 'push');
+  assert.equal(sessionKeyOn('2026-11-05', T, d.session_moves), 'push');
+  assert.equal(sessionKeyOn('2026-11-04', T, d.session_moves), 'push', 'the planned push day is untouched');
+  assert.equal(sessionKeyOn('2026-11-12', T, d.session_moves), 'pull', 'next week is the plan again');
+  assert.ok(isChangedOn('2026-11-05', d.session_moves));
+});
+
+test('a rest day can become a training day and back', () => {
+  const d = setSessionOn({ session_moves: [] }, T, '2026-11-03', 'upper');
+  assert.equal(sessionKeyOn('2026-11-03', T, d.session_moves), 'upper');
+  assert.equal(programDayFor('2026-11-03', T, d.session_moves).isRestToday, false);
+  const back = setSessionOn(d, T, '2026-11-03', 'rest');
+  assert.deepEqual(back.session_moves, [], 'picking the planned session drops the change');
+});
+
+test('a training day can become a rest day', () => {
+  const d = setSessionOn({ session_moves: [] }, T, '2026-11-05', 'rest');
+  assert.equal(sessionKeyOn('2026-11-05', T, d.session_moves), 'rest');
+  assert.equal(programDayFor('2026-11-05', T, d.session_moves).label, 'Leg');
+});
+
+test('picking the same session again changes nothing', () => {
+  const d0 = { session_moves: [] };
+  assert.equal(setSessionOn(d0, T, '2026-11-05', 'pull'), d0);
+});
+
+test('changing a day a session was moved onto keeps its old day empty', () => {
+  const moved = moveSession({ session_moves: [] }, T, '2026-11-02', '2026-11-03');
+  const d = setSessionOn(moved, T, '2026-11-03', 'upper');
+  assert.equal(sessionKeyOn('2026-11-03', T, d.session_moves), 'upper');
+  assert.equal(sessionKeyOn('2026-11-02', T, d.session_moves), 'rest', 'Lower does not jump back to Monday');
+});
+
+test('a session picked for one day can still be moved, leaving that day empty', () => {
+  const picked = setSessionOn({ session_moves: [] }, T, '2026-11-02', 'push');
+  const d = moveSession(picked, T, '2026-11-02', '2026-11-03');
+  assert.equal(sessionKeyOn('2026-11-03', T, d.session_moves), 'push');
+  assert.equal(sessionKeyOn('2026-11-02', T, d.session_moves), 'rest');
+});
+
+test('undo puts a picked day back to the plan', () => {
+  const d = undoMove(setSessionOn({ session_moves: [] }, T, '2026-11-05', 'push'), '2026-11-05');
+  assert.equal(sessionKeyOn('2026-11-05', T, d.session_moves), 'pull');
+});
