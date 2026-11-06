@@ -58,7 +58,6 @@ export default {
   'snap.detail': 'This snapshot has {workouts}, {sets} and {weighIns}. Anything logged since then is replaced, but kept as a new snapshot first.',
   'snap.restore': 'Restore this snapshot',
   'snap.restored': 'Restored: {workouts} and {weighIns}. What was here before is kept as a new snapshot.',
-  'common.cancel': 'Cancel',
   'count.workout': '{n} workout',
   'count.workouts': '{n} workouts',
   'count.set': '{n} set',
