@@ -11,7 +11,7 @@ import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
-import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
+import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
 import { isTime, leadText, REMIND_CHOICES, setTimes, timesOf } from '../lib/times.js';
@@ -104,6 +104,10 @@ export default function Settings() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setMsg('That file is too big to be a Fitness OS backup (over 10 MB), so nothing was changed.');
+      return;
+    }
     try {
       const parsed = parseDataFile(await file.text(), content);
       setPendingImport(parsed);
@@ -113,9 +117,12 @@ export default function Settings() {
     }
   };
 
-  const confirmImport = async () => {
+  // P14-10: a file that would switch off a safety limit this phone has on
+  // asks first, with this phone's answers kept by default.
+  const loosened = pendingImport ? loosenedGates(data, pendingImport) : [];
+  const confirmImport = async (keep = false) => {
     const t = summarize(pendingImport);
-    await replaceAll(pendingImport, 'import');
+    await replaceAll(keep ? keepSafety(data, pendingImport) : pendingImport, 'import');
     setPendingImport(null);
     setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}. What was here before is kept in Snapshots.`);
   };
@@ -216,7 +223,19 @@ export default function Settings() {
           <div className="muted small">
             The file has {n(summarize(pendingImport).workouts, 'workout')}, {n(summarize(pendingImport).sets, 'set')}, {n(summarize(pendingImport).weighIns, 'weigh-in')} and {n(summarize(pendingImport).meals, 'meal')}. What's in the app now ({n(s.workouts, 'workout')}) will be replaced.
           </div>
-          <button type="button" className="btn" onClick={confirmImport}>Import and replace</button>
+          {loosened.length ? (
+            <div className="stack" style={{ gap: 6 }} role="group" aria-labelledby="still-true">
+              <strong id="still-true">{t('import.stillTrue')}</strong>
+              <div className="muted small">{t('import.stillTrueNote')}</div>
+              <ul className="small" style={{ margin: 0, paddingInlineStart: 18 }}>
+                {loosened.map((g) => <li key={g}>{t(`import.gate.${g}`)}</li>)}
+              </ul>
+              <button type="button" className="btn" onClick={() => confirmImport(true)}>{t('import.keepSafety')}</button>
+              <button type="button" className="btn ghost" onClick={() => confirmImport(false)}>{t('import.useFileSafety')}</button>
+            </div>
+          ) : (
+            <button type="button" className="btn" onClick={() => confirmImport(false)}>Import and replace</button>
+          )}
           <button type="button" className="btn ghost" onClick={() => setPendingImport(null)}>Cancel</button>
         </section>
       ) : null}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import { ImportError, parseDataFile, summarize, toDataFile } from './dataFile.js';
+import { DATA_KEYS, ImportError, isPhotoFile, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile } from './dataFile.js';
 import { content } from './testContent.js';
 
 // The shape the old site's Settings > "Download my data" produces.
@@ -47,4 +47,70 @@ test('rejects files that are not a Fitness OS export', () => {
   assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, version: 99 }), content), ImportError);
   assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, schemaVersion: 3 }), content), /newer version/);
   assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, workouts: null }), content), ImportError);
+});
+
+// ── P14-10: a hostile backup can't hurt ──────────────────────────────
+
+const hostile = (extra) => JSON.stringify({ ...JSON.parse(toDataFile(emptyData(content))), ...extra });
+
+test('a file over 10 MB is refused before it is parsed', () => {
+  const big = `{"format":"fitness-os-export","pad":"${'x'.repeat(MAX_FILE_BYTES)}"}`;
+  assert.throws(() => parseDataFile(big, content), (e) => e instanceof ImportError && /too big/.test(e.message));
+});
+
+test('photo entries that point outside the photos folder are dropped', () => {
+  const good = { id: 1, date: '2026-11-01', pose: 'front', file: 'progress-photos/2026-11-01-front-1730000000000.jpg' };
+  const bad = [
+    { id: 2, date: '2026-11-01', pose: 'side', file: 'fitness-os-data.json' },
+    { id: 3, date: '2026-11-01', pose: 'back', file: 'progress-photos/../fitness-os-data.json' },
+    { id: 4, date: '2026-11-01', pose: 'back', file: 'snapshots/1-import.json' },
+    { id: 5, date: '2026-11-01', pose: 'back', file: '/data/data/com.usefgamal.fitnessos/files/x.jpg' },
+    { id: 6, date: '2026-11-01', pose: 'back', file: null },
+    'not an object',
+  ];
+  const d = parseDataFile(hostile({ progress_photos: [good, ...bad] }), content);
+  assert.deepEqual(d.progress_photos, [good]);
+  assert.equal(isPhotoFile(good.file), true);
+  for (const b of bad) assert.equal(isPhotoFile(b?.file), false);
+});
+
+test('unknown keys go into the _unknown bag, prototype keys are dropped', () => {
+  const text = hostile({ a_key_from_the_future: { kept: true }, blob: 'x'.repeat(100) }).replace('{', '{"__proto__":{"polluted":true},"constructor":1,');
+  const d = parseDataFile(text, content);
+  assert.equal(d.a_key_from_the_future, undefined);
+  assert.equal(d.blob, undefined);
+  assert.deepEqual(d._unknown, { a_key_from_the_future: { kept: true }, blob: 'x'.repeat(100) });
+  assert.equal(Object.hasOwn(d, '__proto__'), false);
+  assert.equal(Object.hasOwn(d, 'constructor'), false);
+  assert.equal({}.polluted, undefined);
+  // Still lossless: the bag goes out with the next export and comes back.
+  assert.deepEqual(parseDataFile(toDataFile(d), content)._unknown, d._unknown);
+});
+
+test('every top-level key the app writes is a known key', async () => {
+  const { readdirSync, readFileSync } = await import('node:fs');
+  const dirs = ['lib', 'store', 'views', 'components'].map((d) => new URL(`../${d}/`, import.meta.url));
+  const written = new Set();
+  for (const dir of dirs) {
+    for (const f of readdirSync(dir)) {
+      if (!/\.jsx?$/.test(f) || f.includes('.test.')) continue;
+      const src = readFileSync(new URL(f, dir), 'utf8');
+      for (const m of src.matchAll(/\.\.\.(?:data|d|next|prev|cur|base|raw), ([a-z_]+):/g)) written.add(m[1]);
+      for (const m of src.matchAll(/\bout\.([a-z_]+) = /g)) if (f === 'migrate.js') written.add(m[1]);
+    }
+  }
+  for (const k of Object.keys(emptyData(content))) written.add(k);
+  const missing = [...written].filter((k) => !DATA_KEYS.has(k) && !['gender', 'kicker', 'status', 'format'].includes(k));
+  assert.deepEqual(missing, [], 'add these to DATA_KEYS in dataFile.js');
+});
+
+test('an import that loosens a safety limit is flagged, and the phone answers can be kept', () => {
+  const here = emptyData(content);
+  here.safety = { ...here.safety, gates: { ...here.safety.gates, no_deficit: true }, hide_kcal: true };
+  const file = emptyData(content);
+  assert.deepEqual(loosenedGates(here, file), ['no_deficit', 'hide_kcal']);
+  assert.deepEqual(loosenedGates(file, here), [], 'tightening asks nothing');
+  assert.deepEqual(loosenedGates(here, here), []);
+  assert.deepEqual(keepSafety(here, file).safety, here.safety);
+  assert.equal(keepSafety(here, file).workouts, file.workouts);
 });
