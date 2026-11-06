@@ -19,15 +19,16 @@ test('TDEE multiplier, falling back to moderate', () => {
   assert.equal(tdee(1780, 'nope'), 1780 * 1.55);
 });
 
-test('deficit from the target rate, capped at 25% of TDEE, 1000 kcal and 1% BW a week', () => {
+test('deficit from the target rate, capped at 1000 kcal and 1% BW a week', () => {
   assert.equal(targetKcal(2500, null), 2500);
   assert.equal(targetKcal(2500, 0), 2500);
   assert.equal(targetKcal(2500, -0.5), 2500);
   assert.equal(targetKcal(2500, 0.5), 2500 - 550);
-  assert.equal(targetKcal(3000, 5), 3000 - 750, '25% of TDEE');
+  assert.equal(targetKcal(3000, 5), 3000 - 1000, 'no share-of-TDEE cap');
   assert.equal(targetKcal(4400, 5), 4400 - 1000, '1000 kcal');
   assert.equal(targetKcal(4400, 5, 80), 4400 - 880, '1% of 80 kg a week');
-  assert.equal(maxDeficit(2000, 100), 500);
+  assert.equal(maxDeficit(2000, 100), 1000);
+  assert.equal(maxDeficit(2000, 60), 660, '1% of 60 kg a week');
 });
 
 test('floors: 1500 kcal for men, 1200 for women', () => {
