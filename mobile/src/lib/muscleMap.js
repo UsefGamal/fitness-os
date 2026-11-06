@@ -13,6 +13,7 @@ export const SHAPES_OF = {
   'front delts': ['front-deltoids'],
   'side delts': ['front-deltoids', 'back-deltoids'],
   'rear delts': ['back-deltoids'],
+  shins: ['calves'],
   neck: ['neck'],
   biceps: ['biceps'],
   triceps: ['triceps'],
