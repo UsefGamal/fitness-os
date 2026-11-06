@@ -4,6 +4,7 @@ import { useState } from 'react';
 import BodyMap from '../components/BodyMap.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import DayPicker from '../components/DayPicker.jsx';
+import DaySheet from '../components/DaySheet.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
@@ -53,6 +54,7 @@ export default function Today() {
   const moved = healthOn ? data.health_daily?.[today] : null;
   const backup = backupDue(data);
   const [picking, setPicking] = useState(false);
+  const [shown, setShown] = useState(null);
   const changedToday = isChangedOn(today, moves);
 
   return (
@@ -167,7 +169,8 @@ export default function Today() {
           <strong>This week</strong>
           {streak > 0 ? <span className="chip accent"><Icon name="bolt" className="icon" /> {streak}-day streak</span> : null}
         </div>
-        <WeekStrip week={week} doneDates={done} />
+        <WeekStrip week={week} doneDates={done} onPick={setShown} />
+        <div className="muted small" style={{ marginTop: 6 }}>{t('daySheet.hint')}</div>
         {isRecoveryWeek(data, today) ? (
           <div className="row between" style={{ marginTop: 10, gap: 8 }}>
             <div className="small grow"><span className="chip warn">{t('recovery.chip')}</span> <span className="muted">{t('recovery.short')}</span></div>
@@ -177,6 +180,8 @@ export default function Today() {
           <button type="button" className="btn ghost small" style={{ marginTop: 6, paddingLeft: 0, justifyContent: 'flex-start' }} onClick={() => update((d) => setRecoveryWeek(d, today, true))}>{t('recovery.on')}</button>
         )}
       </section>
+
+      {shown ? <DaySheet day={shown} data={data} training={T} today={today} time={times.session_time} log={data.workouts.find((w) => w.log_date === shown.date && w.workout_type === 'gym' && (w.finished_at || w.sets.length))} onClose={() => setShown(null)} /> : null}
 
       <div className="section-label">Other sessions</div>
       <div className="list">

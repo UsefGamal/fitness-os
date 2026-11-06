@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { moveSession, moveTargets, programDayFor, restSeconds, sessionKeyOn, undoMove, weekView } from './schedule.js';
+import { moveSession, moveTargets, programDayFor, restSeconds, sessionKeyOn, tileLabel, undoMove, weekView } from './schedule.js';
 import { content } from './testContent.js';
 
 const T = content.training;
@@ -121,4 +121,22 @@ test('a session picked for one day can still be moved, leaving that day empty', 
 test('undo puts a picked day back to the plan', () => {
   const d = undoMove(setSessionOn({ session_moves: [] }, T, '2026-11-05', 'push'), '2026-11-05');
   assert.equal(sessionKeyOn('2026-11-05', T, d.session_moves), 'pull');
+});
+
+test('week tiles keep session variants apart without an ellipsis', () => {
+  assert.equal(tileLabel('Full body A'), 'FB A');
+  assert.equal(tileLabel('Full body B'), 'FB B');
+  assert.equal(tileLabel('Full body C'), 'FB C');
+  assert.equal(tileLabel('Upper B'), 'Up B');
+  assert.equal(tileLabel('Lower A (Home)'), 'Lo A');
+  assert.equal(tileLabel('Push'), 'Push');
+  assert.equal(tileLabel('Chest'), 'Chest');
+  assert.equal(tileLabel('Shoulders'), 'Shoul');
+  assert.equal(tileLabel('Chest & back'), 'CB');
+  assert.equal(tileLabel('Day 12'), 'Da 12');
+  assert.equal(tileLabel(''), '');
+  for (const d of weekView('2026-11-01', content.training)) {
+    assert.ok(d.tile.length <= 6, `${d.label} -> ${d.tile}`);
+    assert.ok(!d.tile.includes('…'));
+  }
 });
