@@ -7,7 +7,7 @@ import DayPicker from '../components/DayPicker.jsx';
 import DaySheet from '../components/DaySheet.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
-import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
+import { formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
@@ -24,6 +24,7 @@ import { backupDue } from '../lib/durable.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { content, useData } from '../store/useData.js';
 import { SESSIONS } from './Session.jsx';
+import { useToday } from '../store/today.js';
 
 const WATER_GOAL = 3000;
 const WEEK_HINT_KEY = 'fitness-os-week-hint-seen';
@@ -31,14 +32,14 @@ const WEEK_HINT_KEY = 'fitness-os-week-hint-seen';
 export default function Today() {
   const { data, update } = useData();
   const navigate = useNavigate();
-  const today = todayISO();
+  const today = useToday();
   const T = activePlan(data, content);
   const times = timesOf(data, content);
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
   const tonight = eveningOn(data, today);
-  const nextHits = dayMuscles(P.effectiveDay(next.key, T, data)?.exercises, T);
+  const nextHits = dayMuscles(next ? P.effectiveDay(next.key, T, data)?.exercises : [], T);
   const nextGroups = dayGroups(data, nextHits.unknown);
   const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
@@ -75,7 +76,17 @@ export default function Today() {
       </div>
 
       <section className="card">
-        {next.isRestToday ? (
+        {!next ? (
+          <>
+            <span className="chip">{t('week.rest')}</span>
+            <h2 style={{ marginTop: 10 }}>{t('week.noSession')}</h2>
+            <p className="muted" style={{ margin: 0 }}>{t('week.noSessionNote')}</p>
+            <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button type="button" className="btn secondary small" style={{ width: 'auto' }} onClick={() => setPicking(true)}>{t('week.trainToday')}</button>
+              <Link className="btn ghost small" style={{ width: 'auto' }} to="/plan">{t('week.openPlan')}</Link>
+            </div>
+          </>
+        ) : next.isRestToday ? (
           <>
             <span className="chip">Rest day</span>
             <h2 style={{ marginTop: 10 }}>Next: {next.label}</h2>
