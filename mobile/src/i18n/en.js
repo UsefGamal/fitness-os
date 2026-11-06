@@ -254,6 +254,9 @@ export default {
   'week.needOneDay': 'Keep at least one training day in the week.',
   'week.reset': 'Back to the original week',
   'week.changeDay': 'Change this day',
+  'week.noSession': 'No session planned this week',
+  'week.noSessionNote': 'Every day in the next 7 is set to rest. Rest up, or train today if you feel like it.',
+  'week.openPlan': 'Open Plan',
 
   'setup.back': 'Back',
   'setup.step': '{n} of {of}',

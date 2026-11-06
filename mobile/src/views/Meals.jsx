@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { addDays, formatDate, todayISO } from '../lib/dates.js';
+import { addDays, formatDate } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { macroTargets } from '../lib/macros.js';
@@ -12,6 +12,7 @@ import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { activePlan } from '../lib/plan.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 const N = content.nutrition;
 
@@ -35,7 +36,7 @@ function SwitchView({ to }) {
 /** Targets only: protein (and kcal unless hidden), water, everyday foods. */
 function Targets() {
   const { data, update } = useData();
-  const today = todayISO();
+  const today = useToday();
   const target = macroTargets(data, N, today);
   const S = N.simple;
   const perMeal = proteinPerMeal(target.protein, S.meals_per_day);
@@ -87,8 +88,15 @@ function Targets() {
 
 function MealPlan() {
   const { data, update } = useData();
-  const today = todayISO();
+  const today = useToday();
   const [date, setDate] = useState(today);
+  // Looking at today when midnight passes: follow the new day.
+  const shownToday = useRef(today);
+  useEffect(() => {
+    if (shownToday.current === today) return;
+    setDate((d) => (d === shownToday.current ? today : d));
+    shownToday.current = today;
+  }, [today]);
   const day = mealDayFor(date, N);
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   const totals = dayTotals(day, picks);
