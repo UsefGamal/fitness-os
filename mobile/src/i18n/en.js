@@ -24,6 +24,19 @@ export default {
   'update.title': 'Update Fitness OS',
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
 
+  'meals.kcalEaten': 'Calories eaten',
+  'meals.proteinEaten': 'Protein eaten',
+  'meals.summary': 'Carbs {carbs}/{tc} g · fat {fat}/{tf} g · {done}/{all} eaten. All picks: {kcal} kcal, {protein} g protein.',
+  'meals.yourTargets': 'Your targets',
+  'meals.setTargets': 'Set your targets',
+
+  'timer.over': 'Rest over. Next: {label}',
+
+  'common.cancel': 'Cancel',
+  'history.deleteTitle': 'Delete workout',
+  'history.deleteBody': 'Delete this workout and all its {n} sets? This cannot be undone.',
+  'photos.deleteTitle': 'Delete photo',
+  'photos.deleteBody': 'Delete this photo from the phone? Photos are not in backups, so it cannot be brought back.',
   'workout.best': 'New best on {name}: {kg} kg × {reps}',
   'workout.baseline': 'Baseline set for {name}: {kg} kg × {reps}. Beat it next time.',
   'recovery.chip': 'Recovery week',
@@ -80,7 +93,6 @@ export default {
   'snap.detail': 'This snapshot has {workouts}, {sets} and {weighIns}. Anything logged since then is replaced, but kept as a new snapshot first.',
   'snap.restore': 'Restore this snapshot',
   'snap.restored': 'Restored: {workouts} and {weighIns}. What was here before is kept as a new snapshot.',
-  'common.cancel': 'Cancel',
   'count.workout': '{n} workout',
   'count.workouts': '{n} workouts',
   'count.set': '{n} set',

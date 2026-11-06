@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Sheet from '../components/Sheet.jsx';
 import SwipeRow from '../components/SwipeRow.jsx';
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
@@ -172,6 +173,18 @@ export default function Workout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, current, sessionKey, ex?.name, target]);
 
+  // After a set moves you on, bring the next exercise up so its log row
+  // sits above the rest timer (E6-S5). Not on the first render.
+  const firstScroll = useRef(true);
+  useEffect(() => {
+    if (firstScroll.current) { firstScroll.current = false; return; }
+    if (!active) return;
+    const el = document.querySelector('.ex-card.current');
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    el?.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
   const doneSets = useMemo(() => {
     if (!active || !day) return {};
     const out = {};
@@ -311,7 +324,6 @@ export default function Workout() {
   };
 
   const discard = () => {
-    if (!window.confirm(t('workout.discardConfirm', { label: day.label, sets: setsText(active.sets.length) }))) return;
     timer.stop();
     update((d) => D.deleteWorkout(d, active.id));
     setActiveWorkout(null);
@@ -350,7 +362,7 @@ export default function Workout() {
         </div>
         <div className="row" style={{ gap: 4 }}>
           <button type="button" className="btn small" onClick={() => setFinishing(true)}>Finish</button>
-          <MoreMenu title={t('workout.more')} actions={[{ key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: discard }]} />
+          <MoreMenu title={t('workout.more')} actions={[{ key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') }]} />
         </div>
       </div>
       {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
@@ -440,6 +452,9 @@ export default function Workout() {
           </div>
         );
       })}
+      {sheet === 'discard' ? (
+        <ConfirmSheet title={t('workout.discard')} body={t('workout.discardConfirm', { label: day.label, sets: setsText(active.sets.length) })} action={t('workout.discard')} onConfirm={discard} onClose={() => setSheet(null)} />
+      ) : null}
       {sheet === 'warmups' && ex ? (
         <Sheet title={`Warm-ups for ${weight} kg`} onClose={() => setSheet(null)}>
           {warmupSets(weight, barKg, settings.plates).length ? (

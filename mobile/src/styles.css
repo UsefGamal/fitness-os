@@ -7,8 +7,8 @@
   --surface2: #2c2c2e;
   --surface3: #3a3a3c;
   --text: #fff;
-  --muted: #8e8e93;
-  --faint: #636366;
+  --muted: #98989f; /* 4.5:1 or better on every surface (E6-S6) */
+  --faint: #7c7c80;
   --accent: #30d158;
   --accent-dim: rgba(48, 209, 88, 0.16);
   --on-accent: #000;
@@ -58,13 +58,13 @@ button.list-row:active, a.list-row:active { background: var(--surface2); }
 .btn.secondary { background: var(--surface2); color: var(--text); }
 .btn.ghost { background: none; color: var(--accent); min-height: 44px; }
 .btn.danger { background: none; color: var(--danger); }
-.btn.small { min-height: 36px; padding: 0 14px; font-size: 15px; width: auto; border-radius: 18px; }
+.btn.small { min-height: 44px; padding: 0 14px; font-size: 15px; width: auto; border-radius: 18px; }
 .btn:disabled { opacity: 0.4; }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; }
 .chip.accent { background: var(--accent-dim); color: var(--accent); }
 .chip.warn { background: rgba(255, 214, 10, 0.15); color: var(--warn); }
-button.chip { border: 0; min-height: 34px; padding: 0 12px; font-family: inherit; cursor: pointer; }
+button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit; cursor: pointer; }
 
 .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .week-day { background: var(--surface2); border-radius: 12px; padding: 8px 2px; text-align: center; min-height: 54px; border: 1.5px solid transparent; }
@@ -104,6 +104,9 @@ label.field > span { display: block; color: var(--muted); font-size: 14px; margi
 
 .ex-card { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; width: 100%; border: 0; text-align: left; color: var(--text); display: block; }
 .ex-card.current { box-shadow: inset 0 0 0 2px var(--accent); }
+/* Auto-scroll lands the card under the status bar with room for the timer (E6-S5). */
+.ex-card { scroll-margin-top: calc(var(--sat) + 8px); scroll-margin-bottom: 220px; }
+.btn.danger-fill { background: var(--danger); color: #fff; }
 .ex-card:active { transform: scale(0.99); }
 .ex-name { font-weight: 600; font-size: 17px; }
 .ex-meta { color: var(--muted); font-size: 14px; margin-top: 2px; }
@@ -165,12 +168,15 @@ label.field > span { display: block; color: var(--muted); font-size: 14px; margi
 .icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .check { width: 28px; height: 28px; border-radius: 14px; border: 2px solid var(--surface3); display: grid; place-items: center; background: none; flex: none; color: var(--on-accent); }
 .check.on { background: var(--accent); border-color: var(--accent); }
+/* The tick stays 28px to look at but takes taps across 44px (E3-S12, E6-S6). */
+.check { position: relative; }
+.check::after { content: ''; position: absolute; inset: -8px; }
 
 .seg { display: flex; background: var(--surface2); border-radius: 10px; padding: 2px; gap: 2px; }
-.seg button { flex: 1; min-height: 36px; border: 0; border-radius: 8px; background: none; color: var(--text); font-size: 14px; font-weight: 600; }
+.seg button { flex: 1; min-height: 44px; border: 0; border-radius: 8px; background: none; color: var(--text); font-size: 14px; font-weight: 600; }
 .seg button.on { background: var(--surface3); }
 
-details.more > summary { list-style: none; color: var(--accent); font-size: 15px; min-height: 36px; display: flex; align-items: center; }
+details.more > summary { list-style: none; color: var(--accent); font-size: 15px; min-height: 44px; display: flex; align-items: center; }
 details.more > summary::-webkit-details-marker { display: none; }
 
 /* Toasts sit at the bottom, in thumb reach, above the tab bar and above the rest timer when it shows (E6-S2). */
@@ -223,7 +229,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .reason.add { color: var(--accent); }
 .reason.deload { color: var(--warn); }
 .ex-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.ex-actions .chip { min-height: 36px; }
+.ex-actions .chip { min-height: 44px; }
 .plate { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; border-radius: 8px; background: var(--surface2); font-weight: 700; font-size: 13px; padding: 0 6px; }
 
 /* Phase 9: stats */
@@ -234,7 +240,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .group-rows { display: grid; gap: 8px; margin-top: 12px; }
-.group-row { border: 0; background: none; color: var(--text); text-align: left; padding: 4px 0; min-height: 36px; width: 100%; display: grid; grid-template-columns: 84px 1fr 56px; align-items: center; gap: 10px; font-size: 15px; }
+.group-row { border: 0; background: none; color: var(--text); text-align: left; padding: 4px 0; min-height: 44px; width: 100%; display: grid; grid-template-columns: 84px 1fr 56px; align-items: center; gap: 10px; font-size: 15px; }
 .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
 /* Badges: each family has its own colour (iOS system hues), a progress ring
    that fills toward the goal, and a tier numeral for later steps. */
@@ -304,3 +310,6 @@ details.more > summary::-webkit-details-marker { display: none; }
 @keyframes intro-charge { 0% { transform: scale(1); } 40% { transform: scale(1.14); filter: drop-shadow(0 0 14px rgba(48, 209, 88, 0.7)); } 100% { transform: scale(1); } }
 @keyframes intro-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes intro-out { to { opacity: 0; transform: scale(1.04); visibility: hidden; } }
+
+/* Read by screen readers only. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
