@@ -4,7 +4,7 @@
 // here means: after the upgrade, every number Yusuf sees for 14 days is
 // what the old app showed.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
@@ -23,6 +23,18 @@ import { widgetDays } from './widget.js';
 const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
 const v1 = (name) => JSON.parse(fixture(`${name}.json`));
 const GOLDEN = JSON.parse(fixture('golden-v1-numbers.json'));
+// Phase 12 (E3-S1..S3) changed the targets on purpose: protein and fat from
+// goal weight, the safe-deficit caps, and Yusuf's goal date moved to 15 Mar.
+// golden-phase12-numbers.json is that new truth, approved by Yusuf as a
+// before/after diff. Regenerate it with UPDATE_GOLDEN=1 npm test, and only
+// with a reason in the PR.
+const GOLDEN_FILE = new URL('./fixtures/golden-phase12-numbers.json', import.meta.url);
+const NAMES = ['v1-empty', 'v1-yusuf-like', 'v1-oldsite-export'];
+
+/** The numbers with the targets taken out: what phase 12 must not change. */
+function withoutTargets(days) {
+  return days.map(({ macros: _m, widget, ...rest }) => ({ ...rest, widget: widget && widget.map(({ stats: _s, ...w }) => w) }));
+}
 
 /** The same numbers golden-v1-numbers.json holds, from today's code. */
 function numbers(data) {
@@ -53,11 +65,17 @@ function numbers(data) {
   });
 }
 
-test('zero diff: 14 days of targets, plan, meals, streak, widget and reminders match the old app', () => {
-  for (const name of ['v1-empty', 'v1-yusuf-like']) {
-    assert.deepEqual(numbers(migrate(v1(name), content)), GOLDEN[name], name);
-  }
-  assert.deepEqual(numbers(parseDataFile(fixture('v1-oldsite-export.json'), content)), GOLDEN['v1-oldsite-export']);
+const upgraded = (name) => (name === 'v1-oldsite-export' ? parseDataFile(fixture(`${name}.json`), content) : migrate(v1(name), content));
+
+test('zero diff: 14 days of plan, meals, streak, widget and reminders match the old app', () => {
+  for (const name of NAMES) assert.deepEqual(withoutTargets(numbers(upgraded(name))), withoutTargets(GOLDEN[name]), name);
+});
+
+test('targets match the approved phase 12 golden', () => {
+  const now = Object.fromEntries(NAMES.map((n) => [n, numbers(upgraded(n))]));
+  if (process.env.UPDATE_GOLDEN) writeFileSync(GOLDEN_FILE, `${JSON.stringify(now)}\n`);
+  const golden = JSON.parse(readFileSync(GOLDEN_FILE, 'utf8'));
+  for (const n of NAMES) assert.deepEqual(now[n], golden[n], n);
 });
 
 test('the golden really covers real numbers, not just fallbacks', () => {
@@ -80,7 +98,7 @@ test('v1 to v2 adds every new field in one bump', () => {
   assert.equal(d.profile.week_start, 'sun');
   assert.equal(d.profile.locale, 'en');
   // The goal moved to goals[], with direction and ended_on.
-  assert.deepEqual(d.goals, [{ id: 'g1', set_on: '2026-09-01', direction: 'lose', start_weight_kg: 103, target_low_kg: 75, target_high_kg: 80, target_date: '2027-01-18', rate_pct_bw_wk: null, ended_on: null }]);
+  assert.deepEqual(d.goals, [{ id: 'g1', set_on: '2026-09-01', direction: 'lose', start_weight_kg: 103, target_low_kg: 75, target_high_kg: 80, target_date: '2027-03-15', rate_pct_bw_wk: null, ended_on: null }]);
   // Safety gates (flags only) and the hide switches, all off.
   assert.deepEqual(Object.values(d.safety.gates), [false, false, false, false, false]);
   assert.equal(d.safety.hide_kcal, false);
