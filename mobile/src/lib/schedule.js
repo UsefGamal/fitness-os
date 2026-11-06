@@ -64,8 +64,32 @@ export function moveSession(data, training, from, to) {
   if (key === 'rest' || from === to) return data;
   const keep = moves.filter((m) => m.to !== from && m.from !== from && m.to !== to && m.to >= addDays(from, -14));
   const original = moves.find((m) => m.to === from);
+  // A session picked for one day (from: null) leaves that day empty when it moves on.
+  if (original && original.from == null) {
+    const planned = sessionKeyOn(from, training, []);
+    const emptied = planned === 'rest' ? [] : [{ from: null, to: from, key: 'rest' }];
+    return { ...data, session_moves: [...keep, ...emptied, { from: null, to, key }] };
+  }
   const next = original ? { from: original.from, to, key } : { from, to, key };
   return { ...data, session_moves: next.from === next.to ? keep : [...keep, next] };
+}
+
+/** Do `key` (a session key or 'rest') on `iso` instead of what's on, for
+ * that day only. A session moved onto `iso` from another day keeps that
+ * day empty. Picking what the weekly plan has drops the change. */
+export function setSessionOn(data, training, iso, key) {
+  const moves = data.session_moves || [];
+  if (sessionKeyOn(iso, training, moves) === key) return data;
+  const existing = moves.find((m) => m.to === iso);
+  const keep = moves.filter((m) => m.to !== iso && m.to >= addDays(iso, -14));
+  const from = existing?.from ?? null;
+  if (from == null && sessionKeyOn(iso, training, keep) === key) return { ...data, session_moves: keep };
+  return { ...data, session_moves: [...keep, { from, to: iso, key }] };
+}
+
+/** True when `iso` shows something other than the weekly plan. */
+export function isChangedOn(iso, moves = []) {
+  return moves.some((m) => m.to === iso);
 }
 
 /** Put a moved session back on its planned day. */
