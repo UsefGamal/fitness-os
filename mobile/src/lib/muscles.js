@@ -24,6 +24,8 @@ export const MUSCLES = [
   { key: 'calves', label: 'Calves', group: 'Legs', shapes: ['calves', 'left-soleus', 'right-soleus'] },
   { key: 'adductors', label: 'Inner thighs', group: 'Legs', shapes: ['adductor'] },
   { key: 'abductors', label: 'Outer thighs', group: 'Legs', shapes: ['abductors', 'gluteal'] },
+  // No catalogue entry is tagged shins, so it has no Library chip.
+  { key: 'shins', label: 'Shins', group: 'Legs', shapes: ['calves'], catalogue: false },
 ];
 
 export const MUSCLE = Object.fromEntries(MUSCLES.map((m) => [m.key, m]));
@@ -41,6 +43,79 @@ export const ANGLES = {
   lats_width: { label: 'Back width (pull from above)', muscle: 'lats' },
   back_thickness: { label: 'Back thickness (rows)', muscle: 'middle back' },
 };
+
+// Where an angle sits on the body map: the part of one outline to light
+// brightly (the rest of the muscle stays dim). Parts are cut from each
+// outline's own box: top / middle / bottom, or inner / outer (toward or
+// away from the body's midline). triceps_all lights the whole muscle.
+export const REGION_OF = {
+  upper_chest: { shape: 'chest', part: 'top' },
+  mid_chest: { shape: 'chest', part: 'middle' },
+  lower_chest: { shape: 'chest', part: 'bottom' },
+  biceps_long: { shape: 'biceps', part: 'outer' },
+  biceps_short: { shape: 'biceps', part: 'inner' },
+  brachialis: { shape: 'biceps', part: 'bottom' },
+  // The back view draws each triceps as a large outline with a smaller one
+  // on its inner side (the long head); `pick` chooses between them.
+  triceps_long: { shape: 'triceps', part: 'whole', pick: 'smallest' },
+  triceps_lateral: { shape: 'triceps', part: 'outer', pick: 'largest' },
+  lats_width: { shape: 'upper-back', part: 'outer' },
+  back_thickness: { shape: 'upper-back', part: 'inner' },
+};
+
+/** The clip box (x, y, width, height) for `part` of an outline whose
+ * points are "x y x y …", in a figure whose midline is at x = `mid`. */
+export function partBox(points, part, mid = 50) {
+  const n = String(points).trim().split(/[\s,]+/).map(Number);
+  const xs = n.filter((_, i) => i % 2 === 0);
+  const ys = n.filter((_, i) => i % 2 === 1);
+  const x0 = Math.min(...xs); const x1 = Math.max(...xs);
+  const y0 = Math.min(...ys); const y1 = Math.max(...ys);
+  const w = x1 - x0; const h = y1 - y0;
+  const leftOfMid = (x0 + x1) / 2 < mid;
+  const half = 0.55 * w;
+  switch (part) {
+    case 'top': return { x: x0, y: y0, width: w, height: 0.5 * h };
+    case 'middle': return { x: x0, y: y0 + 0.28 * h, width: w, height: 0.47 * h };
+    case 'bottom': return { x: x0, y: y0 + 0.55 * h, width: w, height: 0.45 * h };
+    case 'outer': return { x: leftOfMid ? x0 : x1 - half, y: y0, width: half, height: h };
+    case 'inner': return { x: leftOfMid ? x1 - half : x0, y: y0, width: half, height: h };
+    default: return { x: x0, y: y0, width: w, height: h };
+  }
+}
+
+/** Which outlines of a shape an angle lights: all of them, or per side of
+ * the midline only the largest or smallest when a side has several. Returns
+ * the indexes into `polys`. */
+export function pickOutlines(polys, pick = null, mid = 50) {
+  const all = polys.map((_, i) => i);
+  if (!pick) return all;
+  const box = (points) => partBox(points, 'whole', mid);
+  const sides = [all.filter((i) => box(polys[i]).x + box(polys[i]).width / 2 < mid), all.filter((i) => box(polys[i]).x + box(polys[i]).width / 2 >= mid)];
+  return sides.flatMap((side) => {
+    if (side.length < 2) return side;
+    const area = (i) => box(polys[i]).width * box(polys[i]).height;
+    const sorted = [...side].sort((a, b) => area(a) - area(b));
+    return [pick === 'smallest' ? sorted[0] : sorted[sorted.length - 1]];
+  }).sort((a, b) => a - b);
+}
+
+/** Muscles and angle for one of our exercises: the hand-checked table
+ * (content/exercise_targets.py) first, then rules on the catalogue entry
+ * whose photos it shows. Null when neither knows it. */
+export function targetFor(name, training, entry = null) {
+  const own = training?.exercise_targets?.[name];
+  if (own) return { main: own.main, helpers: own.helpers || [], angle: own.angle || null };
+  if (!entry) return null;
+  return { main: musclesOf(entry), helpers: helpersOf(entry), angle: angleOf(entry) };
+}
+
+/** Short label for a target: the angle when there is one, else the muscles. */
+export function targetLabel(target) {
+  if (!target) return '';
+  if (target.angle) return ANGLES[target.angle]?.label || '';
+  return target.main.map((m) => MUSCLE[m]?.label || m).join(', ');
+}
 
 const name = (entry) => String(entry?.name || '').toLowerCase();
 
@@ -96,7 +171,7 @@ export function angleOf(entry) {
 
 /** Muscles in one of the app's six groups, in list order. */
 export function musclesIn(group) {
-  return MUSCLES.filter((m) => m.group === group);
+  return MUSCLES.filter((m) => m.group === group && m.catalogue !== false);
 }
 
 /** Angles that belong to one muscle. */
@@ -109,4 +184,18 @@ export function targetText(entry) {
   const a = angleOf(entry);
   if (a) return ANGLES[a].label;
   return musclesOf(entry).map((m) => MUSCLE[m]?.label || m).join(', ');
+}
+
+/** Main muscles a day's exercises hit, for the small day maps on Today and
+ * Plan. `unknown`: exercises the table doesn't know (added from the Library),
+ * which the caller lights by group. */
+export function dayMuscles(exercises = [], training) {
+  const muscles = new Set();
+  const unknown = [];
+  for (const ex of exercises) {
+    const target = targetFor(ex.name, training);
+    if (target) for (const m of target.main) muscles.add(m);
+    else unknown.push(ex);
+  }
+  return { muscles: [...muscles], unknown };
 }

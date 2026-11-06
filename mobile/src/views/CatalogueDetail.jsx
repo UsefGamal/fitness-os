@@ -8,12 +8,15 @@ import { capitalize, groupOf } from '../lib/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { ANGLES, MUSCLE, angleOf, helpersOf, musclesOf } from '../lib/muscles.js';
 
-const labels = (keys) => keys.map((m) => MUSCLE[m]?.label || capitalize(m)).join(', ');
+export const labels = (keys) => keys.map((m) => MUSCLE[m]?.label || capitalize(m)).join(', ');
 import * as D from '../lib/data.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { useData } from '../store/useData.js';
 
-export function HowTo({ entry }) {
+export function HowTo({ entry, target = null }) {
+  const main = target ? target.main : musclesOf(entry);
+  const helpers = target ? target.helpers : helpersOf(entry);
+  const angle = target ? target.angle : angleOf(entry);
   return (
     <>
       <div className="row" style={{ flexWrap: 'wrap', gap: 6, margin: '0 0 12px' }}>
@@ -23,9 +26,9 @@ export function HowTo({ entry }) {
         {entry.force ? <span className="chip">{capitalize(entry.force)}</span> : null}
       </div>
       <div className="card small">
-        <div><span className="muted">{t('muscles.works')}</span> {labels(musclesOf(entry))}</div>
-        {angleOf(entry) ? <div><span className="muted">{t('muscles.focus')}</span> {ANGLES[angleOf(entry)].label}</div> : null}
-        {helpersOf(entry).length ? <div><span className="muted">{t('muscles.also')}</span> {labels(helpersOf(entry))}</div> : null}
+        <div><span className="muted">{t('muscles.works')}</span> {labels(main)}</div>
+        {angle ? <div><span className="muted">{t('muscles.focus')}</span> {ANGLES[angle].label}</div> : null}
+        {helpers.length ? <div><span className="muted">{t('muscles.also')}</span> {labels(helpers)}</div> : null}
       </div>
       {entry.instructions.length ? (
         <>
@@ -55,7 +58,7 @@ export default function CatalogueDetail() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{entry.name}</h1>
       <ExercisePhotos entry={entry} />
       <HowTo entry={entry} />
-      <section className="card"><BodyMap primary={musclesOf(entry)} secondary={helpersOf(entry)} label={t('muscles.mapLabel', { muscles: labels(musclesOf(entry)) })} /></section>
+      <section className="card"><BodyMap primary={musclesOf(entry)} secondary={helpersOf(entry)} focus={angleOf(entry)} label={t('muscles.mapLabel', { muscles: labels(musclesOf(entry)) })} /></section>
       {mine ? (
         <Link to={`/library/${mine.id}`} className="btn secondary"><Icon name="book" /> In your Library</Link>
       ) : (
