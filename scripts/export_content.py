@@ -28,6 +28,7 @@ from content import (  # noqa: E402
     meal_plan,
     milestones,
     recovery_program,
+    routines,
 )
 from content.tdee import ACTIVITY_LEVELS, ACTIVITY_MULTIPLIERS, GENDERS  # noqa: E402
 
@@ -66,6 +67,7 @@ def build_content() -> dict:
             "training": {
                 "trainer_plan": gym_program.TRAINER_PLAN,
                 "program": gym_program.PROGRAM,
+                "routines": routines.ROUTINES,
                 "session_time": gym_program.SESSION_TIME,
                 "progression_note": gym_program.PROGRESSION_NOTE,
                 "exercise_library": gym_exercises.SEED_EXERCISES,
