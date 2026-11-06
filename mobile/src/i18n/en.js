@@ -143,6 +143,9 @@ export default {
   'about.flavor.friends': 'Friends build',
   'about.flavor.dev': 'Dev build',
   'about.data': 'Data version {schema}',
+  'about.signing': 'Signing code',
+  'about.signingNote': 'Must match the code in the release message.',
+  'about.notInstalled': "If an update says \"App not installed\", don't uninstall: that deletes your data. Message Yusuf.",
   'about.report': 'Send a bug report',
   'about.reportNote': 'Versions, counts and recent errors only; nothing personal.',
 

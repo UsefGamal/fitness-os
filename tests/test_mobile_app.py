@@ -166,6 +166,6 @@ def test_only_tags_build_a_signed_release():
     wf = (ROOT / ".github" / "workflows" / "android.yml").read_text(encoding="utf-8")
     assert 'tags: ["v*"]' in wf
     assert "scripts/build-apk.sh release" in wf
-    assert "if: env.IS_TAG == 'true'" in wf
+    assert "if: ${{ startsWith(github.ref, 'refs/tags/v') }}" in wf  # the release job (P14-08)
     assert "check-apk.sh dist/fitness-os-release.apk com.usefgamal.fitnessos" in wf
     assert "check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug" in wf

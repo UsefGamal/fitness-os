@@ -56,3 +56,12 @@ test('phone model and Android version come from the user agent', () => {
   assert.deepEqual(deviceFromUA(), {});
   assert.deepEqual(deviceFromUA('Mozilla/5.0 (Linux; Android 13; RMX3511 Build/TP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36'), { osVersion: '13', model: 'RMX3511', webview: '131' });
 });
+
+test('the signing code is the first 8 hex digits of the certificate', async () => {
+  const { codeOf } = await import('./version.js');
+  const sha = 'ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89';
+  assert.equal(codeOf(sha), 'ABCD-EF01');
+  assert.equal(codeOf(sha.replace(/:/g, '').toUpperCase()), 'ABCD-EF01');
+  assert.equal(codeOf('abc'), null);
+  assert.equal(codeOf(null), null);
+});
