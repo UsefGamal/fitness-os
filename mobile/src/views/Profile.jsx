@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { ACTIVITY, DIRECTIONS, GAIN_SURPLUS, PROTEIN_G_PER_KG, goalIssues, macroTargets, minGoalWeight, profileOf, safeGoalDate, saveProfile } from '../lib/macros.js';
+import { settleSetup } from '../lib/setup.js';
 import { content, useData } from '../store/useData.js';
 
 const ACTIVITY_LABELS = {
@@ -47,7 +48,7 @@ export default function Profile() {
   const save = (e) => {
     e.preventDefault();
     if (errors.length) return;
-    update((d) => saveProfile(d, clean, today));
+    update((d) => settleSetup(saveProfile(d, clean, today)));
     setSaved(true);
   };
 
