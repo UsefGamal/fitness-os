@@ -4,9 +4,13 @@
 //             date, capped at 25% of TDEE, 1000 kcal and 1% of body weight a
 //             week (E3-S2), and never below 1500 kcal (men) / 1200 (women);
 //   maintain: TDEE;
-//   gain:     TDEE + 300 kcal (about 0.25-0.5% of body weight a week).
-// Protein is 2.0 / 1.8 / 1.6 g per kg of GOAL weight (lose / maintain /
-// gain) and fat 0.8 g/kg of goal weight (E3-S3); carbs fill the rest.
+//   gain:     TDEE + 300 kcal (about 0.25-0.5% of body weight a week);
+//   recomp:   lose fat and build muscle (E3-S13): a small deficit of
+//             10-15% of TDEE (the goal pace inside that band, 12.5% without
+//             one), same floors.
+// Protein is 2.0 / 1.8 / 1.6 / 2.2 g per kg of GOAL weight (lose /
+// maintain / gain / recomp) and fat 0.8 g/kg of goal weight (E3-S3);
+// carbs fill the rest.
 // content/tdee.py is the frozen old maths (2 g/kg of current weight, a flat
 // 1200 floor); this file has moved on from it on purpose.
 // Phone only, and only when switched on in Settings: with enough days of
@@ -20,12 +24,15 @@ const KCAL_PER_KG_FAT = 7700;
 const MAX_DAILY_DEFICIT = 1000;
 // The share-of-TDEE cap is off (1 = no cap): with Yusuf's maintenance near
 // 2940 kcal a quarter cap held him at 0.67 kg a week and flagged most of his
-// meal plan. Phase 13 may set 0.25 for smaller friends.
+// meal plan. The friends build turns it back on at 0.25 (rule A, E3-S13)
+// through content.nutrition.max_deficit_share.
 export const MAX_DEFICIT_SHARE = 1; // of TDEE
+export const RECOMP_DEFICIT = { low: 0.1, high: 0.15, default: 0.125 }; // of TDEE
 export const MAX_LOSS_SHARE_BW = 0.01; // of body weight a week
 export const MIN_KCAL = { male: 1500, female: 1200 };
 export const GAIN_SURPLUS = 300;
-export const PROTEIN_G_PER_KG = { lose: 2.0, maintain: 1.8, gain: 1.6 };
+export const PROTEIN_G_PER_KG = { lose: 2.0, maintain: 1.8, gain: 1.6, recomp: 2.2 };
+export const DIRECTIONS = ['lose', 'recomp', 'maintain', 'gain'];
 const FAT_G_PER_KG = 0.8;
 const MIN_BMI = 18.5;
 
@@ -79,21 +86,29 @@ export function pyRound(x) {
 }
 
 /** The largest daily deficit that is still safe at this weight and TDEE. */
-export function maxDeficit(tdeeKcal, weightKg) {
-  return Math.min(MAX_DAILY_DEFICIT, tdeeKcal * MAX_DEFICIT_SHARE, (weightKg * MAX_LOSS_SHARE_BW * KCAL_PER_KG_FAT) / 7);
+export function maxDeficit(tdeeKcal, weightKg, share = MAX_DEFICIT_SHARE) {
+  return Math.min(MAX_DAILY_DEFICIT, tdeeKcal * share, (weightKg * MAX_LOSS_SHARE_BW * KCAL_PER_KG_FAT) / 7);
 }
 
 /** Daily kcal for a goal direction, with the reasons it isn't the plain
  * pace maths: { kcal, deficit, reasons }. Reasons: 'capped' (the pace asked
  * for needs more than the safe deficit), 'floor' (held up at the minimum),
  * 'no_pace' (losing, but no goal date or start weight to set a pace). */
-export function energyTarget({ tdee: t, rate, weight, mode = 'lose', gender }) {
+export function energyTarget({ tdee: t, rate, weight, mode = 'lose', gender, share = MAX_DEFICIT_SHARE }) {
   if (mode === 'maintain') return { kcal: pyRound(t), deficit: 0, reasons: [] };
   if (mode === 'gain') return { kcal: pyRound(t + GAIN_SURPLUS), deficit: -GAIN_SURPLUS, reasons: [] };
   const reasons = [];
+  if (mode === 'recomp') {
+    const paced = rate > 0 ? (rate * KCAL_PER_KG_FAT) / 7 : t * RECOMP_DEFICIT.default;
+    const want = Math.min(Math.max(paced, t * RECOMP_DEFICIT.low), t * RECOMP_DEFICIT.high);
+    const floorR = MIN_KCAL[gender] ?? MIN_KCAL.female;
+    let kcalR = pyRound(t - Math.min(want, maxDeficit(t, weight, share)));
+    if (kcalR < floorR) { kcalR = floorR; reasons.push('floor'); }
+    return { kcal: kcalR, deficit: Math.max(0, pyRound(t) - kcalR), reasons };
+  }
   if (rate == null) reasons.push('no_pace');
   const asked = rate > 0 ? (rate * KCAL_PER_KG_FAT) / 7 : 0;
-  const cap = maxDeficit(t, weight);
+  const cap = maxDeficit(t, weight, share);
   if (asked > cap) reasons.push('capped');
   const floor = MIN_KCAL[gender] ?? MIN_KCAL.female;
   let kcal = pyRound(t - Math.min(asked, cap));
@@ -130,7 +145,7 @@ export function minGoalWeight(heightCm) {
  * at this weight; null when already there or not losing. */
 export function safeGoalDate(t) {
   if (!t || t.mode !== 'lose' || t.goal_weight == null || t.weight <= t.goal_weight || !t.tdee) return null;
-  const perWeek = (maxDeficit(t.tdee, t.weight) * 7) / KCAL_PER_KG_FAT;
+  const perWeek = (maxDeficit(t.tdee, t.weight, t.share ?? MAX_DEFICIT_SHARE) * 7) / KCAL_PER_KG_FAT;
   const days = Math.ceil(((t.weight - t.goal_weight) / perWeek) * 7);
   return addDays(t.today, days);
 }
@@ -159,8 +174,9 @@ export function macroTargets(data, nutrition, today) {
   const b = bmr(weight, p.height_cm, age, p.gender);
   const activeAvg = data.settings?.health?.adaptive === true ? activeKcalAverage(data.health_daily, today) : null;
   const t = activeAvg != null ? watchTdee(b, activeAvg) : tdee(b, p.activity_level);
-  const mode = ['maintain', 'gain'].includes(currentGoal(data)?.direction) ? currentGoal(data).direction : 'lose';
-  const energy = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender });
+  const mode = DIRECTIONS.includes(currentGoal(data)?.direction) ? currentGoal(data).direction : 'lose';
+  const share = nutrition.max_deficit_share ?? MAX_DEFICIT_SHARE;
+  const energy = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
   return {
     ...macroSplit(energy.kcal, goalMid ?? weight, mode),
     source: activeAvg != null ? 'watch' : 'profile',
@@ -175,6 +191,7 @@ export function macroTargets(data, nutrition, today) {
     rate,
     weight,
     today,
+    ...(share !== MAX_DEFICIT_SHARE ? { share } : {}),
     ...(activeAvg != null ? { active_avg: activeAvg } : {}),
   };
 }

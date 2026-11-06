@@ -171,6 +171,9 @@ export default function Plan() {
     <div className="page">
       <h1 className="page-title">Plan</h1>
       <p className="page-sub">{T.trainer_plan.name}, {times.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
+      <div className="list">
+        <Link to="/plan/routines" className="list-row"><Icon name="dumbbell" /><div className="grow"><div>{t('routines.open')}</div><div className="meta small">{t('routines.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
+      </div>
       <section className="card"><WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} /></section>
 
       {day ? (
@@ -241,6 +244,7 @@ export default function Plan() {
       {shareMsg ? <p className="muted small" role="status" style={{ margin: '8px 4px 0' }}>{shareMsg}</p> : null}
 
       <div className="list" style={{ marginTop: 12 }}>
+        <Link to="/plan/mine" className="list-row"><Icon name="plus" /><div className="grow"><div>{t('my.open')}</div><div className="meta small">{t('my.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
         <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>
       </div>
       <details className="card more">

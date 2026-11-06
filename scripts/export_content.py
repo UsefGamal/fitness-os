@@ -28,6 +28,7 @@ from content import (  # noqa: E402
     meal_plan,
     milestones,
     recovery_program,
+    routines,
     simple_meals,
 )
 from content.tdee import ACTIVITY_LEVELS, ACTIVITY_MULTIPLIERS, GENDERS  # noqa: E402
@@ -67,6 +68,7 @@ def build_content() -> dict:
             "training": {
                 "trainer_plan": gym_program.TRAINER_PLAN,
                 "program": gym_program.PROGRAM,
+                "routines": routines.ROUTINES,
                 "session_time": gym_program.SESSION_TIME,
                 "progression_note": gym_program.PROGRESSION_NOTE,
                 "exercise_library": gym_exercises.SEED_EXERCISES,
@@ -95,6 +97,9 @@ def build_content() -> dict:
                     "plate_guide": simple_meals.PLATE_GUIDE,
                     "meals_per_day": simple_meals.MEALS_PER_DAY,
                 },
+                # Rule A (E3-S13): the 25%-of-TDEE deficit cap is on for the
+                # friends build and off (1) for Yusuf's, who chose it off.
+                "max_deficit_share": 0.25 if gym_program.FLAVOR == "friends" else 1,
                 "drink_options": meal_plan.DRINK_OPTIONS,
                 "drinks": food_items.DRINKS,
                 "days": [_day_with_items(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],

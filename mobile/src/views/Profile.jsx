@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import Icon from '../components/Icon.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
-import { ACTIVITY, GAIN_SURPLUS, goalIssues, macroTargets, minGoalWeight, profileOf, safeGoalDate, saveProfile } from '../lib/macros.js';
+import { ACTIVITY, DIRECTIONS, GAIN_SURPLUS, PROTEIN_G_PER_KG, goalIssues, macroTargets, minGoalWeight, profileOf, safeGoalDate, saveProfile } from '../lib/macros.js';
 import { content, useData } from '../store/useData.js';
 
 const ACTIVITY_LABELS = {
@@ -64,6 +64,7 @@ export default function Profile() {
         </div>
         <div className="muted small">Protein {preview.protein} g · carbs {preview.carbs} g · fat {preview.fat} g · fiber {preview.fiber} g</div>
         {preview.source !== 'plan' && preview.mode === 'maintain' ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.maintain', preview)}</div> : null}
+        {preview.source !== 'plan' && preview.mode === 'recomp' ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.recomp', { ...preview, protein_per_kg: PROTEIN_G_PER_KG.recomp })}</div> : null}
         {preview.source !== 'plan' && preview.mode === 'gain' ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.gain', { ...preview, surplus: GAIN_SURPLUS })}</div> : null}
         {preview.source === 'profile' && preview.mode === 'lose' ? (
           <div className="muted small" style={{ marginTop: 8 }}>
@@ -98,7 +99,7 @@ export default function Profile() {
           <select value={p.activity_level} onChange={set('activity_level')}>{Object.keys(ACTIVITY).map((k) => <option key={k} value={k}>{ACTIVITY_LABELS[k]}</option>)}</select>
         </label>
         <label className="field"><span>{t('profile.direction')}</span>
-          <select value={p.direction || 'lose'} onChange={set('direction')}>{['lose', 'maintain', 'gain'].map((k) => <option key={k} value={k}>{t(`profile.dir.${k}`)}</option>)}</select>
+          <select value={p.direction || 'lose'} onChange={set('direction')}>{DIRECTIONS.map((k) => <option key={k} value={k}>{t(`profile.dir.${k}`)}</option>)}</select>
         </label>
         <label className="field"><span>Start weight (kg, blank = first weigh-in)</span><input type="number" inputMode="decimal" step="0.1" value={p.start_weight_kg ?? ''} onChange={set('start_weight_kg')} /></label>
         <div className="row">

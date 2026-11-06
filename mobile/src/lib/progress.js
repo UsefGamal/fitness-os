@@ -17,7 +17,8 @@ export const EMA_ALPHA = 0.1; // per day
 export const PACE_WINDOW_DAYS = 28;
 export const MIN_SPAN_DAYS = 14;
 export const MIN_LOGS = 3;
-export const BANDS = { lose: [0.5, 1], gain: [0.25, 0.5], maintain: [-0.25, 0.25] };
+// Recomp loses slowly on purpose: about 0.25-0.5% of body weight a week.
+export const BANDS = { lose: [0.5, 1], recomp: [0.25, 0.5], gain: [0.25, 0.5], maintain: [-0.25, 0.25] };
 
 /** [{ date, weight, trend }] in date order, weigh-ins without a weight dropped. */
 export function trendSeries(logs = []) {
@@ -67,7 +68,7 @@ export function predictedDate(current, goal, ratePerWeek, today) {
 export function goalProgress(logs, goal, today) {
   const series = trendSeries(logs);
   if (!series.length) return null;
-  const mode = ['gain', 'maintain'].includes(goal?.direction) ? goal.direction : 'lose';
+  const mode = ['gain', 'maintain', 'recomp'].includes(goal?.direction) ? goal.direction : 'lose';
   const last = series[series.length - 1];
   const trend = last.trend;
   const low = goal?.target_low_kg;
@@ -92,7 +93,7 @@ export function goalProgress(logs, goal, today) {
     else if (pct > 0) status = 'slow';
     else status = 'holding';
   }
-  const reached = target != null && (mode === 'gain' ? trend >= (low ?? target) : mode === 'lose' ? trend <= (high ?? target) : false);
+  const reached = target != null && (mode === 'gain' ? trend >= (low ?? target) : mode === 'lose' || mode === 'recomp' ? trend <= (high ?? target) : false);
   if (reached) status = 'reached';
 
   let range = null;

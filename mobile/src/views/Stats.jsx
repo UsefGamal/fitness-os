@@ -11,7 +11,10 @@ import { formatDate, todayISO } from '../lib/dates.js';
 import { profileOf } from '../lib/macros.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
-import { useData } from '../store/useData.js';
+import { t } from '../lib/i18n.js';
+import { activePlan } from '../lib/plan.js';
+import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
+import { content, useData } from '../store/useData.js';
 
 const MEASURES = [
   ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
@@ -64,6 +67,41 @@ function Muscles({ data, today }) {
         ))}
       </div>
       {group ? <GroupExercises data={data} group={group} /> : <p className="muted small" style={{ textAlign: 'center', margin: '10px 0 0' }}>Tap a muscle to see its exercises.</p>}
+    </section>
+  );
+}
+
+const SCALE = 25; // the bar's full width, in sets
+const BAND_TONE = { none: 'var(--faint)', low: 'var(--warn)', good: 'var(--accent)', high: 'var(--warn)' };
+
+/** Hard sets per muscle this week against the 10-20 guide (E4-S19). */
+function WeeklySets({ data, today }) {
+  const T = activePlan(data, content);
+  const done = doneThisWeek(data, T, today);
+  const planned = plannedThisWeek(data, T, today);
+  const rows = muscleRows(done.muscles, planned.muscles);
+  const low = rows.filter((r) => r.band === 'low' || r.band === 'none').map((r) => r.label);
+  const pct = (n) => `${Math.min(100, (n / SCALE) * 100)}%`;
+  return (
+    <section className="card">
+      <h2 style={{ margin: '0 0 4px' }}>{t('wsets.title')}</h2>
+      <p className="muted small" style={{ margin: '0 0 10px' }}>{t('wsets.note', { low: GUIDE.low, high: GUIDE.high })}</p>
+      <div className="wsets">
+        {rows.map((r) => (
+          <div key={r.key} className="wset-row">
+            <span>{r.label}</span>
+            <div role="img" className="wset-bar" aria-label={t('wsets.rowLabel', { muscle: r.label, done: r.done, planned: r.planned })}>
+              <span className="wset-guide" style={{ insetInlineStart: pct(GUIDE.low), width: `${((GUIDE.high - GUIDE.low) / SCALE) * 100}%` }} />
+              <span className="wset-plan" style={{ width: pct(r.planned), borderColor: BAND_TONE[r.band] }} />
+              <span className="wset-done" style={{ width: pct(r.done) }} />
+            </div>
+            <span aria-hidden="true" className="muted small" style={{ textAlign: 'end' }}>{t('wsets.count', { done: r.done, planned: r.planned })}</span>
+          </div>
+        ))}
+      </div>
+      <p className="muted small" style={{ margin: '10px 0 0' }}>{t('wsets.legend')}</p>
+      {low.length ? <p className="small" style={{ margin: '6px 0 0' }}>{t('wsets.lowPlan', { list: low.join(', '), low: GUIDE.low })}</p> : null}
+      {done.unknown ? <p className="muted small" style={{ margin: '6px 0 0' }}>{t('wsets.unknown', { n: done.unknown })}</p> : null}
     </section>
   );
 }
@@ -256,7 +294,7 @@ export default function Stats() {
       <div className="seg" style={{ marginBottom: 14 }}>
         {tabs.map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
-      {tab === 'muscles' ? <Muscles data={data} today={today} /> : null}
+      {tab === 'muscles' ? <><Muscles data={data} today={today} /><WeeklySets data={data} today={today} /></> : null}
       {tab === 'strength' ? <Strength data={data} /> : null}
       {tab === 'body' && weightOn ? <Body data={data} update={update} today={today} /> : null}
       {tab === 'badges' ? <Badges data={data} today={today} /> : null}

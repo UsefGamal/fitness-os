@@ -88,3 +88,17 @@ test('an unknown weekday or data without a block changes nothing', () => {
   assert.equal(setWeekday(bare, content, 'monday', 'push'), bare);
   assert.equal(isWeekEdited(bare, content), false);
 });
+
+test('My week resets to the routine the block started from, not the build plan', async () => {
+  const { startRoutine } = await import('./routines.js');
+  const { isWeekEdited, resetWeek, setWeekday, templateSchedule } = await import('./plan.js');
+  let d = startRoutine(emptyData(content), content, 'ppl-3', '2026-11-10');
+  assert.equal(isWeekEdited(d, content), false, 'a fresh routine is not an edit');
+  assert.equal(templateSchedule(activeBlock(d), content).find((e) => e.day === 'sunday').session, 'push');
+  d = setWeekday(d, content, 'monday', 'push');
+  assert.equal(isWeekEdited(d, content), true);
+  d = resetWeek(d, content);
+  assert.equal(isWeekEdited(d, content), false);
+  assert.equal(activeBlock(d).schedule.find((e) => e.day === 'monday').session, 'rest');
+  assert.equal(activeBlock(d).schedule.find((e) => e.day === 'tuesday').session, 'pull');
+});
