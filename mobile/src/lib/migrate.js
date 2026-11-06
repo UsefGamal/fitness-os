@@ -43,7 +43,7 @@ export const V1_PROFILE_DEFAULTS = {
   date_of_birth: '1999-01-01',
   goal_weight_low_kg: 75,
   goal_weight_high_kg: 80,
-  goal_date: '2027-01-18',
+  goal_date: '2027-03-15', // moved from 2027-01-18 in phase 12 (E3-S3), approved by Yusuf
   start_weight_kg: null,
   gender: 'male',
   activity_level: 'moderate',
