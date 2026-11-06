@@ -49,6 +49,22 @@ def _plain(value):
     return value
 
 
+def _trainer_only_names() -> set[str]:
+    """Exercise names that only Yusuf's own plan uses (P14-02). The friends
+    build leaves their photo and muscle entries out, so his plan's exercise
+    list doesn't ship in the friends APK. Names in the library, the starter
+    plan or the ready-made routines are general and stay."""
+    if gym_program.FLAVOR != "friends":
+        return set()
+    root = Path(__file__).resolve().parent.parent / "content"
+    own = json.loads((root / "trainer_plan.json").read_text(encoding="utf-8"))
+    names = {i["name"] for s in own["sessions"].values() for b in s["blocks"] for i in b.get("items", [])}
+    general = {name for _g, name, _k in gym_exercises.SEED_EXERCISES}
+    general |= {i["name"] for s in gym_program.TRAINER_PLAN["sessions"].values() for b in s["blocks"] for i in b.get("items", [])}
+    general |= {e["name"] for r in routines.ROUTINES for d in r["program"] for e in d["exercises"]}
+    return names - general
+
+
 def _day_with_items(n: int) -> dict:
     """get_day(n) plus each option's raw food keys, which the phone app's
     shopping list needs (get_day only carries display names)."""
@@ -61,6 +77,7 @@ def _day_with_items(n: int) -> dict:
 
 
 def build_content() -> dict:
+    hide = _trainer_only_names()
     return _plain(
         {
             "format": CONTENT_FORMAT,
@@ -77,10 +94,11 @@ def build_content() -> dict:
                 "recovery_checklist": recovery_program.RECOVERY_CHECKLIST,
                 "cardio_session": cardio_program.CARDIO_SESSION,
                 "cardio_alternatives": cardio_program.ALTERNATIVES,
-                "exercise_photos": exercise_photos.EXERCISE_PHOTOS,
+                "exercise_photos": {k: v for k, v in exercise_photos.EXERCISE_PHOTOS.items() if k not in hide},
                 "exercise_targets": {
                     name: {"main": main, "helpers": helpers, "angle": angle}
                     for name, (main, helpers, angle) in exercise_targets.EXERCISE_TARGETS.items()
+                    if name not in hide
                 },
             },
             "nutrition": {

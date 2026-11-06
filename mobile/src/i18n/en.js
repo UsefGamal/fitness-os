@@ -127,6 +127,9 @@ export default {
 
   'about.title': 'About',
   'about.version': 'Version {version}',
+  'about.flavor.yusuf': 'Yusuf build',
+  'about.flavor.friends': 'Friends build',
+  'about.flavor.dev': 'Dev build',
   'about.data': 'Data version {schema}',
   'about.report': 'Send a bug report',
   'about.reportNote': 'Versions, counts and recent errors only; nothing personal.',

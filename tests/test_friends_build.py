@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -48,3 +49,35 @@ def test_unknown_flavor_is_refused():
     env = {**os.environ, "FITNESS_OS_FLAVOR": "nope"}
     r = subprocess.run([sys.executable, "-c", "import content.gym_program"], env=env, cwd=ROOT, capture_output=True, text=True)
     assert r.returncode != 0 and "FITNESS_OS_FLAVOR" in r.stderr
+
+
+def _apk(tmp_path, flavor):
+    """A stand-in APK: the exported content inside assets/public/, as the
+    Vite bundle carries it."""
+    out = tmp_path / f"{flavor}.json"
+    env = {**os.environ, "FITNESS_OS_FLAVOR": flavor}
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "export_content.py"), str(out)], check=True, env=env, cwd=ROOT)
+    apk = tmp_path / f"{flavor}.apk"
+    with zipfile.ZipFile(apk, "w") as z:
+        z.writestr("assets/public/assets/index-abc.js", "export default " + out.read_text(encoding="utf-8"))
+        z.writestr("classes.dex", b"\x00binary")
+    return apk
+
+
+def test_the_apk_check_passes_the_friends_apk(tmp_path):
+    """P14-02: the APK check reads what ships, and the friends export no
+    longer carries the trainer plan's exercise names in photos or muscles."""
+    assert check.apk_problems(check.apk_texts(_apk(tmp_path, "friends"))) == []
+
+
+def test_the_apk_check_catches_the_yusuf_apk(tmp_path):
+    found = check.apk_problems(check.apk_texts(_apk(tmp_path, "yusuf")))
+    assert any("Y-Bench" in p for p in found)
+    assert any("youtu" in p for p in found)
+
+
+def test_the_apk_check_fails_an_apk_with_no_app_code(tmp_path):
+    apk = tmp_path / "empty.apk"
+    with zipfile.ZipFile(apk, "w") as z:
+        z.writestr("classes.dex", b"\x00")
+    assert check.apk_problems(check.apk_texts(apk)) == ["no app code found in the APK (assets/public/)"]
