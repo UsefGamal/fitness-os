@@ -20,6 +20,12 @@ def trainer_markers() -> set[str]:
     """Exercise names and links that only the trainer plan has."""
     starter = json.loads((ROOT / "content" / "starter_plan.json").read_text(encoding="utf-8"))
     starter_names = {i["name"] for s in starter["sessions"].values() for b in s["blocks"] for i in b.get("items", [])}
+    # The ready-made routines (content/routines.py) are general plans written
+    # for both builds, so their exercise names are not trainer markers.
+    sys.path.insert(0, str(ROOT))
+    from content.routines import ROUTINES  # noqa: PLC0415
+
+    starter_names |= {e["name"] for r in ROUTINES for d in r["program"] for e in d["exercises"]}
     out = set()
     for session in TRAINER["sessions"].values():
         for block in session["blocks"]:

@@ -61,8 +61,9 @@ def _warmup_lines(session: dict) -> list[str]:
     return lines
 
 
-def _build_day(key: str) -> dict:
-    session = TRAINER_PLAN["sessions"][key]
+def _build_day(key: str, plan: dict | None = None) -> dict:
+    plan = plan or TRAINER_PLAN
+    session = plan["sessions"][key]
     exercises = []
     warmup_items = []
     for block in session["blocks"]:
@@ -71,26 +72,33 @@ def _build_day(key: str) -> dict:
                 exercises.append({**item, "rest_sec": rest_seconds(item.get("rest"))})
         elif block["phase"] == "warm_up":
             warmup_items.extend(block["items"])
-    cardio_key = next((d["cardio_after"] for d in TRAINER_PLAN["schedule"] if d["session"] == key), None)
+    cardio_key = next((d["cardio_after"] for d in plan["schedule"] if d["session"] == key), None)
+    labels = plan.get("labels") or SESSION_LABELS
+    focus = plan.get("focus") or SESSION_FOCUS
     return {
         "key": key,
         "day_letter": key[0].upper(),
-        "label": SESSION_LABELS[key],
-        "focus": SESSION_FOCUS[key],
+        "label": labels[key],
+        "focus": focus[key],
         "warmup": _warmup_lines(session),
         "warmup_items": warmup_items,
         "pre_cardio": session["pre_cardio"],
         "cooldown": (
-            [f"{TRAINER_PLAN['cardio'][cardio_key]['minutes']} min cycling. {TRAINER_PLAN['cardio'][cardio_key]['note']}"]
+            [f"{plan['cardio'][cardio_key]['minutes']} min cycling. {plan['cardio'][cardio_key]['note']}"]
             if cardio_key
             else []
         ),
-        "cardio_after": TRAINER_PLAN["cardio"][cardio_key] if cardio_key else None,
+        "cardio_after": plan["cardio"][cardio_key] if cardio_key else None,
         "exercises": exercises,
     }
 
 
-PROGRAM = [_build_day(key) for key in SESSION_LABELS]
+def build_program(plan: dict) -> list[dict]:
+    """A plan in the trainer_plan.json shape -> the app's session list."""
+    return [_build_day(key, plan) for key in (plan.get("labels") or SESSION_LABELS)]
+
+
+PROGRAM = build_program(TRAINER_PLAN)
 _PROGRAM_BY_KEY = {day["key"]: day for day in PROGRAM}
 _SCHEDULE_BY_WEEKDAY = {entry["day"]: entry["session"] for entry in TRAINER_PLAN["schedule"]}
 
