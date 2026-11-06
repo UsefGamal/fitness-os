@@ -13,6 +13,7 @@
     "test": "npm run content && node --test src/lib/*.test.js",
     "coverage": "npm run content && node scripts/coverage.mjs",
     "lint:i18n": "node scripts/i18n-lint.mjs",
+    "e2e": "npm run build && node e2e/harness.mjs",
     "build:mobile": "npm run photos && npm run build && cap sync android",
     "photos": "python3 ../scripts/fetch_exercise_photos.py public/exercise-db"
   },
@@ -33,6 +34,8 @@
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
     "@vitejs/plugin-react": "6.1.2",
+    "axe-core": "4.10.3",
+    "playwright": "1.63.0",
     "vite": "8.3.4"
   }
 }

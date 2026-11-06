@@ -43,6 +43,45 @@ jobs:
       - name: No new hard-coded strings (i18n)
         run: npm run lint:i18n
 
+  # Every screen at 360/390/412 px, left-to-right and right-to-left:
+  # accessibility (axe, contrast), 44px taps, sideways scroll, page errors.
+  # Counts may only go down (mobile/e2e/baseline.json), E6-S8.
+  phone:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Africa/Cairo
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Phone harness
+        timeout-minutes: 15
+        run: npm run e2e -- --shots
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phone-screens
+          path: mobile/e2e/out/
+          retention-days: 7
+
   # content/ and the export scripts.
   python:
     runs-on: ubuntu-latest
