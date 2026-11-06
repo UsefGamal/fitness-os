@@ -4,6 +4,7 @@ import { useState } from 'react';
 import BodyMap from '../components/BodyMap.jsx';
 import GoalCard from '../components/GoalCard.jsx';
 import DayPicker from '../components/DayPicker.jsx';
+import DaySheet from '../components/DaySheet.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
@@ -25,6 +26,7 @@ import { content, useData } from '../store/useData.js';
 import { SESSIONS } from './Session.jsx';
 
 const WATER_GOAL = 3000;
+const WEEK_HINT_KEY = 'fitness-os-week-hint-seen';
 
 export default function Today() {
   const { data, update } = useData();
@@ -53,6 +55,13 @@ export default function Today() {
   const moved = healthOn ? data.health_daily?.[today] : null;
   const backup = backupDue(data);
   const [picking, setPicking] = useState(false);
+  const [shown, setShown] = useState(null);
+  // The 'Tap a day' hint goes away after the first tap (per phone).
+  const [hinted, setHinted] = useState(() => { try { return localStorage.getItem(WEEK_HINT_KEY) === '1'; } catch { return false; } });
+  const showDay = (d) => {
+    setShown(d);
+    if (!hinted) { setHinted(true); try { localStorage.setItem(WEEK_HINT_KEY, '1'); } catch { /* private mode */ } }
+  };
   const changedToday = isChangedOn(today, moves);
 
   return (
@@ -167,7 +176,8 @@ export default function Today() {
           <strong>This week</strong>
           {streak > 0 ? <span className="chip accent"><Icon name="bolt" className="icon" /> {streak}-day streak</span> : null}
         </div>
-        <WeekStrip week={week} doneDates={done} />
+        <WeekStrip week={week} doneDates={done} onPick={showDay} />
+        {hinted ? null : <div className="muted small" style={{ marginTop: 6 }}>{t('daySheet.hint')}</div>}
         {isRecoveryWeek(data, today) ? (
           <div className="row between" style={{ marginTop: 10, gap: 8 }}>
             <div className="small grow"><span className="chip warn">{t('recovery.chip')}</span> <span className="muted">{t('recovery.short')}</span></div>
@@ -177,6 +187,8 @@ export default function Today() {
           <button type="button" className="btn ghost small" style={{ marginTop: 6, paddingLeft: 0, justifyContent: 'flex-start' }} onClick={() => update((d) => setRecoveryWeek(d, today, true))}>{t('recovery.on')}</button>
         )}
       </section>
+
+      {shown ? <DaySheet day={shown} data={data} training={T} today={today} time={times.session_time} log={data.workouts.find((w) => w.log_date === shown.date && w.workout_type === 'gym' && (w.finished_at || w.sets.length))} onClose={() => setShown(null)} /> : null}
 
       <div className="section-label">Other sessions</div>
       <div className="list">

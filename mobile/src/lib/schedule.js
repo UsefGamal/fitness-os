@@ -40,9 +40,27 @@ export function weekView(iso, training, moves = []) {
       short: shortWeekday(date),
       key,
       label: key === 'rest' ? 'Rest' : programDay(key, training).label,
+      tile: key === 'rest' ? 'Rest' : tileLabel(programDay(key, training).label),
       isToday: date === iso,
     };
   });
+}
+
+/** A session name short enough for a week-strip tile (about 37px wide on
+ * a 360px phone), so variants stay apart: 'Full body A' -> 'FB A',
+ * 'Upper B' -> 'Up B', 'Lower A (Home)' -> 'Lo A', 'Push' -> 'Push'. Never
+ * ends in an ellipsis; the full name is in the tile's label and the sheet. */
+export function tileLabel(label) {
+  const clean = String(label || '').replace(/\s*\(.*?\)\s*/g, ' ').trim();
+  if (clean.length <= 5) return clean;
+  const words = clean.split(/\s+/).filter((w) => !/^(&|and|\+|-)$/i.test(w));
+  const last = words[words.length - 1];
+  const variant = words.length > 1 && /^([A-Z]|\d{1,2})$/i.test(last) ? last.toUpperCase() : null;
+  const base = variant ? words.slice(0, -1) : words;
+  const short = base.length > 1
+    ? base.slice(0, 3).map((w) => w[0].toUpperCase()).join('')
+    : variant ? base[0].slice(0, 2) : base[0].slice(0, 5);
+  return variant ? `${short} ${variant}` : short;
 }
 
 /** '2m' -> 120, '1.5-2m' -> 90, '45s per arm' -> 45. Same as rest_seconds(). */
