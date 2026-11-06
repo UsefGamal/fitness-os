@@ -11,6 +11,7 @@ import { entryFor, groupOf } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
+import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { progressionTarget } from '../lib/progression.js';
@@ -107,7 +108,9 @@ export default function Workout() {
   const requested = params.get('session');
   const scheduledKey = sessionKeyOn(today, T, data.session_moves || []);
   const sessionKey = active?.session_key || requested || (scheduledKey !== 'rest' ? scheduledKey : null);
-  const planDay = sessionKey ? effectiveDay(sessionKey, T, data) : null;
+  const recovery = active ? Boolean(active.is_deload) : isRecoveryWeek(data, today);
+  const baseDay = sessionKey ? effectiveDay(sessionKey, T, data) : null;
+  const planDay = recovery ? recoveryDay(baseDay) : baseDay;
   // Today's changes (extra sets, skips, swaps) live on the workout, not the plan.
   const day = planDay && active ? applyTweaks(planDay, active.tweaks) : planDay;
 
@@ -147,7 +150,8 @@ export default function Workout() {
   // Double progression from earlier sessions (lib/progression.js).
   const target = useMemo(() => {
     if (!active || !ex || !exRow) return null;
-    const sessions = D.exerciseHistory(data, exRow.id).filter((h) => h.workoutId !== active.id).map((h) => h.sets);
+    if (recovery) return null; // same loads as last time: no progression in a recovery week
+    const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets);
     const small = entry ? entry.mechanic === 'isolation' : !barbell;
     return progressionTarget(ex.reps, ex.sets, sessions, { step: small ? 1 : 2.5 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,7 +219,7 @@ export default function Workout() {
       for (const b of build || []) {
         if (b.status === 'swap' && swaps[b.orig]) next = D.addCustomExercise(next, { name: b.to.name, muscle_group: groupOf(b.to), equipment: b.to.equipment });
       }
-      const r = D.startWorkout(next, { date: today, sessionKey: day.key, label: day.label });
+      const r = D.startWorkout(next, { date: today, sessionKey: day.key, label: day.label, isDeload: recovery });
       id = r.workoutId;
       return Object.keys(swaps).length ? setTweaks(r.data, id, { ...emptyTweaks(day.exercises.length), swaps }) : r.data;
     });
@@ -229,6 +233,7 @@ export default function Workout() {
       <div className="page">
         <h1 className="page-title">{day.label}</h1>
         <p className="page-sub">{day.focus}{day.cardio_after ? `, then ${day.cardio_after.minutes} min cycling` : ''}</p>
+        {recovery ? <div className="card small" role="note"><span className="chip warn">{t('recovery.chip')}</span> {t('recovery.banner')}</div> : null}
         {prev?.finished_at ? <div className="card muted small">You already finished a session today ({prev.notes}, {prev.sets.length} sets).</div> : null}
         {build && build.some((b) => b.status !== 'keep') ? (
           <section className="card stack">
@@ -269,12 +274,15 @@ export default function Workout() {
   const logSet = (w = weight, r = reps) => {
     if (!exRow || r < 1) return;
     const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
-    const pb = D.isPersonalBest(data, active.id, set);
+    const kind = D.setKind(data, active.id, set);
     update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w }));
     unlockAudio();
-    if (pb && w > 0) {
+    if (kind === 'best') {
       feedback('pr');
-      setToast(`New best on ${ex.name}: ${w} kg × ${r}`);
+      setToast(t('workout.best', { name: ex.name, kg: w, reps: r }));
+      setTimeout(() => setToast(''), 2500);
+    } else if (kind === 'baseline') {
+      setToast(t('workout.baseline', { name: ex.name, kg: w, reps: r }));
       setTimeout(() => setToast(''), 2500);
     }
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
