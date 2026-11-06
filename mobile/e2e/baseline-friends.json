@@ -1,6 +1,6 @@
 {
  "/ 360 ltr": {
-  "axe": 5,
+  "axe": 6,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -324,7 +324,7 @@
   "errors": 0
  },
  "/ 360 rtl": {
-  "axe": 5,
+  "axe": 6,
   "taps": 0,
   "overflow": 0,
   "errors": 0
