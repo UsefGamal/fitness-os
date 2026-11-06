@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
+import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
 import { introOn, setIntro } from '../lib/intro.js';
@@ -41,6 +42,10 @@ function lastBackupText(data) {
 export default function Settings() {
   const { data, update, replaceAll } = useData();
   const navigate = useNavigate();
+  const { section } = useParams();
+  const page = pageOf(section);
+  // The root lists the pages; each page shows only its own part (E5-S1).
+  const show = (key) => page?.key === key;
   const fileRef = useRef(null);
   const [msg, setMsg] = useState('');
   const [pendingImport, setPendingImport] = useState(null);
@@ -175,16 +180,23 @@ export default function Settings() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
-      <h1 className="page-title" style={{ marginTop: 4 }}>Settings</h1>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <h1 className="page-title" style={{ marginTop: 4 }}>{page ? t(page.title) : t('settings.title')}</h1>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
 
-      <div className="section-label">You</div>
-      <div className="list">
-        <button type="button" className="list-row" onClick={() => navigate('/profile')}><Icon name="user" /><div className="grow">Profile and macro targets</div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">Quests</div><Icon name="chev" className="icon chev" /></button>
-      </div>
+      {!page ? (
+        <div className="list">
+          <button type="button" className="list-row" onClick={() => navigate('/profile')}><Icon name="user" /><div className="grow">{t('settings.profile')}</div><Icon name="chev" className="icon chev" /></button>
+          <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">{t('settings.quests')}</div><Icon name="chev" className="icon chev" /></button>
+          {SETTINGS_PAGES.map((p) => (
+            <button key={p.key} type="button" className="list-row" onClick={() => navigate(`/settings/${p.key}`)}>
+              <Icon name={p.icon} /><div className="grow"><div>{t(p.title)}</div><div className="meta">{t(p.note)}</div></div><Icon name="chev" className="icon chev" />
+            </button>
+          ))}
+        </div>
+      ) : null}
 
+      {show('data') ? (<>
       <div className="section-label">Your data</div>
       <div className="list">
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
@@ -234,10 +246,13 @@ export default function Settings() {
         </section>
       ) : null}
 
-      <TrainingSettings data={data} update={update} />
+      </>) : null}
 
-      <TimesSettings data={data} update={update} toggleReminders={toggleReminders} />
+      {show('training') ? <TrainingSettings data={data} update={update} /> : null}
 
+      {show('times') ? <TimesSettings data={data} update={update} toggleReminders={toggleReminders} /> : null}
+
+      {show('health') ? (<>
       <div className="section-label">Health Connect</div>
       <div className="list">
         {hcStatus === 'available' ? (
@@ -271,7 +286,9 @@ export default function Settings() {
         )}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Health Connect is Android's on-phone health store. Nothing goes to a server.</p>
+      </>) : null}
 
+      {show('modules') ? (<>
       <div className="section-label">Modules</div>
       <div className="list">
         {MODULES.map((m) => {
@@ -286,7 +303,9 @@ export default function Settings() {
         })}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Switching a module off only hides it. Nothing is deleted.</p>
+      </>) : null}
 
+      {show('about') ? (<>
       <div className="section-label">App</div>
       <div className="list">
         <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped during a workout, and ends at once when a reminder or the widget opens another screen" />
@@ -298,6 +317,7 @@ export default function Settings() {
         <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t('about.data', { schema: data.schemaVersion })}</span></div>
         <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
+      </>) : null}
     </div>
   );
 }

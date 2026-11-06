@@ -71,7 +71,7 @@ export default function Photos() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Progress photos</h1>
       <p className="page-sub">Kept only on this phone, never in backups or anywhere else. The location and other photo details are removed when saved.</p>
       {msg ? <div className="card small" role="status">{msg}</div> : null}

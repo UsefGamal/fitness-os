@@ -113,7 +113,7 @@ export default function Intervals() {
   const clean = normalizeIntervals(config);
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Intervals</h1>
       <p className="page-sub">Pick a preset or set your own. Sounds follow Settings → Training.</p>
       <div className="list">

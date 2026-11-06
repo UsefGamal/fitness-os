@@ -59,7 +59,7 @@ function Muscles({ data, today }) {
           <button key={g} type="button" className={`group-row${group === g ? ' on' : ''}`} onClick={() => setGroup(group === g ? null : g)}>
             <span>{g}</span>
             <div className="progress"><span style={{ width: `${Math.min(100, (sets[g] / 12) * 100)}%` }} /></div>
-            <span className="muted small" style={{ textAlign: 'right' }}>{mode === 'volume' ? `${sets[g]} sets` : last[g] ? formatDate(last[g]).split(',')[0] : 'never'}</span>
+            <span className="muted small" style={{ textAlign: 'end' }}>{mode === 'volume' ? `${sets[g]} sets` : last[g] ? formatDate(last[g]).split(',')[0] : 'never'}</span>
           </button>
         ))}
       </div>

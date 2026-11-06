@@ -237,7 +237,7 @@ export default function Workout() {
         {prev?.finished_at ? <div className="card muted small">You already finished a session today ({prev.notes}, {prev.sets.length} sets).</div> : null}
         {build && build.some((b) => b.status !== 'keep') ? (
           <section className="card stack">
-            <div className="row between"><strong>With your equipment</strong><Link to="/settings" className="small">Change</Link></div>
+            <div className="row between"><strong>With your equipment</strong><Link to="/settings/training" className="small">Change</Link></div>
             {build.filter((b) => b.status !== 'keep').map((b) => (
               <div key={b.orig} className="small">
                 {b.status === 'swap' ? <>{b.name} <span className="muted">→</span> <strong>{b.to.name}</strong></> : null}
@@ -394,7 +394,7 @@ export default function Workout() {
         const isCurrent = i === current;
         return (
           <div key={`${x.name}-${i}`} className={`ex-card${isCurrent ? ' current' : ''}`}>
-            <button type="button" className="row between" style={{ width: '100%', background: 'none', border: 0, padding: 0, color: 'inherit', textAlign: 'left' }} onClick={() => setCurrent(i)} aria-expanded={isCurrent}>
+            <button type="button" className="row between" style={{ width: '100%', background: 'none', border: 0, padding: 0, color: 'inherit', textAlign: 'start' }} onClick={() => setCurrent(i)} aria-expanded={isCurrent}>
               <div className="grow">
                 <div className="ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
                 <div className="ex-meta">{x.sets} × {x.reps}{x.rir ? ` · leave ${x.rir} in the tank` : ''} · rest {x.rest}</div>

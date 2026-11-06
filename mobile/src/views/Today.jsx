@@ -99,7 +99,7 @@ export default function Today() {
             <div className="muted">{backup.days == null ? "You haven't saved a backup yet." : `Last backup ${backup.days} days ago.`} It's the only copy, so keep one somewhere safe.</div>
           </div>
           <div className="stack" style={{ gap: 4 }}>
-            <Link className="btn small" to="/settings">Back up</Link>
+            <Link className="btn small" to="/settings/data">Back up</Link>
             <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}>Later</button>
           </div>
         </section>
