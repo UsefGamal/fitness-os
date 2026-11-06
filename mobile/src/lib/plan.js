@@ -44,3 +44,44 @@ export function withPlanOverrides(data, overrides) {
     },
   };
 }
+
+// ── The weekly plan: which session goes on each weekday ─────────────────
+
+export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+/** Put `session` (a session key or 'rest') on `day` ('monday') every week.
+ * Lives on the active block, so it survives updates. A change that would
+ * leave no training day at all is refused (returns `data` unchanged). */
+export function setWeekday(data, content, day, session) {
+  const block = activeBlock(data);
+  if (!block || !WEEKDAYS.includes(day)) return data;
+  const current = block.schedule || content.training.trainer_plan.schedule;
+  const schedule = WEEKDAYS.map((d) => {
+    const entry = current.find((e) => e.day === d) || { day: d, plan_day: WEEKDAYS.indexOf(d) + 1, session: 'rest', cardio_after: null };
+    return d === day ? { ...entry, session } : { ...entry };
+  });
+  if (schedule.every((e) => e.session === 'rest')) return data;
+  return {
+    ...data,
+    program: { ...data.program, blocks: data.program.blocks.map((b) => (b === block ? { ...b, schedule } : b)) },
+  };
+}
+
+/** The weekly plan back to the template's. */
+export function resetWeek(data, content) {
+  const block = activeBlock(data);
+  if (!block) return data;
+  const schedule = content.training.trainer_plan.schedule.map((d) => ({ ...d }));
+  return {
+    ...data,
+    program: { ...data.program, blocks: data.program.blocks.map((b) => (b === block ? { ...b, schedule } : b)) },
+  };
+}
+
+/** True when the weekly plan differs from the template's. */
+export function isWeekEdited(data, content) {
+  const block = activeBlock(data);
+  if (!block?.schedule) return false;
+  const base = content.training.trainer_plan.schedule;
+  return WEEKDAYS.some((d) => (block.schedule.find((e) => e.day === d)?.session ?? 'rest') !== (base.find((e) => e.day === d)?.session ?? 'rest'));
+}
