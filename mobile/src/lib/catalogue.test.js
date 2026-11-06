@@ -39,3 +39,11 @@ test('every plan exercise with a mapping points at a real name in our content', 
   const stray = Object.keys(content.training.exercise_photos).filter((n) => !ours.has(n));
   assert.deepEqual(stray, []);
 });
+
+test('filters by a finer muscle and an angle, and search finds them', () => {
+  const more = [...entries, E('Incline_DB', 'Incline Dumbbell Press', ['chest'], 'dumbbell'), E('Side_Lateral_Raise', 'Side Lateral Raise', ['shoulders'], 'dumbbell'), E('Face_Pull', 'Face Pull', ['shoulders'], 'cable')];
+  assert.deepEqual(filterCatalogue(more, { muscle: 'rear delts' }).map((e) => e.id), ['Face_Pull']);
+  assert.deepEqual(filterCatalogue(more, { group: 'Chest', angle: 'upper_chest' }).map((e) => e.id), ['Incline_DB']);
+  assert.deepEqual(filterCatalogue(more, { q: 'side delts' }).map((e) => e.id), ['Side_Lateral_Raise']);
+  assert.deepEqual(filterCatalogue(more, { q: 'upper chest' }).map((e) => e.id), ['Incline_DB']);
+});

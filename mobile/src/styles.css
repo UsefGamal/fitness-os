@@ -317,3 +317,11 @@ details.more > summary::-webkit-details-marker { display: none; }
 [dir='rtl'] svg.timer-expand { transform: rotate(-90deg); }
 /* Read by screen readers only. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Finer muscle and angle filters in the Library (E4-S16): a row of
+   44px chips that scrolls sideways instead of wrapping onto many lines. */
+.chip-row { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 10px; padding-bottom: 2px; scrollbar-width: none; }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip-btn { flex: none; min-height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: var(--surface2); color: var(--text); font-size: 15px; font-weight: 600; }
+.chip-btn.on { background: var(--accent-dim); color: var(--accent); }
+.chip-btn:active { transform: scale(0.97); }

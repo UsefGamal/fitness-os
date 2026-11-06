@@ -5,6 +5,10 @@ import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
 import { capitalize, groupOf } from '../lib/catalogue.js';
+import { t } from '../lib/i18n.js';
+import { ANGLES, MUSCLE, angleOf, helpersOf, musclesOf } from '../lib/muscles.js';
+
+const labels = (keys) => keys.map((m) => MUSCLE[m]?.label || capitalize(m)).join(', ');
 import * as D from '../lib/data.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { useData } from '../store/useData.js';
@@ -19,8 +23,9 @@ export function HowTo({ entry }) {
         {entry.force ? <span className="chip">{capitalize(entry.force)}</span> : null}
       </div>
       <div className="card small">
-        <div><span className="muted">Works:</span> {capitalize(entry.primary.join(', '))}</div>
-        {entry.secondary.length ? <div><span className="muted">Also:</span> {entry.secondary.join(', ')}</div> : null}
+        <div><span className="muted">{t('muscles.works')}</span> {labels(musclesOf(entry))}</div>
+        {angleOf(entry) ? <div><span className="muted">{t('muscles.focus')}</span> {ANGLES[angleOf(entry)].label}</div> : null}
+        {helpersOf(entry).length ? <div><span className="muted">{t('muscles.also')}</span> {labels(helpersOf(entry))}</div> : null}
       </div>
       {entry.instructions.length ? (
         <>
@@ -50,7 +55,7 @@ export default function CatalogueDetail() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{entry.name}</h1>
       <ExercisePhotos entry={entry} />
       <HowTo entry={entry} />
-      <section className="card"><BodyMap primary={entry.primary} secondary={entry.secondary} label={`Works ${entry.primary.join(', ')}`} /></section>
+      <section className="card"><BodyMap primary={musclesOf(entry)} secondary={helpersOf(entry)} label={t('muscles.mapLabel', { muscles: labels(musclesOf(entry)) })} /></section>
       {mine ? (
         <Link to={`/library/${mine.id}`} className="btn secondary"><Icon name="book" /> In your Library</Link>
       ) : (

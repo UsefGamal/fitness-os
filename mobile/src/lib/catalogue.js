@@ -2,6 +2,8 @@
 // scripts/fetch_exercise_photos.py into public/exercise-db/. Pure helpers;
 // the loader lives in store/catalogue.js.
 
+import { ANGLES, angleOf, musclesOf } from './muscles.js';
+
 // The dataset's muscles folded into the app's six groups (Library, BodyMap).
 export const MUSCLE_GROUP = {
   chest: 'Chest',
@@ -23,12 +25,15 @@ export function groupsOf(entry) {
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /** Search by name, muscle group and equipment. Every word of the query must appear. */
-export function filterCatalogue(entries, { q = '', group = null, equipment = null } = {}) {
+export function filterCatalogue(entries, { q = '', group = null, equipment = null, muscle = null, angle = null } = {}) {
   const words = norm(q).split(' ').filter(Boolean);
   return entries.filter((e) => {
     if (group && groupOf(e) !== group) return false;
     if (equipment && (e.equipment || 'other') !== equipment) return false;
-    const hay = norm(`${e.name} ${e.primary.join(' ')} ${e.equipment || ''}`);
+    if (muscle && !musclesOf(e).includes(muscle)) return false;
+    if (angle && angleOf(e) !== angle) return false;
+    const a = angleOf(e);
+    const hay = norm(`${e.name} ${e.primary.join(' ')} ${musclesOf(e).join(' ')} ${a ? ANGLES[a].label : ''} ${e.equipment || ''}`);
     return words.every((w) => hay.includes(w));
   });
 }

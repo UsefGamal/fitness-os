@@ -128,4 +128,14 @@ export default {
   'about.data': 'Data version {schema}',
   'about.report': 'Send a bug report',
   'about.reportNote': 'Versions, counts and recent errors only; nothing personal.',
+
+  'muscles.pick': 'Muscle',
+  'muscles.all': 'All {group}',
+  'muscles.angle': 'Angle',
+  'muscles.anyAngle': 'Any angle',
+  'muscles.count': '{n} exercises with photos',
+  'muscles.works': 'Works:',
+  'muscles.focus': 'Focus:',
+  'muscles.also': 'Also:',
+  'muscles.mapLabel': 'Works {muscles}',
 };
