@@ -13,7 +13,9 @@ import { effectiveDay } from '../lib/planEdit.js';
 import { activePlan } from '../lib/plan.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
-import { HowTo } from './CatalogueDetail.jsx';
+import { t } from '../lib/i18n.js';
+import { targetFor } from '../lib/muscles.js';
+import { HowTo, labels } from './CatalogueDetail.jsx';
 
 export default function ExerciseDetail() {
   const { id } = useParams();
@@ -29,6 +31,7 @@ export default function ExerciseDetail() {
     .map((d) => ({ d, x: effectiveDay(d.key, plan, data).exercises.find((e) => e.name === ex.name) }))
     .filter((r) => r.x);
   const photo = ex && catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
+  const target = targetFor(ex.name, plan, photo);
   const video = inPlan.find((r) => r.x.video)?.x.video;
 
   return (
@@ -42,7 +45,7 @@ export default function ExerciseDetail() {
           {photo.name.toLowerCase() !== ex.name.toLowerCase() ? <p className="muted small" style={{ margin: '-6px 4px 12px' }}>Photos show {photo.name}, the closest match.</p> : null}
         </>
       ) : null}
-      <section className="card">{photo ? <BodyMap primary={photo.primary} secondary={photo.secondary} label={`Works ${photo.primary.join(', ')}`} /> : <BodyMap hit={new Set([ex.muscle_group])} label={`Works ${ex.muscle_group}`} />}</section>
+      <section className="card">{target ? <BodyMap primary={target.main} secondary={target.helpers} focus={target.angle} label={t('muscles.mapLabel', { muscles: labels(target.main) })} /> : <BodyMap hit={new Set([ex.muscle_group])} label={t('muscles.mapLabel', { muscles: ex.muscle_group })} />}</section>
       <div className="stat-grid">
         <div className="stat"><div className="label">Best set</div><div className="value">{best ? `${best.weight_kg}×${best.reps}` : '–'}</div></div>
         <div className="stat"><div className="label">Est. 1RM</div><div className="value">{best ? Math.round(best.score) : '–'}<span className="unit">kg</span></div></div>
@@ -55,7 +58,7 @@ export default function ExerciseDetail() {
           {video ? <a href={video} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 8 }}><Icon name="video" className="icon" /> Form video</a> : null}
         </div>
       ) : null}
-      {photo ? <HowTo entry={photo} /> : null}
+      {photo ? <HowTo entry={photo} target={target} /> : null}
       <Alternatives key={ex.id} entry={photo} group={ex.muscle_group} catalogue={catalogue} />
       <div className="section-label">History</div>
       {history.length ? (

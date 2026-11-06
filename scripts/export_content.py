@@ -19,6 +19,7 @@ from content import (  # noqa: E402
     cardio_program,
     eating_out_guide,
     exercise_photos,
+    exercise_targets,
     food_items,
     gym_exercises,
     gym_program,
@@ -76,6 +77,10 @@ def build_content() -> dict:
                 "cardio_session": cardio_program.CARDIO_SESSION,
                 "cardio_alternatives": cardio_program.ALTERNATIVES,
                 "exercise_photos": exercise_photos.EXERCISE_PHOTOS,
+                "exercise_targets": {
+                    name: {"main": main, "helpers": helpers, "angle": angle}
+                    for name, (main, helpers, angle) in exercise_targets.EXERCISE_TARGETS.items()
+                },
             },
             "nutrition": {
                 "plan_start_date": meal_plan.PLAN_START_DATE,
