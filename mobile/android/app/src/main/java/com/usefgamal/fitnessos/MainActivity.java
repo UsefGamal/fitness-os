@@ -3,6 +3,7 @@ package com.usefgamal.fitnessos;
 import android.os.Bundle;
 
 import com.getcapacitor.BridgeActivity;
+import com.usefgamal.fitnessos.device.DevicePlugin;
 import com.usefgamal.fitnessos.health.HealthPlugin;
 import com.usefgamal.fitnessos.timer.RestTimerPlugin;
 import com.usefgamal.fitnessos.widget.WidgetPlugin;
@@ -14,6 +15,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(RestTimerPlugin.class);
         registerPlugin(WidgetPlugin.class);
         registerPlugin(HealthPlugin.class);
+        registerPlugin(DevicePlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
