@@ -14,9 +14,12 @@ export function mealDayFor(iso, nutrition) {
 }
 
 /** Totals for the options actually picked (option A when none picked). */
-export function dayTotals(day, picks = {}) {
+/** The day's totals for the picked options. With `only` (a Set of slots),
+ * just those meals: Meals uses it for what was eaten so far (E3-S12). */
+export function dayTotals(day, picks = {}, only = null) {
   const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
   for (const meal of day.meals) {
+    if (only && !only.has(meal.slot)) continue;
     const opt = meal.options.find((o) => o.key === picks[meal.slot]) || meal.options[0];
     for (const k of Object.keys(totals)) totals[k] += opt[k] || 0;
   }

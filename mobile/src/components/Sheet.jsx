@@ -1,10 +1,16 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import { pushOverlay } from '../lib/overlays.js';
 
 /** A bottom sheet: slides up over the page, closes on the backdrop, the
  * Done button, or a drag down on the handle. */
 export default function Sheet({ title, onClose, children }) {
   const [dy, setDy] = useState(0);
   const start = useRef(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  // Android back closes the sheet, not the page (E6-S7).
+  useEffect(() => pushOverlay(() => closeRef.current()), []);
   const down = (e) => { start.current = e.clientY; e.currentTarget.setPointerCapture?.(e.pointerId); };
   const moveP = (e) => { if (start.current != null) setDy(Math.max(0, e.clientY - start.current)); };
   const up = () => {

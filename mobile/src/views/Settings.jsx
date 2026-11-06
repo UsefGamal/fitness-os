@@ -358,7 +358,7 @@ function TrainingSettings({ data, update }) {
         <Choice label="Target workout length" value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
           options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
       </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your trainer's rest for an exercise always comes first; these are for exercises without one.</p>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>The plan's rest for an exercise always comes first; these are for exercises without one.</p>
 
       <div className="section-label">Bar and plates</div>
       <div className="list">

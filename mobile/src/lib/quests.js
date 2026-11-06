@@ -46,9 +46,13 @@ export function longestStreak(dates) {
   return best;
 }
 
+/** Weekly quests (E7-S3): three real sessions can be earned any day; the
+ * "every day this week" quests only on the week's last day, so nothing is
+ * awarded on day 1 for one tick. */
 export function weeklyConditions(data, today) {
   const start = weekStart(today);
   const elapsed = daysBetween(start, today) + 1;
+  const weekDone = elapsed >= 7;
   const inWeek = (d) => d >= start && d <= today;
   const sessionDays = new Set(data.workouts.filter((w) => inWeek(w.log_date)).map((w) => w.log_date));
   const logs = data.bonus_logs.filter((b) => inWeek(b.log_date));
@@ -56,11 +60,13 @@ export function weeklyConditions(data, today) {
   const prepDays = new Set(logs.filter((b) => b.task_key === 'meal_prep').map((b) => b.log_date));
   return {
     three_sessions_week: sessionDays.size >= 3,
-    no_missed_week: checkinDays.size >= elapsed,
-    meal_prep_week: prepDays.size >= elapsed,
+    no_missed_week: weekDone && checkinDays.size >= 7,
+    meal_prep_week: weekDone && prepDays.size >= 7,
   };
 }
 
+/** Once-ever milestones. The 30-day streak quest is gone (E7-S3): it asked
+ * for training on rest days. Old awards of it still count their points. */
 export function onceConditions(data) {
   let lost5 = false;
   if (data.body_logs.length) {
@@ -70,7 +76,6 @@ export function onceConditions(data) {
   }
   return {
     first_5kg: lost5,
-    thirty_day_streak: longestStreak(data.workouts.map((w) => w.log_date)) >= 30,
     first_deload: data.workouts.some((w) => w.is_deload),
   };
 }

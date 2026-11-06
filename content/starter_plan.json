@@ -1,0 +1,348 @@
+{
+ "id": "starter-3",
+ "name": "Full body, 3 days",
+ "source": "A general beginner full-body plan written for Fitness OS (2026-11).",
+ "week_starts": "sunday",
+ "session_time": "07:00",
+ "tempo": "2010",
+ "tempo_note": "Every exercise: 2 s down, no pause, 1 s up, no pause at the top.",
+ "glossary": {
+  "RIR": "Reps in reserve: how many more good reps you could have done. RIR 2-3 means stop with 2-3 left.",
+  "tempo": "Seconds for each part of a rep: down, pause, up, pause."
+ },
+ "general_notes": [
+  "Warm up with light weights first.",
+  "Add weight when every set reaches the top of the rep range."
+ ],
+ "labels": {
+  "full_a": "Full body A",
+  "full_b": "Full body B",
+  "full_c": "Full body C"
+ },
+ "focus": {
+  "full_a": "Squat, bench press, rows, core",
+  "full_b": "Hip hinge, overhead press, pulldown, arms",
+  "full_c": "Leg press, incline press, rows, calves"
+ },
+ "schedule": [
+  {
+   "day": "sunday",
+   "plan_day": 1,
+   "session": "full_a",
+   "cardio_after": null
+  },
+  {
+   "day": "monday",
+   "plan_day": 2,
+   "session": "rest",
+   "cardio_after": null
+  },
+  {
+   "day": "tuesday",
+   "plan_day": 3,
+   "session": "full_b",
+   "cardio_after": "walk_15"
+  },
+  {
+   "day": "wednesday",
+   "plan_day": 4,
+   "session": "rest",
+   "cardio_after": null
+  },
+  {
+   "day": "thursday",
+   "plan_day": 5,
+   "session": "full_c",
+   "cardio_after": null
+  },
+  {
+   "day": "friday",
+   "plan_day": 6,
+   "session": "rest",
+   "cardio_after": null
+  },
+  {
+   "day": "saturday",
+   "plan_day": 7,
+   "session": "rest",
+   "cardio_after": null
+  }
+ ],
+ "cardio": {
+  "walk_15": {
+   "minutes": 15,
+   "note": "Brisk walk or easy bike after the workout. You can talk, but not sing."
+  }
+ },
+ "sessions": {
+  "full_a": {
+   "pre_cardio": "5 min easy walk or bike",
+   "blocks": [
+    {
+     "phase": "warm_up",
+     "items": [
+      {
+       "name": "Glute Bridge",
+       "sets": 1,
+       "reps": "12",
+       "rest": "20s"
+      },
+      {
+       "name": "Dead Bug",
+       "sets": 1,
+       "reps": "8 per side",
+       "rest": "20s"
+      },
+      {
+       "name": "Push-up",
+       "sets": 1,
+       "reps": "8",
+       "rest": "30s",
+       "note": "From the knees is fine."
+      }
+     ]
+    },
+    {
+     "phase": "rest",
+     "rest": "1-2m"
+    },
+    {
+     "phase": "work",
+     "items": [
+      {
+       "name": "Back Squat",
+       "sets": 3,
+       "reps": "6-8",
+       "rest": "2-3m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Bench Press",
+       "sets": 3,
+       "reps": "6-8",
+       "rest": "2-3m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Seated Cable Row",
+       "sets": 3,
+       "reps": "8-12",
+       "rest": "2m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Lateral Raise",
+       "sets": 2,
+       "reps": "12-15",
+       "rest": "1m",
+       "rir": "2-3",
+       "type": "normal"
+      },
+      {
+       "name": "Plank",
+       "sets": 2,
+       "reps": "30-45s",
+       "rest": "1m",
+       "type": "normal"
+      }
+     ]
+    }
+   ]
+  },
+  "full_b": {
+   "pre_cardio": "5 min easy walk or bike",
+   "blocks": [
+    {
+     "phase": "warm_up",
+     "items": [
+      {
+       "name": "Glute Bridge",
+       "sets": 1,
+       "reps": "12",
+       "rest": "20s"
+      },
+      {
+       "name": "Dead Bug",
+       "sets": 1,
+       "reps": "8 per side",
+       "rest": "20s"
+      },
+      {
+       "name": "Push-up",
+       "sets": 1,
+       "reps": "8",
+       "rest": "30s",
+       "note": "From the knees is fine."
+      }
+     ]
+    },
+    {
+     "phase": "rest",
+     "rest": "1-2m"
+    },
+    {
+     "phase": "work",
+     "items": [
+      {
+       "name": "Romanian Deadlift",
+       "sets": 3,
+       "reps": "8-10",
+       "rest": "2-3m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Overhead Press",
+       "sets": 3,
+       "reps": "6-8",
+       "rest": "2m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Lat Pulldown",
+       "sets": 3,
+       "reps": "8-12",
+       "rest": "2m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Dumbbell Curl",
+       "sets": 2,
+       "reps": "10-12",
+       "rest": "1m",
+       "rir": "2-3",
+       "type": "normal"
+      },
+      {
+       "name": "Triceps Pushdown",
+       "sets": 2,
+       "reps": "10-12",
+       "rest": "1m",
+       "rir": "2-3",
+       "type": "normal"
+      }
+     ]
+    }
+   ]
+  },
+  "full_c": {
+   "pre_cardio": "5 min easy walk or bike",
+   "blocks": [
+    {
+     "phase": "warm_up",
+     "items": [
+      {
+       "name": "Glute Bridge",
+       "sets": 1,
+       "reps": "12",
+       "rest": "20s"
+      },
+      {
+       "name": "Dead Bug",
+       "sets": 1,
+       "reps": "8 per side",
+       "rest": "20s"
+      },
+      {
+       "name": "Push-up",
+       "sets": 1,
+       "reps": "8",
+       "rest": "30s",
+       "note": "From the knees is fine."
+      }
+     ]
+    },
+    {
+     "phase": "rest",
+     "rest": "1-2m"
+    },
+    {
+     "phase": "work",
+     "items": [
+      {
+       "name": "Leg Press",
+       "sets": 3,
+       "reps": "10-12",
+       "rest": "2m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Incline Dumbbell Press",
+       "sets": 3,
+       "reps": "8-10",
+       "rest": "2m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Bent-over Row",
+       "sets": 3,
+       "reps": "8-10",
+       "rest": "2m",
+       "rir": "2-3",
+       "type": "normal",
+       "warm_up_sets": "2",
+       "warm_up_reps": "8",
+       "warm_up_rest": "1m",
+       "warm_up_pct": "50-80"
+      },
+      {
+       "name": "Standing Calf Raise",
+       "sets": 2,
+       "reps": "12-15",
+       "rest": "1m",
+       "rir": "2-3",
+       "type": "normal"
+      },
+      {
+       "name": "Face Pull",
+       "sets": 2,
+       "reps": "12-15",
+       "rest": "1m",
+       "rir": "2-3",
+       "type": "normal"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

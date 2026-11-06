@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
+import { t } from '../lib/i18n.js';
 import { useData } from '../store/useData.js';
 
 function SetEditor({ set, onSave, onCancel }) {
@@ -30,6 +32,7 @@ export default function History() {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(null);
   const [editDate, setEditDate] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const w = data.workouts.find((x) => x.id === Number(id));
   if (!w) return <div className="page"><div className="card empty">That workout isn't here anymore.</div></div>;
 
@@ -42,7 +45,6 @@ export default function History() {
   const volume = w.sets.reduce((v, s) => v + s.weight_kg * s.reps, 0);
 
   const remove = () => {
-    if (!window.confirm('Delete this workout and all its sets?')) return;
     if (activeWorkoutId === w.id) setActiveWorkout(null);
     update((d) => D.deleteWorkout(d, w.id));
     navigate('/history');
@@ -92,7 +94,8 @@ export default function History() {
           {w.checklist_items.map((c) => <div key={c.id} className="row small"><Icon name={c.completed ? 'check' : 'x'} /> {c.item_name}{c.reps_achieved ? ` · ${c.reps_achieved} reps` : ''}</div>)}
         </section>
       ) : null}
-      <button type="button" className="btn danger" onClick={remove}><Icon name="trash" /> Delete workout</button>
+      <button type="button" className="btn danger" onClick={() => setConfirming(true)}><Icon name="trash" /> Delete workout</button>
+      {confirming ? <ConfirmSheet title={t('history.deleteTitle')} body={t('history.deleteBody', { n: w.sets.length })} action={t('history.deleteTitle')} onConfirm={remove} onClose={() => setConfirming(false)} /> : null}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-# The gym program is Yusuf's trainer's Upper / Lower / Push / Pull / Leg plan,
+# The gym program. Yusuf's build uses his Upper / Lower / Push / Pull / Leg plan,
 # on a fixed weekday schedule (Sunday-start week, 7 AM sessions), the way
 # openGym plans a routine per weekday. The plan itself lives in
 # content/trainer_plan.json, transcribed from the trainer's PDF: exercises,
@@ -7,20 +7,29 @@
 # the very same file. Exercise names must match content/gym_exercises.py.
 
 import json
+import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
 
-_PLAN_PATH = Path(__file__).with_name("trainer_plan.json")
+# Which plan a build carries (E4-S2). Yusuf's plan came from his trainer's
+# PDF and stays in his build only; the friends build (FITNESS_OS_FLAVOR=
+# friends) gets the general content/starter_plan.json instead.
+FLAVOR = os.environ.get("FITNESS_OS_FLAVOR", "yusuf")
+PLAN_FILES = {"yusuf": "trainer_plan.json", "friends": "starter_plan.json"}
+if FLAVOR not in PLAN_FILES:
+    raise ValueError(f"Unknown FITNESS_OS_FLAVOR {FLAVOR!r}; use one of {sorted(PLAN_FILES)}")
+_PLAN_PATH = Path(__file__).with_name(PLAN_FILES[FLAVOR])
 TRAINER_PLAN: dict = json.loads(_PLAN_PATH.read_text(encoding="utf-8"))
+TRAINER_PLAN.setdefault("id", "ul-ppl")
 
 SESSION_TIME: str = TRAINER_PLAN["session_time"]
 TEMPO: str = TRAINER_PLAN["tempo"]
 TEMPO_NOTE: str = TRAINER_PLAN["tempo_note"]
 GLOSSARY: dict = TRAINER_PLAN["glossary"]
 
-SESSION_LABELS = {"upper": "Upper", "lower": "Lower", "push": "Push", "pull": "Pull", "leg": "Leg"}
-SESSION_FOCUS = {
+SESSION_LABELS = TRAINER_PLAN.get("labels") or {"upper": "Upper", "lower": "Lower", "push": "Push", "pull": "Pull", "leg": "Leg"}
+SESSION_FOCUS = TRAINER_PLAN.get("focus") or {
     "upper": "Incline press, lat pulldown, lateral raises, arms",
     "lower": "Leg press, quads and hamstrings, glutes, calves, core",
     "push": "Shoulders, incline press, chest, triceps",

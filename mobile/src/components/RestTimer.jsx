@@ -4,6 +4,7 @@ import { clock, COUNTDOWN_BEEPS } from '../lib/training.js';
 import { feedback } from '../store/feedback.js';
 import { useTimer } from '../store/useTimer.js';
 import Icon from './Icon.jsx';
+import { t } from '../lib/i18n.js';
 
 // Quick lengths on the full screen timer.
 const PRESETS = [45, 60, 90, 120, 180];
@@ -67,7 +68,8 @@ export default function RestTimer() {
     const R = 120;
     const C = 2 * Math.PI * R;
     return (
-      <div className="timer-full" role="timer" aria-live="polite">
+      <div className="timer-full" role="timer" aria-live="off">
+        <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
         <button type="button" className="icon-btn timer-close" aria-label="Back to the workout" onClick={() => setFull(false)}><Icon name="chev" /></button>
         <div className="muted">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
         <svg viewBox="0 0 280 280" className="ring" aria-hidden="true">
@@ -88,7 +90,8 @@ export default function RestTimer() {
   }
 
   return (
-    <div className={`timer${done ? ' done' : ''}`} role="timer" aria-live="polite">
+    <div className={`timer${done ? ' done' : ''}`} role="timer" aria-live="off">
+      <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
       <button type="button" className="timer-open" onClick={() => setFull(true)} aria-label="Open the full screen timer">
         <div className="t">{done ? 'Go' : clock(left)}</div>
         <div className="grow">
