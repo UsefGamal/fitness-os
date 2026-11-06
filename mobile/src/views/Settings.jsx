@@ -15,7 +15,7 @@ import { ImportError, parseDataFile, summarize, toDataFile } from '../lib/dataFi
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
 import { isTime, leadText, REMIND_CHOICES, setTimes, timesOf } from '../lib/times.js';
-import { Health, isNative } from '../store/native.js';
+import { Health, isNative, signingCode } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
@@ -43,6 +43,9 @@ export default function Settings() {
   const { data, update, replaceAll } = useData();
   const navigate = useNavigate();
   const { section } = useParams();
+  // P14-08: the code the release notes list, read from Android itself.
+  const [signing, setSigning] = useState(null);
+  useEffect(() => { signingCode().then(setSigning); }, []);
   const page = pageOf(section);
   // The root lists the pages; each page shows only its own part (E5-S1).
   const show = (key) => page?.key === key;
@@ -315,6 +318,8 @@ export default function Settings() {
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</span></div>
+        <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
+        <p className="muted small" style={{ margin: '4px 16px 12px' }}>{t('about.notInstalled')}</p>
         <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       </>) : null}

@@ -8,3 +8,11 @@ export const APP = {
   release: typeof __RELEASE__ !== 'undefined' ? __RELEASE__ : false,
   flavor: typeof __FLAVOR__ !== 'undefined' ? __FLAVOR__ : 'dev',
 };
+
+/** The signing code from a certificate SHA-256 in any form ("ab:cd:..."):
+ * its first 8 hex digits as "ABCD-EF01". scripts/release-notes.sh prints
+ * the same. null when it isn't a SHA-256. P14-08. */
+export function codeOf(sha256) {
+  const hex = String(sha256 || '').replace(/[:\s]/g, '').toUpperCase();
+  return /^[0-9A-F]{64}$/.test(hex) ? `${hex.slice(0, 4)}-${hex.slice(4, 8)}` : null;
+}

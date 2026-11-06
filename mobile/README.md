@@ -88,6 +88,35 @@ needed once; after that every release updates in place.
 
 Never commit the keystore (`*.jks` and `*.keystore` are gitignored).
 
+### Releases you can trust (P14-08)
+
+Each release lists both APKs' SHA-256, the certificate's SHA-256 and an
+8-character **signing code** (like `AB12-CD34`). Settings > About on the
+phone reads the code from Android itself; a friend checks it matches the
+release message. If an update ever says "App not installed", **don't
+uninstall** (that deletes the data): message Yusuf.
+
+One-time GitHub settings (Yusuf, as repo owner):
+
+1. **Settings > Environments > New environment** `release`. Turn on
+   **Required reviewers** (yourself) and limit **Deployment branches and
+   tags** to the tag pattern `v*`.
+2. Move the secrets `FITNESS_OS_KEYSTORE_BASE64`,
+   `FITNESS_OS_KEYSTORE_PASSWORD`, `FITNESS_OS_KEY_ALIAS` and
+   `FITNESS_OS_KEY_PASSWORD` into that environment, then delete the
+   repository-level copies. Only the release job (tags, after your
+   approval) can read them now.
+3. **Settings > Rules > Rulesets > New tag ruleset** for `v*`: only you may
+   create, update or delete those tags.
+4. **Settings > Actions > General > Workflow permissions**: *Read
+   repository contents*. The workflows also say this themselves.
+5. **Google developer verification** for sideloaded apps: register the app
+   ID `com.usefgamal.fitnessos` and the certificate SHA-256 in the Android
+   Developer Console before the countries where friends live require it.
+
+Every action in the workflows is pinned to a commit SHA. To update one,
+replace the SHA and the version comment together.
+
 ### Backups by Android
 
 Android's own backup may copy the app's data file to Google Drive, so a new

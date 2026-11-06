@@ -55,3 +55,12 @@ test('phone model and Android version come from the user agent', () => {
   assert.deepEqual(deviceFromUA('Mozilla/5.0 (X11; Linux x86_64)'), {});
   assert.deepEqual(deviceFromUA(), {});
 });
+
+test('the signing code is the first 8 hex digits of the certificate', async () => {
+  const { codeOf } = await import('./version.js');
+  const sha = 'ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89';
+  assert.equal(codeOf(sha), 'ABCD-EF01');
+  assert.equal(codeOf(sha.replace(/:/g, '').toUpperCase()), 'ABCD-EF01');
+  assert.equal(codeOf('abc'), null);
+  assert.equal(codeOf(null), null);
+});
