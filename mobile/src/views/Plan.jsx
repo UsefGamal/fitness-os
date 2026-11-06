@@ -11,6 +11,7 @@ import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
 import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
+import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activePlan } from '../lib/plan.js';
 import { MUSCLE, dayMuscles, targetFor, targetLabel } from '../lib/muscles.js';
@@ -230,6 +231,7 @@ export default function Plan() {
       {shareMsg ? <p className="muted small" role="status" style={{ margin: '8px 4px 0' }}>{shareMsg}</p> : null}
 
       <div className="list" style={{ marginTop: 12 }}>
+        <Link to="/plan/mine" className="list-row"><Icon name="plus" /><div className="grow"><div>{t('my.open')}</div><div className="meta small">{t('my.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
         <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>
       </div>
       <details className="card more">
