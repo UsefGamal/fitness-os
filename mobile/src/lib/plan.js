@@ -21,7 +21,7 @@ export function activePlan(data, content) {
   return {
     ...T,
     program: block.sessions || T.program,
-    trainer_plan: { ...T.trainer_plan, schedule: block.schedule || T.trainer_plan.schedule },
+    trainer_plan: { ...T.trainer_plan, name: block.name || T.trainer_plan.name, schedule: block.schedule || T.trainer_plan.schedule },
   };
 }
 

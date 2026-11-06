@@ -11,6 +11,7 @@ import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
 import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
+import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activePlan } from '../lib/plan.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
@@ -163,6 +164,9 @@ export default function Plan() {
     <div className="page">
       <h1 className="page-title">Plan</h1>
       <p className="page-sub">{T.trainer_plan.name}, {times.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
+      <div className="list">
+        <Link to="/plan/routines" className="list-row"><Icon name="dumbbell" /><div className="grow"><div>{t('routines.open')}</div><div className="meta small">{t('routines.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
+      </div>
       <section className="card"><WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} /></section>
 
       {day ? (
