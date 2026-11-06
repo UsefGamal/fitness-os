@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import GoalCard from '../components/GoalCard.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
@@ -87,6 +88,8 @@ export default function Today() {
           </>
         )}
       </section>
+
+      {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <GoalCard data={data} today={today} /> : null}
 
       {backup ? (
         <section className="card row" style={{ gap: 10 }} role="status">
