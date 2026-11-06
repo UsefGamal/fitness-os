@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import DayPicker from '../components/DayPicker.jsx';
@@ -124,7 +124,8 @@ export default function Plan() {
   const times = timesOf(data, content);
   const week = weekView(today, T, data.session_moves || []);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
-  const [pickedRaw, setPicked] = useState(firstTraining);
+  const [params] = useSearchParams();
+  const [pickedRaw, setPicked] = useState(() => week.find((d) => d.date === params.get('day')) || firstTraining);
   const picked = week.find((d) => d.date === pickedRaw.date) || pickedRaw;
   const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState(false);
