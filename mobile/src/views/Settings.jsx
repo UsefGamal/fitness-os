@@ -294,7 +294,7 @@ export default function Settings() {
 
       <div className="section-label">About</div>
       <div className="list">
-        <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name || "Trainer's U-L-PPL"}</span></div>
+        <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t('about.data', { schema: data.schemaVersion })}</span></div>
         <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
@@ -338,7 +338,7 @@ function TrainingSettings({ data, update }) {
         <Choice label="Target workout length" value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
           options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
       </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your trainer's rest for an exercise always comes first; these are for exercises without one.</p>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>The plan's rest for an exercise always comes first; these are for exercises without one.</p>
 
       <div className="section-label">Bar and plates</div>
       <div className="list">
