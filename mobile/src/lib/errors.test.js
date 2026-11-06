@@ -24,6 +24,9 @@ test('a bug report has no health or personal data', () => {
   const report = bugReport({ app: { version: '0.4.1', build: '42' }, data: yusuf, errors, device: { platform: 'android', model: 'Redmi Note 12', osVersion: '14', screen: '393x873 @2.75x' }, now: new Date(Date.UTC(2026, 10, 5, 8)) });
   assert.match(report, /App: 0\.4\.1 \(42\), data schema 2/);
   assert.match(report, /Redmi Note 12, Android 14/);
+  // P14-02: the report names which APK it came from.
+  const friends = bugReport({ app: { version: '0.6.0', build: '60', flavor: 'friends' }, data: yusuf, errors: [] });
+  assert.match(friends, /App: 0\.6\.0 \(60\) friends build, data schema/);
   assert.match(report, /workouts: 5/);
   assert.match(report, /Boom/);
   // Nothing from the person's records: weights, notes, health, profile, photos.

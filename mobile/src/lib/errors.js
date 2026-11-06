@@ -38,7 +38,7 @@ export function bugReport({ app, data, errors, device = {}, now = new Date() }) 
   const lines = [
     'Fitness OS bug report',
     `Time: ${now.toISOString().slice(0, 16).replace('T', ' ')} UTC`,
-    `App: ${app.version} (${app.build}), data schema ${data?.schemaVersion ?? '?'}`,
+    `App: ${app.version} (${app.build})${app.flavor ? ` ${app.flavor} build` : ''}, data schema ${data?.schemaVersion ?? '?'}`,
     `Device: ${device.platform || 'web'}${device.model ? `, ${device.model}` : ''}${device.osVersion ? `, Android ${device.osVersion}` : ''}`,
     `Screen: ${device.screen || '?'}`,
     `WebView: ${device.webview ? `Chrome ${device.webview}` : '?'}`,

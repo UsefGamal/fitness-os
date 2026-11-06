@@ -16,5 +16,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.APK_VERSION_NAME || pkg.version),
     __APP_BUILD__: JSON.stringify(process.env.APK_VERSION_CODE || 'local'),
     __RELEASE__: JSON.stringify(process.env.FITNESS_OS_RELEASE === '1'),
+    // Which APK this is (P14-02): 'yusuf' (his own plan) or 'friends'.
+    __FLAVOR__: JSON.stringify(process.env.FITNESS_OS_FLAVOR || 'yusuf'),
   },
 });

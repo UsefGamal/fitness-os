@@ -4,12 +4,18 @@ process and fails if any of the trainer plan's sessions, exercises, links
 or the word "trainer" show up in what the app would read.
 
     python scripts/check_friends_build.py [out.json]
+    python scripts/check_friends_build.py --apk dist/fitness-os-release-friends.apk
+
+With --apk (P14-02) it opens the built APK instead and fails if any trainer
+plan exercise or link appears in the web assets inside it, so the check
+covers what actually ships, not only the export.
 """
 
 import json
 import os
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -26,6 +32,10 @@ def trainer_markers() -> set[str]:
     from content.routines import ROUTINES  # noqa: PLC0415
 
     starter_names |= {e["name"] for r in ROUTINES for d in r["program"] for e in d["exercises"]}
+    # The exercise library is general too (anyone can add those exercises).
+    from content.gym_exercises import SEED_EXERCISES  # noqa: PLC0415
+
+    starter_names |= {name for _g, name, _k in SEED_EXERCISES}
     out = set()
     for session in TRAINER["sessions"].values():
         for block in session["blocks"]:
@@ -65,7 +75,42 @@ def problems(content: dict) -> list[str]:
     return found
 
 
+TEXT_SUFFIXES = (".js", ".json", ".html", ".css", ".txt")
+# The public-domain photo dataset (scripts/fetch_exercise_photos.py) is the
+# same in both builds and has nothing from Yusuf's plan, but it shares some
+# common exercise names with it (e.g. "World's Greatest Stretch").
+PUBLIC_DATASET = "assets/public/exercise-db/"
+
+
+def apk_problems(files: dict[str, str]) -> list[str]:
+    """Trainer plan items found in an APK's text assets ({path: text})."""
+    markers = sorted(trainer_markers())
+    found = []
+    for path, text in files.items():
+        for m in markers:
+            if m in text:
+                found.append(f"trainer plan item in {path}: {m}")
+    if not any(p.endswith(".js") for p in files):
+        found.append("no app code found in the APK (assets/public/)")
+    return found
+
+
+def apk_texts(apk: Path) -> dict[str, str]:
+    with zipfile.ZipFile(apk) as z:
+        return {
+            n: z.read(n).decode("utf-8", "replace")
+            for n in z.namelist()
+            if n.startswith("assets/public/") and not n.startswith(PUBLIC_DATASET) and n.endswith(TEXT_SUFFIXES)
+        }
+
+
 def main() -> int:
+    if len(sys.argv) > 2 and sys.argv[1] == "--apk":
+        found = apk_problems(apk_texts(Path(sys.argv[2])))
+        for p in found:
+            print(p)
+        print("Friends APK: clean." if not found else f"Friends APK: {len(found)} problem(s).")
+        return 1 if found else 0
     out = Path(sys.argv[1] if len(sys.argv) > 1 else ROOT / "mobile" / "src" / "content.friends.json")
     env = {**os.environ, "FITNESS_OS_FLAVOR": "friends"}
     subprocess.run([sys.executable, str(ROOT / "scripts" / "export_content.py"), str(out)], check=True, env=env, cwd=ROOT)

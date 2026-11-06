@@ -74,6 +74,13 @@ jobs:
         timeout-minutes: 15
         run: npm run e2e -- --shots
 
+      # P14-02: and the build the friends install (its own baseline).
+      - name: Phone harness, friends build
+        timeout-minutes: 15
+        env:
+          FITNESS_OS_FLAVOR: friends
+        run: npm run e2e -- --shots
+
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@v4
