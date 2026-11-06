@@ -1,8 +1,8 @@
 {
-  "total": 353,
+  "total": 351,
   "files": {
     "src/views/Catalogue.jsx": 7,
-    "src/views/CatalogueDetail.jsx": 9,
+    "src/views/CatalogueDetail.jsx": 7,
     "src/views/ExerciseDetail.jsx": 12,
     "src/views/FollowAlong.jsx": 9,
     "src/views/History.jsx": 16,
