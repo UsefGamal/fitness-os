@@ -31,6 +31,14 @@ def test_every_plan_exercise_is_checked():
         assert not missing, f"{plan}: add these to content/exercise_targets.py: {sorted(missing)}"
 
 
+def test_every_routine_exercise_is_checked():
+    from content.routines import ROUTINES
+
+    names = {ex["name"] for r in ROUTINES for day in r["program"] for ex in day["exercises"]}
+    missing = names - set(EXERCISE_TARGETS)
+    assert not missing, f"content/routines.py: add these to content/exercise_targets.py: {sorted(missing)}"
+
+
 def test_entries_are_well_formed():
     for name, (main, helpers, angle) in EXERCISE_TARGETS.items():
         assert main, name
