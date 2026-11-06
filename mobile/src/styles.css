@@ -337,3 +337,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .wset-bar > .wset-guide { background: rgba(48, 209, 88, 0.14); border-radius: 0; }
 .wset-bar > .wset-plan { border: 1.5px solid var(--faint); background: none; }
 .wset-bar > .wset-done { background: var(--accent); }
+
+/* "Couldn't save" (QA-07): amber, above the tab bar, never blocks a tap behind it except its own area. */
+.save-bar { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 70; max-width: 540px; margin: 0 auto; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #3a2f00; color: var(--warn); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+.save-bar .small { color: var(--text); opacity: 0.85; }

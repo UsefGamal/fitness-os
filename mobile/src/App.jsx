@@ -3,6 +3,7 @@ import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-rou
 
 import ErrorBoundary from './components/CrashScreen.jsx';
 import Fanfare from './components/Fanfare.jsx';
+import SaveBar from './components/SaveBar.jsx';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
@@ -168,10 +169,11 @@ export default function App() {
       </div>
     );
   }
-  if (setup) return <Setup onDone={() => setSetup(false)} />;
+  if (setup) return <><Setup onDone={() => setSetup(false)} /><SaveBar /></>;
   return (
     <>
       <RouterProvider router={router} />
+      <SaveBar />
       {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
     </>
   );

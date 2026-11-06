@@ -304,6 +304,9 @@ export default {
   'setup.noBodyNote': 'Fill in your profile any time for protein and calorie targets.',
   'setup.go': 'Start',
   'setup.changeLater': 'Change any of this later in Profile and Plan.',
+  'save.failedTitle': "Couldn't save",
+  'save.failedNote': 'Phone storage is full. Free some space; your last changes are kept while the app stays open.',
+  'save.retry': 'Try again',
   'setup.finishTitle': 'Finish your setup',
   'setup.finishNote': 'Add your height, weight and age for your own targets.',
 };
