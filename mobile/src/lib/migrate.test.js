@@ -124,8 +124,10 @@ test('unknown keys and later v1 fields survive the upgrade and a backup', () => 
   const d = migrate(v1('v1-yusuf-like'), content);
   assert.deepEqual(d.a_key_from_the_future, { kept: true });
   for (const k of ['session_moves', 'exercise_notes', 'achievements', 'evening_plan', 'progress_photos', 'health_daily']) assert.ok(d[k], k);
+  // Import keeps it too, in the _unknown bag (P14-10), and nothing else changes.
   const back = parseDataFile(toDataFile(d), content);
-  assert.deepEqual(back, d);
+  const { a_key_from_the_future: future, ...rest } = d;
+  assert.deepEqual(back, { ...rest, _unknown: { a_key_from_the_future: future } });
 });
 
 test('migrating twice is the same as once, and current data is left alone', () => {
@@ -171,7 +173,7 @@ test('a truncated or broken file is refused with nothing returned', () => {
 
 test('a v1 snapshot is upgraded when restored, a v2 one is kept as is', () => {
   const fromV1 = parseSnapshot(fixture('v1-yusuf-like.json'), content);
-  assert.deepEqual(fromV1, migrate(parseDataFile(JSON.stringify({ ...v1('v1-yusuf-like'), format: 'fitness-os-export' }), content), content));
+  assert.deepEqual(fromV1, migrate(parseDataFile(JSON.stringify({ ...v1('v1-yusuf-like'), format: 'fitness-os-export' }), content, { trusted: true }), content));
   const current = migrate(v1('v1-yusuf-like'), content);
   assert.deepEqual(parseSnapshot(JSON.stringify({ ...current, saved_at: 5 }), content), current);
 });

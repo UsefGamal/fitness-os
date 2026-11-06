@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { macroTargets } from '../lib/macros.js';
 import { routineById } from '../lib/routines.js';
-import { DAY_CHOICES, GOALS, bodyComplete, finishSetup, pickRoutine, skipSetup } from '../lib/setup.js';
+import { DAY_CHOICES, GOALS, bodyComplete, bodyErrors, finishSetup, isMinor, pickRoutine, skipSetup } from '../lib/setup.js';
+import { pushOverlay } from '../lib/overlays.js';
 import { content, useData } from '../store/useData.js';
 
 const STEPS = 5;
@@ -22,6 +23,15 @@ export default function Setup({ onDone }) {
   const num = (k) => (e) => set(k, e.target.value === '' ? null : Number(e.target.value));
   const next = () => setStep((s) => Math.min(STEPS - 1, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
+  // Android Back goes one step back and keeps the answers (TL-04). On the
+  // first step it leaves the app as before. Answers stay in memory only.
+  useEffect(() => (0 < step ? pushOverlay(back) : undefined), [step]);
+  const errors = bodyErrors(a, today);
+  const minor = isMinor(a, today);
+  function err(k) {
+    if (!errors[k]) return null;
+    return <span className="field-error" role="alert">{t(errors[k])}</span>;
+  }
   const finish = () => { update((d) => finishSetup(d, content, a, today)); onDone(); };
   const skipAll = () => { update((d) => skipSetup(d, today)); onDone(); };
   const restore = () => { update((d) => skipSetup(d, today)); window.location.hash = '#/settings/data'; onDone(); };
@@ -61,13 +71,14 @@ export default function Setup({ onDone }) {
           <div className="seg" style={{ marginBottom: 12 }} role="group" aria-label={t('setup.sex')}>
             {['male', 'female'].map((g) => <button key={g} type="button" className={a.gender === g ? 'on' : ''} aria-pressed={a.gender === g} onClick={() => set('gender', g)}>{t(`setup.${g}`)}</button>)}
           </div>
-          <div className="row">
-            <label className="field grow"><span>{t('setup.birthYear')}</span><input type="number" inputMode="numeric" min="1930" max="2015" value={a.birth_year ?? ''} onChange={num('birth_year')} /></label>
-            <label className="field grow"><span>{t('setup.height')}</span><input type="number" inputMode="decimal" value={a.height_cm ?? ''} onChange={num('height_cm')} /></label>
+          <div className="row" style={{ alignItems: 'flex-start' }}>
+            <label className="field grow"><span>{t('setup.birthYear')}</span><input type="number" inputMode="numeric" value={a.birth_year ?? ''} onChange={num('birth_year')} aria-invalid={Boolean(errors.birth_year)} />{err('birth_year')}</label>
+            <label className="field grow"><span>{t('setup.height')}</span><input type="number" inputMode="decimal" value={a.height_cm ?? ''} onChange={num('height_cm')} aria-invalid={Boolean(errors.height_cm)} />{err('height_cm')}</label>
           </div>
-          <label className="field"><span>{t('setup.weight')}</span><input type="number" inputMode="decimal" step="0.1" value={a.weight_kg ?? ''} onChange={num('weight_kg')} /></label>
+          <label className="field"><span>{t('setup.weight')}</span><input type="number" inputMode="decimal" step="0.1" value={a.weight_kg ?? ''} onChange={num('weight_kg')} aria-invalid={Boolean(errors.weight_kg)} />{err('weight_kg')}</label>
+          {minor && !errors.birth_year ? <p className="muted small">{t('setup.minorNote')}</p> : null}
           <div className="stack" style={{ marginTop: 12 }}>
-            <button type="button" className="btn" disabled={!bodyComplete(a)} onClick={next}>{t('setup.next')}</button>
+            <button type="button" className="btn" disabled={!bodyComplete(a, today)} onClick={next}>{t('setup.next')}</button>
             <button type="button" className="btn ghost" onClick={() => { setA((x) => ({ ...x, gender: null, birth_year: null, height_cm: null, weight_kg: null })); next(); }}>{t('setup.skipStep')}</button>
           </div>
           <p className="muted small">{t('setup.aboutSkipNote')}</p>
@@ -77,12 +88,13 @@ export default function Setup({ onDone }) {
       {step === 2 ? (
         <>
           <h1 className="page-title">{t('setup.goalTitle')}</h1>
-          <div className="list">{GOALS.map((g) => choice('goal', g, t(`setup.goal.${g}`), t(`setup.goalNote.${g}`)))}</div>
+          <div className="list">{GOALS.filter((g) => !minor || (g !== 'lose' && g !== 'recomp')).map((g) => choice('goal', g, t(`setup.goal.${g}`), t(`setup.goalNote.${g}`)))}</div>
+          {minor ? <p className="muted small">{t('setup.minorGoal')}</p> : null}
           {(a.goal === 'lose' || a.goal === 'recomp') && a.weight_kg ? (
-            <label className="field"><span>{t('setup.goalWeight')}</span><input type="number" inputMode="decimal" step="0.5" value={a.goal_kg ?? ''} onChange={num('goal_kg')} /></label>
+            <label className="field"><span>{t('setup.goalWeight')}</span><input type="number" inputMode="decimal" step="0.5" value={a.goal_kg ?? ''} onChange={num('goal_kg')} aria-invalid={Boolean(errors.goal_kg)} />{err('goal_kg')}</label>
           ) : null}
           <div className="stack" style={{ marginTop: 12 }}>
-            <button type="button" className="btn" disabled={!a.goal} onClick={next}>{t('setup.next')}</button>
+            <button type="button" className="btn" disabled={!a.goal || Boolean(errors.goal_kg)} onClick={next}>{t('setup.next')}</button>
             <button type="button" className="btn ghost" onClick={() => { set('goal', null); next(); }}>{t('setup.skipStep')}</button>
           </div>
         </>
@@ -118,7 +130,7 @@ export default function Setup({ onDone }) {
           <h1 className="page-title">{t('setup.doneTitle')}</h1>
           <div className="list">
             <div className="list-row"><Icon name="dumbbell" /><div className="grow"><div>{routine?.name}</div><div className="meta small">{t('setup.daysAWeek', { n: routine?.days })}</div></div></div>
-            {preview && bodyComplete(a) ? (
+            {preview && bodyComplete(a, today) ? (
               <div className="list-row"><Icon name="meals" /><div className="grow"><div>{t('setup.protein', { g: preview.protein })}</div><div className="meta small">{t('setup.kcal', { kcal: preview.kcal })}</div></div></div>
             ) : (
               <div className="list-row"><Icon name="user" /><div className="grow"><div>{t('setup.noBody')}</div><div className="meta small">{t('setup.noBodyNote')}</div></div></div>

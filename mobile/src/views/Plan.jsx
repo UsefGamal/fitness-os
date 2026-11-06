@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import DayPicker from '../components/DayPicker.jsx';
@@ -8,7 +8,7 @@ import MyWeek from '../components/MyWeek.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { entryFor, groupOf, photoSrc, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
-import { longWeekday, todayISO, weekdayName } from '../lib/dates.js';
+import { longWeekday, weekdayName } from '../lib/dates.js';
 import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
 import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
@@ -23,6 +23,7 @@ import { useCatalogue } from '../store/catalogue.js';
 import { saveExport } from '../store/mirror.js';
 import { dataUrlOf, shareFile, shareText } from '../store/share.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 function ExerciseList({ day, training }) {
   return day.exercises.map((ex, i) => (
@@ -118,12 +119,13 @@ function EditList({ day, sessionKey }) {
 
 export default function Plan() {
   const { data, update } = useData();
-  const today = todayISO();
+  const today = useToday();
   const T = activePlan(data, content);
   const times = timesOf(data, content);
   const week = weekView(today, T, data.session_moves || []);
-  const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
-  const [pickedRaw, setPicked] = useState(firstTraining);
+  const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest') || week.find((d) => d.isToday);
+  const [params] = useSearchParams();
+  const [pickedRaw, setPicked] = useState(() => week.find((d) => d.date === params.get('day')) || firstTraining);
   const picked = week.find((d) => d.date === pickedRaw.date) || pickedRaw;
   const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState(false);

@@ -32,6 +32,24 @@ export async function shareFile(title, uri) {
   }
 }
 
+/** Hand a text file to the share sheet without leaving a copy in shared
+ * Documents (it is written to the app's cache). In a browser: a download. */
+export async function shareTextFile(title, filename, text) {
+  if (Capacitor.isNativePlatform()) {
+    const { Directory, Encoding, Filesystem } = await import('@capacitor/filesystem');
+    const { uri } = await Filesystem.writeFile({ path: filename, directory: Directory.Cache, encoding: Encoding.UTF8, data: text });
+    await Share.share({ title, url: uri, dialogTitle: title });
+    return 'shared';
+  }
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return 'downloaded';
+}
+
 /** An image as a data: URL, for files that must stand on their own. */
 export async function dataUrlOf(src) {
   try {

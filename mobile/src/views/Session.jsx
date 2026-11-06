@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { formatDate, todayISO } from '../lib/dates.js';
+import { formatDate } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 const T = content.training;
 
@@ -43,7 +44,7 @@ export default function Session() {
   const meta = SESSIONS[type];
   const navigate = useNavigate();
   const { update } = useData();
-  const today = todayISO();
+  const today = useToday();
   const [date, setDate] = useState(today);
   const [homeDay, setHomeDay] = useState(0);
   const [machine, setMachine] = useState(T.cardio_session.label);

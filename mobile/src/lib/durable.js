@@ -48,7 +48,7 @@ export async function atomicWrite(fs, path, text) {
 
 // ── Snapshots ─────────────────────────────────────────────────────────
 
-const REASONS = { migrate: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand' };
+const REASONS = { migrate: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand', unreadable: 'Data that could not be read' };
 
 export function snapshotName(reason, now = Date.now()) {
   return `${SNAPSHOT_DIR}/${now}-${reason}.json`;
@@ -82,25 +82,32 @@ export async function takeSnapshot(fs, text, reason, now = Date.now()) {
 // ── Backup reminder (E2-S11) ──────────────────────────────────────────
 
 export const BACKUP_EVERY_DAYS = 14;
+/** With no screen lock, Android's cloud backup is off (P14-09), so remind
+ * twice as often. */
+export const BACKUP_EVERY_DAYS_NO_LOCK = 7;
 const DAY = 24 * 60 * 60 * 1000;
 
-/** { days } since the last backup (null when there has never been one)
- * once a reminder is due, otherwise null. Never-backed-up data is due
- * 14 days after its first log, so a brand-new install isn't nagged. */
-export function backupDue(data, now = Date.now()) {
+/** { days, noLock } once a reminder is due, otherwise null. days is since
+ * the last backup (null when there has never been one). Never-backed-up
+ * data is due 14 days after its first log, so a brand-new install isn't
+ * nagged. screenLock false (the phone has none) means 7 days instead, and
+ * noLock tells the card to say why. */
+export function backupDue(data, now = Date.now(), { screenLock = null } = {}) {
+  const noLock = screenLock === false;
+  const every = noLock ? BACKUP_EVERY_DAYS_NO_LOCK : BACKUP_EVERY_DAYS;
   const dates = [...data.workouts, ...data.body_logs, ...data.meal_logs].map((r) => r.log_date).filter(Boolean);
   if (!dates.length) return null;
   const last = data.settings?.last_backup_at;
   const since = last ? Math.floor((now - last) / DAY) : null;
-  if (since != null && since < BACKUP_EVERY_DAYS) return null;
+  if (since != null && since < every) return null;
   if (since == null) {
     const first = dates.reduce((a, b) => (a < b ? a : b));
     const [y, m, d] = first.split('-').map(Number);
-    if (now - new Date(y, m - 1, d, 12).getTime() < BACKUP_EVERY_DAYS * DAY) return null;
+    if (now - new Date(y, m - 1, d, 12).getTime() < every * DAY) return null;
   }
   const snoozed = data.settings?.backup_snoozed_at;
   if (snoozed && now - snoozed < 3 * DAY) return null;
-  return { days: since };
+  return { days: since, noLock };
 }
 
 // ── Start-up ──────────────────────────────────────────────────────────
@@ -110,6 +117,13 @@ export function backupDue(data, now = Date.now()) {
  * copy to keep before upgrading it (null when no upgrade is needed), or
  * null when neither store holds readable data. Throws NewerSchemaError
  * for data from a newer app version. */
+/** True when a saved copy exists but none can be read: the person has
+ * data, so this must never look like a new phone (QA-08). */
+export function unreadable({ localText, fileText }) {
+  const present = [localText, fileText].filter((t) => typeof t === 'string' && t.trim() !== '');
+  return present.length > 0 && present.every((t) => !parseCopy(t));
+}
+
 export function loadNewest({ localText, fileText }, content) {
   const newest = pickNewest(parseCopy(localText), parseCopy(fileText));
   if (!newest) return null;

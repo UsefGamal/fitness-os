@@ -25,8 +25,10 @@ public class HealthPrivacyActivity extends Activity {
                 + "and writes your finished workouts as exercise sessions. If you allow it, it also reads daily steps, "
                 + "active calories, sleep and resting heart rate (from your phone or a watch) to show your recovery "
                 + "and, only if you switch it on, to adjust your calorie target.\n\n"
-                + "Everything stays on this phone. Fitness OS has no server, no account, no analytics and no ads, "
-                + "and it never sends your health data anywhere.\n\n"
+                + "Fitness OS has no server, no account, no analytics and no ads, and it never sends your "
+                + "health data anywhere itself. Two things can copy it off the phone, both under your control: "
+                + "Android's own backup to your Google account, which runs only if the phone has a screen lock "
+                + "and is then encrypted with it, and a backup file you choose to save or share.\n\n"
                 + "You can turn this off any time in Health Connect's settings or in Fitness OS > Settings.");
         ScrollView s = new ScrollView(this);
         s.setBackgroundColor(Color.BLACK);

@@ -11,6 +11,14 @@ import { privateFs } from './fs.js';
 const PATH = 'fitness-os-data.json';
 let pending = null;
 let timer = null;
+let onResult = () => {};
+
+/** Told after every mirror write: true when it landed, false when it failed. */
+export function onMirrorResult(fn) {
+  onResult = fn;
+}
+
+export const hasMirror = Boolean(privateFs);
 
 /** The mirror's raw text and parsed copy. Falls back to the .tmp file if
  * a write was cut off between deleting the old file and the rename. */
@@ -24,12 +32,14 @@ export async function readMirror() {
   return null;
 }
 
-/** Coalesces bursts (tapping + on a stepper) into one write. */
-export function writeMirror(data) {
+/** Coalesces bursts (tapping + on a stepper) into one write. `now`: write
+ * at once (the app is going to the background and may be killed, TL-09). */
+export function writeMirror(data, now = false) {
   if (!privateFs) return;
   pending = data;
   clearTimeout(timer);
-  timer = setTimeout(flush, 300);
+  if (now) flush();
+  else timer = setTimeout(flush, 300);
 }
 
 async function flush() {
@@ -38,8 +48,10 @@ async function flush() {
   if (!data) return;
   try {
     await atomicWrite(privateFs, PATH, JSON.stringify(data));
+    onResult(true);
   } catch (err) {
     console.error('Could not write the data mirror', err);
+    onResult(false);
   }
 }
 

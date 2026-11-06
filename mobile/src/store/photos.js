@@ -4,6 +4,8 @@
 // They are not part of backups.
 import { Directory, Filesystem } from '@capacitor/filesystem';
 
+import { isPhotoFile } from '../lib/dataFile.js';
+
 import { fitSize } from '../lib/photos.js';
 
 const DIR = 'progress-photos';
@@ -42,6 +44,7 @@ const cache = new Map();
 
 /** A data: URL for a stored photo (cached while the app runs). */
 export async function photoUrl(path) {
+  if (!isPhotoFile(path)) throw new Error('Not a photo file');
   if (cache.has(path)) return cache.get(path);
   const { data } = await Filesystem.readFile({ path, directory: Directory.Data });
   const url = typeof data === 'string' ? `data:image/jpeg;base64,${data}` : await new Promise((resolve) => {
@@ -54,6 +57,8 @@ export async function photoUrl(path) {
 }
 
 export async function deletePhoto(path) {
+  // P14-10: only ever a file in the photos folder, never the data file.
+  if (!isPhotoFile(path)) return;
   cache.delete(path);
   await Filesystem.deleteFile({ path, directory: Directory.Data }).catch(() => {});
 }

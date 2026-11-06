@@ -21,3 +21,16 @@ export async function signingCode() {
     return null;
   }
 }
+
+export const Device = registerPlugin('Device');
+
+/** true/false: does the phone have a screen lock? null when unknown (a
+ * browser, or an older APK without the plugin). P14-09. */
+export async function hasScreenLock() {
+  if (!isNative()) return null;
+  try {
+    return (await Device.security()).screenLock === true;
+  } catch {
+    return null;
+  }
+}
