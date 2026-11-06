@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router';
 
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
-import { formatDate, todayISO } from '../lib/dates.js';
+import { formatDate } from '../lib/dates.js';
 import { addPhoto, beforeAfter, POSES, removePhoto, timeline } from '../lib/photos.js';
 import { deletePhoto, photoUrl, storePhoto } from '../store/photos.js';
 import { t } from '../lib/i18n.js';
 import { useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 function Img({ path, className, alt = '' }) {
   const [src, setSrc] = useState(null);
@@ -44,7 +45,7 @@ export default function Photos() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [viewing, setViewing] = useState(null);
-  const today = todayISO();
+  const today = useToday();
   const days = timeline(data);
   const pair = beforeAfter(data, pose);
 

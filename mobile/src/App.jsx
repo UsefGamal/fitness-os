@@ -1,10 +1,11 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-router';
+import { Outlet, ScrollRestoration, createHashRouter, RouterProvider, useLocation, useNavigationType } from 'react-router';
 
 import ErrorBoundary from './components/CrashScreen.jsx';
 import RecoveryScreen from './components/RecoveryScreen.jsx';
 import { recordError } from './store/errors.js';
 import Fanfare from './components/Fanfare.jsx';
+import SaveBar from './components/SaveBar.jsx';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
@@ -54,15 +55,19 @@ const Shopping = lazy(() => import('./views/Shopping.jsx'));
 const Stats = lazy(() => import('./views/Stats.jsx'));
 const Session = lazy(() => import('./views/Session.jsx'));
 
-// Detail pages slide in from the right; tabs fade (styles.css, .route).
+// Detail pages slide in from the right (left in RTL); Back slides the other
+// way; tabs fade (styles.css, .route).
 const TABS = new Set(['/', '/plan', '/workout', '/meals', '/stats']);
 
 function Shell() {
   const { pathname } = useLocation();
+  const back = useNavigationType() === 'POP';
   const timing = useTimer((t) => Boolean(t.endsAt));
   return (
     <>
-      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : 'push-in'}${timing ? ' with-timer' : ''}`}>
+      {/* New pages open at the top; Back returns to where you were (UX-03). */}
+      <ScrollRestoration />
+      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : back ? 'pop-in' : 'push-in'}${timing ? ' with-timer' : ''}`}>
         <ErrorBoundary key={pathname}>
           <Suspense fallback={<div className="page" />}>
             <Outlet />
@@ -176,10 +181,11 @@ export default function App() {
     );
   }
   if (startError) return <RecoveryScreen kind={startError} />;
-  if (setup) return <Setup onDone={() => setSetup(false)} />;
+  if (setup) return <><Setup onDone={() => setSetup(false)} /><SaveBar /></>;
   return (
     <>
       <RouterProvider router={router} />
+      <SaveBar />
       {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
     </>
   );

@@ -86,7 +86,7 @@ export function startPhoneSync() {
   });
   App.addListener('appStateChange', ({ isActive }) => {
     if (!isActive) {
-      flushSave(); // the app may be killed in the background: write now
+      flushSave(true); // the app may be killed in the background: write now, file too
       return;
     }
     pushWidget();
