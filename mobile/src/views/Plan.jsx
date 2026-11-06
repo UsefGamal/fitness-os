@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import DayPicker from '../components/DayPicker.jsx';
 import Icon from '../components/Icon.jsx';
+import MyWeek from '../components/MyWeek.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { entryFor, groupOf, photoSrc, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
@@ -11,6 +13,7 @@ import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
 import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
+import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activePlan } from '../lib/plan.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
@@ -118,12 +121,14 @@ export default function Plan() {
   const times = timesOf(data, content);
   const week = weekView(today, T, data.session_moves || []);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
-  const [picked, setPicked] = useState(firstTraining);
+  const [pickedRaw, setPicked] = useState(firstTraining);
+  const picked = week.find((d) => d.date === pickedRaw.date) || pickedRaw;
+  const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
   const moves = data.session_moves || [];
-  const movedHere = moves.find((m) => m.to === picked.date);
+  const movedHere = moves.find((m) => m.to === picked.date && m.from);
   const pick = (date) => setPicked(weekView(today, T, data.session_moves || []).find((d) => d.date === date) || picked);
   const move = (to) => {
     if (!to) return;
@@ -190,6 +195,7 @@ export default function Plan() {
                 {movedHere ? (
                   <button type="button" className="btn ghost small grow" onClick={() => { update((d) => undoMove(d, picked.date)); pick(movedHere.from); }}>Moved from {longWeekday(movedHere.from)} · put it back</button>
                 ) : null}
+                {picked.date >= today ? <button type="button" className="btn secondary small" style={{ width: 'auto' }} onClick={() => setChoosing(true)}>{t('week.change')}</button> : null}
                 {picked.date >= today ? (
                   <label className="field grow" style={{ margin: 0 }}>
                     <select value="" aria-label={`Move ${day.label} to another day`} onChange={(e) => move(e.target.value)}>
@@ -208,8 +214,13 @@ export default function Plan() {
           )}
         </>
       ) : (
-        <div className="card empty">Rest day. Walk, stretch, sleep well.</div>
+        <div className="card empty">
+          Rest day. Walk, stretch, sleep well.
+          {picked.date >= today ? <button type="button" className="btn secondary small" style={{ marginTop: 10 }} onClick={() => setChoosing(true)}>{t('week.changeDay')}</button> : null}
+        </div>
       )}
+      {choosing ? <DayPicker date={picked.date} dayName={longWeekday(picked.date)} training={T} data={data} update={update} onClose={() => setChoosing(false)} /> : null}
+      <MyWeek data={data} update={update} content={content} training={T} />
 
       <label className="field" style={{ marginTop: 12 }}>
         <span>{longWeekday(picked.date)} at {times.evening_time} (every week)</span>

@@ -48,3 +48,43 @@ test('edits land on the active block only', () => {
   const open = { ...two, program: { ...two.program, active_block: undefined } };
   assert.equal(activeBlock(open).id, 'b2');
 });
+
+// ── My week: the session on each weekday (friend feedback, 6 Nov 2026) ──
+import { isWeekEdited, resetWeek, setWeekday } from './plan.js';
+
+test('setting a weekday changes every week from then on', () => {
+  const d = setWeekday(emptyData(content), content, 'tuesday', 'pull');
+  const T = activePlan(d, content);
+  assert.equal(sessionKeyOn('2026-11-03', T), 'pull');
+  assert.equal(sessionKeyOn('2026-11-10', T), 'pull');
+  assert.equal(sessionKeyOn('2026-11-05', T), 'pull', 'Thursday keeps its own session');
+  assert.ok(isWeekEdited(d, content));
+});
+
+test('the week edit lives on the block and survives a content update', () => {
+  const d = setWeekday(emptyData(content), content, 'sunday', 'rest');
+  const changed = structuredClone(content);
+  changed.training.trainer_plan.schedule[0].session = 'push';
+  assert.equal(sessionKeyOn('2026-11-01', activePlan(d, changed)), 'rest');
+});
+
+test('a week with no training day is refused', () => {
+  let d = emptyData(content);
+  for (const day of ['sunday', 'monday', 'wednesday', 'thursday']) d = setWeekday(d, content, day, 'rest');
+  const before = d;
+  assert.equal(setWeekday(d, content, 'friday', 'rest'), before);
+});
+
+test('reset puts the template week back', () => {
+  const d = resetWeek(setWeekday(emptyData(content), content, 'monday', 'push'), content);
+  assert.deepEqual(activeBlock(d).schedule, content.training.trainer_plan.schedule);
+  assert.equal(isWeekEdited(d, content), false);
+});
+
+test('an unknown weekday or data without a block changes nothing', () => {
+  const d = emptyData(content);
+  assert.equal(setWeekday(d, content, 'funday', 'push'), d);
+  const bare = { workouts: [] };
+  assert.equal(setWeekday(bare, content, 'monday', 'push'), bare);
+  assert.equal(isWeekEdited(bare, content), false);
+});
