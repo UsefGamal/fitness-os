@@ -19,7 +19,6 @@ BONUS_TASKS = [
     {"key": "three_sessions_week", "label": "3+ training sessions this week", "points": 25, "icon": "dumbbell", "frequency": "weekly"},
     {"key": "no_missed_week", "label": "No missed check-in days this week", "points": 15, "icon": "calendar", "frequency": "weekly"},
     {"key": "first_5kg", "label": "Lose your first 5kg", "points": 50, "icon": "star", "frequency": "once"},
-    {"key": "thirty_day_streak", "label": "Hit a 30-day streak", "points": 75, "icon": "flame", "frequency": "once"},
     {"key": "first_deload", "label": "Complete your first deload week", "points": 30, "icon": "snowflake", "frequency": "once"},
 ]
 

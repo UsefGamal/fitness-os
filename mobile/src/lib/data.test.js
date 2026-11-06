@@ -41,6 +41,19 @@ test('suggestions prefill from this session, then from last time', () => {
   assert.equal(D.isPersonalBest(data, second, { exercise_id: ex.id, reps: 5, weight_kg: 90 }), false);
 });
 
+test('the first set of a new exercise is a baseline, not a best (E7-S2)', () => {
+  let data = fresh();
+  const ex = data.exercises[0];
+  const r = D.startWorkout(data, { date: '2026-11-04', sessionKey: 'upper', label: 'Upper' });
+  data = r.data;
+  const set = { exercise_id: ex.id, reps: 10, weight_kg: 40 };
+  assert.equal(D.setKind(data, r.workoutId, set), 'baseline');
+  assert.equal(D.isPersonalBest(data, r.workoutId, set), false);
+  data = D.addSet(data, r.workoutId, { exerciseId: ex.id, reps: 10, weightKg: 40 });
+  assert.equal(D.setKind(data, r.workoutId, { ...set, weight_kg: 45 }), null, 'one baseline per exercise');
+  assert.equal(D.setKind(data, r.workoutId, { ...set, weight_kg: 0 }), null);
+});
+
 test('meals, water and one weigh-in per day', () => {
   let d = D.setMeal(fresh(), '2026-11-04', 'breakfast', { completed: true, option_key: 'option_b' });
   d = D.setMeal(d, '2026-11-04', 'breakfast', { completed: false });

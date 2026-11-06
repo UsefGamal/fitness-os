@@ -48,3 +48,21 @@ test('longest streak and badges', () => {
   assert.equal(b.pct, 50);
   assert.equal(b.level, 4);
 });
+
+test('no day-1 awards: the every-day quests wait for the week to end (E7-S3)', () => {
+  let d = toggleDaily(base(), '2026-11-08', 'extra_walk', Q); // Sunday, day 1
+  const day1 = syncQuests(d, '2026-11-08', Q);
+  assert.ok(!doneKeys(day1, '2026-11-08', Q).has('no_missed_week'));
+  for (let i = 9; i <= 14; i += 1) d = toggleDaily(d, `2026-11-${String(i).padStart(2, '0')}`, 'extra_walk', Q);
+  assert.ok(!doneKeys(syncQuests(d, '2026-11-13', Q), '2026-11-13', Q).has('no_missed_week'), 'not on Friday');
+  assert.ok(doneKeys(syncQuests(d, '2026-11-14', Q), '2026-11-14', Q).has('no_missed_week'), 'yes on Saturday, all 7 days');
+});
+
+test('the 30-day streak quest is gone; old awards still count', () => {
+  assert.ok(!Q.bonus_tasks.some((t) => t.key === 'thirty_day_streak'));
+  const d = base();
+  d.workouts = Array.from({ length: 31 }, (_, i) => ({ id: i + 1, log_date: `2026-10-${String(i + 1).padStart(2, '0')}`, sets: [], is_deload: false }));
+  d.bonus_logs = [{ id: 1, log_date: '2026-10-30', task_key: 'thirty_day_streak', points: 75 }];
+  assert.equal(totalPoints(syncQuests(d, '2026-10-31', Q)) >= 75, true);
+  assert.ok(!syncQuests(d, '2026-10-31', Q).bonus_logs.some((b) => b.id !== 1 && b.task_key === 'thirty_day_streak'));
+});

@@ -261,12 +261,15 @@ export default function Workout() {
   const logSet = (w = weight, r = reps) => {
     if (!exRow || r < 1) return;
     const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
-    const pb = D.isPersonalBest(data, active.id, set);
+    const kind = D.setKind(data, active.id, set);
     update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w }));
     unlockAudio();
-    if (pb && w > 0) {
+    if (kind === 'best') {
       feedback('pr');
-      setToast(`New best on ${ex.name}: ${w} kg × ${r}`);
+      setToast(t('workout.best', { name: ex.name, kg: w, reps: r }));
+      setTimeout(() => setToast(''), 2500);
+    } else if (kind === 'baseline') {
+      setToast(t('workout.baseline', { name: ex.name, kg: w, reps: r }));
       setTimeout(() => setToast(''), 2500);
     }
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));

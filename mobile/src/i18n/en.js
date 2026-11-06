@@ -24,6 +24,8 @@ export default {
   'update.title': 'Update Fitness OS',
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
 
+  'workout.best': 'New best on {name}: {kg} kg × {reps}',
+  'workout.baseline': 'Baseline set for {name}: {kg} kg × {reps}. Beat it next time.',
   'recovery.chip': 'Recovery week',
   'recovery.on': 'Make this a recovery week',
   'recovery.off': 'Back to normal',
