@@ -2,15 +2,16 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { addDays, formatDate, todayISO, weekStart } from '../lib/dates.js';
+import { addDays, formatDate, weekStart } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { shoppingList } from '../lib/shopping.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 export default function Shopping() {
   const { data, update } = useData();
   const navigate = useNavigate();
-  const today = todayISO();
+  const today = useToday();
   const week = weekStart(today);
   const groups = useMemo(() => shoppingList(today, content.nutrition), [today]);
   const checked = D.shoppingChecked(data, week);

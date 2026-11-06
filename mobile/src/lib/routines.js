@@ -80,7 +80,9 @@ export function startRoutine(data, content, id, today) {
   };
   return withExercises({
     ...data,
-    session_moves: (data.session_moves || []).filter((m) => m.to < today),
+    // Past one-off changes stay as history, but only if the new plan has
+    // that session; the rest would point at a session that no longer exists.
+    session_moves: (data.session_moves || []).filter((m) => m.to < today && (m.key === 'rest' || routine.program.some((d) => d.key === m.key))),
     program: { ...(data.program || { schedule_mode: 'weekdays' }), active_block: block.id, blocks: [...kept, block] },
   }, routine);
 }

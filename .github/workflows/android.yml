@@ -68,6 +68,20 @@ jobs:
         if: env.IS_TAG != 'true'
         run: scripts/check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug
 
+      # P14-02: the friends APK is built and checked on every PR too, so a
+      # change that leaks Yusuf's plan into it fails here, not at release.
+      - name: Build friends debug APK
+        if: env.IS_TAG != 'true'
+        env:
+          FITNESS_OS_FLAVOR: friends
+          APK_VERSION_CODE: ${{ github.run_number }}
+          APK_VERSION_NAME: 0.4.${{ github.run_number }}
+        run: scripts/build-apk.sh debug
+
+      - name: Friends debug APK has no trace of Yusuf's plan
+        if: env.IS_TAG != 'true'
+        run: python scripts/check_friends_build.py --apk dist/fitness-os-debug-friends.apk
+
       # ── Release: tags only ────────────────────────────────────────────
       - name: Version from the tag
         if: env.IS_TAG == 'true'
@@ -86,7 +100,9 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
-          FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" scripts/build-apk.sh release
+          # P14-02: one tag, one key, two APKs: Yusuf's and the friends one.
+          FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" FITNESS_OS_FLAVOR=yusuf scripts/build-apk.sh release
+          FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" FITNESS_OS_FLAVOR=friends scripts/build-apk.sh release
           rm -f "$RUNNER_TEMP/release.jks"
 
       - name: Check release ID, version and signing key
@@ -99,14 +115,17 @@ jobs:
             exit 1
           fi
           scripts/check-apk.sh dist/fitness-os-release.apk com.usefgamal.fitnessos "$CERT_SHA256" "$APK_VERSION_CODE"
-          mv dist/fitness-os-release.apk "dist/fitness-os-${APK_VERSION_NAME}.apk"
+          scripts/check-apk.sh dist/fitness-os-release-friends.apk com.usefgamal.fitnessos "$CERT_SHA256" "$APK_VERSION_CODE"
+          python scripts/check_friends_build.py --apk dist/fitness-os-release-friends.apk
+          mv dist/fitness-os-release.apk "dist/fitness-os-${APK_VERSION_NAME}-yusuf.apk"
+          mv dist/fitness-os-release-friends.apk "dist/fitness-os-${APK_VERSION_NAME}-friends.apk"
 
       - name: Attach the APK to the GitHub release
         if: env.IS_TAG == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "Fitness OS $APK_VERSION_NAME"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "Fitness OS $APK_VERSION_NAME. Friends install fitness-os-${APK_VERSION_NAME}-friends.apk; Yusuf installs the -yusuf one."
           gh release upload "$GITHUB_REF_NAME" dist/*.apk --clobber
 
       - uses: actions/upload-artifact@v4

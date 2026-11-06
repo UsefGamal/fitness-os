@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { formatDate, todayISO } from '../lib/dates.js';
+import { formatDate } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { ACTIVITY, DIRECTIONS, GAIN_SURPLUS, PROTEIN_G_PER_KG, goalIssues, macroTargets, minGoalWeight, profileOf, safeGoalDate, saveProfile } from '../lib/macros.js';
 import { settleSetup } from '../lib/setup.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 const ACTIVITY_LABELS = {
   sedentary: 'Sedentary: little or no exercise',
@@ -21,7 +22,7 @@ const num = (v) => (v === '' || v == null ? null : Number(v));
 export default function Profile() {
   const { data, update } = useData();
   const navigate = useNavigate();
-  const today = todayISO();
+  const today = useToday();
   const [p, setP] = useState(() => ({ gender: '', activity_level: 'moderate', ...profileOf(data) }));
   const [saved, setSaved] = useState(false);
   const set = (k) => (e) => { setP({ ...p, [k]: e.target.value }); setSaved(false); };

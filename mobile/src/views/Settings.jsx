@@ -333,7 +333,7 @@ export default function Settings() {
       <div className="section-label">About</div>
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
-        <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t('about.data', { schema: data.schemaVersion })}</span></div>
+        <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</span></div>
         <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       </>) : null}

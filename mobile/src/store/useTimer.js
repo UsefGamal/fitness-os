@@ -84,7 +84,9 @@ export const useTimer = create((set, get) => ({
     try {
       const s = await RestTimer.state();
       if (get().pausedLeft != null) return; // paused here: the shade is empty on purpose
-      if (s.endsAt > Date.now()) set({ endsAt: s.endsAt, label: s.label || get().label });
+      // After a restart the app has no total, so the bar would sit empty
+      // (QA-15): count the time left as the whole rest.
+      if (s.endsAt > Date.now()) set({ endsAt: s.endsAt, label: s.label || get().label, ...(get().total ? {} : { total: Math.ceil((s.endsAt - Date.now()) / 1000) }) });
       else if (get().endsAt && get().endsAt > Date.now()) set({ endsAt: null });
     } catch {
       // Plugin missing in an old build: nothing to sync.

@@ -2,9 +2,12 @@
 <!-- Android 12+: what Android may copy to Google Drive (cloud-backup) or to
      a new phone (device-transfer). The data file may go, so a new phone can
      restore it; progress photos never leave this phone (E8-S1).
+     Cloud backup only runs when it is end-to-end encrypted with the phone's
+     screen lock (P14-09): the data holds health records, so a phone with no
+     lock gets no cloud copy at all, and the app's backup reminder says so.
      tests/test_mobile_app.py checks these rules. -->
 <data-extraction-rules>
-    <cloud-backup>
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
         <exclude domain="file" path="progress-photos/" />
     </cloud-backup>
     <device-transfer>

@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
@@ -26,8 +27,11 @@ import com.usefgamal.fitnessos.R;
  * with +15s and Skip buttons. When the time is up it posts a "Rest done"
  * notification that buzzes and plays the notification sound (or stays
  * silent when sounds are off in the app's settings), then stops. Running as a foreground service
- * keeps the process alive for the few minutes of a rest, so the alert fires
- * on time with the screen off.
+ * keeps the process alive for the few minutes of a rest, and a partial
+ * wakelock held for the length of the rest keeps the CPU awake, so the
+ * Handler's delayed "done" fires on time with the screen locked (TL-02:
+ * without it the countdown stops while the CPU sleeps and the buzz can come
+ * minutes late). The lock goes on Skip, Stop, at the end, or by its timeout.
  */
 public class RestTimerService extends Service {
     public static final String ACTION_START = "com.usefgamal.fitnessos.timer.START";
@@ -60,6 +64,9 @@ public class RestTimerService extends Service {
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable finish = this::finish;
+    private PowerManager.WakeLock wakeLock;
+    /** Slack on the wakelock's own timeout: it outlives the rest by a little, never by much. */
+    private static final long WAKE_SLACK_MS = 10_000L;
 
     public static void start(Context context, long endsAt, String label, boolean sound) {
         Intent i = new Intent(context, RestTimerService.class).setAction(ACTION_START)
@@ -130,8 +137,32 @@ public class RestTimerService extends Service {
         } else {
             nm().notify(ID_RUNNING, n);
         }
+        holdAwake(left + WAKE_SLACK_MS);
         handler.removeCallbacks(finish);
         handler.postDelayed(finish, left);
+    }
+
+    /** (Re)take the partial wakelock for `ms`. The timeout means it can never be left held. */
+    private void holdAwake(long ms) {
+        try {
+            if (wakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm == null) return;
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "fitnessos:rest");
+                wakeLock.setReferenceCounted(false);
+            }
+            wakeLock.acquire(ms);
+        } catch (RuntimeException ignored) {
+            // No lock: the timer still runs, the buzz may just come late.
+        }
+    }
+
+    private void releaseAwake() {
+        try {
+            if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        } catch (RuntimeException ignored) {
+            // Already released by its timeout.
+        }
     }
 
     private void finish() {
@@ -163,6 +194,7 @@ public class RestTimerService extends Service {
 
     private void end(boolean finished) {
         handler.removeCallbacks(finish);
+        releaseAwake();
         endsAt = 0;
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         nm().cancel(ID_RUNNING);
@@ -241,6 +273,7 @@ public class RestTimerService extends Service {
     @Override
     public void onDestroy() {
         handler.removeCallbacks(finish);
+        releaseAwake();
         super.onDestroy();
     }
 }

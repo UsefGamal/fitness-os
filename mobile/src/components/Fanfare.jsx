@@ -32,6 +32,14 @@ export default function Fanfare() {
     feedback('pr');
   }, [activeWorkoutId, queued]);
 
+  // A workout starting while a card shows: put the card away until the
+  // workout is over, so it never covers the first exercise (UX-04).
+  useEffect(() => {
+    if (!activeWorkoutId || !shown) return;
+    setQueued((q) => [...shown, ...q]);
+    setShown(null);
+  }, [activeWorkoutId, shown]);
+
   useEffect(() => {
     if (!shown) return undefined;
     const id = setTimeout(() => setShown(null), 5000);
