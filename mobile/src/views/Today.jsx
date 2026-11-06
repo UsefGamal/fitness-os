@@ -1,7 +1,9 @@
 import { Link, useNavigate } from 'react-router';
+import { useState } from 'react';
 
 import BodyMap from '../components/BodyMap.jsx';
 import GoalCard from '../components/GoalCard.jsx';
+import DayPicker from '../components/DayPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
@@ -13,10 +15,10 @@ import { eveningDone, eveningOn } from '../lib/evening.js';
 import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, totalPoints } from '../lib/quests.js';
-import { programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
+import { isChangedOn, programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
+import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { backupDue } from '../lib/durable.js';
-import { t } from '../lib/i18n.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { content, useData } from '../store/useData.js';
 import { SESSIONS } from './Session.jsx';
@@ -48,6 +50,8 @@ export default function Today() {
   const ready = healthOn ? readiness(data.health_daily, today) : null;
   const moved = healthOn ? data.health_daily?.[today] : null;
   const backup = backupDue(data);
+  const [picking, setPicking] = useState(false);
+  const changedToday = isChangedOn(today, moves);
 
   return (
     <div className="page">
@@ -65,12 +69,17 @@ export default function Today() {
             <span className="chip">Rest day</span>
             <h2 style={{ marginTop: 10 }}>Next: {next.label}</h2>
             <p className="muted" style={{ margin: 0 }}>{longWeekday(next.onDate)} at {times.session_time} · {next.focus}</p>
+            <button type="button" className="btn secondary small" style={{ marginTop: 12 }} onClick={() => setPicking(true)}>{t('week.trainToday')}</button>
           </>
         ) : (
           <>
             <div className="row" style={{ alignItems: 'flex-start', gap: 10 }}>
               <div className="grow">
-                <span className="chip accent">Today at {times.session_time}</span>
+                <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="chip accent">Today at {times.session_time}</span>
+                  {changedToday ? <span className="chip">{t('week.changed')}</span> : null}
+                  {!todays ? <button type="button" className="btn ghost small" style={{ width: 'auto', minHeight: 44 }} onClick={() => setPicking(true)}>{t('week.change')}</button> : null}
+                </div>
                 <h2 style={{ marginTop: 10 }}>{next.label}</h2>
                 <p className="muted" style={{ margin: '0 0 14px' }}>
                   {next.focus}{next.cardio_after ? `, then ${next.cardio_after.minutes} min cycling` : ''}
@@ -88,6 +97,7 @@ export default function Today() {
           </>
         )}
       </section>
+      {picking ? <DayPicker date={today} dayName={longWeekday(today)} training={T} data={data} update={update} onClose={() => setPicking(false)} /> : null}
 
       {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <GoalCard data={data} today={today} /> : null}
 
