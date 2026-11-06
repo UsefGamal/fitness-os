@@ -78,7 +78,7 @@ export function blockFromContent(content, { id = 'b1', startedOn, overrides = {}
   const T = content.training;
   return {
     id,
-    template_id: 'ul-ppl',
+    template_id: T.trainer_plan.id ?? 'ul-ppl',
     template_version: content.version ?? 1,
     started_on: startedOn,
     ended_on: null,

@@ -8,3 +8,4 @@ venv/
 *.keystore
 *.jks
 dist/
+mobile/src/content.friends.json
