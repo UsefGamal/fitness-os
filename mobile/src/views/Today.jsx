@@ -36,7 +36,7 @@ export default function Today() {
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
   const tonight = eveningOn(data, today);
-  const nextHits = dayMuscles(P.effectiveDay(next.key, T, data)?.exercises, T);
+  const nextHits = dayMuscles(next ? P.effectiveDay(next.key, T, data)?.exercises : [], T);
   const nextGroups = dayGroups(data, nextHits.unknown);
   const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
@@ -66,7 +66,17 @@ export default function Today() {
       </div>
 
       <section className="card">
-        {next.isRestToday ? (
+        {!next ? (
+          <>
+            <span className="chip">{t('week.rest')}</span>
+            <h2 style={{ marginTop: 10 }}>{t('week.noSession')}</h2>
+            <p className="muted" style={{ margin: 0 }}>{t('week.noSessionNote')}</p>
+            <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button type="button" className="btn secondary small" style={{ width: 'auto' }} onClick={() => setPicking(true)}>{t('week.trainToday')}</button>
+              <Link className="btn ghost small" style={{ width: 'auto' }} to="/plan">{t('week.openPlan')}</Link>
+            </div>
+          </>
+        ) : next.isRestToday ? (
           <>
             <span className="chip">Rest day</span>
             <h2 style={{ marginTop: 10 }}>Next: {next.label}</h2>

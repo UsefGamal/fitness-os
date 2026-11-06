@@ -82,7 +82,9 @@ export function widgetDays(data, content, today) {
       week,
     };
     out.push(
-      next.isRestToday
+      !next
+        ? { ...base, kicker: 'Rest day', title: 'No session this week', subtitle: 'Rest and recover', route: 'plan' }
+        : next.isRestToday
         ? { ...base, kicker: 'Rest day', title: `Next: ${next.label}`, subtitle: `${longWeekday(next.onDate)} at ${times.session_time}`, route: 'plan' }
         : {
             ...base,

@@ -122,7 +122,7 @@ export default function Plan() {
   const T = activePlan(data, content);
   const times = timesOf(data, content);
   const week = weekView(today, T, data.session_moves || []);
-  const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest');
+  const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest') || week.find((d) => d.isToday);
   const [pickedRaw, setPicked] = useState(firstTraining);
   const picked = week.find((d) => d.date === pickedRaw.date) || pickedRaw;
   const [choosing, setChoosing] = useState(false);
