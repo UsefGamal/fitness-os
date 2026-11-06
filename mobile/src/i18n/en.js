@@ -14,6 +14,7 @@ export default {
   'crash.title': 'Something went wrong',
   'crash.body': 'Your data is safe on this phone. Save a backup first, then send the bug report so it can be fixed.',
   'crash.backup': 'Save a backup',
+  'backup.noLock': "This phone has no screen lock, so Android doesn't back up Fitness OS to your Google account.",
   'crash.backupSaved': 'Backup saved to Documents.',
   'crash.backupDownloaded': 'Backup downloaded.',
   'crash.backupFailed': 'Could not save the backup.',

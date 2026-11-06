@@ -6,7 +6,7 @@ import test from 'node:test';
 
 import { emptyData } from './data.js';
 import {
-  atomicWrite, BACKUP_EVERY_DAYS, backupDue, loadNewest, parseCopy, parseSnapshotName, pickNewest,
+  atomicWrite, BACKUP_EVERY_DAYS, BACKUP_EVERY_DAYS_NO_LOCK, backupDue, loadNewest, parseCopy, parseSnapshotName, pickNewest,
   SNAPSHOT_KEEP, snapshotName, snapshotsToPrune, sortSnapshots, stamp, takeSnapshot,
 } from './durable.js';
 import { migrate, NewerSchemaError } from './migrate.js';
@@ -129,14 +129,19 @@ test('a backup reminder after 14 days, not before, and not on an empty phone', (
   const started = { ...empty, body_logs: [{ id: 1, log_date: '2026-11-10', weight_kg: 80 }] };
   assert.equal(backupDue(started, now), null, '10 days in, never backed up: not yet');
   const longer = { ...empty, workouts: [{ id: 1, log_date: '2026-09-01', sets: [] }] };
-  assert.deepEqual(backupDue(longer, now), { days: null });
+  assert.deepEqual(backupDue(longer, now), { days: null, noLock: false });
 
   const backedUp = (daysAgo) => ({ ...longer, settings: { ...longer.settings, last_backup_at: now - daysAgo * DAY } });
   assert.equal(backupDue(backedUp(BACKUP_EVERY_DAYS - 1), now), null);
-  assert.deepEqual(backupDue(backedUp(BACKUP_EVERY_DAYS), now), { days: BACKUP_EVERY_DAYS });
+  assert.deepEqual(backupDue(backedUp(BACKUP_EVERY_DAYS), now), { days: BACKUP_EVERY_DAYS, noLock: false });
 
   // "Later" hides it for three days.
   const snoozed = { ...backedUp(20), settings: { ...backedUp(20).settings, backup_snoozed_at: now - DAY } };
   assert.equal(backupDue(snoozed, now), null);
-  assert.deepEqual(backupDue({ ...snoozed, settings: { ...snoozed.settings, backup_snoozed_at: now - 4 * DAY } }, now), { days: 20 });
+  assert.deepEqual(backupDue({ ...snoozed, settings: { ...snoozed.settings, backup_snoozed_at: now - 4 * DAY } }, now), { days: 20, noLock: false });
+
+  // P14-09: no screen lock means no cloud copy, so a week is enough to remind.
+  assert.equal(backupDue(backedUp(BACKUP_EVERY_DAYS_NO_LOCK), now, { screenLock: true }), null);
+  assert.deepEqual(backupDue(backedUp(BACKUP_EVERY_DAYS_NO_LOCK), now, { screenLock: false }), { days: 7, noLock: true });
+  assert.equal(backupDue(backedUp(BACKUP_EVERY_DAYS_NO_LOCK - 1), now, { screenLock: false }), null);
 });

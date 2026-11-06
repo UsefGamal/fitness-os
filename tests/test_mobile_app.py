@@ -98,6 +98,36 @@ def test_progress_photos_never_go_to_android_backup():
     assert ("file", "progress-photos/") in [(e.get("domain"), e.get("path")) for e in legacy.findall("exclude")]
 
 
+def test_health_data_never_goes_to_an_unencrypted_cloud_backup():
+    """P14-09 (SEC-01): the data file holds health records, so Android's
+    cloud backup runs only when it is encrypted with the screen lock."""
+    rules = ET.parse(RES_XML / "data_extraction_rules.xml").getroot()
+    assert rules.find("cloud-backup").get("disableIfNoEncryptionCapabilities") == "true"
+    # Android 9-11: every include needs encryption or a phone-to-phone move.
+    legacy = ET.parse(RES_XML / "backup_rules.xml").getroot()
+    includes = legacy.findall("include")
+    assert includes, "with no include, Android 11- would back up everything with no flag"
+    paths = {(e.get("domain"), e.get("path")) for e in includes}
+    assert ("root", "app_webview/") in paths  # where the WebView keeps localStorage
+    assert ("file", ".") in paths  # the file mirror and snapshots
+    for e in includes:
+        assert e.get("requireFlags") in ("clientSideEncryption", "deviceToDeviceTransfer"), e.attrib
+    for path in paths:
+        flags = {e.get("requireFlags") for e in includes if (e.get("domain"), e.get("path")) == path}
+        assert flags == {"clientSideEncryption", "deviceToDeviceTransfer"}, path
+
+
+def test_the_health_privacy_text_mentions_android_backup():
+    text = (ANDROID / "java" / "com" / "usefgamal" / "fitnessos" / "health" / "HealthPrivacyActivity.java").read_text(encoding="utf-8")
+    assert "never sends your health data anywhere.\\n" not in text
+    assert "screen lock" in text
+
+
+def test_the_device_plugin_is_registered():
+    main = (ANDROID / "java" / "com" / "usefgamal" / "fitnessos" / "MainActivity.java").read_text(encoding="utf-8")
+    assert "registerPlugin(DevicePlugin.class);" in main
+
+
 def test_the_photo_folder_in_the_rules_is_the_one_the_app_uses():
     photos = (ROOT / "mobile" / "src" / "store" / "photos.js").read_text(encoding="utf-8")
     assert "const DIR = 'progress-photos';" in photos

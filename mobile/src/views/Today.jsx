@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import BodyMap from '../components/BodyMap.jsx';
 import GoalCard from '../components/GoalCard.jsx';
@@ -22,6 +22,7 @@ import { MUSCLE, dayMuscles } from '../lib/muscles.js';
 import { backupDue } from '../lib/durable.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { content, useData } from '../store/useData.js';
+import { hasScreenLock } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
 
 const WATER_GOAL = 3000;
@@ -51,7 +52,11 @@ export default function Today() {
   const healthOn = data.settings?.health?.enabled;
   const ready = healthOn ? readiness(data.health_daily, today) : null;
   const moved = healthOn ? data.health_daily?.[today] : null;
-  const backup = backupDue(data);
+  // P14-09: with no screen lock Android makes no cloud copy, so the
+  // reminder comes sooner and says why.
+  const [screenLock, setScreenLock] = useState(null);
+  useEffect(() => { hasScreenLock().then(setScreenLock); }, []);
+  const backup = backupDue(data, Date.now(), { screenLock });
   const [picking, setPicking] = useState(false);
   const changedToday = isChangedOn(today, moves);
 
@@ -115,7 +120,7 @@ export default function Today() {
           <Icon name="download" />
           <div className="grow small">
             <strong>Back up your data</strong>
-            <div className="muted">{backup.days == null ? "You haven't saved a backup yet." : `Last backup ${backup.days} days ago.`} It's the only copy, so keep one somewhere safe.</div>
+            <div className="muted">{backup.days == null ? "You haven't saved a backup yet." : `Last backup ${backup.days} days ago.`} It's the only copy, so keep one somewhere safe.{backup.noLock ? ` ${t('backup.noLock')}` : ''}</div>
           </div>
           <div className="stack" style={{ gap: 4 }}>
             <Link className="btn small" to="/settings/data">Back up</Link>

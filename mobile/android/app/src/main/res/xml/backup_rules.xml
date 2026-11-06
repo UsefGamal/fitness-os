@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 11 and older: the same rule as data_extraction_rules.xml.
-     Progress photos are never part of Android's backup (E8-S1). -->
+     Progress photos are never part of Android's backup (E8-S1). From
+     Android 9, each include needs either client-side encryption (a screen
+     lock) or a phone-to-phone transfer (P14-09), so health data never goes
+     to the cloud unencrypted. Android 8 ignores requireFlags. -->
 <full-backup-content>
+    <include domain="root" path="app_webview/" requireFlags="clientSideEncryption" />
+    <include domain="root" path="app_webview/" requireFlags="deviceToDeviceTransfer" />
+    <include domain="file" path="." requireFlags="clientSideEncryption" />
+    <include domain="file" path="." requireFlags="deviceToDeviceTransfer" />
+    <include domain="sharedpref" path="." requireFlags="clientSideEncryption" />
+    <include domain="sharedpref" path="." requireFlags="deviceToDeviceTransfer" />
     <exclude domain="file" path="progress-photos/" />
 </full-backup-content>
