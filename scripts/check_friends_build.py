@@ -76,6 +76,10 @@ def problems(content: dict) -> list[str]:
 
 
 TEXT_SUFFIXES = (".js", ".json", ".html", ".css", ".txt")
+# The public-domain photo dataset (scripts/fetch_exercise_photos.py) is the
+# same in both builds and has nothing from Yusuf's plan, but it shares some
+# common exercise names with it (e.g. "World's Greatest Stretch").
+PUBLIC_DATASET = "assets/public/exercise-db/"
 
 
 def apk_problems(files: dict[str, str]) -> list[str]:
@@ -96,7 +100,7 @@ def apk_texts(apk: Path) -> dict[str, str]:
         return {
             n: z.read(n).decode("utf-8", "replace")
             for n in z.namelist()
-            if n.startswith("assets/public/") and n.endswith(TEXT_SUFFIXES)
+            if n.startswith("assets/public/") and not n.startswith(PUBLIC_DATASET) and n.endswith(TEXT_SUFFIXES)
         }
 
 

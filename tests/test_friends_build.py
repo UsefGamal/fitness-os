@@ -61,6 +61,8 @@ def _apk(tmp_path, flavor):
     with zipfile.ZipFile(apk, "w") as z:
         z.writestr("assets/public/assets/index-abc.js", "export default " + out.read_text(encoding="utf-8"))
         z.writestr("classes.dex", b"\x00binary")
+        # The public photo dataset shares a few common names; it is skipped.
+        z.writestr("assets/public/exercise-db/index.json", '{"exercises":[{"name":"World\'s Greatest Stretch"}]}')
     return apk
 
 
