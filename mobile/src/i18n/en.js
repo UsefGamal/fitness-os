@@ -141,6 +141,13 @@ export default {
   'muscles.also': 'Also:',
   'muscles.mapLabel': 'Works {muscles}',
 
+  'wsets.title': 'Sets per muscle this week',
+  'wsets.note': 'Aim for {low}-{high} hard sets a week for each muscle. A helper muscle counts half a set.',
+  'wsets.rowLabel': '{muscle}: {done} done, {planned} planned',
+  'wsets.count': '{done} / {planned}',
+  'wsets.legend': 'Green: done since Sunday. Outline: what your plan has this week. Shaded: the guide.',
+  'wsets.lowPlan': 'Your plan gives under {low} sets a week to: {list}. Add a set or an exercise for them in Plan, or ignore it if that is on purpose.',
+  'wsets.unknown': '{n} sets were for exercises without muscle tags, so they are not counted here.',
   'my.open': 'Make your own workout',
   'my.openNote': 'Pick the exercises, sets, reps and rest; put it on any day',
   'my.title': 'Your own workouts',

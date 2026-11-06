@@ -327,3 +327,13 @@ details.more > summary::-webkit-details-marker { display: none; }
 .chip-btn:active { transform: scale(0.97); }
 /* The muscle or angle an exercise works, on Plan's exercise cards. */
 .ex-target { color: var(--accent); font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+/* Weekly sets per muscle (Stats). The faint band is the 10-20 guide, the
+   outline is the plan's sets for the week, the fill is what's done. */
+.wsets { display: grid; gap: 6px; }
+.wset-row { display: grid; grid-template-columns: 96px 1fr 64px; align-items: center; gap: 10px; min-height: 28px; font-size: 15px; }
+.wset-bar { position: relative; height: 12px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+.wset-bar > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 6px; }
+.wset-bar > .wset-guide { background: rgba(48, 209, 88, 0.14); border-radius: 0; }
+.wset-bar > .wset-plan { border: 1.5px solid var(--faint); background: none; }
+.wset-bar > .wset-done { background: var(--accent); }
