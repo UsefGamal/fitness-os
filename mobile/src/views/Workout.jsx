@@ -201,7 +201,7 @@ export default function Workout() {
     return (
       <div className="page">
         <h1 className="page-title">Start</h1>
-        <p className="page-sub">Rest day. Next up: {programDayFor(today, T, data.session_moves || []).label}. Training anyway? Pick a session.</p>
+        <p className="page-sub">Rest day. {programDayFor(today, T, data.session_moves || []) ? `Next up: ${programDayFor(today, T, data.session_moves || []).label}. ` : ''}Training anyway? Pick a session.</p>
         <Picker onPick={(k) => setParams({ session: k })} />
       </div>
     );
