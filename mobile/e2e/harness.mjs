@@ -24,7 +24,7 @@ const FIXTURE = JSON.parse(readFileSync(new URL('../src/lib/fixtures/v1-yusuf-li
 const KEY = 'fitness-os-data-v1';
 const PORT = 4179;
 
-export const ROUTES = ['/', '/plan', '/plan/routines', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
+export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
 export const WIDTHS = [360, 390, 412];
 export const DIRS = ['ltr', 'rtl'];
 export const MIN_TAP = 44;

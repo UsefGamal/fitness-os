@@ -17,6 +17,12 @@
   "overflow": 0,
   "errors": 0
  },
+ "/plan/mine 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/workout 360 ltr": {
   "axe": 0,
   "taps": 1,
@@ -114,6 +120,12 @@
   "errors": 0
  },
  "/plan/routines 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan/mine 390 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -221,6 +233,12 @@
   "overflow": 0,
   "errors": 0
  },
+ "/plan/mine 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/workout 412 ltr": {
   "axe": 0,
   "taps": 1,
@@ -318,6 +336,12 @@
   "errors": 0
  },
  "/plan/routines 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan/mine 360 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -425,6 +449,12 @@
   "overflow": 0,
   "errors": 0
  },
+ "/plan/mine 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/workout 390 rtl": {
   "axe": 0,
   "taps": 1,
@@ -522,6 +552,12 @@
   "errors": 0
  },
  "/plan/routines 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/plan/mine 412 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
