@@ -6,7 +6,7 @@ import GoalCard from '../components/GoalCard.jsx';
 import DayPicker from '../components/DayPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
-import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
+import { formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups } from '../lib/insights.js';
 import { timesOf } from '../lib/times.js';
@@ -23,13 +23,14 @@ import { backupDue } from '../lib/durable.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { content, useData } from '../store/useData.js';
 import { SESSIONS } from './Session.jsx';
+import { useToday } from '../store/today.js';
 
 const WATER_GOAL = 3000;
 
 export default function Today() {
   const { data, update } = useData();
   const navigate = useNavigate();
-  const today = todayISO();
+  const today = useToday();
   const T = activePlan(data, content);
   const times = timesOf(data, content);
   const moves = data.session_moves || [];

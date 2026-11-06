@@ -18,6 +18,14 @@ export function todayISO(now = new Date()) {
   return toISO(now);
 }
 
+/** Milliseconds from `now` until just after the next local midnight (1 s
+ * past, so todayISO() has surely moved on). DST-safe: built from the local
+ * calendar date, not by adding 24 h. */
+export function msUntilMidnight(now = new Date()) {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+  return Math.max(1000, next - now);
+}
+
 export function addDays(iso, n) {
   const d = fromISO(iso);
   d.setDate(d.getDate() + n);

@@ -8,7 +8,6 @@ import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
-import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js';
@@ -28,6 +27,7 @@ import { useCatalogue } from '../store/catalogue.js';
 import { useTimer } from '../store/useTimer.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
+import { useToday } from '../store/today.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
 const UNDO_MS = 7000;
@@ -101,7 +101,7 @@ export default function Workout() {
   const { catalogue } = useCatalogue();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const today = todayISO();
+  const today = useToday();
   const T = activePlan(data, content);
 
   const active = data.workouts.find((w) => w.id === activeWorkoutId && !w.finished_at) || null;
@@ -114,7 +114,9 @@ export default function Workout() {
   // Today's changes (extra sets, skips, swaps) live on the workout, not the plan.
   const day = planDay && active ? applyTweaks(planDay, active.tweaks) : planDay;
 
-  const [current, setCurrent] = useState(0);
+  // Coming back to a workout (tab change, app killed and reopened) opens the
+  // first exercise that isn't finished, not exercise 1 (QA-04).
+  const [current, setCurrent] = useState(() => (active && day ? nextIndex(day, active, data, 0) : 0));
   const [weight, setWeight] = useState(0);
   const [reps, setReps] = useState(10);
   const [toast, setToast] = useState('');
