@@ -17,7 +17,8 @@ test('a day more than 10% off on calories or protein is flagged', () => {
   const target = { kcal: 2000, protein: 180 };
   assert.deepEqual(dayDrift({ kcal: 2100, protein: 175 }, target), []);
   const d = dayDrift({ kcal: 1700, protein: 210 }, target);
-  assert.deepEqual(d.map((r) => [r.key, r.over]), [['kcal', false], ['protein', true]]);
+  assert.deepEqual(d.map((r) => [r.key, r.over]), [['kcal', false]], 'protein over is fine');
+  assert.deepEqual(dayDrift({ kcal: 2000, protein: 150 }, target).map((r) => [r.key, r.over]), [['protein', false]]);
 });
 
 test('the bundled meal plan is checked without errors', () => {
