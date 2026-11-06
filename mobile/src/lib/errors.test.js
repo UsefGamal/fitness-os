@@ -24,6 +24,9 @@ test('a bug report has no health or personal data', () => {
   const report = bugReport({ app: { version: '0.4.1', build: '42' }, data: yusuf, errors, device: { platform: 'android', model: 'Redmi Note 12', osVersion: '14', screen: '393x873 @2.75x' }, now: new Date(Date.UTC(2026, 10, 5, 8)) });
   assert.match(report, /App: 0\.4\.1 \(42\), data schema 2/);
   assert.match(report, /Redmi Note 12, Android 14/);
+  // P14-02: the report names which APK it came from.
+  const friends = bugReport({ app: { version: '0.6.0', build: '60', flavor: 'friends' }, data: yusuf, errors: [] });
+  assert.match(friends, /App: 0\.6\.0 \(60\) friends build, data schema/);
   assert.match(report, /workouts: 5/);
   assert.match(report, /Boom/);
   // Nothing from the person's records: weights, notes, health, profile, photos.
@@ -51,4 +54,5 @@ test('phone model and Android version come from the user agent', () => {
   assert.deepEqual(deviceFromUA('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36'), { osVersion: '10', model: null });
   assert.deepEqual(deviceFromUA('Mozilla/5.0 (X11; Linux x86_64)'), {});
   assert.deepEqual(deviceFromUA(), {});
+  assert.deepEqual(deviceFromUA('Mozilla/5.0 (Linux; Android 13; RMX3511 Build/TP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36'), { osVersion: '13', model: 'RMX3511', webview: '131' });
 });

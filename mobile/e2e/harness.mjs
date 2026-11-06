@@ -19,7 +19,10 @@ import { chromium } from 'playwright';
 const require = createRequire(import.meta.url);
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const HERE = new URL('.', import.meta.url);
-const BASELINE = new URL('./baseline.json', HERE);
+// P14-02: each APK has its own counts. FITNESS_OS_FLAVOR=friends checks the
+// build the friends install, against e2e/baseline-friends.json.
+const FLAVOR = process.env.FITNESS_OS_FLAVOR === 'friends' ? 'friends' : 'yusuf';
+const BASELINE = new URL(FLAVOR === 'friends' ? './baseline-friends.json' : './baseline.json', HERE);
 const FIXTURE = JSON.parse(readFileSync(new URL('../src/lib/fixtures/v1-yusuf-like.json', HERE), 'utf8'));
 const KEY = 'fitness-os-data-v1';
 const PORT = 4179;
@@ -102,7 +105,7 @@ export async function run({ shots = false } = {}) {
           };
           if (shots) {
             mkdirSync(new URL('./out/', HERE), { recursive: true });
-            await page.screenshot({ path: new URL(`./out/${route.replace(/\W+/g, '_') || 'home'}-${width}-${dir}.png`, HERE).pathname, fullPage: true });
+            await page.screenshot({ path: new URL(`./out/${FLAVOR}-${route.replace(/\W+/g, '_') || 'home'}-${width}-${dir}.png`, HERE).pathname, fullPage: true });
           }
         }
         await ctx.close();

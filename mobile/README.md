@@ -53,6 +53,11 @@ There are two kinds of build, and they are separate apps on the phone.
   called **Fitness OS debug**, uses its own app ID
   (`com.usefgamal.fitnessos.debug`) and its own empty data, and installs
   *beside* the real app. It can never replace or break it.
+- **Two APKs per tag (P14-02).** Each tag builds `fitness-os-<version>-yusuf.apk`
+  (Yusuf's own plan) and `fitness-os-<version>-friends.apk` (the starter plan),
+  signed with the same key. Send friends only the `-friends` file. CI fails if
+  the friends APK carries any exercise or link from Yusuf's plan, and About and
+  the bug report say which build is installed.
 
 ### Releases: one-time setup
 

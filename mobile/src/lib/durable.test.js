@@ -5,10 +5,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import {
-  atomicWrite, BACKUP_EVERY_DAYS, BACKUP_EVERY_DAYS_NO_LOCK, backupDue, loadNewest, parseCopy, parseSnapshotName, pickNewest,
-  SNAPSHOT_KEEP, snapshotName, snapshotsToPrune, sortSnapshots, stamp, takeSnapshot,
-} from './durable.js';
+import { BACKUP_EVERY_DAYS, BACKUP_EVERY_DAYS_NO_LOCK, SNAPSHOT_KEEP, atomicWrite, backupDue, loadNewest, parseCopy, parseSnapshotName, pickNewest, snapshotName, snapshotsToPrune, sortSnapshots, stamp, takeSnapshot, unreadable } from './durable.js';
 import { migrate, NewerSchemaError } from './migrate.js';
 import { content } from './testContent.js';
 
@@ -144,4 +141,11 @@ test('a backup reminder after 14 days, not before, and not on an empty phone', (
   assert.equal(backupDue(backedUp(BACKUP_EVERY_DAYS_NO_LOCK), now, { screenLock: true }), null);
   assert.deepEqual(backupDue(backedUp(BACKUP_EVERY_DAYS_NO_LOCK), now, { screenLock: false }), { days: 7, noLock: true });
   assert.equal(backupDue(backedUp(BACKUP_EVERY_DAYS_NO_LOCK - 1), now, { screenLock: false }), null);
+});
+
+test('saved data that cannot be read is told apart from a new phone (QA-08)', () => {
+  assert.equal(unreadable({ localText: null, fileText: null }), false, 'a new phone');
+  assert.equal(unreadable({ localText: '', fileText: '  ' }), false);
+  assert.equal(unreadable({ localText: '{"version":1,"work', fileText: null }), true, 'truncated');
+  assert.equal(unreadable({ localText: '{"version":1,"work', fileText: 'garbage' }), true);
 });

@@ -48,7 +48,7 @@ export async function atomicWrite(fs, path, text) {
 
 // ── Snapshots ─────────────────────────────────────────────────────────
 
-const REASONS = { migrate: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand' };
+const REASONS = { migrate: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand', unreadable: 'Data that could not be read' };
 
 export function snapshotName(reason, now = Date.now()) {
   return `${SNAPSHOT_DIR}/${now}-${reason}.json`;
@@ -117,6 +117,13 @@ export function backupDue(data, now = Date.now(), { screenLock = null } = {}) {
  * copy to keep before upgrading it (null when no upgrade is needed), or
  * null when neither store holds readable data. Throws NewerSchemaError
  * for data from a newer app version. */
+/** True when a saved copy exists but none can be read: the person has
+ * data, so this must never look like a new phone (QA-08). */
+export function unreadable({ localText, fileText }) {
+  const present = [localText, fileText].filter((t) => typeof t === 'string' && t.trim() !== '');
+  return present.length > 0 && present.every((t) => !parseCopy(t));
+}
+
 export function loadNewest({ localText, fileText }, content) {
   const newest = pickNewest(parseCopy(localText), parseCopy(fileText));
   if (!newest) return null;

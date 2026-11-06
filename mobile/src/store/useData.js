@@ -11,9 +11,10 @@ import { create } from 'zustand';
 
 import content from '../content.json';
 import * as D from '../lib/data.js';
-import { loadNewest, parseCopy, stamp } from '../lib/durable.js';
+import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
-import { readMirror, writeMirror } from './mirror.js';
+import { hasMirror, onMirrorResult, readMirror, writeMirror } from './mirror.js';
+import { SAVE_OK, recordSave } from '../lib/saveHealth.js';
 import { snapshot } from './snapshots.js';
 
 const KEY = 'fitness-os-data-v1'; // the key name predates schema versions; it stays
@@ -23,16 +24,26 @@ let pending = null; // data waiting to be written
 let timer = null;
 let blocked = false; // data from a newer app version: never overwrite it
 
-/** Write anything waiting now (also called when the app is hidden). */
-export function flushSave() {
+/** Write anything waiting now. `hidden`: the app is going to the
+ * background, so the file is written at once too, not 300 ms later. */
+export function flushSave(hidden = false) {
   if (timer) clearTimeout(timer);
   timer = null;
   if (!pending || blocked) return;
   const data = stamp(pending);
   pending = null;
-  saveLocal(data);
-  writeMirror(data);
+  report('local', saveLocal(data));
+  writeMirror(data, hidden);
 }
+
+// Whether the last writes landed (lib/saveHealth.js); the store's
+// saveFailing drives the "Couldn't save" bar.
+let health = SAVE_OK;
+function report(channel, ok) {
+  health = recordSave(health, channel, ok, { hasFile: hasMirror });
+  if (useData.getState().saveFailing !== health.failing) useData.setState({ saveFailing: health.failing });
+}
+onMirrorResult((ok) => report('file', ok));
 
 function scheduleSave(data) {
   if (blocked) return;
@@ -41,8 +52,8 @@ function scheduleSave(data) {
 }
 
 if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
-  window.addEventListener('pagehide', flushSave);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(true); });
+  window.addEventListener('pagehide', () => flushSave(true));
 }
 
 function readLocalText() {
@@ -56,9 +67,11 @@ function readLocalText() {
 function saveLocal(data) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
+    return true;
   } catch {
     // Storage full or blocked: the file mirror still has it, and its newer
-    // saved_at makes it win on the next start.
+    // saved_at makes it win on the next start. If that fails too, the bar shows.
+    return false;
   }
 }
 
@@ -80,12 +93,52 @@ export const useData = create((set, get) => ({
   activeWorkoutId: null,
   /** Set when the saved data is from a newer app version (see App.jsx). */
   loadError: null,
+  /** Set when start-up couldn't load the data: 'unreadable' (a copy exists
+   * but none parses) or 'failed' (anything else). App.jsx then shows the
+   * recovery screen, never Setup or a black screen (TL-03, QA-08). Nothing
+   * is written while it is set. */
+  startError: null,
+  /** The raw saved texts, for "Save a copy of my data" on that screen. */
+  rawCopies: [],
+
+  /** Use a snapshot's data after a failed start (recovery screen). */
+  async recoverFrom(text) {
+    const data = migrate(parseCopy(text), content);
+    // Keep what couldn't be read, so this restore can be undone too.
+    const raw = get().rawCopies.reduce((a, b) => (b.length > a.length ? b : a), '');
+    if (raw) await snapshot(raw, 'unreadable');
+    blocked = false;
+    set({ data, startError: null });
+    pending = data;
+    flushSave();
+  },
+
+  /** True while no copy could be written (storage full): the data is only in memory. */
+  saveFailing: false,
+
+  /** Try the write again (the bar's button). */
+  retrySave() {
+    pending = get().data;
+    flushSave(true);
+  },
 
   /** Run once at start: pick the newest copy, upgrade it if needed. */
   async hydrate() {
-    const file = await readMirror();
+    let file = null;
+    const localText = readLocalText();
     try {
-      const start = loadNewest({ localText: readLocalText(), fileText: file?.text ?? null }, content);
+      file = await readMirror();
+    } catch {
+      file = null;
+    }
+    const rawCopies = [localText, file?.text].filter((t) => typeof t === 'string' && t.trim() !== '');
+    if (unreadable({ localText, fileText: file?.text ?? null })) {
+      blocked = true;
+      set({ startError: 'unreadable', rawCopies, ready: true });
+      return;
+    }
+    try {
+      const start = loadNewest({ localText, fileText: file?.text ?? null }, content);
       if (start) {
         if (start.snapshotText) await snapshot(start.snapshotText, 'migrate');
         set({ data: start.data });
@@ -95,9 +148,9 @@ export const useData = create((set, get) => ({
         flushSave();
       }
     } catch (err) {
-      if (!(err instanceof NewerSchemaError)) throw err;
       blocked = true;
-      set({ loadError: err.message, ready: true });
+      if (err instanceof NewerSchemaError) set({ loadError: err.message, ready: true });
+      else set({ startError: 'failed', rawCopies, ready: true });
       return;
     }
     const data = get().data;
