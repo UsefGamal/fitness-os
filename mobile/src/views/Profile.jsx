@@ -50,7 +50,7 @@ export default function Profile() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Profile</h1>
       <p className="page-sub">Your stats set the daily calorie and macro targets.</p>
 

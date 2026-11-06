@@ -52,7 +52,7 @@ export default function Snapshots() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> {t('nav.back')}</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> {t('nav.back')}</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>{t('snap.title')}</h1>
       <p className="page-sub">{t('snap.intro')}</p>
       {msg ? <div className="card small" role="status">{msg}</div> : null}

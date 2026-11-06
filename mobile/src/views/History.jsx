@@ -50,7 +50,7 @@ export default function History() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>{w.notes || w.workout_type}</h1>
       {editDate ? (
         <div className="row" style={{ margin: '-8px 0 16px' }}>
@@ -77,7 +77,7 @@ export default function History() {
             ) : (
               <div key={s.id} className="set-row">
                 <span className="set-n done">{s.set_number}</span>
-                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'left', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`Edit set ${s.set_number}`}>
+                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`Edit set ${s.set_number}`}>
                   {s.weight_kg} kg × {s.reps}{s.rpe ? <span className="muted"> · RPE {s.rpe}</span> : null}
                 </button>
                 <span />

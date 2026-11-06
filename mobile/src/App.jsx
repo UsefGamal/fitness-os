@@ -87,6 +87,7 @@ const router = createHashRouter([
       { path: '/library/:id', element: <ExerciseDetail /> },
       { path: '/catalogue/:id', element: <CatalogueDetail /> },
       { path: '/settings', element: <Settings /> },
+      { path: '/settings/:section', element: <Settings /> },
       { path: '/shopping', element: <Shopping /> },
       { path: '/session/:type', element: <Session /> },
       { path: '/quests', element: <Quests /> },
