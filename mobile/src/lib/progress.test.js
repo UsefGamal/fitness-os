@@ -78,3 +78,14 @@ test('reached, gain and maintain goals', () => {
   assert.equal(keep.status, 'steady');
   assert.equal(keep.range, null);
 });
+
+test('recomp: a slow loss is steady, the lose pace is fast', () => {
+  const recomp = { ...GOAL, direction: 'recomp' };
+  const slow = weekly(90, 0.3, 10);
+  assert.equal(goalProgress(slow, recomp, slow[slow.length - 1].log_date).status, 'steady');
+  assert.equal(goalProgress(slow, GOAL, slow[slow.length - 1].log_date).status, 'slow');
+  const quick = weekly(90, 0.7, 10);
+  const p = goalProgress(quick, recomp, quick[quick.length - 1].log_date);
+  assert.equal(p.mode, 'recomp');
+  assert.equal(p.status, 'fast');
+});

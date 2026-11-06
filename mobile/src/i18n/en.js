@@ -89,6 +89,7 @@ export default {
   'goal.next.reached': 'You are in your goal range. Set what comes next in Profile.',
   'profile.direction': 'Goal',
   'profile.dir.lose': 'Lose fat',
+  'profile.dir.recomp': 'Lose fat and build muscle',
   'profile.dir.maintain': 'Keep my weight',
   'profile.dir.gain': 'Build muscle (gain)',
   'profile.bmiLow': 'The low goal weight is under a healthy weight for your height. Pick {min} kg or more.',
@@ -97,6 +98,7 @@ export default {
   'profile.safeDate': 'At {pace} kg a week you would reach {goal} kg around {date}.',
   'profile.useDate': 'Use {date} as the goal date',
   'profile.maintain': 'BMR {bmr} × activity = {tdee} kcal maintenance. Protein is 1.8 g per kg of goal weight.',
+  'profile.recomp': 'BMR {bmr} × activity = {tdee} kcal maintenance, minus {deficit} kcal a day: a small deficit (10-15%) so you lose fat slowly while you build muscle. Protein is {protein_per_kg} g per kg of goal weight.',
   'profile.gain': 'BMR {bmr} × activity = {tdee} kcal maintenance, plus {surplus} kcal to build. Protein is 1.6 g per kg of goal weight.',
   'profile.protein': 'Protein is 2 g per kg of your goal weight ({goal} kg), not your current weight: enough to keep muscle on a cut.',
 
