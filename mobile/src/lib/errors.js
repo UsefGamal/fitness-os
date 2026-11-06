@@ -41,6 +41,7 @@ export function bugReport({ app, data, errors, device = {}, now = new Date() }) 
     `App: ${app.version} (${app.build}), data schema ${data?.schemaVersion ?? '?'}`,
     `Device: ${device.platform || 'web'}${device.model ? `, ${device.model}` : ''}${device.osVersion ? `, Android ${device.osVersion}` : ''}`,
     `Screen: ${device.screen || '?'}`,
+    `WebView: ${device.webview ? `Chrome ${device.webview}` : '?'}`,
     '',
     'Counts:',
     ...Object.entries(dataCounts(data)).map(([k, v]) => `  ${k}: ${v}`),
@@ -62,5 +63,7 @@ export function bugReport({ app, data, errors, device = {}, now = new Date() }) 
 export function deviceFromUA(ua = '') {
   const m = /Android ([\d.]+);\s*([^;)]+?)(?:\s+Build\/[^;)]*)?[;)]/.exec(ua);
   if (!m) return {};
-  return { osVersion: m[1], model: m[2].trim() === 'K' ? null : m[2].trim() };
+  // The WebView's Chrome version: the app needs 111+ (TL-05).
+  const chrome = /Chrome\/(\d+)/.exec(ua);
+  return { osVersion: m[1], model: m[2].trim() === 'K' ? null : m[2].trim(), ...(chrome ? { webview: chrome[1] } : {}) };
 }

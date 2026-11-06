@@ -51,4 +51,5 @@ test('phone model and Android version come from the user agent', () => {
   assert.deepEqual(deviceFromUA('Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36'), { osVersion: '10', model: null });
   assert.deepEqual(deviceFromUA('Mozilla/5.0 (X11; Linux x86_64)'), {});
   assert.deepEqual(deviceFromUA(), {});
+  assert.deepEqual(deviceFromUA('Mozilla/5.0 (Linux; Android 13; RMX3511 Build/TP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36'), { osVersion: '13', model: 'RMX3511', webview: '131' });
 });
