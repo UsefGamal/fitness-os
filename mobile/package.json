@@ -6,6 +6,7 @@
   "description": "The standalone Fitness OS phone app. Runs inside the APK, data saved on the phone.",
   "scripts": {
     "content": "python3 ../scripts/export_content.py src/content.json",
+    "check:friends": "python3 ../scripts/check_friends_build.py",
     "dev": "npm run content && vite",
     "build": "npm run content && vite build",
     "preview": "vite preview",

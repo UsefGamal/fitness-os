@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import { addPhoto, beforeAfter, POSES, removePhoto, timeline } from '../lib/photos.js';
 import { deletePhoto, photoUrl, storePhoto } from '../store/photos.js';
+import { t } from '../lib/i18n.js';
 import { useData } from '../store/useData.js';
 
 function Img({ path, className, alt = '' }) {
@@ -38,6 +40,7 @@ export default function Photos() {
   const { data, update } = useData();
   const fileRef = useRef(null);
   const [pose, setPose] = useState('front');
+  const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [viewing, setViewing] = useState(null);
@@ -61,7 +64,6 @@ export default function Photos() {
   };
 
   const remove = async (p) => {
-    if (!window.confirm('Delete this photo from the phone?')) return;
     update((d) => removePhoto(d, p.id));
     await deletePhoto(p.file);
     setViewing(null);
@@ -69,7 +71,7 @@ export default function Photos() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Progress photos</h1>
       <p className="page-sub">Kept only on this phone, never in backups or anywhere else. The location and other photo details are removed when saved.</p>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
@@ -104,7 +106,8 @@ export default function Photos() {
           <div style={{ width: 'min(360px, 90vw)', aspectRatio: '3 / 4', borderRadius: 14, overflow: 'hidden' }}><Img path={viewing.file} className="fill-img" /></div>
           <div className="row" style={{ gap: 12 }}>
             <button type="button" className="btn secondary" style={{ width: 140 }} onClick={() => setViewing(null)}>Close</button>
-            <button type="button" className="btn ghost" style={{ width: 140, color: '#ff453a' }} onClick={() => remove(viewing)}><Icon name="trash" /> Delete</button>
+            <button type="button" className="btn ghost" style={{ width: 140, color: '#ff453a' }} onClick={() => setConfirming(viewing)}><Icon name="trash" /> Delete</button>
+            {confirming ? <ConfirmSheet title={t('photos.deleteTitle')} body={t('photos.deleteBody')} action={t('photos.deleteTitle')} onConfirm={() => remove(confirming)} onClose={() => setConfirming(null)} /> : null}
           </div>
         </div>
       ) : null}

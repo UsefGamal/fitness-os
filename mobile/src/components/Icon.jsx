@@ -44,7 +44,7 @@ const PATHS = {
 
 export default function Icon({ name, className = 'icon', title }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden={title ? undefined : true} role={title ? 'img' : undefined}>
+    <svg className={className} data-icon={name} viewBox="0 0 24 24" aria-hidden={title ? undefined : true} role={title ? 'img' : undefined}>
       {title ? <title>{title}</title> : null}
       <path d={PATHS[name]} />
     </svg>

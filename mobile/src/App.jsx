@@ -3,7 +3,11 @@ import { Outlet, createHashRouter, RouterProvider, useLocation } from 'react-rou
 
 import ErrorBoundary from './components/CrashScreen.jsx';
 import Fanfare from './components/Fanfare.jsx';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+
 import Intro from './components/Intro.jsx';
+import { closeTopOverlay } from './lib/overlays.js';
 import RestTimer from './components/RestTimer.jsx';
 import { useTimer } from './store/useTimer.js';
 import TabBar from './components/TabBar.jsx';
@@ -87,6 +91,7 @@ const router = createHashRouter([
       { path: '/library/:id', element: <ExerciseDetail /> },
       { path: '/catalogue/:id', element: <CatalogueDetail /> },
       { path: '/settings', element: <Settings /> },
+      { path: '/settings/:section', element: <Settings /> },
       { path: '/shopping', element: <Shopping /> },
       { path: '/session/:type', element: <Session /> },
       { path: '/quests', element: <Quests /> },
@@ -114,6 +119,17 @@ function introFor() {
   return introLine({ next, time: timesOf(data, content).session_time, doneToday, firstRun: data.workouts.length === 0 });
 }
 
+/** Android back: close the top sheet first, then go back a screen, and
+ * only leave the app from the first screen (E6-S7). */
+function listenBackButton() {
+  if (!Capacitor.isNativePlatform()) return;
+  CapApp.addListener('backButton', ({ canGoBack }) => {
+    if (closeTopOverlay()) return;
+    if (canGoBack && window.history.length > 1 && window.location.hash !== '#/') window.history.back();
+    else CapApp.exitApp();
+  });
+}
+
 export default function App() {
   const { ready, hydrate, loadError } = useData();
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
@@ -127,6 +143,7 @@ export default function App() {
       // Keep two weeks of reminders queued on every open.
       scheduleReminders(content, useData.getState().data.settings.notifications);
       startPhoneSync();
+      listenBackButton();
     });
   }, [hydrate]);
   const endIntro = useCallback(() => setIntro(null), []);

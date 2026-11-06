@@ -43,7 +43,7 @@ export default function Fanfare() {
   return (
     <button type="button" className="fanfare" role="status" onClick={() => setShown(null)}>
       <span className="medal"><Icon name="trophy" /></span>
-      <span className="grow" style={{ textAlign: 'left' }}>
+      <span className="grow" style={{ textAlign: 'start' }}>
         <strong>{shown.length > 1 ? `${shown.length} new badges` : 'New badge'}: {top.label}</strong>
         <div className="muted small">{top.note}</div>
       </span>

@@ -37,7 +37,7 @@ export default function CatalogueDetail() {
   const navigate = useNavigate();
   const { data, update } = useData();
   const { catalogue, error } = useCatalogue();
-  const back = <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>;
+  const back = <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>;
   if (error) return <div className="page">{back}<div className="card empty">The exercise photos aren't in this build.</div></div>;
   if (!catalogue) return <div className="page">{back}<div className="card empty">Loading…</div></div>;
   const entry = catalogue.byId.get(id);

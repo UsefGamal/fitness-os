@@ -19,7 +19,7 @@ export default function Shopping() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Shopping list</h1>
       <p className="page-sub">{formatDate(today)} to {formatDate(addDays(today, 6))}, both options of every meal</p>
       <section className="card">

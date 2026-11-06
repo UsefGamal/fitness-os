@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
+import { t } from '../lib/i18n.js';
 import { useData } from '../store/useData.js';
 
 function SetEditor({ set, onSave, onCancel }) {
@@ -30,6 +32,7 @@ export default function History() {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(null);
   const [editDate, setEditDate] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const w = data.workouts.find((x) => x.id === Number(id));
   if (!w) return <div className="page"><div className="card empty">That workout isn't here anymore.</div></div>;
 
@@ -42,7 +45,6 @@ export default function History() {
   const volume = w.sets.reduce((v, s) => v + s.weight_kg * s.reps, 0);
 
   const remove = () => {
-    if (!window.confirm('Delete this workout and all its sets?')) return;
     if (activeWorkoutId === w.id) setActiveWorkout(null);
     update((d) => D.deleteWorkout(d, w.id));
     navigate('/history');
@@ -50,7 +52,7 @@ export default function History() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>{w.notes || w.workout_type}</h1>
       {editDate ? (
         <div className="row" style={{ margin: '-8px 0 16px' }}>
@@ -77,7 +79,7 @@ export default function History() {
             ) : (
               <div key={s.id} className="set-row">
                 <span className="set-n done">{s.set_number}</span>
-                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'left', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`Edit set ${s.set_number}`}>
+                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`Edit set ${s.set_number}`}>
                   {s.weight_kg} kg × {s.reps}{s.rpe ? <span className="muted"> · RPE {s.rpe}</span> : null}
                 </button>
                 <span />
@@ -92,7 +94,8 @@ export default function History() {
           {w.checklist_items.map((c) => <div key={c.id} className="row small"><Icon name={c.completed ? 'check' : 'x'} /> {c.item_name}{c.reps_achieved ? ` · ${c.reps_achieved} reps` : ''}</div>)}
         </section>
       ) : null}
-      <button type="button" className="btn danger" onClick={remove}><Icon name="trash" /> Delete workout</button>
+      <button type="button" className="btn danger" onClick={() => setConfirming(true)}><Icon name="trash" /> Delete workout</button>
+      {confirming ? <ConfirmSheet title={t('history.deleteTitle')} body={t('history.deleteBody', { n: w.sets.length })} action={t('history.deleteTitle')} onConfirm={remove} onClose={() => setConfirming(false)} /> : null}
     </div>
   );
 }

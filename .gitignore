@@ -9,3 +9,4 @@ venv/
 *.jks
 dist/
 mobile/e2e/out/
+mobile/src/content.friends.json

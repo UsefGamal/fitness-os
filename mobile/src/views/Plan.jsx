@@ -105,7 +105,7 @@ function EditList({ day, sessionKey }) {
         <button type="button" className="btn secondary" disabled={!adding} onClick={() => { update((d) => P.addExercise(d, sessionKey, T, adding)); setAdding(''); }}><Icon name="plus" /> Add to {day.label}</button>
       </div>
       {day.edited ? (
-        <button type="button" className="btn danger" onClick={() => window.confirm(`Put ${day.label} back to your trainer's version?`) && update((d) => P.resetDay(d, sessionKey))}>Reset {day.label} to the trainer's plan</button>
+        <button type="button" className="btn danger" onClick={() => window.confirm(`Put ${day.label} back to the original plan?`) && update((d) => P.resetDay(d, sessionKey))}>Reset {day.label} to the original plan</button>
       ) : null}
     </>
   );
@@ -162,7 +162,7 @@ export default function Plan() {
   return (
     <div className="page">
       <h1 className="page-title">Plan</h1>
-      <p className="page-sub">Your trainer's Upper / Lower / Push / Pull / Leg week, {times.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
+      <p className="page-sub">{T.trainer_plan.name}, {times.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
       <section className="card"><WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} /></section>
 
       {day ? (

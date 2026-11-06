@@ -134,7 +134,7 @@ export default function FollowAlong() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingLeft: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>{src.title}</h1>
       <p className="page-sub">{steps.length} holds · {clock(total)}. Each one plays with a chime and moves on by itself; sounds follow Settings → Training.</p>
       <div className="list">

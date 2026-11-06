@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import GoalCard from '../components/GoalCard.jsx';
 import Icon from '../components/Icon.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday, todayISO } from '../lib/dates.js';
@@ -15,6 +16,8 @@ import { doneKeys, totalPoints } from '../lib/quests.js';
 import { programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
 import { activePlan } from '../lib/plan.js';
 import { backupDue } from '../lib/durable.js';
+import { t } from '../lib/i18n.js';
+import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { content, useData } from '../store/useData.js';
 import { SESSIONS } from './Session.jsx';
 
@@ -86,6 +89,8 @@ export default function Today() {
         )}
       </section>
 
+      {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <GoalCard data={data} today={today} /> : null}
+
       {backup ? (
         <section className="card row" style={{ gap: 10 }} role="status">
           <Icon name="download" />
@@ -94,7 +99,7 @@ export default function Today() {
             <div className="muted">{backup.days == null ? "You haven't saved a backup yet." : `Last backup ${backup.days} days ago.`} It's the only copy, so keep one somewhere safe.</div>
           </div>
           <div className="stack" style={{ gap: 4 }}>
-            <Link className="btn small" to="/settings">Back up</Link>
+            <Link className="btn small" to="/settings/data">Back up</Link>
             <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}>Later</button>
           </div>
         </section>
@@ -144,6 +149,14 @@ export default function Today() {
           {streak > 0 ? <span className="chip accent"><Icon name="bolt" className="icon" /> {streak}-day streak</span> : null}
         </div>
         <WeekStrip week={week} doneDates={done} />
+        {isRecoveryWeek(data, today) ? (
+          <div className="row between" style={{ marginTop: 10, gap: 8 }}>
+            <div className="small grow"><span className="chip warn">{t('recovery.chip')}</span> <span className="muted">{t('recovery.short')}</span></div>
+            <button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => update((d) => setRecoveryWeek(d, today, false))}>{t('recovery.off')}</button>
+          </div>
+        ) : (
+          <button type="button" className="btn ghost small" style={{ marginTop: 6, paddingLeft: 0, justifyContent: 'flex-start' }} onClick={() => update((d) => setRecoveryWeek(d, today, true))}>{t('recovery.on')}</button>
+        )}
       </section>
 
       <div className="section-label">Other sessions</div>
