@@ -26,3 +26,11 @@ test('slot labels', () => {
   assert.equal(slotLabel('snack1'), 'Morning snack');
   assert.equal(slotLabel('dinner'), 'Dinner');
 });
+
+test('eaten totals: only the ticked meals, and 0 with none ticked (E3-S12)', () => {
+  const day = mealDayFor('2026-11-08', content.nutrition);
+  assert.deepEqual(dayTotals(day, {}, new Set()), { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+  const slot = day.meals[0].slot;
+  assert.equal(dayTotals(day, {}, new Set([slot])).kcal, Math.round(day.meals[0].options[0].kcal));
+  assert.ok(dayTotals(day, {}).kcal > dayTotals(day, {}, new Set([slot])).kcal);
+});

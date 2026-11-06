@@ -24,6 +24,20 @@ export default {
   'update.title': 'Update Fitness OS',
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
 
+  'meals.kcalEaten': 'Calories eaten',
+  'meals.proteinEaten': 'Protein eaten',
+  'meals.summary': 'Carbs {carbs}/{tc} g · fat {fat}/{tf} g · {done}/{all} eaten. All picks: {kcal} kcal, {protein} g protein.',
+  'meals.yourTargets': 'Your targets',
+  'meals.setTargets': 'Set your targets',
+
+  'timer.over': 'Rest over. Next: {label}',
+
+  'common.cancel': 'Cancel',
+  'history.deleteTitle': 'Delete workout',
+  'history.deleteBody': 'Delete this workout and all its {n} sets? This cannot be undone.',
+  'photos.deleteTitle': 'Delete photo',
+  'photos.deleteBody': 'Delete this photo from the phone? Photos are not in backups, so it cannot be brought back.',
+
   'snap.title': 'Snapshots',
   'snap.intro': 'The app keeps a copy of your data before each update, import or restore. The newest 7 are kept, on this phone only.',
   'snap.none': 'No snapshots yet. One is kept automatically before the next update or import.',
