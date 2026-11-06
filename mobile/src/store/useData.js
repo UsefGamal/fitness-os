@@ -11,7 +11,7 @@ import { create } from 'zustand';
 
 import content from '../content.json';
 import * as D from '../lib/data.js';
-import { loadNewest, parseCopy, stamp } from '../lib/durable.js';
+import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { readMirror, writeMirror } from './mirror.js';
 import { snapshot } from './snapshots.js';
@@ -80,12 +80,43 @@ export const useData = create((set, get) => ({
   activeWorkoutId: null,
   /** Set when the saved data is from a newer app version (see App.jsx). */
   loadError: null,
+  /** Set when start-up couldn't load the data: 'unreadable' (a copy exists
+   * but none parses) or 'failed' (anything else). App.jsx then shows the
+   * recovery screen, never Setup or a black screen (TL-03, QA-08). Nothing
+   * is written while it is set. */
+  startError: null,
+  /** The raw saved texts, for "Save a copy of my data" on that screen. */
+  rawCopies: [],
+
+  /** Use a snapshot's data after a failed start (recovery screen). */
+  async recoverFrom(text) {
+    const data = migrate(parseCopy(text), content);
+    // Keep what couldn't be read, so this restore can be undone too.
+    const raw = get().rawCopies.reduce((a, b) => (b.length > a.length ? b : a), '');
+    if (raw) await snapshot(raw, 'unreadable');
+    blocked = false;
+    set({ data, startError: null });
+    pending = data;
+    flushSave();
+  },
 
   /** Run once at start: pick the newest copy, upgrade it if needed. */
   async hydrate() {
-    const file = await readMirror();
+    let file = null;
+    const localText = readLocalText();
     try {
-      const start = loadNewest({ localText: readLocalText(), fileText: file?.text ?? null }, content);
+      file = await readMirror();
+    } catch {
+      file = null;
+    }
+    const rawCopies = [localText, file?.text].filter((t) => typeof t === 'string' && t.trim() !== '');
+    if (unreadable({ localText, fileText: file?.text ?? null })) {
+      blocked = true;
+      set({ startError: 'unreadable', rawCopies, ready: true });
+      return;
+    }
+    try {
+      const start = loadNewest({ localText, fileText: file?.text ?? null }, content);
       if (start) {
         if (start.snapshotText) await snapshot(start.snapshotText, 'migrate');
         set({ data: start.data });
@@ -95,9 +126,9 @@ export const useData = create((set, get) => ({
         flushSave();
       }
     } catch (err) {
-      if (!(err instanceof NewerSchemaError)) throw err;
       blocked = true;
-      set({ loadError: err.message, ready: true });
+      if (err instanceof NewerSchemaError) set({ loadError: err.message, ready: true });
+      else set({ startError: 'failed', rawCopies, ready: true });
       return;
     }
     const data = get().data;
