@@ -92,7 +92,7 @@ export default {
   'profile.dir.maintain': 'Keep my weight',
   'profile.dir.gain': 'Build muscle (gain)',
   'profile.bmiLow': 'The low goal weight is under a healthy weight for your height. Pick {min} kg or more.',
-  'profile.capped': 'Your goal date asks for {rate} kg a week. The safe most is {pace} kg a week (a deficit of at most a quarter of maintenance, 1000 kcal, and 1% of your weight a week), so the target uses that.',
+  'profile.capped': 'Your goal date asks for {rate} kg a week. The safe most is {pace} kg a week (a deficit of at most 1000 kcal a day and 1% of your weight a week), so the target uses that.',
   'profile.floor': 'Held at {kcal} kcal, the lowest safe daily target.',
   'profile.safeDate': 'At {pace} kg a week you would reach {goal} kg around {date}.',
   'profile.useDate': 'Use {date} as the goal date',

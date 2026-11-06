@@ -18,7 +18,10 @@ import { addDays, daysBetween } from './dates.js';
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
 const KCAL_PER_KG_FAT = 7700;
 const MAX_DAILY_DEFICIT = 1000;
-export const MAX_DEFICIT_SHARE = 0.25; // of TDEE
+// The share-of-TDEE cap is off (1 = no cap): with Yusuf's maintenance near
+// 2940 kcal a quarter cap held him at 0.67 kg a week and flagged most of his
+// meal plan. Phase 13 may set 0.25 for smaller friends.
+export const MAX_DEFICIT_SHARE = 1; // of TDEE
 export const MAX_LOSS_SHARE_BW = 0.01; // of body weight a week
 export const MIN_KCAL = { male: 1500, female: 1200 };
 export const GAIN_SURPLUS = 300;
