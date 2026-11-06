@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { todayISO } from '../lib/dates.js';
 import { badgeProgress, doneKeys, syncQuests, toggleDaily, totalPoints } from '../lib/quests.js';
 import { content, useData } from '../store/useData.js';
+import { useToday } from '../store/today.js';
 
 const Q = content.quests;
 const GROUPS = [
@@ -16,7 +16,7 @@ const GROUPS = [
 export default function Quests() {
   const { data, update } = useData();
   const navigate = useNavigate();
-  const today = todayISO();
+  const today = useToday();
   useEffect(() => {
     if (syncQuests(data, today, Q) !== data) update((d) => syncQuests(d, today, Q));
   }, [data, today, update]);
