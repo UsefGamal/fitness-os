@@ -312,4 +312,13 @@ export default {
   'setup.minorGoal': 'Under 18, weight-loss goals are off. Train, eat well and grow.',
   'setup.finishTitle': 'Finish your setup',
   'setup.finishNote': 'Add your height, weight and age for your own targets.',
+  'daySheet.done': 'Done',
+  'daySheet.today': 'Today at {time}',
+  'daySheet.edited': 'Edited',
+  'daySheet.rest': 'rest {rest}',
+  'daySheet.seeLog': 'See what you logged',
+  'daySheet.start': 'Start {name}',
+  'daySheet.doToday': 'Do it today instead',
+  'daySheet.openPlan': 'Open in Plan',
+  'daySheet.hint': 'Tap a day to see its exercises.',
 };
