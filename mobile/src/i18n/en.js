@@ -24,6 +24,11 @@ export default {
   'update.title': 'Update Fitness OS',
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
 
+  'recovery.chip': 'Recovery week',
+  'recovery.on': 'Make this a recovery week',
+  'recovery.off': 'Back to normal',
+  'recovery.short': 'Fewer sets, same weights.',
+  'recovery.banner': 'A third fewer sets, the same weights as last time, and stop 2 reps further from failure. It still counts as a full week of training.',
   'goal.title': 'Goal',
   'goal.aria': 'Goal: trend weight {trend} kg. Open Stats',
   'goal.noWeighIn': 'Log a weigh-in to see your trend and pace.',

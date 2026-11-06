@@ -71,7 +71,7 @@ export function exerciseByName(data, name) {
 
 // ── Workouts ──────────────────────────────────────────────────────────
 
-export function startWorkout(data, { date, sessionKey, label, type = 'gym' }) {
+export function startWorkout(data, { date, sessionKey, label, type = 'gym', isDeload = false }) {
   const id = nextId(data.workouts);
   const workout = {
     id,
@@ -80,7 +80,7 @@ export function startWorkout(data, { date, sessionKey, label, type = 'gym' }) {
     duration_min: null,
     notes: label,
     session_rpe: null,
-    is_deload: false,
+    is_deload: Boolean(isDeload),
     pain_note: null,
     result: null,
     session_key: sessionKey,
