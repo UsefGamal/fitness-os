@@ -87,3 +87,20 @@ test('works out real targets from the profile and the latest weigh-in', () => {
   assert.equal(t.carbs, 374);
   assert.deepEqual(t.reasons, []);
 });
+
+// ── Recomp (E3-S13) and rule A ─────────────────────────────────────────
+test('recomp: a 10-15% deficit, 12.5% without a pace', () => {
+  assert.deepEqual(energyTarget({ tdee: 2400, rate: null, weight: 70, mode: 'recomp', gender: 'male' }), { kcal: 2100, deficit: 300, reasons: [] });
+  // A fast pace is held to 15%, a slow one lifted to 10%.
+  assert.equal(energyTarget({ tdee: 2400, rate: 1, weight: 70, mode: 'recomp', gender: 'male' }).kcal, 2040);
+  assert.equal(energyTarget({ tdee: 2400, rate: 0.05, weight: 70, mode: 'recomp', gender: 'male' }).kcal, 2160);
+  // The floor still holds.
+  assert.deepEqual(energyTarget({ tdee: 1300, rate: null, weight: 50, mode: 'recomp', gender: 'female' }), { kcal: 1200, deficit: 100, reasons: ['floor'] });
+  assert.equal(macroSplit(2100, 70, 'recomp').protein, 154, '2.2 g per kg of goal weight');
+});
+
+test('rule A: the friends build caps a cut at 25% of TDEE', () => {
+  const fast = { tdee: 1800, rate: 1, weight: 60, mode: 'lose', gender: 'female' };
+  assert.equal(energyTarget(fast).kcal, 1200, "Yusuf's build: no share cap, so 1% BW a week and the floor decide");
+  assert.deepEqual(energyTarget({ ...fast, share: 0.25 }), { kcal: 1350, deficit: 450, reasons: ['capped'] });
+});

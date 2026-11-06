@@ -86,6 +86,9 @@ def build_content() -> dict:
                 "meal_slot_windows": meal_plan.MEAL_SLOT_WINDOWS,
                 "pre_workout_note": meal_plan.PRE_WORKOUT_NOTE,
                 "macro_targets": meal_plan.MACRO_TARGETS,
+                # Rule A (E3-S13): the 25%-of-TDEE deficit cap is on for the
+                # friends build and off (1) for Yusuf's, who chose it off.
+                "max_deficit_share": 0.25 if gym_program.FLAVOR == "friends" else 1,
                 "drink_options": meal_plan.DRINK_OPTIONS,
                 "drinks": food_items.DRINKS,
                 "days": [_day_with_items(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
