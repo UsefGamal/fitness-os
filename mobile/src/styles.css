@@ -66,10 +66,13 @@ button.list-row:active, a.list-row:active { background: var(--surface2); }
 .chip.warn { background: rgba(255, 214, 10, 0.15); color: var(--warn); }
 button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit; cursor: pointer; }
 
-.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.week-day { background: var(--surface2); border-radius: 12px; padding: 8px 2px; text-align: center; min-height: 54px; border: 1.5px solid transparent; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-inline: -12px; }
+/* Bleeds into the card padding so each day is 44px wide at 360px. */
+.week-day { background: var(--surface2); border-radius: 12px; padding: 8px 1px; text-align: center; min-height: 54px; border: 1.5px solid transparent; }
 .week-day .d { font-size: 12px; color: var(--muted); }
-.week-day .s { font-size: 13px; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Wraps at the space ("FB" over "A") instead of cutting off when the text size is large. */
+.week-day .s { font-size: 11px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-top: 2px; }
+.week-day .tick { color: var(--accent); margin-inline-start: 2px; }
 .week-day.rest .s { color: var(--faint); font-weight: 500; }
 .week-day.today { border-color: var(--accent); }
 .week-day.done .s { color: var(--accent); }
