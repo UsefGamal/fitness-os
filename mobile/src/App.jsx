@@ -70,14 +70,14 @@ function Shell() {
     <>
       {/* New pages open at the top; Back returns to where you were (UX-03). */}
       <ScrollRestoration />
-      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : back ? 'pop-in' : 'push-in'}${timing ? ' with-timer' : ''}`}>
+      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
         <ErrorBoundary key={pathname}>
           <Suspense fallback={<div className="page" />}>
             <Outlet />
           </Suspense>
         </ErrorBoundary>
       </div>
-      <RestTimer />
+      <RestTimer compact={pathname !== '/workout'} />
       <Fanfare />
       <TabBar />
     </>
