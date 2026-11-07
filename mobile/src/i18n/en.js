@@ -32,6 +32,9 @@ export default {
   'crash.report': 'Send a bug report',
   'crash.reportNote': 'The report has the app version, your phone model, counts (how many workouts, weigh-ins) and the last errors. No weights, notes, photos or health data.',
   'crash.reload': 'Reload the app',
+  'share.title': 'Share a copy',
+  'share.note': 'Without weigh-ins, health data or photos. Can’t be restored',
+  'share.failed': 'Could not share the copy. Try again.',
 
   'update.title': 'Update Fitness OS',
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",

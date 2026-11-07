@@ -11,7 +11,7 @@ import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
-import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
+import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
 import { isTime, leadText, REMIND_CHOICES, setTimes, timesOf } from '../lib/times.js';
@@ -22,7 +22,7 @@ import { content, useData } from '../store/useData.js';
 import { t } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
 import { currentReport } from '../store/errors.js';
-import { shareText } from '../store/share.js';
+import { shareText, shareTextFile } from '../store/share.js';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -176,6 +176,15 @@ export default function Settings() {
     }
   };
 
+  // P14-14: a copy to show someone, without health data; never restorable.
+  const shareCopy = async () => {
+    try {
+      await shareTextFile(t('share.title'), `fitness-os-copy-${todayISO()}.json`, toShareCopy(data));
+    } catch {
+      setMsg(t('share.failed'));
+    }
+  };
+
   const toggleReminders = async () => {
     const on = !data.settings.notifications;
     if (on && !(await enableReminders())) {
@@ -212,6 +221,7 @@ export default function Settings() {
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
         <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>Export a backup</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={shareCopy}><Icon name="upload" /><div className="grow"><div>{t('share.title')}</div><div className="meta">{t('share.note')}</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => navigate('/snapshots')}><Icon name="undo" /><div className="grow"><div>Snapshots</div><div className="meta">Copies kept before each update, import or restore</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
