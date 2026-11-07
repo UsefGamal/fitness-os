@@ -9,6 +9,8 @@ const PATHS = {
   chev: 'M9 6l6 6-6 6',
   back: 'M15 6l-6 6 6 6',
   check: 'M5 12l5 5L20 7',
+  alert: 'M12 3 2 20h20zM12 10v4M12 17v.5',
+  info: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 11v6M12 7v.5',
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
   x: 'M6 6l12 12M18 6 6 18',

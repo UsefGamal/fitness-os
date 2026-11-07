@@ -17,6 +17,11 @@ import { seedExercises, defaultSettings } from './data.js';
 import { CURRENT_SCHEMA, migrate, NewerSchemaError, schemaOf } from './migrate.js';
 
 export const FILE_FORMAT = 'fitness-os-export';
+/** "Share a copy" (P14-14): a file to show someone, never to restore. */
+export const SHARE_FORMAT = 'fitness-os-share';
+/** What a shared copy leaves out: screening answers, daily health data,
+ * weigh-ins and measurements, and progress photo entries. */
+export const SHARE_OMITS = ['safety', 'health_daily', 'body_logs', 'progress_photos'];
 const LISTS = ['exercises', 'body_logs', 'hydration_logs', 'workouts', 'meal_logs', 'bonus_logs'];
 // File-only fields: they describe the file, not the data.
 const FILE_KEYS = ['format', 'exported_at', 'saved_at'];
@@ -73,6 +78,9 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
   } catch {
     throw new ImportError("That file isn't complete or isn't valid JSON, so nothing was changed.");
   }
+  if (isObject(raw) && raw.format === SHARE_FORMAT) {
+    throw new ImportError("That's a shared copy without health data, so it can't be restored. Use a full backup (Settings > \"Export a backup\").");
+  }
   if (!isObject(raw) || raw.format !== FILE_FORMAT) {
     throw new ImportError('That isn\'t a Fitness OS data file. Use Settings > "Export a backup" in the app (or "Download my data" on the old site).');
   }
@@ -121,6 +129,22 @@ export function summarize(data) {
 export function toDataFile(data, now = new Date()) {
   const { version: _v1, saved_at: _saved, ...rest } = data;
   return JSON.stringify({ format: FILE_FORMAT, schemaVersion: schemaOf(data), exported_at: now.toISOString().slice(0, 19) + 'Z', ...rest }, null, 2);
+}
+
+/** A copy to share (P14-14): the plan, workouts and meals without the
+ * health data in SHARE_OMITS, marked so import refuses it. The full backup
+ * (toDataFile) is unchanged. */
+export function toShareCopy(data, now = new Date()) {
+  const { version: _v1, saved_at: _saved, _unknown: _bag, ...rest } = data;
+  for (const k of SHARE_OMITS) delete rest[k];
+  return JSON.stringify({
+    format: SHARE_FORMAT,
+    restorable: false,
+    note: "A copy to share, without health data. It can't be restored.",
+    schemaVersion: schemaOf(data),
+    exported_at: now.toISOString().slice(0, 19) + 'Z',
+    ...rest,
+  }, null, 2);
 }
 
 /** A snapshot is the raw saved data (no file header): read it like a

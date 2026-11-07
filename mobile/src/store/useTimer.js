@@ -5,6 +5,7 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { create } from 'zustand';
 
+import { t } from '../lib/i18n.js';
 import { trainingSettings } from '../lib/training.js';
 import { feedback } from './feedback.js';
 import { isNative, RestTimer } from './native.js';
@@ -21,7 +22,11 @@ async function toShade(endsAt, label) {
       await LocalNotifications.requestPermissions(); // Android 13+ needs it for any notification
     }
     const { sounds } = trainingSettings(useData.getState().data);
-    await RestTimer.start({ endsAt, label, sound: sounds });
+    const texts = {
+      rest: t('shade.rest'), restTimer: t('shade.restTimer'), then: t('shade.then'), skip: t('shade.skip'),
+      done: t('shade.done'), nextSet: t('shade.nextSet'), nextSetLabel: t('shade.nextSetLabel'),
+    };
+    await RestTimer.start({ endsAt, label, sound: sounds, texts });
     useTimer.setState({ inShade: true });
   } catch {
     // No notification permission: the in-app timer still works.

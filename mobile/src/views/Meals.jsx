@@ -11,6 +11,7 @@ import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { activePlan } from '../lib/plan.js';
+import { mealWhat } from '../lib/widget.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -157,7 +158,7 @@ function MealPlan() {
                 </button>
               ))}
             </div>
-            <div>{opt.ingredients.join(', ')}</div>
+            <div>{mealWhat(opt)}</div>
             <div className="muted small" style={{ marginTop: 4 }}>{opt.kcal} kcal · {opt.protein} g protein · {opt.carbs} g carbs · {opt.fat} g fat</div>
           </section>
         );
