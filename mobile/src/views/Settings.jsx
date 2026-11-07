@@ -18,6 +18,7 @@ import { Health, isNative, signingCode } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
+import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
 import { currentReport } from '../store/errors.js';
@@ -462,7 +463,8 @@ function TimesSettings({ data, update, toggleReminders }) {
             <Choice label="Before a session" value={t.remind_before} onChange={(v) => set({ remind_before: Number(v) })} options={REMIND_CHOICES.map((m) => [m, m ? `${m} min` : 'At start time'])} />
             <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />
             <Toggle on={t.remind_evening !== false} onClick={() => set({ remind_evening: t.remind_evening === false })} title="Evening session" note={`${leadText(t.remind_before)} ${t.evening_time} when one is planned`} />
-            <Toggle on={t.remind_meals !== false} onClick={() => set({ remind_meals: t.remind_meals === false })} title="Meals" note="At each meal time below" />
+            <Toggle on={t.remind_meals === true} onClick={() => set({ remind_meals: t.remind_meals !== true })} title="Meals" note="At each meal time below" />
+            <ReminderCheck />
           </>
         ) : null}
       </div>
