@@ -5,6 +5,8 @@ import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import { formatDate } from '../lib/dates.js';
 import { addPhoto, beforeAfter, POSES, removePhoto, timeline } from '../lib/photos.js';
+import { photoLockOn, setPhotoLock } from '../lib/photoLock.js';
+import { isPhotosOpen, phoneHasLock, photoLockEvent, securePhotos, unlockPhotos } from '../store/photoLock.js';
 import { deletePhoto, photoUrl, storePhoto } from '../store/photos.js';
 import { t } from '../lib/i18n.js';
 import { useData } from '../store/useData.js';
@@ -35,8 +37,63 @@ function Compare({ pair }) {
   );
 }
 
-/** Progress photos: front, side and back, kept only on this phone. */
+/** P14-13: Photos opens with the phone's own lock. A cold start, or 60 s
+ * away from Photos, locks it again; the app's own camera and file picker
+ * don't count. A forgotten lock never deletes anything. */
 export default function Photos() {
+  const { data } = useData();
+  const lockOn = photoLockOn(data);
+  const [hasLock, setHasLock] = useState(undefined);
+  const [open, setOpen] = useState(() => isPhotosOpen());
+  const [asking, setAsking] = useState(false);
+  useEffect(() => { phoneHasLock().then(setHasLock); }, []);
+  useEffect(() => {
+    photoLockEvent('return');
+    setOpen(isPhotosOpen());
+    securePhotos(true);
+    const vis = () => {
+      if (document.visibilityState === 'hidden') photoLockEvent('leave');
+      else { photoLockEvent('return'); setOpen(isPhotosOpen()); }
+    };
+    document.addEventListener('visibilitychange', vis);
+    return () => {
+      document.removeEventListener('visibilitychange', vis);
+      photoLockEvent('leave');
+      securePhotos(false);
+    };
+  }, []);
+  const needLock = lockOn && hasLock === true;
+  const unlock = async () => {
+    setAsking(true);
+    const ok = await unlockPhotos(t('photoLock.title'), t('photoLock.subtitle'));
+    setAsking(false);
+    setOpen(ok);
+  };
+  // Ask once on the way in, so opening Photos is one step.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (needLock && !open && !asked.current) { asked.current = true; unlock(); }
+  });
+  if (lockOn && hasLock === undefined) return <div className="page" />;
+  if (needLock && !open) return <PhotosLocked onUnlock={unlock} asking={asking} />;
+  return <PhotosBody hasLock={hasLock} />;
+}
+
+function PhotosLocked({ onUnlock, asking }) {
+  const navigate = useNavigate();
+  return (
+    <div className="page">
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> {t('nav.back')}</button>
+      <h1 className="page-title" style={{ marginTop: 4 }}>{t('photoLock.title')}</h1>
+      <p className="page-sub">{t('photoLock.lockedBody')}</p>
+      <button type="button" className="btn" disabled={asking} onClick={onUnlock}>{t('photoLock.unlock')}</button>
+      <p className="muted small" style={{ marginTop: 12 }}>{t('photoLock.forgot')}</p>
+    </div>
+  );
+}
+
+/** Progress photos: front, side and back, kept only on this phone. */
+function PhotosBody({ hasLock }) {
   const navigate = useNavigate();
   const { data, update } = useData();
   const fileRef = useRef(null);
@@ -79,8 +136,17 @@ export default function Photos() {
       <div className="seg" style={{ marginBottom: 12 }}>
         {POSES.map(([k, l]) => <button key={k} type="button" className={pose === k ? 'on' : ''} onClick={() => setPose(k)}>{l}</button>)}
       </div>
-      <button type="button" className="btn" disabled={busy} onClick={() => fileRef.current?.click()}><Icon name="plus" /> {busy ? 'Saving…' : `Add a ${pose} photo for today`}</button>
+      <button type="button" className="btn" disabled={busy} onClick={() => { photoLockEvent('external'); fileRef.current?.click(); }}><Icon name="plus" /> {busy ? 'Saving…' : `Add a ${pose} photo for today`}</button>
       <input ref={fileRef} type="file" accept="image/*" capture="user" hidden onChange={pick} />
+
+      {hasLock === true ? (
+        <div className="list" style={{ marginTop: 12 }}>
+          <button type="button" className="list-row" aria-pressed={photoLockOn(data)} onClick={() => update((d) => setPhotoLock(d, !photoLockOn(d)))}>
+            <Icon name="lock" /><div className="grow"><div>{t('photoLock.toggle')}</div><div className="meta">{t('photoLock.toggleNote')}</div></div>
+            <span className={`check${photoLockOn(data) ? ' on' : ''}`}>{photoLockOn(data) ? <Icon name="check" /> : null}</span>
+          </button>
+        </div>
+      ) : hasLock === false ? <p className="muted small" style={{ margin: '12px 4px 0' }}>{t('photoLock.noLock')}</p> : null}
 
       {pair ? (
         <>
