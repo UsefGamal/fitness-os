@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import { DATA_KEYS, ImportError, isPhotoFile, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile } from './dataFile.js';
+import { DATA_KEYS, ImportError, isPhotoFile, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, SHARE_FORMAT, SHARE_OMITS, summarize, toDataFile, toShareCopy } from './dataFile.js';
 import { content } from './testContent.js';
 
 // The shape the old site's Settings > "Download my data" produces.
@@ -113,4 +113,21 @@ test('an import that loosens a safety limit is flagged, and the phone answers ca
   assert.deepEqual(loosenedGates(here, here), []);
   assert.deepEqual(keepSafety(here, file).safety, here.safety);
   assert.equal(keepSafety(here, file).workouts, file.workouts);
+});
+
+test('P14-14: a shared copy leaves out health data and can\'t be restored', () => {
+  const data = { ...parseDataFile(JSON.stringify(SERVER_EXPORT), content), health_daily: { '2026-11-04': { steps: 9000 } }, progress_photos: [{ id: 1, date: '2026-11-04', pose: 'front', file: 'progress-photos/1.jpg' }], _unknown: { x: 1 } };
+  const copy = JSON.parse(toShareCopy(data, new Date('2026-11-07T08:00:00Z')));
+  assert.equal(copy.format, SHARE_FORMAT);
+  assert.equal(copy.restorable, false);
+  assert.match(copy.note, /can't be restored/);
+  assert.equal(copy.exported_at, '2026-11-07T08:00:00Z');
+  for (const k of [...SHARE_OMITS, '_unknown', 'saved_at', 'version']) assert.equal(k in copy, false, k);
+  assert.ok(Array.isArray(copy.workouts) && copy.workouts.length === 1);
+  assert.ok(Array.isArray(copy.meal_logs));
+  assert.equal(JSON.stringify(copy).includes('9000'), false);
+  assert.throws(() => parseDataFile(JSON.stringify(copy), content), (e) => e instanceof ImportError && /can't be restored/.test(e.message));
+  // The full backup is untouched and lossless.
+  assert.deepEqual(parseDataFile(toDataFile(data), content), data);
+  assert.equal(data.health_daily['2026-11-04'].steps, 9000);
 });

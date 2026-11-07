@@ -6,24 +6,27 @@
  * every cold start, including at 6:50 AM before a workout). */
 export const INTRO_MS = 1800;
 
-export function introOn(data) {
-  return data?.settings?.intro !== false;
-}
-
-export function setIntro(data, on) {
-  return { ...data, settings: { ...data.settings, intro: on } };
-}
+/** Time away from the app after which coming back plays the intro again.
+ * Shorter trips (the app's own camera or file picker, a quick glance at a
+ * message) don't replay it. */
+export const AWAY_MS = 60 * 1000;
 
 /**
- * Whether to play the intro on this launch. It is skipped when switched off,
+ * Whether to play the intro on this open. It always plays (there is no
+ * switch for it; an old saved `settings.intro: false` is ignored), except
  * when the system asks for reduced motion, when the app opens on another
  * screen (a reminder or widget tap), and while a workout is in progress, so
  * getting back to the gym floor is never slowed down.
  */
-export function shouldPlayIntro({ data, hash = '', reducedMotion = false, activeWorkout = false }) {
-  if (!introOn(data) || reducedMotion || activeWorkout) return false;
+export function shouldPlayIntro({ hash = '', reducedMotion = false, activeWorkout = false }) {
+  if (reducedMotion || activeWorkout) return false;
   const route = hash.replace(/^#/, '').split('?')[0];
   return route === '' || route === '/';
+}
+
+/** Whether coming back to the app counts as a new open. */
+export function isNewOpen(awayMs) {
+  return Number.isFinite(awayMs) && awayMs >= AWAY_MS;
 }
 
 /**

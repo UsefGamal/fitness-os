@@ -6,9 +6,10 @@ import { setEvening } from './evening.js';
 import { plannedReminders } from './reminders.js';
 import { content } from './testContent.js';
 
-test('workout reminder 30 min before the session on training days only, plus meal times', () => {
+test('workout reminder 30 min before the session on training days only, plus meal times', async () => {
+  const { defaultTimes } = await import('./times.js');
   const now = new Date(2026, 10, 3, 5, 0); // Tue 3 Nov 05:00, a rest day
-  const r = plannedReminders('2026-11-03', content, now);
+  const r = plannedReminders('2026-11-03', content, now, [], {}, { ...defaultTimes(content), remind_meals: true });
   const workouts = r.filter((x) => x.id < 2000);
   assert.equal(workouts[0].title, 'Push at 07:00');
   assert.equal(workouts[0].at.getDate(), 4);
@@ -72,4 +73,31 @@ test('every reminder says which screen a tap opens', () => {
     else assert.equal(r.route, '/workout');
   }
   assert.ok(list.some((r) => r.id >= 3000));
+});
+
+test('P14-12: by default at most 2 reminders a day (meals are opt-in)', () => {
+  const r = plannedReminders('2026-11-03', content, new Date(2026, 10, 3, 5, 0), [], { wednesday: 'tabata' });
+  const perDay = new Map();
+  for (const x of r) perDay.set(x.at.toDateString(), (perDay.get(x.at.toDateString()) || 0) + 1);
+  assert.ok(Math.max(...perDay.values()) <= 2, JSON.stringify([...perDay]));
+  assert.ok(!r.some((x) => x.id >= 2000 && x.id < 3000));
+});
+
+test('P14-12: a day already logged gets no reminder', async () => {
+  const { defaultTimes } = await import('./times.js');
+  const { doneFrom } = await import('./reminders.js');
+  const times = { ...defaultTimes(content), remind_meals: true };
+  const now = new Date(2026, 10, 4, 5, 0); // Wed 4 Nov, Push day
+  const before = plannedReminders('2026-11-04', content, now, [], {}, times);
+  assert.ok(before.some((x) => x.id === 1000));
+  const slot = content.nutrition.meal_slots[1];
+  const data = {
+    workouts: [{ id: 1, log_date: '2026-11-04', started_at: 'x', finished_at: 'y', sets: [] }, { id: 2, log_date: '2026-11-05', started_at: 'x', finished_at: null, sets: [] }],
+    meal_logs: [{ id: 1, log_date: '2026-11-04', meal_slot: slot, completed: true }],
+  };
+  const after = plannedReminders('2026-11-04', content, now, [], {}, times, doneFrom(data));
+  assert.ok(!after.some((x) => x.id === 1000), 'the logged workout day');
+  assert.ok(!after.some((x) => x.id === 2001), 'the logged meal');
+  assert.ok(after.some((x) => x.id === 2000), 'other meals stay');
+  assert.ok(after.some((x) => x.id === 1001) === before.some((x) => x.id === 1001), 'an unfinished workout does not count');
 });

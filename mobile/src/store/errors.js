@@ -2,7 +2,8 @@
 // builds the bug report. The ring lives in localStorage only.
 import { Capacitor } from '@capacitor/core';
 
-import { bugReport, deviceFromUA, errorEntry, pushError } from '../lib/errors.js';
+import { bugReport, capReport, deviceFromUA, errorEntry, nativeEntry, pushError } from '../lib/errors.js';
+import { takeNativeCrashes } from './native.js';
 import { APP } from '../lib/version.js';
 import { useData } from './useData.js';
 
@@ -15,6 +16,21 @@ export function readErrors() {
   } catch {
     return [];
   }
+}
+
+function pushEntry(entry) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(pushError(readErrors(), entry)));
+  } catch {
+    // Storage blocked: nothing else to do.
+  }
+}
+
+/** Move native crash lines (CrashPlugin) into the ring, once per start. */
+export async function collectNativeCrashes() {
+  const list = await takeNativeCrashes();
+  list.forEach((c) => pushEntry(nativeEntry(c)));
+  return list.length;
 }
 
 export function recordError(err) {
@@ -41,5 +57,5 @@ export function currentReport() {
     ...deviceFromUA(ua),
     screen: typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight} @${window.devicePixelRatio}x` : null,
   };
-  return bugReport({ app: APP, data: useData.getState().data, errors: readErrors(), device });
+  return capReport(bugReport({ app: APP, data: useData.getState().data, errors: readErrors(), device }));
 }
