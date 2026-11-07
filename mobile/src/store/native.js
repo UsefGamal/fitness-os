@@ -22,6 +22,20 @@ export async function signingCode() {
   }
 }
 
+export const Crash = registerPlugin('Crash');
+
+/** Native crash lines saved since the last start ([{ at, message }]), and
+ * clears them. Empty in a browser or an older APK. P14-15. */
+export async function takeNativeCrashes() {
+  if (!isNative()) return [];
+  try {
+    const out = await Crash.take();
+    return Array.isArray(out?.crashes) ? out.crashes : [];
+  } catch {
+    return [];
+  }
+}
+
 export const Device = registerPlugin('Device');
 
 /** true/false: does the phone have a screen lock? null when unknown (a
