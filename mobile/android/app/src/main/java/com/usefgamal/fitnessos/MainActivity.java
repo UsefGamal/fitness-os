@@ -7,6 +7,7 @@ import com.usefgamal.fitnessos.appinfo.AppInfoPlugin;
 import com.usefgamal.fitnessos.crash.CrashPlugin;
 import com.usefgamal.fitnessos.device.DevicePlugin;
 import com.usefgamal.fitnessos.health.HealthPlugin;
+import com.usefgamal.fitnessos.photolock.PhotoLockPlugin;
 import com.usefgamal.fitnessos.timer.RestTimerPlugin;
 import com.usefgamal.fitnessos.widget.WidgetPlugin;
 
@@ -19,6 +20,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(HealthPlugin.class);
         registerPlugin(AppInfoPlugin.class);
         registerPlugin(DevicePlugin.class);
+        registerPlugin(PhotoLockPlugin.class);
         registerPlugin(CrashPlugin.class);
         super.onCreate(savedInstanceState);
     }

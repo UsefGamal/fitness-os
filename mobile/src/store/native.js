@@ -38,6 +38,9 @@ export async function takeNativeCrashes() {
 
 export const Device = registerPlugin('Device');
 
+/** Photo lock and FLAG_SECURE (P14-13): store/photoLock.js. */
+export const PhotoLock = registerPlugin('PhotoLock');
+
 /** true/false: does the phone have a screen lock? null when unknown (a
  * browser, or an older APK without the plugin). P14-09. */
 export async function hasScreenLock() {
