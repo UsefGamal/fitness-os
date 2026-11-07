@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { bugReport, dataCounts, deviceFromUA, errorEntry, pushError, RING_SIZE } from './errors.js';
+import { bugReport, capReport, dataCounts, deviceFromUA, errorEntry, nativeEntry, pushError, REPORT_MAX, RING_SIZE } from './errors.js';
 import { migrate } from './migrate.js';
 import { content } from './testContent.js';
 
@@ -64,4 +64,27 @@ test('the signing code is the first 8 hex digits of the certificate', async () =
   assert.equal(codeOf(sha.replace(/:/g, '').toUpperCase()), 'ABCD-EF01');
   assert.equal(codeOf('abc'), null);
   assert.equal(codeOf(null), null);
+});
+
+test('P14-15: a native crash line becomes a ring entry', () => {
+  const e = nativeEntry({ at: 5, message: 'Native crash: java.lang.IllegalStateException: boom\nat a.b(C.java:1)\nat d.e(F.java:2)' });
+  assert.equal(e.at, 5);
+  assert.equal(e.route, 'native');
+  assert.equal(e.message, 'Native crash: java.lang.IllegalStateException: boom');
+  assert.equal(e.stack, 'at a.b(C.java:1)\nat d.e(F.java:2)');
+  const r = nativeEntry({ message: 'WebView renderer crashed; the app reopened' });
+  assert.equal(r.stack, null);
+  assert.ok(Number.isFinite(r.at));
+  assert.equal(nativeEntry(null).message, 'Native crash');
+});
+
+test('P14-15: the report is capped on a line break, and says so', () => {
+  assert.equal(capReport('short'), 'short');
+  const long = Array.from({ length: 2000 }, (_, i) => `line ${i}`).join('\n');
+  const out = capReport(long);
+  assert.ok(out.length <= REPORT_MAX);
+  assert.ok(out.endsWith('\n[cut to fit]'));
+  assert.ok(/line \d+\n\[cut/.test(out));
+  assert.equal(capReport('x'.repeat(50), 20).length, 20);
+  assert.equal(capReport(undefined), '');
 });
