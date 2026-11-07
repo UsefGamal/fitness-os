@@ -26,8 +26,11 @@ export function formatShoppingQty(total, unit) {
   return `×${g(total)}`;
 }
 
-export function displayName(key) {
-  return key.replace(/_/g, ' ').replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase());
+/** A food's name for the list, in sentence case (P14-19): the content's
+ * own name when it has one ("Low-fat Greek yogurt"), else the key in words. */
+export function displayName(key, names = {}) {
+  const s = names[key] || key.replace(/_/g, ' ');
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /** [{ name, items: [{ key, name, qty }] }] in the plan's category order. */
@@ -52,7 +55,7 @@ export function shoppingList(startIso, nutrition, days = 7) {
     const [base, unit] = k.split('|');
     const cat = category.get(base) || FALLBACK_CATEGORY;
     if (!groups.has(cat)) groups.set(cat, []);
-    groups.get(cat).push({ key: k, name: displayName(base), qty: formatShoppingQty(total, unit) });
+    groups.get(cat).push({ key: k, name: displayName(base, nutrition.food_names), qty: formatShoppingQty(total, unit) });
   }
   return [...groups]
     .filter(([, items]) => items.length)

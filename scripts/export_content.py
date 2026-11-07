@@ -123,6 +123,7 @@ def build_content() -> dict:
                 "days": [_day_with_items(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
                 "foods": food_items.FOODS,
                 "food_categories": food_items.FOOD_CATEGORIES,
+                "food_names": {k: v[0] for k, v in food_items.FOOD_NAMES.items()},
                 "category_order": food_items.CATEGORY_ORDER,
                 "eating_out_tips": eating_out_guide.EATING_OUT_TIPS,
                 "maintenance_intro": maintenance_plan.MAINTENANCE_INTRO,
