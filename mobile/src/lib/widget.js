@@ -27,11 +27,13 @@ function optionFor(meal, log) {
   return meal.options.find((o) => o.key === log?.option_key) || meal.options[0];
 }
 
-/** "Ful Medames Bowl, Boiled Egg ×2, Whole Wheat Pita Half" */
+/** "A bowl of ful medames, 2 boiled eggs, half a wholewheat pita". The
+ * content already merges repeats (P14-19); any left are counted here. */
 export function mealWhat(option) {
   const counts = new Map();
   for (const i of option.ingredients || []) counts.set(i, (counts.get(i) || 0) + 1);
-  return [...counts].map(([name, n]) => (n > 1 ? `${name} ×${n}` : name)).join(', ');
+  const s = [...counts].map(([name, n]) => (n > 1 ? `${name} ×${n}` : name)).join(', ');
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function widgetDays(data, content, today) {

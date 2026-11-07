@@ -5,13 +5,12 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
-import { introOn, setIntro } from '../lib/intro.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
-import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile } from '../lib/dataFile.js';
+import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
 import { isTime, leadText, REMIND_CHOICES, setTimes, timesOf } from '../lib/times.js';
@@ -20,10 +19,11 @@ import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
 import RamadanSettings from '../components/RamadanSettings.jsx';
+import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
-import { currentReport } from '../store/errors.js';
-import { shareText } from '../store/share.js';
+import { shareTextFile } from '../store/share.js';
+import ReportSheet from '../components/ReportSheet.jsx';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -52,6 +52,7 @@ export default function Settings() {
   const show = (key) => page?.key === key;
   const fileRef = useRef(null);
   const [msg, setMsg] = useState('');
+  const [report, setReport] = useState(false);
   const [pendingImport, setPendingImport] = useState(null);
   const csvRef = useRef(null);
   const [csv, setCsv] = useState(null); // { text, unit, parsed, preview }
@@ -177,6 +178,15 @@ export default function Settings() {
     }
   };
 
+  // P14-14: a copy to show someone, without health data; never restorable.
+  const shareCopy = async () => {
+    try {
+      await shareTextFile(t('share.title'), `fitness-os-copy-${todayISO()}.json`, toShareCopy(data));
+    } catch {
+      setMsg(t('share.failed'));
+    }
+  };
+
   const toggleReminders = async () => {
     const on = !data.settings.notifications;
     if (on && !(await enableReminders())) {
@@ -194,6 +204,7 @@ export default function Settings() {
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>{page ? t(page.title) : t('settings.title')}</h1>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
+      {report ? <ReportSheet onClose={() => setReport(false)} /> : null}
 
       {!page ? (
         <div className="list">
@@ -213,6 +224,7 @@ export default function Settings() {
         <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
         <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>Export a backup</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={shareCopy}><Icon name="upload" /><div className="grow"><div>{t('share.title')}</div><div className="meta">{t('share.note')}</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => navigate('/snapshots')}><Icon name="undo" /><div className="grow"><div>Snapshots</div><div className="meta">Copies kept before each update, import or restore</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
@@ -330,18 +342,13 @@ export default function Settings() {
       </>) : null}
 
       {show('about') ? (<>
-      <div className="section-label">App</div>
-      <div className="list">
-        <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped during a workout, and ends at once when a reminder or the widget opens another screen" />
-      </div>
-
       <div className="section-label">About</div>
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
-        <div className="list-row"><div className="grow">Version</div><span className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</span></div>
+        <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
         <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
         <p className="muted small" style={{ margin: '4px 16px 12px' }}>{t('about.notInstalled')}</p>
-        <button type="button" className="list-row" onClick={async () => { const r = await shareText('Fitness OS bug report', currentReport()); if (r === 'copied') setMsg('Bug report copied.'); }}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => setReport(true)}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       </>) : null}
     </div>
@@ -470,7 +477,8 @@ function TimesSettings({ data, update, toggleReminders }) {
             <Choice label="Before a session" value={t.remind_before} onChange={(v) => set({ remind_before: Number(v) })} options={REMIND_CHOICES.map((m) => [m, m ? `${m} min` : 'At start time'])} />
             <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />
             <Toggle on={t.remind_evening !== false} onClick={() => set({ remind_evening: t.remind_evening === false })} title="Evening session" note={`${leadText(t.remind_before)} ${t.evening_time} when one is planned`} />
-            <Toggle on={t.remind_meals !== false} onClick={() => set({ remind_meals: t.remind_meals === false })} title="Meals" note="At each meal time below" />
+            <Toggle on={t.remind_meals === true} onClick={() => set({ remind_meals: t.remind_meals !== true })} title="Meals" note="At each meal time below" />
+            <ReminderCheck />
           </>
         ) : null}
       </div>

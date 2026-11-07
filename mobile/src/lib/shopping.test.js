@@ -26,10 +26,12 @@ test('quantities format like the old site', () => {
 test('the first plan week merges portions (matches the Python list)', () => {
   const groups = shoppingList(N.plan_start_date, N);
   const items = Object.fromEntries(groups.flatMap((g) => g.items).map((i) => [i.name, i.qty]));
-  assert.equal(items['Grilled Chicken Breast'], '1.5 kg');
-  assert.equal(items['Boiled Egg'], '×13');
-  assert.equal(items['Whole Wheat Pita'], '×5');
-  assert.equal(items['White Rice'], '450 g');
+  assert.equal(items['Grilled chicken breast'], '1.5 kg');
+  assert.equal(items['Boiled egg'], '×13');
+  assert.equal(items['Wholewheat pita'], '×5');
+  assert.equal(items['White rice'], '450 g');
   assert.equal(groups.flatMap((g) => g.items).length, 43);
+  // P14-19: sentence case, never a title-cased key.
+  for (const i of groups.flatMap((g) => g.items)) assert.doesNotMatch(i.name, /\b[a-z]+_|(?:\s[A-Z][a-z]+){2}/, i.name);
   assert.deepEqual(groups.map((g) => g.name), N.category_order.filter((c) => groups.some((g) => g.name === c)));
 });

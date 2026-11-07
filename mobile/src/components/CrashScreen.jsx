@@ -5,13 +5,14 @@ import { Component, useState } from 'react';
 import { toDataFile } from '../lib/dataFile.js';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
-import { currentReport, recordError } from '../store/errors.js';
+import { recordError } from '../store/errors.js';
 import { saveExport } from '../store/mirror.js';
-import { shareText } from '../store/share.js';
 import { useData } from '../store/useData.js';
+import ReportSheet from './ReportSheet.jsx';
 
 function CrashScreen() {
   const [msg, setMsg] = useState('');
+  const [report, setReport] = useState(false);
   const backup = async () => {
     try {
       const where = await saveExport(`fitness-os-backup-${todayISO()}.json`, toDataFile(useData.getState().data));
@@ -27,10 +28,11 @@ function CrashScreen() {
       {msg ? <div className="card small" role="status">{msg}</div> : null}
       <div className="stack">
         <button type="button" className="btn" onClick={backup}>{t('crash.backup')}</button>
-        <button type="button" className="btn secondary" onClick={() => shareText('Fitness OS bug report', currentReport())}>{t('crash.report')}</button>
+        <button type="button" className="btn secondary" onClick={() => setReport(true)}>{t('crash.report')}</button>
         <button type="button" className="btn ghost" onClick={() => { window.location.hash = '#/'; window.location.reload(); }}>{t('crash.reload')}</button>
       </div>
       <p className="muted small" style={{ marginTop: 12 }}>{t('crash.reportNote')}</p>
+      {report ? <ReportSheet onClose={() => setReport(false)} /> : null}
     </div>
   );
 }

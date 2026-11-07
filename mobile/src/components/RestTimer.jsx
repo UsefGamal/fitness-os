@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { clock, COUNTDOWN_BEEPS } from '../lib/training.js';
 import { feedback } from '../store/feedback.js';
@@ -14,8 +15,10 @@ const RING_C = 2 * Math.PI * RING_R;
 /** The rest timer: a floating panel above the tab bar with big digits, a
  * progress bar and labelled controls (-15s, +15s, Pause/Resume, Skip), and a
  * full screen view (tap the time) with a ring and quick lengths. When the rest
- * is over it stays up with Restart and Close. */
-export default function RestTimer() {
+ * is over it stays up with Restart and Close. Away from the workout
+ * (`compact`) it is a small solid pill with the time and Skip (P14-16). */
+export default function RestTimer({ compact = false }) {
+  const navigate = useNavigate();
   const { endsAt, total, label, pausedLeft, add, pause, resume, skip, stop, start } = useTimer();
   const [now, setNow] = useState(Date.now());
   const [full, setFull] = useState(false);
@@ -83,6 +86,22 @@ export default function RestTimer() {
       <button type="button" className="tbtn" onClick={skip} aria-label="Skip the rest"><Icon name="skip" /><span>Skip</span></button>
     </div>
   );
+
+  if (compact && !full) {
+    return (
+      <div className={`timer-pill${done ? ' done' : ''}`} role="timer" aria-live="off">
+        <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
+        <button type="button" className="pill-open" onClick={() => navigate('/workout')} aria-label={t('pill.open')}>
+          <Icon name="timer" />
+          <span className="t">{done ? t('pill.go') : clock(left)}</span>
+          <span className="pill-what">{done ? t('pill.done') : paused ? t('pill.paused') : t('pill.rest')}</span>
+        </button>
+        {done
+          ? <button type="button" className="pill-btn" onClick={stop}>{t('pill.close')}</button>
+          : <button type="button" className="pill-btn" onClick={skip}>{t('pill.skip')}</button>}
+      </div>
+    );
+  }
 
   if (full) {
     return (

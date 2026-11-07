@@ -1,5 +1,5 @@
 {
-  "total": 350,
+  "total": 347,
   "files": {
     "src/views/Catalogue.jsx": 7,
     "src/views/CatalogueDetail.jsx": 7,
@@ -18,7 +18,7 @@
     "src/views/Quests.jsx": 4,
     "src/views/Routines.jsx": 0,
     "src/views/Session.jsx": 12,
-    "src/views/Settings.jsx": 74,
+    "src/views/Settings.jsx": 71,
     "src/views/Setup.jsx": 0,
     "src/views/Shopping.jsx": 5,
     "src/views/Snapshots.jsx": 0,
@@ -40,6 +40,7 @@
     "src/components/MoreMenu.jsx": 0,
     "src/components/MyWeek.jsx": 0,
     "src/components/RecoveryScreen.jsx": 0,
+    "src/components/ReportSheet.jsx": 0,
     "src/components/RestTimer.jsx": 11,
     "src/components/SaveBar.jsx": 0,
     "src/components/Sheet.jsx": 2,

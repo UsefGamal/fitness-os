@@ -58,6 +58,7 @@ test('meals come in time order with what to eat, and the next one is picked by t
 
 test('repeated ingredients are counted', () => {
   assert.equal(mealWhat({ ingredients: ['Egg', 'Pita', 'Egg'] }), 'Egg ×2, Pita');
+  assert.equal(mealWhat({ ingredients: ['a bowl of ful medames', '2 boiled eggs'] }), 'A bowl of ful medames, 2 boiled eggs');
 });
 
 test('a week strip of seven days and tonight\'s session', () => {
