@@ -26,7 +26,7 @@ import { programDayFor } from './lib/schedule.js';
 import { activePlan } from './lib/plan.js';
 import { timesOf } from './lib/times.js';
 import { APP } from './lib/version.js';
-import { catchErrors } from './store/errors.js';
+import { catchErrors, collectNativeCrashes } from './store/errors.js';
 import { startPhoneSync } from './store/phoneSync.js';
 import { content, useData } from './store/useData.js';
 import Meals from './views/Meals.jsx';
@@ -51,6 +51,8 @@ const Snapshots = lazy(() => import('./views/Snapshots.jsx'));
 const Lab = lazy(() => import('./views/Lab.jsx'));
 
 catchErrors();
+// Native crashes and a dead WebView from the last run go into the ring (P14-15).
+collectNativeCrashes().catch(() => {});
 const Quests = lazy(() => import('./views/Quests.jsx'));
 const Shopping = lazy(() => import('./views/Shopping.jsx'));
 const Stats = lazy(() => import('./views/Stats.jsx'));
