@@ -5,7 +5,6 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
-import { introOn, setIntro } from '../lib/intro.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
@@ -328,11 +327,6 @@ export default function Settings() {
       </>) : null}
 
       {show('about') ? (<>
-      <div className="section-label">App</div>
-      <div className="list">
-        <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped during a workout, and ends at once when a reminder or the widget opens another screen" />
-      </div>
-
       <div className="section-label">About</div>
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>

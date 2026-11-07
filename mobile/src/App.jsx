@@ -17,7 +17,7 @@ import TabBar from './components/TabBar.jsx';
 import { todayISO } from './lib/dates.js';
 import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
-import { introLine, shouldPlayIntro } from './lib/intro.js';
+import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
 import Setup from './views/Setup.jsx';
 import { programDayFor } from './lib/schedule.js';
@@ -117,11 +117,11 @@ const router = createHashRouter([
   },
 ]);
 
-/** Decides once per launch whether the intro plays, and what it says. */
+/** Decides on each open whether the intro plays, and what it says. */
 function introFor() {
   const { data, activeWorkoutId } = useData.getState();
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  if (!shouldPlayIntro({ data, hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
+  if (!data || !shouldPlayIntro({ hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
   const today = todayISO();
   let next = null;
   try {
@@ -168,6 +168,22 @@ export default function App() {
     });
   }, [hydrate]);
   const endIntro = useCallback(() => setIntro(null), []);
+  // Every open plays the intro: also coming back to the app after a minute
+  // or more away, not only a cold start.
+  useEffect(() => {
+    let hiddenAt = null;
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+      const away = hiddenAt == null ? NaN : Date.now() - hiddenAt;
+      hiddenAt = null;
+      const s = useData.getState();
+      if (!s.ready || s.loadError || s.startError || needsSetup(s.data) || !isNewOpen(away)) return;
+      const line = introFor();
+      if (typeof line === 'string') setIntro(line);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   if (!ready) return null;
   if (loadError) {
     // The saved data is from a newer version of the app. Nothing is
