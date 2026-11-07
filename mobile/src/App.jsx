@@ -24,7 +24,7 @@ import { needsSetup } from './lib/setup.js';
 import Setup from './views/Setup.jsx';
 import { programDayFor } from './lib/schedule.js';
 import { activePlan } from './lib/plan.js';
-import { timesOf } from './lib/times.js';
+import { effectiveTimes } from './lib/ramadan.js';
 import { APP } from './lib/version.js';
 import { catchErrors, collectNativeCrashes } from './store/errors.js';
 import { startPhoneSync } from './store/phoneSync.js';
@@ -133,7 +133,7 @@ function introFor() {
     next = null;
   }
   const doneToday = data.workouts.some((w) => w.log_date === today && w.finished_at && (w.workout_type || 'gym') === 'gym');
-  return introLine({ next, time: timesOf(data, content).session_time, doneToday, firstRun: data.workouts.length === 0 });
+  return introLine({ next, time: effectiveTimes(data, content, today).session_time, doneToday, firstRun: data.workouts.length === 0 });
 }
 
 /** Android back: close the top sheet first, then go back a screen, and

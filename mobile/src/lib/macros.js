@@ -18,6 +18,7 @@
 // level (lib/activity.js). The web app has no watch data, so it never does.
 import { activeKcalAverage, watchTdee } from './activity.js';
 import { addDays, daysBetween } from './dates.js';
+import { deficitShare, ramadanActive } from './ramadan.js';
 
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
 const KCAL_PER_KG_FAT = 7700;
@@ -175,7 +176,8 @@ export function macroTargets(data, nutrition, today) {
   const activeAvg = data.settings?.health?.adaptive === true ? activeKcalAverage(data.health_daily, today) : null;
   const t = activeAvg != null ? watchTdee(b, activeAvg) : tdee(b, p.activity_level);
   const mode = DIRECTIONS.includes(currentGoal(data)?.direction) ? currentGoal(data).direction : 'lose';
-  const share = nutrition.max_deficit_share ?? MAX_DEFICIT_SHARE;
+  // Ramadan: at most 15% of TDEE, none with the no_fasting_deficit gate.
+  const share = deficitShare(data, today, nutrition.max_deficit_share ?? MAX_DEFICIT_SHARE);
   const energy = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
   return {
     ...macroSplit(energy.kcal, goalMid ?? weight, mode),
@@ -193,5 +195,6 @@ export function macroTargets(data, nutrition, today) {
     today,
     ...(share !== MAX_DEFICIT_SHARE ? { share } : {}),
     ...(activeAvg != null ? { active_avg: activeAvg } : {}),
+    ...(ramadanActive(data, today) ? { ramadan: true } : {}),
   };
 }

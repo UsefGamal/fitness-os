@@ -18,7 +18,7 @@ import { macroTargets } from './macros.js';
 import { activePlan } from './plan.js';
 import { mealDayFor, slotLabel } from './meals.js';
 import { programDayFor, sessionKeyOn, weekView } from './schedule.js';
-import { timesOf } from './times.js';
+import { effectiveTimes } from './ramadan.js';
 
 export const WIDGET_DAYS = 7;
 export const WATER_GOAL_ML = 3000;
@@ -40,7 +40,7 @@ export function widgetDays(data, content, today) {
   const T = activePlan(data, content);
   const N = content.nutrition;
   const moves = data.session_moves || [];
-  const times = timesOf(data, content);
+  const times = effectiveTimes(data, content, today);
   const isRest = (d) => sessionKeyOn(d, T, moves) === 'rest';
   const streak = D.trainingStreak(data, today, isRest);
   const trained = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));

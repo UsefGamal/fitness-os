@@ -10,7 +10,7 @@ import WeekStrip from '../components/WeekStrip.jsx';
 import { formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups } from '../lib/insights.js';
-import { timesOf } from '../lib/times.js';
+import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { mealDayFor } from '../lib/meals.js';
@@ -35,7 +35,7 @@ export default function Today() {
   const navigate = useNavigate();
   const today = useToday();
   const T = activePlan(data, content);
-  const times = timesOf(data, content);
+  const times = effectiveTimes(data, content, today);
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
   const week = weekView(today, T, moves);
@@ -126,6 +126,9 @@ export default function Today() {
       </section>
       {picking ? <DayPicker date={today} dayName={longWeekday(today)} training={T} data={data} update={update} onClose={() => setPicking(false)} /> : null}
 
+      {ramadanActive(data, today) ? (
+        <div className="card small" role="note"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.homeNote', { time: times.session_time })}</span></div>
+      ) : null}
       {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <GoalCard data={data} today={today} /> : null}
 
       {data.setup?.needs_body ? (
