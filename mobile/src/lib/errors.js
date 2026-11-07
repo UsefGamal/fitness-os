@@ -6,6 +6,9 @@
 
 export const RING_SIZE = 20;
 const MAX_STACK = 600;
+/** Longest report the share sheet gets (P14-15): enough for every error,
+ * short enough for a chat message. */
+export const REPORT_MAX = 6000;
 
 export function errorEntry(err, { route = null, now = Date.now() } = {}) {
   const message = String(err?.message || err || 'Unknown error').slice(0, 300);
@@ -66,4 +69,23 @@ export function deviceFromUA(ua = '') {
   // The WebView's Chrome version: the app needs 111+ (TL-05).
   const chrome = /Chrome\/(\d+)/.exec(ua);
   return { osVersion: m[1], model: m[2].trim() === 'K' ? null : m[2].trim(), ...(chrome ? { webview: chrome[1] } : {}) };
+}
+
+/** A line saved by the native crash catcher (CrashPlugin.java) as a ring
+ * entry: the first line is the message, the rest the top of the stack. */
+export function nativeEntry(c) {
+  const text = String(c?.message || 'Native crash');
+  const [first, ...rest] = text.split('\n');
+  const at = Number.isFinite(c?.at) ? c.at : Date.now();
+  return { at, message: first.slice(0, 300), stack: rest.length ? rest.join('\n').slice(0, MAX_STACK) : null, route: 'native' };
+}
+
+/** Keep a report under `max` characters, cutting whole lines and saying so. */
+export function capReport(text, max = REPORT_MAX) {
+  const s = String(text || '');
+  if (s.length <= max) return s;
+  const note = '\n[cut to fit]';
+  const cut = s.slice(0, max - note.length);
+  const nl = cut.lastIndexOf('\n');
+  return (nl > 0 ? cut.slice(0, nl) : cut) + note;
 }

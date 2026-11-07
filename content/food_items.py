@@ -152,6 +152,59 @@ DRINKS = {
     "flavored_sparkling_water": (0, 0, 0, 0, 0),
 }
 
+# How each food reads in the app (P14-19): sentence case, keyed by the base
+# key that parse_shopping_unit() leaves once the portion suffix is gone.
+# (singular, plural); the plural is used when a meal has more than one.
+FOOD_NAMES = {
+    "ful_medames_bowl": ("bowl of ful medames", "bowls of ful medames"),
+    "boiled_egg": ("boiled egg", "boiled eggs"),
+    "whole_wheat_pita": ("wholewheat pita", "wholewheat pitas"),
+    "greek_yogurt_lowfat": ("low-fat Greek yogurt", "low-fat Greek yogurt"),
+    "fruit_medium": ("piece of fruit", "pieces of fruit"),
+    "grilled_chicken_breast": ("grilled chicken breast", "grilled chicken breast"),
+    "white_rice": ("white rice", "white rice"),
+    "salad_tomato_cucumber": ("tomato and cucumber salad", "tomato and cucumber salads"),
+    "mixed_nuts": ("mixed nuts", "mixed nuts"),
+    "lentil_soup_bowl": ("bowl of lentil soup", "bowls of lentil soup"),
+    "cottage_cheese": ("cottage cheese", "cottage cheese"),
+    "shakshuka_3eggs": ("shakshuka with 3 eggs", "shakshuka with 3 eggs"),
+    "feta": ("feta", "feta"),
+    "beef_kofta": ("beef kofta", "beef kofta"),
+    "molokhia_bowl": ("bowl of molokhia", "bowls of molokhia"),
+    "bamia_chicken_bowl": ("bowl of bamia with chicken", "bowls of bamia with chicken"),
+    "freekeh": ("freekeh", "freekeh"),
+    "hawawshi_baked": ("baked hawawshi", "baked hawawshi"),
+    "fattah_portion": ("portion of fattah", "portions of fattah"),
+    "koshari_bowl_small": ("small bowl of koshari", "small bowls of koshari"),
+    "omelet_3egg_veg": ("3-egg vegetable omelette", "3-egg vegetable omelettes"),
+    "roasted_chickpeas": ("roasted chickpeas", "roasted chickpeas"),
+    "labneh": ("labneh", "labneh"),
+    "grilled_beef_steak": ("grilled beef steak", "grilled beef steak"),
+    "mahshi_zucchini_bowl": ("bowl of zucchini mahshi", "bowls of zucchini mahshi"),
+    "turkey_breast": ("turkey breast", "turkey breast"),
+    "chicken_shawarma_home": ("homemade chicken shawarma", "homemade chicken shawarma"),
+    "grilled_chicken_thigh": ("grilled chicken thigh", "grilled chicken thigh"),
+    "rice_pudding_small": ("small rice pudding", "small rice puddings"),
+    "dates": ("date", "dates"),
+    "hummus": ("hummus", "hummus"),
+    "whole_wheat_toast": ("wholewheat toast", "wholewheat toast"),
+    "avocado": ("avocado", "avocados"),
+    "shish_tawook": ("shish tawook", "shish tawook"),
+    "grilled_kofta_skewer": ("grilled kofta skewers", "grilled kofta skewers"),
+    "grilled_lamb_chops": ("grilled lamb chops", "grilled lamb chops"),
+    "grilled_kebab_hindi": ("grilled kebab hindi", "grilled kebab hindi"),
+    "shawarma_plate": ("shawarma plate", "shawarma plate"),
+    "grilled_halloumi": ("grilled halloumi", "grilled halloumi"),
+    "fattoush_bowl": ("bowl of fattoush", "bowls of fattoush"),
+    "tabbouleh_bowl": ("bowl of tabbouleh", "bowls of tabbouleh"),
+    "mutabbal": ("mutabbal", "mutabbal"),
+    "toum": ("toum", "toum"),
+    "batata_harra": ("batata harra", "batata harra"),
+    "syrian_rice_vermicelli": ("Syrian rice with vermicelli", "Syrian rice with vermicelli"),
+    "zaatar_manakish": ("za'atar manakish", "za'atar manakish"),
+}
+
+
 # Shopping-list quantity parsing — lets the same base ingredient sold at
 # different portion sizes (e.g. grilled_chicken_breast_150g and _200g)
 # consolidate into one real-world shopping quantity instead of listing
@@ -184,3 +237,35 @@ def format_shopping_qty(total: float, unit: str) -> str:
     if total == int(total):
         return f"×{int(total)}"
     return f"×{total:g}"
+
+
+def _num(x: float) -> str:
+    return f"{x:g}"
+
+
+def food_phrase(base: str, qty: float, unit: str) -> str:
+    """One food in words: "grilled chicken breast 200 g", "2 boiled eggs",
+    "half an avocado", "3 dates", "2 slices of wholewheat toast"."""
+    one, many = FOOD_NAMES.get(base, (base.replace("_", " "), base.replace("_", " ")))
+    if unit in ("g", "tbsp"):
+        return f"{one} {_num(qty)} {unit}"
+    if unit == "pc":
+        return f"{_num(qty)} {one if qty == 1 else many}"
+    if unit == "slice":
+        return f"{_num(qty)} {'slice' if qty == 1 else 'slices'} of {one}"
+    if qty == 0.5:
+        return f"half {'an' if one[0] in 'aeiou' else 'a'} {one}"
+    if qty == 1:
+        # Countable foods (their plural differs) get "a"/"an".
+        return one if one == many else f"{'an' if one[0] in 'aeiou' else 'a'} {one}"
+    return f"{_num(qty)} {many}"
+
+
+def natural_items(keys) -> list:
+    """A meal's food keys as words, repeats merged ("2 boiled eggs",
+    "grilled chicken breast 300 g"), in the order they first appear."""
+    totals = {}
+    for key in keys:
+        base, qty, unit = parse_shopping_unit(key)
+        totals[(base, unit)] = totals.get((base, unit), 0) + qty
+    return [food_phrase(base, qty, unit) for (base, unit), qty in totals.items()]

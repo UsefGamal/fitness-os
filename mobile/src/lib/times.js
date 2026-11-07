@@ -13,7 +13,8 @@ export function defaultTimes(content) {
     remind_before: 30, // minutes before a session
     remind_workouts: true,
     remind_evening: true,
-    remind_meals: true,
+    // Meals are opt-in (P14-12): by default at most 2 reminders a day.
+    remind_meals: false,
     meal_times: Object.fromEntries(N.meal_slots.map((s) => [s, N.meal_slot_windows[s].split('–')[0].padStart(5, '0')])),
   };
 }

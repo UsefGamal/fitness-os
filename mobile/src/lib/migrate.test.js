@@ -16,6 +16,7 @@ import { CURRENT_SCHEMA, migrate, needsMigration, NewerSchemaError, schemaOf, V1
 import { activePlan } from './plan.js';
 import { effectiveDay } from './planEdit.js';
 import { plannedReminders } from './reminders.js';
+import { defaultTimes } from './times.js';
 import { programDayFor, sessionKeyOn, weekView } from './schedule.js';
 import { content } from './testContent.js';
 import { widgetDays } from './widget.js';
@@ -60,7 +61,8 @@ function numbers(data) {
       mealDay: mealDayNumber(iso, content.nutrition),
       streak: D.trainingStreak(data, iso, (d) => sessionKeyOn(d, T, moves) === 'rest'),
       widget: iso === '2026-11-08' ? widgetDays(data, content, iso) : null,
-      reminders: plannedReminders(iso, C, new Date(`${iso}T05:00:00`), moves, data.evening_plan || {}).length,
+      // The golden predates opt-in meal reminders (P14-12), so it counts them on.
+      reminders: plannedReminders(iso, C, new Date(`${iso}T05:00:00`), moves, data.evening_plan || {}, { ...defaultTimes(C), remind_meals: true }).length,
     };
   });
 }
