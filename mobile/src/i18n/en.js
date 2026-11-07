@@ -32,6 +32,13 @@ export default {
   'crash.report': 'Send a bug report',
   'crash.reportNote': 'The report has the app version, your phone model, counts (how many workouts, weigh-ins) and the last errors. No weights, notes, photos or health data.',
   'crash.reload': 'Reload the app',
+  'pill.open': 'Rest timer: back to the workout',
+  'pill.go': 'Go',
+  'pill.rest': 'Rest',
+  'pill.paused': 'Paused',
+  'pill.done': 'Rest done',
+  'pill.skip': 'Skip',
+  'pill.close': 'Done',
 
   'update.title': 'Update Fitness OS',
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
