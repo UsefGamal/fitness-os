@@ -6,7 +6,7 @@ import { macroTargets } from './macros.js';
 import { dropFastingReminders, deficitShare, effectiveTimes, isFasting, RAMADAN_DEFICIT_SHARE, ramadanActive, ramadanOf, ramadanSet, setRamadan, SUGGESTED_DATES, switchRamadan } from './ramadan.js';
 import { plannedReminders } from './reminders.js';
 import { content } from './testContent.js';
-import { timesOf } from './times.js';
+import { defaultTimes, timesOf } from './times.js';
 
 const N = content.nutrition;
 
@@ -79,7 +79,9 @@ test('no reminder rings while fasting', () => {
   const d = setRamadan(emptyData(content), { from: '2026-11-04', to: '2026-11-30', iftar: '17:00', suhoor: '04:30' });
   const now = new Date(2026, 10, 3, 5, 0);
   // Planned with the normal times (made before Ramadan), the fasting ones are dropped.
-  const plain = plannedReminders('2026-11-03', content, now);
+  // Meal reminders are opt-in, so switch them on to have daytime ones.
+  const withMeals = { ...defaultTimes(content), remind_meals: true };
+  const plain = plannedReminders('2026-11-03', content, now, [], {}, withMeals);
   const kept = dropFastingReminders(plain, d);
   assert.ok(kept.length < plain.length);
   const r = ramadanOf(d);
@@ -88,7 +90,7 @@ test('no reminder rings while fasting', () => {
   // The day before Ramadan keeps its daytime reminders.
   assert.ok(kept.some((x) => x.at.getDate() === 3 && isFasting(r, hhmm(x))));
   // Planned with Ramadan times, nothing is dropped on Ramadan days.
-  const moved = plannedReminders('2026-11-05', content, new Date(2026, 10, 5, 1, 0), [], {}, effectiveTimes(d, content, '2026-11-05'));
+  const moved = plannedReminders('2026-11-05', content, new Date(2026, 10, 5, 1, 0), [], {}, { ...effectiveTimes(d, content, '2026-11-05'), remind_meals: true });
   assert.deepEqual(dropFastingReminders(moved, d), moved);
   assert.equal(dropFastingReminders(plain, emptyData(content)), plain);
 });
