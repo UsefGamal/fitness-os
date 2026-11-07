@@ -5,7 +5,6 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
-import { introOn, setIntro } from '../lib/intro.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
@@ -19,6 +18,7 @@ import { Health, isNative, signingCode } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
+import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
 import ReportSheet from '../components/ReportSheet.jsx';
@@ -329,11 +329,6 @@ export default function Settings() {
       </>) : null}
 
       {show('about') ? (<>
-      <div className="section-label">App</div>
-      <div className="list">
-        <Toggle on={introOn(data)} onClick={() => update((d) => setIntro(d, !introOn(d)))} title="Intro animation" note="A short animation when the app opens. Skipped during a workout, and ends at once when a reminder or the widget opens another screen" />
-      </div>
-
       <div className="section-label">About</div>
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
@@ -469,7 +464,8 @@ function TimesSettings({ data, update, toggleReminders }) {
             <Choice label="Before a session" value={t.remind_before} onChange={(v) => set({ remind_before: Number(v) })} options={REMIND_CHOICES.map((m) => [m, m ? `${m} min` : 'At start time'])} />
             <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />
             <Toggle on={t.remind_evening !== false} onClick={() => set({ remind_evening: t.remind_evening === false })} title="Evening session" note={`${leadText(t.remind_before)} ${t.evening_time} when one is planned`} />
-            <Toggle on={t.remind_meals !== false} onClick={() => set({ remind_meals: t.remind_meals === false })} title="Meals" note="At each meal time below" />
+            <Toggle on={t.remind_meals === true} onClick={() => set({ remind_meals: t.remind_meals !== true })} title="Meals" note="At each meal time below" />
+            <ReminderCheck />
           </>
         ) : null}
       </div>

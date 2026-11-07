@@ -10,6 +10,8 @@ import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
 import Intro from './components/Intro.jsx';
+import PermissionsSheet from './components/PermissionsSheet.jsx';
+import { askPermissionsOnOpen } from './lib/reminderHealth.js';
 import { closeTopOverlay } from './lib/overlays.js';
 import RestTimer from './components/RestTimer.jsx';
 import { useTimer } from './store/useTimer.js';
@@ -17,7 +19,7 @@ import TabBar from './components/TabBar.jsx';
 import { todayISO } from './lib/dates.js';
 import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
-import { introLine, shouldPlayIntro } from './lib/intro.js';
+import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
 import Setup from './views/Setup.jsx';
 import { programDayFor } from './lib/schedule.js';
@@ -25,7 +27,6 @@ import { activePlan } from './lib/plan.js';
 import { timesOf } from './lib/times.js';
 import { APP } from './lib/version.js';
 import { catchErrors, collectNativeCrashes } from './store/errors.js';
-import { scheduleReminders } from './store/notify.js';
 import { startPhoneSync } from './store/phoneSync.js';
 import { content, useData } from './store/useData.js';
 import Meals from './views/Meals.jsx';
@@ -119,11 +120,11 @@ const router = createHashRouter([
   },
 ]);
 
-/** Decides once per launch whether the intro plays, and what it says. */
+/** Decides on each open whether the intro plays, and what it says. */
 function introFor() {
   const { data, activeWorkoutId } = useData.getState();
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  if (!shouldPlayIntro({ data, hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
+  if (!data || !shouldPlayIntro({ hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
   const today = todayISO();
   let next = null;
   try {
@@ -150,6 +151,7 @@ export default function App() {
   const { ready, hydrate, loadError, startError } = useData();
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
+  const [perms, setPerms] = useState(false);
   useEffect(() => {
     hydrate().then(() => {
       const loc = setLocale(localeOf(useData.getState().data));
@@ -158,8 +160,9 @@ export default function App() {
       if (useData.getState().loadError || useData.getState().startError) return;
       // A fresh phone gets the first-time setup instead of the intro (E5-S2).
       if (needsSetup(useData.getState().data)) { setSetup(true); setIntro(null); } else setIntro(introFor());
-      // Keep two weeks of reminders queued on every open.
-      scheduleReminders(content, useData.getState().data.settings.notifications);
+      // The one-time permissions step, shown once the intro is out of the way.
+      setPerms(askPermissionsOnOpen({ native: Capacitor.isNativePlatform(), data: useData.getState().data }));
+      // Reminders are queued once per start by startPhoneSync (watchReminders).
       startPhoneSync();
       listenBackButton();
     }).catch((err) => {
@@ -170,6 +173,22 @@ export default function App() {
     });
   }, [hydrate]);
   const endIntro = useCallback(() => setIntro(null), []);
+  // Every open plays the intro: also coming back to the app after a minute
+  // or more away, not only a cold start.
+  useEffect(() => {
+    let hiddenAt = null;
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+      const away = hiddenAt == null ? NaN : Date.now() - hiddenAt;
+      hiddenAt = null;
+      const s = useData.getState();
+      if (!s.ready || s.loadError || s.startError || needsSetup(s.data) || !isNewOpen(away)) return;
+      const line = introFor();
+      if (typeof line === 'string') setIntro(line);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   if (!ready) return null;
   if (loadError) {
     // The saved data is from a newer version of the app. Nothing is
@@ -183,11 +202,14 @@ export default function App() {
     );
   }
   if (startError) return <RecoveryScreen kind={startError} />;
-  if (setup) return <><Setup onDone={() => setSetup(false)} /><SaveBar /></>;
+  if (setup) {
+    return <><Setup onDone={() => { setSetup(false); setPerms(askPermissionsOnOpen({ native: Capacitor.isNativePlatform(), data: useData.getState().data })); }} /><SaveBar /></>;
+  }
   return (
     <>
       <RouterProvider router={router} />
       <SaveBar />
+      {perms && intro === null ? <PermissionsSheet onDone={() => setPerms(false)} /> : null}
       {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
     </>
   );
