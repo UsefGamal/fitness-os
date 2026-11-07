@@ -5,7 +5,23 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 
 const D = Directory.Data;
 
-export const privateFs = Capacitor.isNativePlatform()
+/** P14-17: the device-test build (VITE_FAKE_FS=1, e2e/device.mjs) keeps the
+ * "file" in localStorage so the mirror code runs in a browser. The normal
+ * build drops this: Vite replaces the flag with undefined. */
+function fakeFs() {
+  const K = 'fitness-os-fake-fs';
+  const load = () => { try { return JSON.parse(localStorage.getItem(K) || '{}'); } catch { return {}; } };
+  const save = (m) => localStorage.setItem(K, JSON.stringify(m));
+  return {
+    async read(path) { return load()[path] ?? null; },
+    async write(path, data) { const m = load(); m[path] = data; save(m); },
+    async rename(from, to) { const m = load(); m[to] = m[from]; delete m[from]; save(m); },
+    async remove(path) { const m = load(); delete m[path]; save(m); },
+    async list(dir) { return Object.keys(load()).filter((k) => k.startsWith(`${dir}/`)); },
+  };
+}
+
+export const privateFs = import.meta.env.VITE_FAKE_FS ? fakeFs() : Capacitor.isNativePlatform()
   ? {
       async read(path) {
         try {

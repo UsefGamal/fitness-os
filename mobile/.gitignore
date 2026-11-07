@@ -14,3 +14,4 @@ android/capacitor-cordova-android-plugins/
 *.keystore
 *.jks
 public/exercise-db/
+dist-device/

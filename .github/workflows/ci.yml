@@ -78,6 +78,19 @@ jobs:
         timeout-minutes: 15
         run: npm run e2e -- --shots
 
+      # P14-17: the friends APK's screens have their own baseline.
+      - name: Phone harness, friends build
+        timeout-minutes: 15
+        env:
+          FITNESS_OS_FLAVOR: friends
+        run: npm run e2e -- --shots
+
+      # P14-17: setup states, 3 years of data at 6x slower CPU, midnight,
+      # and the file mirror against a fake file system.
+      - name: Device tests
+        timeout-minutes: 10
+        run: npm run e2e:device
+
       # P14-02: and the build the friends install (its own baseline).
       - name: Phone harness, friends build
         timeout-minutes: 15
