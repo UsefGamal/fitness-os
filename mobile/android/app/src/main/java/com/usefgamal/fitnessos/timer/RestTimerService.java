@@ -57,6 +57,25 @@ public class RestTimerService extends Service {
     static volatile Listener listener;
     static volatile long endsAt = 0;
     static volatile String label = "";
+
+    // The shade texts in the app's language, sent from JS with each start
+    // (P14-12: native text goes through i18n). English until the first start.
+    private static final java.util.Map<String, String> TEXTS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void setTexts(org.json.JSONObject texts) {
+        if (texts == null) return;
+        java.util.Iterator<String> keys = texts.keys();
+        while (keys.hasNext()) {
+            String k = keys.next();
+            String v = texts.optString(k, null);
+            if (v != null && !v.isEmpty()) TEXTS.put(k, v);
+        }
+    }
+
+    static String tx(String key, String fallback) {
+        String v = TEXTS.get(key);
+        return v != null ? v : fallback;
+    }
     static volatile boolean sound = true;
     /** The app is on screen: play the "rest done" chime directly instead of relying on the notification sound. */
     static volatile boolean foreground = false;
@@ -116,8 +135,8 @@ public class RestTimerService extends Service {
         Notification n = new NotificationCompat.Builder(this, CHANNEL_RUNNING)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
-            .setContentTitle("Rest")
-            .setContentText(label.isEmpty() ? "Rest timer" : "Then " + label)
+            .setContentTitle(tx("rest", "Rest"))
+            .setContentText(label.isEmpty() ? tx("restTimer", "Rest timer") : tx("then", "Then {label}").replace("{label}", label))
             .setWhen(endsAt)
             .setShowWhen(true)
             .setUsesChronometer(true)
@@ -129,7 +148,7 @@ public class RestTimerService extends Service {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(openApp())
             .addAction(0, "+15s", self(ACTION_ADD, 1).putExtra(EXTRA_SECONDS, 15).let())
-            .addAction(0, "Skip", self(ACTION_STOP, 2).putExtra("fromShade", true).let())
+            .addAction(0, tx("skip", "Skip"), self(ACTION_STOP, 2).putExtra("fromShade", true).let())
             .build();
         if (first) {
             int type = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
@@ -177,8 +196,8 @@ public class RestTimerService extends Service {
         Notification done = new NotificationCompat.Builder(this, sound && !chime ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
-            .setContentTitle("Rest done")
-            .setContentText(label.isEmpty() ? "Time for your next set" : "Next set: " + label)
+            .setContentTitle(tx("done", "Rest done"))
+            .setContentText(label.isEmpty() ? tx("nextSet", "Time for your next set") : tx("nextSetLabel", "Next set: {label}").replace("{label}", label))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVibrate(new long[] {0, 300, 150, 300})
@@ -205,13 +224,13 @@ public class RestTimerService extends Service {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager m = nm();
         if (m.getNotificationChannel(CHANNEL_RUNNING) == null) {
-            NotificationChannel c = new NotificationChannel(CHANNEL_RUNNING, "Rest timer", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel c = new NotificationChannel(CHANNEL_RUNNING, tx("restTimer", "Rest timer"), NotificationManager.IMPORTANCE_LOW);
             c.setDescription("The countdown between sets");
             c.setShowBadge(false);
             m.createNotificationChannel(c);
         }
         if (m.getNotificationChannel(CHANNEL_DONE) == null) {
-            NotificationChannel c = new NotificationChannel(CHANNEL_DONE, "Rest done", NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel c = new NotificationChannel(CHANNEL_DONE, tx("done", "Rest done"), NotificationManager.IMPORTANCE_HIGH);
             c.setDescription("Buzzes when a rest is over");
             c.enableVibration(true);
             c.setVibrationPattern(new long[] {0, 300, 150, 300});

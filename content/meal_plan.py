@@ -1,6 +1,6 @@
 from datetime import date
 
-from content.food_items import FOODS
+from content.food_items import FOODS, natural_items
 
 # Lives here (not routers/meals.py) so baseline.py and other non-router
 # modules can import it without a circular dependency — routers/meals.py
@@ -407,7 +407,8 @@ MEAL_PLAN_14_DAY = [
 
 
 def display_name(key: str) -> str:
-    return key.replace("_", " ").title()
+    """Kept for old callers; the app shows natural_items() (P14-19)."""
+    return natural_items([key])[0]
 
 
 def compute_macros(item_keys):
@@ -427,7 +428,7 @@ def _build_option(option_key: str, option: dict) -> dict:
     return {
         "key": option_key,
         "cuisine": option["cuisine"],
-        "ingredients": [display_name(i) for i in option["items"]],
+        "ingredients": natural_items(option["items"]),
         "kcal": kcal,
         "protein": protein,
         "carbs": carbs,
