@@ -25,6 +25,10 @@ const FLAVOR = process.env.FITNESS_OS_FLAVOR === 'friends' ? 'friends' : 'yusuf'
 const BASELINE = new URL(FLAVOR === 'friends' ? './baseline-friends.json' : './baseline.json', HERE);
 const FIXTURE = JSON.parse(readFileSync(new URL('../src/lib/fixtures/v1-yusuf-like.json', HERE), 'utf8'));
 const KEY = 'fitness-os-data-v1';
+// Every run sees the same day, so a screen's numbers don't move with the
+// calendar (a Saturday meal day vs a Friday rest day). Friday 6 Nov 2026,
+// 09:00 in Cairo: the day the baselines were recorded.
+const NOW = new Date('2026-11-06T07:00:00Z');
 const PORT = 4179;
 
 export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
@@ -77,6 +81,7 @@ export async function run({ shots = false } = {}) {
       raw.profile = { ...(raw.profile || {}), locale: dir === 'rtl' ? 'ar' : 'en' };
       for (const width of WIDTHS) {
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
+        await ctx.clock.setFixedTime(NOW);
         await ctx.addInitScript(([k, d]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, d); } catch { /* fresh */ } }, [KEY, JSON.stringify(raw)]);
         const page = await ctx.newPage();
         const errors = [];
