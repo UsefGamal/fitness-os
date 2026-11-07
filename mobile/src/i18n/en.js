@@ -50,7 +50,7 @@ export default {
   'settings.modules': 'Modules',
   'settings.modulesNote': 'Show or hide parts of the app',
   'settings.about': 'App and about',
-  'settings.aboutNote': 'Intro animation, version, bug report',
+  'settings.aboutNote': 'Version, bug report',
   'meals.kcalEaten': 'Calories eaten',
   'meals.proteinEaten': 'Protein eaten',
   'meals.summary': 'Carbs {carbs}/{tc} g · fat {fat}/{tf} g · {done}/{all} eaten. All picks: {kcal} kcal, {protein} g protein.',
