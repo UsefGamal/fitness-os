@@ -14,6 +14,7 @@
     "coverage": "npm run content && node scripts/coverage.mjs",
     "lint:i18n": "node scripts/i18n-lint.mjs",
     "e2e": "npm run build && node e2e/harness.mjs",
+    "e2e:device": "npm run content && VITE_FAKE_FS=1 vite build --outDir dist-device && node e2e/device.mjs",
     "build:mobile": "npm run photos && npm run build && cap sync android",
     "photos": "python3 ../scripts/fetch_exercise_photos.py public/exercise-db"
   },
