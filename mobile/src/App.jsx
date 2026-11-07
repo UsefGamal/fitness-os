@@ -10,6 +10,8 @@ import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
 import Intro from './components/Intro.jsx';
+import PermissionsSheet from './components/PermissionsSheet.jsx';
+import { askPermissionsOnOpen } from './lib/reminderHealth.js';
 import { closeTopOverlay } from './lib/overlays.js';
 import RestTimer from './components/RestTimer.jsx';
 import { useTimer } from './store/useTimer.js';
@@ -25,7 +27,6 @@ import { activePlan } from './lib/plan.js';
 import { timesOf } from './lib/times.js';
 import { APP } from './lib/version.js';
 import { catchErrors } from './store/errors.js';
-import { scheduleReminders } from './store/notify.js';
 import { startPhoneSync } from './store/phoneSync.js';
 import { content, useData } from './store/useData.js';
 import Meals from './views/Meals.jsx';
@@ -148,6 +149,7 @@ export default function App() {
   const { ready, hydrate, loadError, startError } = useData();
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
+  const [perms, setPerms] = useState(false);
   useEffect(() => {
     hydrate().then(() => {
       const loc = setLocale(localeOf(useData.getState().data));
@@ -156,8 +158,9 @@ export default function App() {
       if (useData.getState().loadError || useData.getState().startError) return;
       // A fresh phone gets the first-time setup instead of the intro (E5-S2).
       if (needsSetup(useData.getState().data)) { setSetup(true); setIntro(null); } else setIntro(introFor());
-      // Keep two weeks of reminders queued on every open.
-      scheduleReminders(content, useData.getState().data.settings.notifications);
+      // The one-time permissions step, shown once the intro is out of the way.
+      setPerms(askPermissionsOnOpen({ native: Capacitor.isNativePlatform(), data: useData.getState().data }));
+      // Reminders are queued once per start by startPhoneSync (watchReminders).
       startPhoneSync();
       listenBackButton();
     }).catch((err) => {
@@ -181,11 +184,14 @@ export default function App() {
     );
   }
   if (startError) return <RecoveryScreen kind={startError} />;
-  if (setup) return <><Setup onDone={() => setSetup(false)} /><SaveBar /></>;
+  if (setup) {
+    return <><Setup onDone={() => { setSetup(false); setPerms(askPermissionsOnOpen({ native: Capacitor.isNativePlatform(), data: useData.getState().data })); }} /><SaveBar /></>;
+  }
   return (
     <>
       <RouterProvider router={router} />
       <SaveBar />
+      {perms && intro === null ? <PermissionsSheet onDone={() => setPerms(false)} /> : null}
       {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
     </>
   );
