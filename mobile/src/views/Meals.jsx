@@ -10,6 +10,7 @@ import { mealsView, proteinPerMeal, servingsFor, setMealsView } from '../lib/mea
 import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
+import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
@@ -105,6 +106,10 @@ function MealPlan() {
   const eatenSlots = new Set(N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed));
   const done = eatenSlots.size;
   const eaten = dayTotals(day, picks, eatenSlots);
+  // Ramadan: the same meals, at suhoor, iftar and after taraweeh.
+  const fasting = ramadanActive(data, date);
+  const rTimes = fasting ? effectiveTimes(data, content, date).meal_times : null;
+  const label = (slot) => (fasting ? t(`ramadan.meal.${slot}`) : slotLabel(slot));
 
   return (
     <div className="page">
@@ -132,7 +137,8 @@ function MealPlan() {
           {day.is_refeed && r.key === 'kcal' && r.over ? ' It is a refeed day, so a little over is planned.' : r.key === 'protein' && !r.over ? ' Try the other option on a meal, or add a protein snack.' : ''}
         </div>
       ))}
-      {training ? <div className="card small"><span className="chip accent">Training day</span> <span className="muted">{N.pre_workout_note}</span></div> : null}
+      {fasting ? <div className="card small"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.mealsNote')}</span></div>
+        : training ? <div className="card small"><span className="chip accent">Training day</span> <span className="muted">{N.pre_workout_note}</span></div> : null}
 
       {day.meals.map((meal) => {
         const log = D.mealLog(data, date, meal.slot);
@@ -142,10 +148,10 @@ function MealPlan() {
           <section key={meal.slot} className="card">
             <div className="row between">
               <div>
-                <strong>{slotLabel(meal.slot)}</strong>
-                <div className="muted small">{meal.time_window}</div>
+                <strong>{label(meal.slot)}</strong>
+                <div className="muted small">{fasting ? rTimes[meal.slot] : meal.time_window}</div>
               </div>
-              <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={`${slotLabel(meal.slot)} eaten`}
+              <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={`${label(meal.slot)} eaten`}
                 onClick={() => update((d) => D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick }))}>
                 {log?.completed ? <Icon name="check" /> : null}
               </button>

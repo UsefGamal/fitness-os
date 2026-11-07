@@ -19,6 +19,7 @@ import { Health, isNative, signingCode } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
+import RamadanSettings from '../components/RamadanSettings.jsx';
 import { t } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
 import { currentReport } from '../store/errors.js';
@@ -273,6 +274,7 @@ export default function Settings() {
       {show('training') ? <TrainingSettings data={data} update={update} /> : null}
 
       {show('times') ? <TimesSettings data={data} update={update} toggleReminders={toggleReminders} /> : null}
+      {show('times') ? <RamadanSettings data={data} update={update} /> : null}
 
       {show('health') ? (<>
       <div className="section-label">Health Connect</div>
