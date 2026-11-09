@@ -36,11 +36,28 @@ yes | "$SDKM" --licenses >/dev/null || true
 echo no | "$AVDM" create avd --force -n update-test -k "$IMAGE" >/dev/null
 "$SDK/emulator/emulator" -avd update-test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot >"$WORK/emulator.log" 2>&1 &
 ADB="$SDK/platform-tools/adb"
-"$ADB" wait-for-device
-for _ in $(seq 1 120); do
-  [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] && break
+EMU_PID=$!
+
+# Never wait forever: on the first tag (v0.8.1) adb waited for a device that
+# never came until the 30-minute job limit. Give the emulator 5 minutes to
+# appear and 5 more to boot, and show its log when it doesn't.
+emulator_failed() {
+  echo "::error::$1"
+  echo "--- emulator log (last 80 lines) ---"
+  tail -n 80 "$WORK/emulator.log" || true
+  ls -l /dev/kvm || true
+  exit 1
+}
+if ! timeout 300 "$ADB" wait-for-device; then
+  kill -0 "$EMU_PID" 2>/dev/null || emulator_failed "The emulator exited before a device appeared."
+  emulator_failed "No emulator device appeared within 5 minutes."
+fi
+booted=""
+for _ in $(seq 1 150); do
+  if [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then booted=1; break; fi
   sleep 2
 done
+[ -n "$booted" ] || emulator_failed "The emulator didn't finish booting within 5 minutes."
 "$ADB" shell input keyevent 82 || true
 
 open_app() {
