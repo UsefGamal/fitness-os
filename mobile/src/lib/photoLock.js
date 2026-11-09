@@ -18,6 +18,15 @@ export function setPhotoLock(data, on) {
   return { ...data, settings: { ...data.settings, photo_lock: on } };
 }
 
+/** An imported backup or restored snapshot never switches the lock off
+ * (pentest AND-01): someone holding the unlocked phone could otherwise
+ * export, edit photo_lock to false and import. The lock is only switched
+ * off from inside Photos, after the phone's lock was asked for. */
+export function keepPhotoLock(current, incoming) {
+  if (!incoming || !photoLockOn(current) || photoLockOn(incoming)) return incoming;
+  return setPhotoLock(incoming, true);
+}
+
 /** The next lock state after an event: 'unlock' | 'lock' | 'external'
  * (the app is about to open its own picker) | 'leave' | 'return'. */
 export function photoLockStep(state, event, now = Date.now()) {

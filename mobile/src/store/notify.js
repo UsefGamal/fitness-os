@@ -4,6 +4,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 import { todayISO } from '../lib/dates.js';
 import { doneFrom, plannedReminders } from '../lib/reminders.js';
+import { reminderRoute } from '../lib/routes.js';
 import { activePlan } from '../lib/plan.js';
 import { dropFastingReminders, effectiveTimes } from '../lib/ramadan.js';
 import { useData } from './useData.js';
@@ -49,12 +50,12 @@ export async function scheduleReminders(content, enabled) {
 }
 
 /** A tapped reminder opens its screen (the workout, the 8 PM session, Meals).
- * Only in-app routes, never a URL from outside. */
+ * Only the routes the app schedules (lib/routes.js), never one from outside. */
 export function openFromReminders() {
   if (!native()) return;
   LocalNotifications.addListener('localNotificationActionPerformed', ({ notification }) => {
-    const route = notification?.extra?.route;
-    if (typeof route === 'string' && route.startsWith('/') && !route.startsWith('//')) window.location.hash = `#${route}`;
+    const route = reminderRoute(notification?.extra?.route);
+    if (route) window.location.hash = `#${route}`;
   });
 }
 

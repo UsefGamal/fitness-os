@@ -32,11 +32,30 @@ export async function shareFile(title, uri) {
   }
 }
 
+// Files this app handed to the share sheet before (backups, copies, CSVs).
+const SHARED = /^fitness-os-[\w.-]+\.(json|csv|txt)$/;
+
+/** Delete earlier shared files from the cache (pentest JS-03). The newest
+ * is kept until the next share, because the app it went to may still be
+ * reading it. */
+async function clearSharedCopies(Filesystem, Directory, keep) {
+  try {
+    const { files } = await Filesystem.readdir({ path: '', directory: Directory.Cache });
+    for (const f of files || []) {
+      const name = typeof f === 'string' ? f : f.name;
+      if (name !== keep && SHARED.test(name)) await Filesystem.deleteFile({ path: name, directory: Directory.Cache }).catch(() => {});
+    }
+  } catch {
+    // An empty or unreadable cache: nothing to clear.
+  }
+}
+
 /** Hand a text file to the share sheet without leaving a copy in shared
  * Documents (it is written to the app's cache). In a browser: a download. */
 export async function shareTextFile(title, filename, text) {
   if (Capacitor.isNativePlatform()) {
     const { Directory, Encoding, Filesystem } = await import('@capacitor/filesystem');
+    await clearSharedCopies(Filesystem, Directory, filename);
     const { uri } = await Filesystem.writeFile({ path: filename, directory: Directory.Cache, encoding: Encoding.UTF8, data: text });
     await Share.share({ title, url: uri, dialogTitle: title });
     return 'shared';

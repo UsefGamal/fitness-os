@@ -4,6 +4,7 @@ import { App } from '@capacitor/app';
 
 import { todayISO } from '../lib/dates.js';
 import { mergeDaily } from '../lib/activity.js';
+import { linkRoute } from '../lib/routes.js';
 import { healthWorkouts, mergeWeighIns } from '../lib/health.js';
 import { timesOf } from '../lib/times.js';
 import { widgetDays } from '../lib/widget.js';
@@ -21,14 +22,7 @@ function pushWidget() {
   }, 800);
 }
 
-// Widget taps open fitnessos://open/<route>; only these screens are allowed.
-const LINKS = { workout: '/workout', plan: '/plan', meals: '/meals' };
-
-export function linkRoute(url) {
-  const m = /^fitnessos:\/\/open\/([a-z]+)/.exec(url || '');
-  return m ? LINKS[m[1]] || null : null;
-}
-
+// Widget taps open fitnessos://open/<route>; lib/routes.js allows only a few screens.
 function openDeepLink(url) {
   const route = linkRoute(url);
   if (route) window.location.hash = `#${route}`;

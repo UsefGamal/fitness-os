@@ -19,9 +19,6 @@ import { CURRENT_SCHEMA, migrate, NewerSchemaError, schemaOf } from './migrate.j
 export const FILE_FORMAT = 'fitness-os-export';
 /** "Share a copy" (P14-14): a file to show someone, never to restore. */
 export const SHARE_FORMAT = 'fitness-os-share';
-/** What a shared copy leaves out: screening answers, daily health data,
- * weigh-ins and measurements, and progress photo entries. */
-export const SHARE_OMITS = ['safety', 'health_daily', 'body_logs', 'progress_photos'];
 const LISTS = ['exercises', 'body_logs', 'hydration_logs', 'workouts', 'meal_logs', 'bonus_logs'];
 // File-only fields: they describe the file, not the data.
 const FILE_KEYS = ['format', 'exported_at', 'saved_at'];
@@ -39,6 +36,20 @@ export const DATA_KEYS = new Set([
   'health_daily', 'plan_overrides', 'setup', '_unknown',
 ]);
 const BAD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** What a shared copy keeps (P14-14, pentest JS-01): the plan, the logged
+ * workouts and meals, and nothing about the person. An allow-list, so a new
+ * key stays private until it is added here on purpose. */
+export const SHARE_KEEPS = new Set([
+  'schemaVersion', 'program', 'plan_overrides', 'exercises', 'workouts', 'meal_logs', 'bonus_logs', 'shopping',
+  'session_moves', 'exercise_notes', 'achievements', 'rewards', 'evening_plan',
+]);
+/** Everything a shared copy leaves out: profile (birth date, height), goals,
+ * diet, set-up and screening answers, settings, check-ins, weigh-ins and
+ * measurements, water, daily health data and photo entries. */
+export const SHARE_OMITS = [...DATA_KEYS].filter((k) => !SHARE_KEEPS.has(k));
+/** Workout fields a shared copy leaves out: how a session hurt. */
+const SHARE_WORKOUT_OMITS = ['pain_note'];
 
 /** A photo file the app itself could have written (store/photos.js). */
 export const PHOTO_FILE = /^progress-photos\/[\w-]{1,80}\.jpg$/;
@@ -85,12 +96,20 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
     throw new ImportError('That isn\'t a Fitness OS data file. Use Settings > "Export a backup" in the app (or "Download my data" on the old site).');
   }
   const version = schemaOf(raw);
+  if (version < 1) throw new ImportError("That file's version can't be read, so nothing was changed.");
   if (version > CURRENT_SCHEMA) throw new ImportError(new NewerSchemaError(version).message);
   for (const key of LISTS) {
     if (!Array.isArray(raw[key])) throw new ImportError(`The file is missing its ${key.replace('_', ' ')}, so nothing was changed.`);
   }
 
   raw = sortKeys(raw, trusted);
+  // Pentest JS-02: list rows must be records, and an exercise needs a
+  // name and an id, or one bad row breaks a screen on every start.
+  for (const key of LISTS) raw[key] = raw[key].filter(isObject);
+  raw.exercises = raw.exercises
+    .filter((e) => typeof e.name === 'string' && e.name.trim() && Number.isFinite(e.id))
+    .map((e) => (e.name.length > 120 ? { ...e, name: e.name.slice(0, 120) } : e));
+  raw.workouts = raw.workouts.filter((w) => Number.isFinite(w.id));
   const rest = Object.fromEntries(Object.entries(raw).filter(([k]) => !FILE_KEYS.includes(k)));
   const workouts = raw.workouts.map((w) => ({
     session_key: null,
@@ -135,8 +154,15 @@ export function toDataFile(data, now = new Date()) {
  * health data in SHARE_OMITS, marked so import refuses it. The full backup
  * (toDataFile) is unchanged. */
 export function toShareCopy(data, now = new Date()) {
-  const { version: _v1, saved_at: _saved, _unknown: _bag, ...rest } = data;
-  for (const k of SHARE_OMITS) delete rest[k];
+  const rest = {};
+  for (const [k, v] of Object.entries(data)) if (SHARE_KEEPS.has(k)) rest[k] = v;
+  if (Array.isArray(rest.workouts)) {
+    rest.workouts = rest.workouts.map((w) => {
+      const out = { ...w };
+      for (const k of SHARE_WORKOUT_OMITS) delete out[k];
+      return out;
+    });
+  }
   return JSON.stringify({
     format: SHARE_FORMAT,
     restorable: false,
