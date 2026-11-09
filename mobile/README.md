@@ -2,7 +2,6 @@
 
 The standalone Android app. Everything runs inside the APK and your data is
 saved on the phone, so there's no server, no account and no internet needed.
-It replaces the phase 1 app that only opened the Render site.
 
 ## Screens
 
