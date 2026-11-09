@@ -26,6 +26,7 @@ ruff check .
 
 scripts/build-apk.sh          # debug APK (needs JDK 21 + Android SDK)
 scripts/build-apk.sh release  # signed release APK (keystore env vars)
+scripts/build-apk.sh unsigned # release APK without a key; CI signs it with scripts/sign-apk.sh
 ```
 
 CI (`.github/workflows/ci.yml`) runs the JS tests with coverage in both UTC and Africa/Cairo, plus ruff and pytest for `content/`. `android.yml` builds a debug APK on every PR.

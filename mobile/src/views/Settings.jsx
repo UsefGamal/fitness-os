@@ -9,7 +9,7 @@ import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingS
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
-import { applyImport, bodyCsv, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
+import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { widgetPrivate } from '../lib/widget.js';
 import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
@@ -142,6 +142,10 @@ export default function Settings() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (file.size > CSV_MAX_BYTES) {
+      setMsg('That file is too big (over 10 MB), so nothing was changed.');
+      return;
+    }
     try {
       readCsv(await file.text(), 'kg');
       setMsg('');

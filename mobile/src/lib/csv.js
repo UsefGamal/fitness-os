@@ -6,8 +6,14 @@ import { addCustomExercise, nextId } from './data.js';
 export const CSV_HEADER = ['date', 'workout', 'exercise', 'muscle_group', 'set', 'weight_kg', 'reps', 'rpe'];
 const LB = 0.45359237;
 
+// A cell a spreadsheet would run as a formula (=, +, -, @, or a tab/CR
+// first) gets a leading ' so Sheets and Excel show it as text (SEC-12). A
+// plain negative number stays a number.
+const FORMULA = /^[=+\-@\t\r]/;
+
 function cell(v) {
-  const s = v == null ? '' : String(v);
+  let s = v == null ? '' : String(v);
+  if (FORMULA.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -95,9 +101,18 @@ const SOURCES = [
 /** Read a workout CSV into { source, workouts: [{ date, label, sets:
  * [{ exercise, weightKg, reps, rpe }] }], skipped }. Strong doesn't say its
  * unit, so `unit` ('kg' | 'lb') applies to it. Warm-up sets are left out. */
+/** Limits on a workout CSV, so a huge or crafted file can't freeze the app
+ * or fill its storage: the file size (checked in Settings too), rows, and
+ * the length of a name. */
+export const CSV_MAX_BYTES = 10 * 1024 * 1024;
+export const CSV_MAX_ROWS = 50000;
+export const CSV_MAX_NAME = 120;
+
 export function readWorkoutCsv(text, { unit = 'kg' } = {}) {
+  if (typeof text === 'string' && text.length > CSV_MAX_BYTES) throw new Error('That file is too big (over 10 MB), so nothing was changed.');
   const rows = parseCsv(text);
   if (rows.length < 2) throw new Error('That file has no rows.');
+  if (rows.length > CSV_MAX_ROWS + 1) throw new Error(`That file has more than ${CSV_MAX_ROWS} rows, so nothing was changed.`);
   const head = rows[0].map((h) => h.trim());
   const src = SOURCES.find((s) => s.needs.every((n) => head.includes(n)));
   if (!src) throw new Error('Unknown CSV. Export from Strong, Hevy or this app and try again.');
@@ -107,7 +122,7 @@ export function readWorkoutCsv(text, { unit = 'kg' } = {}) {
   let skipped = 0;
   for (const r of rows.slice(1)) {
     const date = csvDate(at(r, src.date));
-    const exercise = (at(r, src.exercise) || '').trim();
+    const exercise = (at(r, src.exercise) || '').trim().slice(0, CSV_MAX_NAME);
     const reps = num(at(r, src.reps));
     const setType = (at(r, src.type) || '').toLowerCase();
     const order = (at(r, src.order) || '').trim().toUpperCase();
@@ -118,7 +133,7 @@ export function readWorkoutCsv(text, { unit = 'kg' } = {}) {
     let weight = num(at(r, src.weight));
     if (weight == null && src.weightLb) weight = num(at(r, src.weightLb)) == null ? null : num(at(r, src.weightLb)) * LB;
     else if (!src.kg && unit === 'lb' && weight != null) weight *= LB;
-    const label = (at(r, src.workout) || 'Imported workout').trim() || 'Imported workout';
+    const label = (at(r, src.workout) || 'Imported workout').trim().slice(0, CSV_MAX_NAME) || 'Imported workout';
     const key = `${date}|${label}`;
     if (!groups.has(key)) groups.set(key, { date, label, sets: [] });
     const rpe = num(at(r, src.rpe));

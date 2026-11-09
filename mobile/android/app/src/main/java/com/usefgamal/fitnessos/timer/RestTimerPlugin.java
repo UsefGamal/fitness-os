@@ -9,6 +9,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 /** JS bridge for RestTimerService: start/stop from the app, events back when the shade buttons are used. */
 @CapacitorPlugin(name = "RestTimer")
 public class RestTimerPlugin extends Plugin {
+    private static final long MAX_REST_MS = 60L * 60L * 1000L;
+
     @Override
     public void load() {
         RestTimerService.foreground = true;
@@ -37,8 +39,11 @@ public class RestTimerPlugin extends Plugin {
             call.reject("endsAt is required");
             return;
         }
+        // Never more than an hour from now (pentest AND-03), whatever JS sends.
+        long now = System.currentTimeMillis();
+        long ends = Math.max(now, Math.min(endsAt.longValue(), now + MAX_REST_MS));
         RestTimerService.setTexts(call.getObject("texts"));
-        RestTimerService.start(getContext(), endsAt.longValue(), call.getString("label", ""), call.getBoolean("sound", true));
+        RestTimerService.start(getContext(), ends, call.getString("label", ""), call.getBoolean("sound", true));
         call.resolve();
     }
 

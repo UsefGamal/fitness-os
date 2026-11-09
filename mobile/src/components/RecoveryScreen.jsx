@@ -18,7 +18,7 @@ export default function RecoveryScreen({ kind }) {
   const copy = rawCopies.reduce((a, b) => (b.length > a.length ? b : a), '');
   const save = async () => {
     try {
-      const r = await shareTextFile(t('recover.copyTitle'), `fitness-os-copy-${todayISO()}.json`, copy);
+      const r = await shareTextFile(t('recover.copyTitle'), `fitness-os-recovery-${todayISO()}.json`, copy);
       setMsg(r === 'shared' ? t('recover.copyShared') : t('recover.copyDownloaded'));
     } catch {
       setMsg(t('recover.copyFailed'));
