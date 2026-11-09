@@ -154,7 +154,7 @@ export default function Workout() {
   const target = useMemo(() => {
     if (!active || !ex || !exRow) return null;
     if (recovery) return null; // same loads as last time: no progression in a recovery week
-    const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets);
+    const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets.filter(D.isWorkSet)).filter((s) => s.length);
     const small = entry ? entry.mechanic === 'isolation' : !barbell;
     return progressionTarget(ex.reps, ex.sets, sessions, { step: small ? 1 : 2.5 });
     // eslint-disable-next-line react-hooks/exhaustive-deps

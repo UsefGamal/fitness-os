@@ -176,16 +176,27 @@ export function workoutOn(data, date, type = 'gym') {
 /** Sets of this exercise from the most recent earlier workout, for prefill. */
 export function lastSets(data, exerciseId, beforeWorkoutId = null) {
   const workouts = data.workouts
-    .filter((w) => w.id !== beforeWorkoutId && w.sets.some((s) => s.exercise_id === exerciseId))
+    .filter((w) => w.id !== beforeWorkoutId && w.sets.some((s) => s.exercise_id === exerciseId && isWorkSet(s)))
     .sort((a, b) => (a.log_date === b.log_date ? b.id - a.id : a.log_date < b.log_date ? 1 : -1));
   if (!workouts.length) return [];
-  return workouts[0].sets.filter((s) => s.exercise_id === exerciseId);
+  return workouts[0].sets.filter((s) => s.exercise_id === exerciseId && isWorkSet(s));
 }
 
-/** Epley estimated one-rep max. */
+/** Sets above this many reps don't add to the estimate (F-00): Epley drifts
+ * high past ~12 reps, so a 25-rep set would otherwise read as a best. */
+export const E1RM_MAX_REPS = 12;
+
+/** Does this set count as work? Warm-ups never do (F-00): they stay out of
+ * records, the e1RM chart, volume, weekly sets and recovery. Every helper
+ * that counts sets asks this one question. */
+export function isWorkSet(set) {
+  return !!set && !set.is_warmup && set.set_type !== 'warmup';
+}
+
+/** Epley estimated one-rep max, with reps counted up to E1RM_MAX_REPS. */
 export function e1rm(weightKg, reps) {
   if (!weightKg || !reps) return 0;
-  return reps === 1 ? weightKg : weightKg * (1 + reps / 30);
+  return reps === 1 ? weightKg : weightKg * (1 + Math.min(reps, E1RM_MAX_REPS) / 30);
 }
 
 /** Best set per exercise (by estimated 1RM), excluding one workout if given. */
@@ -194,6 +205,7 @@ export function personalBests(data, excludeWorkoutId = null) {
   for (const w of data.workouts) {
     if (w.id === excludeWorkoutId) continue;
     for (const s of w.sets) {
+      if (!isWorkSet(s)) continue;
       const score = e1rm(s.weight_kg, s.reps);
       const cur = best.get(s.exercise_id);
       if (!cur || score > cur.score) best.set(s.exercise_id, { ...s, score, log_date: w.log_date });
@@ -206,12 +218,13 @@ export function personalBests(data, excludeWorkoutId = null) {
  * ever logged (nothing to beat yet, so not a best), 'best' when it beats
  * every earlier workout, else null. */
 export function setKind(data, workoutId, set) {
+  if (!isWorkSet(set)) return null;
   const score = e1rm(set.weight_kg, set.reps);
   if (!(score > 0)) return null;
   const prev = personalBests(data, workoutId).get(set.exercise_id);
   if (!prev) {
     const workout = data.workouts.find((w) => w.id === workoutId);
-    return workout?.sets.some((s) => s.exercise_id === set.exercise_id) ? null : 'baseline';
+    return workout?.sets.some((s) => s.exercise_id === set.exercise_id && isWorkSet(s)) ? null : 'baseline';
   }
   return score > prev.score ? 'best' : null;
 }
