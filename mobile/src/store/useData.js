@@ -125,7 +125,7 @@ export const useData = create((set, get) => ({
 
   /** Run once at start: pick the newest copy, upgrade it if needed. */
   async hydrate() {
-    let file = null;
+    let file;
     const localText = readLocalText();
     try {
       file = await readMirror();

@@ -13,6 +13,8 @@
     "test": "npm run content && node --test src/lib/*.test.js",
     "coverage": "npm run content && node scripts/coverage.mjs",
     "lint:i18n": "node scripts/i18n-lint.mjs",
+    "lint": "eslint .",
+    "check": "npm run lint && npm run lint:i18n && npm test",
     "e2e": "npm run build && node e2e/harness.mjs",
     "e2e:device": "npm run content && VITE_FAKE_FS=1 vite build --outDir dist-device && node e2e/device.mjs",
     "build:mobile": "npm run photos && npm run build && cap sync android",
@@ -34,8 +36,13 @@
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
+    "@eslint/js": "10.0.1",
     "@vitejs/plugin-react": "6.1.2",
     "axe-core": "4.10.3",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.14.0",
     "playwright": "1.63.0",
     "vite": "8.3.4"
   }
