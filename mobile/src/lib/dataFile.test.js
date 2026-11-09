@@ -131,3 +131,37 @@ test('P14-14: a shared copy leaves out health data and can\'t be restored', () =
   assert.deepEqual(parseDataFile(toDataFile(data), content), data);
   assert.equal(data.health_daily['2026-11-04'].steps, 9000);
 });
+
+test('pentest JS-01: a shared copy keeps only the plan, workouts and meals', () => {
+  const data = {
+    ...parseDataFile(JSON.stringify(SERVER_EXPORT), content),
+    profile: { birth_date: '1990-01-01', height_cm: 180 },
+    goals: [{ start_weight_kg: 103 }],
+    diet: { ramadan: { start: '2027-02-18' } },
+    setup: { minor: true },
+    checkins: [{ date: '2026-11-01' }],
+  };
+  data.workouts = data.workouts.map((w) => ({ ...w, pain_note: 'left knee' }));
+  const copy = JSON.parse(toShareCopy(data));
+  for (const k of ['profile', 'goals', 'diet', 'setup', 'checkins', 'settings', 'safety', 'body_logs', 'hydration_logs', 'health_daily', 'progress_photos']) {
+    assert.equal(k in copy, false, k);
+    assert.ok(SHARE_OMITS.includes(k), k);
+  }
+  assert.ok(copy.workouts.length > 0);
+  assert.equal(JSON.stringify(copy).includes('left knee'), false);
+  assert.equal(JSON.stringify(copy).includes('1990'), false);
+  // Every key the app knows is either kept on purpose or left out.
+  assert.equal(SHARE_OMITS.length + [...DATA_KEYS].filter((k) => !SHARE_OMITS.includes(k)).length, DATA_KEYS.size);
+});
+
+test('pentest JS-02: bad rows are dropped and a bad version is refused', () => {
+  const file = structuredClone(SERVER_EXPORT);
+  file.exercises = [...file.exercises, { id: 900, name: 123 }, { name: 'No id' }, 'x', { id: 901, name: 'N'.repeat(500) }];
+  file.workouts = [...file.workouts, 1, ['x'], { sets: [] }];
+  const d = parseDataFile(JSON.stringify(file), content);
+  assert.equal(d.exercises.some((e) => typeof e.name !== 'string'), false);
+  assert.equal(d.exercises.some((e) => e.name === 'No id'), false);
+  assert.equal(d.exercises.find((e) => e.id === 901).name.length, 120);
+  assert.equal(d.workouts.length, SERVER_EXPORT.workouts.length);
+  assert.throws(() => parseDataFile(JSON.stringify({ ...SERVER_EXPORT, schemaVersion: -1 }), content), ImportError);
+});

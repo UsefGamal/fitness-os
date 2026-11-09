@@ -13,6 +13,10 @@ import { useData } from './useData.js';
 
 let asked = false;
 
+// The longest rest the timer runs (pentest AND-03): a rest time from an
+// imported plan can't keep the shade timer and its wakelock going for days.
+export const MAX_REST_S = 30 * 60;
+
 async function toShade(endsAt, label) {
   if (!isNative()) return;
   useTimer.setState({ inShade: false });
@@ -40,7 +44,8 @@ export const useTimer = create((set, get) => ({
   pausedLeft: null, // ms left while paused, else null
   inShade: false, // the countdown also runs in the notification shade, which chimes at the end
   start(seconds, label) {
-    if (!seconds) return;
+    if (!(seconds > 0)) return;
+    seconds = Math.min(seconds, MAX_REST_S);
     const endsAt = Date.now() + seconds * 1000;
     set({ endsAt, total: seconds, label, pausedLeft: null });
     feedback('restStart');
@@ -49,11 +54,11 @@ export const useTimer = create((set, get) => ({
   add(seconds) {
     const { endsAt, label, pausedLeft } = get();
     if (pausedLeft != null) {
-      set({ pausedLeft: Math.max(1000, pausedLeft + seconds * 1000) });
+      set({ pausedLeft: Math.min(Math.max(1000, pausedLeft + seconds * 1000), MAX_REST_S * 1000) });
       return;
     }
     if (!endsAt) return;
-    const next = Math.max(Date.now(), endsAt) + seconds * 1000;
+    const next = Math.min(Math.max(Date.now(), endsAt) + seconds * 1000, Date.now() + MAX_REST_S * 1000);
     if (next <= Date.now()) {
       get().skip();
       return;

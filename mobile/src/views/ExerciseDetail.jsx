@@ -6,6 +6,7 @@ import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
 import { formatDate } from '../lib/dates.js';
+import { safeVideo } from '../lib/links.js';
 import { entryFor } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries } from '../lib/insights.js';
@@ -32,7 +33,7 @@ export default function ExerciseDetail() {
     .filter((r) => r.x);
   const photo = ex && catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
   const target = targetFor(ex.name, plan, photo);
-  const video = inPlan.find((r) => r.x.video)?.x.video;
+  const video = inPlan.map((r) => safeVideo(r.x.video)).find(Boolean);
 
   return (
     <div className="page">

@@ -22,6 +22,7 @@ import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { saveExport } from '../store/mirror.js';
 import { dataUrlOf, shareFile, shareText } from '../store/share.js';
+import { safeVideo } from '../lib/links.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -36,7 +37,7 @@ function ExerciseList({ day, training }) {
             {ex.sets} × {ex.reps}{ex.rir ? ` · leave ${ex.rir} in the tank` : ''}{ex.rest ? ` · rest ${ex.rest}` : ''}
           </div>
         </div>
-        {ex.video ? <a className="icon-btn" href={ex.video} target="_blank" rel="noreferrer" aria-label={`${ex.name} form video`}><Icon name="video" /></a> : null}
+        {safeVideo(ex.video) ? <a className="icon-btn" href={safeVideo(ex.video)} target="_blank" rel="noreferrer" aria-label={`${ex.name} form video`}><Icon name="video" /></a> : null}
       </div>
       {ex.swapped_from ? <div className="ex-meta">Instead of {ex.swapped_from}</div> : null}
       {ex.note ? <div className="ex-note">{ex.note}</div> : null}

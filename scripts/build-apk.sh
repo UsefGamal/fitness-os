@@ -5,6 +5,9 @@
 #
 #   scripts/build-apk.sh            debug APK (debug-signed, for sideloading)
 #   scripts/build-apk.sh release    release APK, signed with your keystore
+#   scripts/build-apk.sh unsigned   release APK with no signature, for
+#                                   scripts/sign-apk.sh (what CI does, so
+#                                   the build never sees the key)
 #
 # Needs Node 22+, Python 3.12 (to export content/), git (to fetch the
 # public-domain exercise photos; Pillow, if installed, shrinks them to WebP),
@@ -53,7 +56,12 @@ case "$mode" in
     # Release builds leave flagged, unfinished features out (mobile/src/lib/flags.js).
     export FITNESS_OS_RELEASE=1
     task=assembleRelease; built="app/build/outputs/apk/release/app-release.apk" ;;
-  *) echo "usage: $0 [debug|release]" >&2; exit 2 ;;
+  unsigned)
+    # The key must not be here: this build runs npm and Gradle code.
+    unset FITNESS_OS_KEYSTORE FITNESS_OS_KEYSTORE_PASSWORD FITNESS_OS_KEY_PASSWORD KEYSTORE_B64
+    export FITNESS_OS_RELEASE=1
+    task=assembleRelease; built="app/build/outputs/apk/release/app-release-unsigned.apk" ;;
+  *) echo "usage: $0 [debug|release|unsigned]" >&2; exit 2 ;;
 esac
 
 cd "$app"

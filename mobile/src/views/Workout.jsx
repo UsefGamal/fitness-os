@@ -9,6 +9,7 @@ import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
+import { safeVideo } from '../lib/links.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js';
 import { activePlan } from '../lib/plan.js';
@@ -446,7 +447,7 @@ export default function Workout() {
                   </select>
                 </label>
                 <div className="row between">
-                  {x.video ? <a href={x.video} target="_blank" rel="noreferrer" className="small"><Icon name="video" className="icon" /> Form video</a> : <span />}
+                  {safeVideo(x.video) ? <a href={safeVideo(x.video)} target="_blank" rel="noreferrer" className="small"><Icon name="video" className="icon" /> Form video</a> : <span />}
                   {x.alternative ? <span className="muted small">Taken? {x.alternative}</span> : null}
                 </div>
               </div>
