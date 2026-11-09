@@ -1,5 +1,5 @@
 {
-  "total": 347,
+  "total": 346,
   "files": {
     "src/views/Catalogue.jsx": 7,
     "src/views/CatalogueDetail.jsx": 7,
@@ -39,9 +39,12 @@
     "src/components/LineChart.jsx": 1,
     "src/components/MoreMenu.jsx": 0,
     "src/components/MyWeek.jsx": 0,
+    "src/components/PermissionsSheet.jsx": 0,
+    "src/components/RamadanSettings.jsx": 0,
     "src/components/RecoveryScreen.jsx": 0,
+    "src/components/ReminderCheck.jsx": 0,
     "src/components/ReportSheet.jsx": 0,
-    "src/components/RestTimer.jsx": 11,
+    "src/components/RestTimer.jsx": 10,
     "src/components/SaveBar.jsx": 0,
     "src/components/Sheet.jsx": 2,
     "src/components/Stepper.jsx": 0,

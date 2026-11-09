@@ -381,3 +381,9 @@ details.more > summary::-webkit-details-marker { display: none; }
 /* "Couldn't save" (QA-07): amber, above the tab bar, never blocks a tap behind it except its own area. */
 .save-bar { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 70; max-width: 540px; margin: 0 auto; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #3a2f00; color: var(--warn); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
 .save-bar .small { color: var(--text); opacity: 0.85; }
+
+/* Records (F-03): the rep-max table. */
+.records-table summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+.records-table table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.records-table th, .records-table td { text-align: start; padding: 8px 4px; border-bottom: var(--hair); }
+.records-table th { font-weight: 600; color: var(--muted); }
