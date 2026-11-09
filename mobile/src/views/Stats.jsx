@@ -20,8 +20,8 @@ import { useToday } from '../store/today.js';
 const MEASURES = [
   ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
 ];
-const VOLUME_FILL = [null, 'rgba(48,209,88,0.35)', 'rgba(48,209,88,0.65)', '#30d158'];
-const STATE_FILL = { recovering: '#ff9f0a', ready: 'rgba(48,209,88,0.65)', untrained: null };
+const VOLUME_FILL = [null, 'color-mix(in srgb, var(--accent) 35%, transparent)', 'color-mix(in srgb, var(--accent) 65%, transparent)', 'var(--accent)'];
+const STATE_FILL = { recovering: 'var(--orange)', ready: 'color-mix(in srgb, var(--accent) 65%, transparent)', untrained: null };
 const MODES = [['volume', 'Volume'], ['recovery', 'Recovery'], ['untrained', 'Untrained']];
 
 function Heat({ data, today }) {
@@ -47,7 +47,7 @@ function Muscles({ data, today }) {
   const state = recoveryState(data, today);
   const last = lastTrained(data, today);
   const fill = Object.fromEntries(GROUPS.map((g) => [g, mode === 'volume' ? VOLUME_FILL[volumeLevel(sets[g])]
-    : mode === 'recovery' ? STATE_FILL[state[g]] : state[g] === 'untrained' ? '#ff453a' : null]));
+    : mode === 'recovery' ? STATE_FILL[state[g]] : state[g] === 'untrained' ? 'var(--danger)' : null]));
   const caption = mode === 'volume' ? 'Working sets in the last 7 days. Brighter means more; 12+ sets a week is a full dose.'
     : mode === 'recovery' ? 'Orange: trained in the last 48 hours, still recovering. Green: ready.'
       : 'Red: no sets in 7 days or more.';

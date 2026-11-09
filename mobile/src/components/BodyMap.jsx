@@ -14,9 +14,9 @@ import { GROUP_OF_SHAPE, shading } from '../lib/muscleMap.js';
 import { REGION_OF, partBox, pickOutlines } from '../lib/muscles.js';
 import { BACK, FRONT } from './muscleShapes.js';
 
-const FILL = { primary: 'rgba(48,209,88,0.85)', secondary: 'rgba(48,209,88,0.35)' };
-const BODY = '#3a3a3c';
-const HEAD = '#2c2c2e';
+const FILL = { primary: 'color-mix(in srgb, var(--accent) 85%, transparent)', secondary: 'color-mix(in srgb, var(--accent) 35%, transparent)' };
+const BODY = 'var(--body)';
+const HEAD = 'var(--body-head)';
 
 function Figure({ shapes, dx, lit, groupFill, onPick, region, uid }) {
   const focused = region ? shapes.filter(([m]) => m === region.shape) : [];
@@ -40,7 +40,7 @@ function Figure({ shapes, dx, lit, groupFill, onPick, region, uid }) {
             key={`${muscle}-${i}`}
             points={points}
             fill={own || (tone ? FILL[tone] : muscle === 'head' ? HEAD : BODY)}
-            stroke="#000"
+            stroke="var(--body-line)"
             strokeWidth={0.4}
             style={pickable ? { cursor: 'pointer' } : undefined}
             onClick={pickable ? () => onPick(group) : undefined}
@@ -50,7 +50,7 @@ function Figure({ shapes, dx, lit, groupFill, onPick, region, uid }) {
         );
       }))}
       {focused.flatMap(([m, polys]) => pickOutlines(polys, region.pick).map((i) => (
-        <polygon key={`focus-${m}-${i}`} points={polys[i]} fill={FILL.primary} stroke="#000" strokeWidth={0.4} clipPath={`url(#${uid}-${dx}-${i})`} pointerEvents="none" />
+        <polygon key={`focus-${m}-${i}`} points={polys[i]} fill={FILL.primary} stroke="var(--body-line)" strokeWidth={0.4} clipPath={`url(#${uid}-${dx}-${i})`} pointerEvents="none" />
       )))}
     </g>
   );
@@ -68,8 +68,8 @@ export default function BodyMap({ hit = null, primary = [], secondary = [], grou
       <svg viewBox="0 0 210 212" style={{ width: '100%', maxWidth: size, display: 'block', margin: '0 auto' }} role="img" aria-label={label}>
         <Figure shapes={FRONT} dx={0} lit={lit} groupFill={groupFill} onPick={onPick} region={region} uid={uid} />
         <Figure shapes={BACK} dx={110} lit={lit} groupFill={groupFill} onPick={onPick} region={region} uid={uid} />
-        <text x={50} y={210} textAnchor="middle" fill="#8e8e93" fontSize="7" letterSpacing="1">FRONT</text>
-        <text x={160} y={210} textAnchor="middle" fill="#8e8e93" fontSize="7" letterSpacing="1">BACK</text>
+        <text x={50} y={210} textAnchor="middle" fill="var(--chart-label)" fontSize="7" letterSpacing="1">FRONT</text>
+        <text x={160} y={210} textAnchor="middle" fill="var(--chart-label)" fontSize="7" letterSpacing="1">BACK</text>
       </svg>
       {showKey ? (
         <figcaption className="row muted small" style={{ justifyContent: 'center', gap: 14, marginTop: 6 }}>

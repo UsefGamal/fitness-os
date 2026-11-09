@@ -173,7 +173,7 @@ function PhotosBody({ hasLock }) {
           <div style={{ width: 'min(360px, 90vw)', aspectRatio: '3 / 4', borderRadius: 14, overflow: 'hidden' }}><Img path={viewing.file} className="fill-img" /></div>
           <div className="row" style={{ gap: 12 }}>
             <button type="button" className="btn secondary" style={{ width: 140 }} onClick={() => setViewing(null)}>Close</button>
-            <button type="button" className="btn ghost" style={{ width: 140, color: '#ff453a' }} onClick={() => setConfirming(viewing)}><Icon name="trash" /> Delete</button>
+            <button type="button" className="btn ghost" style={{ width: 140, color: 'var(--danger)' }} onClick={() => setConfirming(viewing)}><Icon name="trash" /> Delete</button>
             {confirming ? <ConfirmSheet title={t('photos.deleteTitle')} body={t('photos.deleteBody')} action={t('photos.deleteTitle')} onConfirm={() => remove(confirming)} onClose={() => setConfirming(null)} /> : null}
           </div>
         </div>

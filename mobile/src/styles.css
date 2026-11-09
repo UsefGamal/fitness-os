@@ -15,11 +15,57 @@
   --warn: #ffd60a;
   --danger: #ff453a;
   --hair: 0.5px solid rgba(84, 84, 88, 0.6);
+  --glass: rgba(44, 44, 46, 0.94);
+  --tabbar-bg: rgba(22, 22, 24, 0.82);
+  --pill-btn: #48484a;
+  --shadow: var(--shadow);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --warn-dim: rgba(255, 214, 10, 0.15);
+  --caution: #ffb340;
+  --caution-dim: rgba(255, 159, 10, 0.14);
+  --save-bar-bg: #3a2f00;
+  --body: #3a3a3c;
+  --body-head: #2c2c2e;
+  --body-line: #000;
+  --chart-label: #8e8e93;
+  --orange: #ff9f0a;
   --radius: 14px;
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --tabbar: 58px;
   color-scheme: dark;
+}
+/* Light theme preview: iOS grouped light. Greens, ambers and reds are the
+   darker "accessible" shades so text on white stays 4.5:1. */
+:root[data-theme="light"] {
+  --bg: #f2f2f7;
+  --surface: #fff;
+  --surface2: #e9e9ee;
+  --surface3: #c7c7cc;
+  --text: #000;
+  --muted: #636366;
+  --faint: #646468;
+  --accent: #1a7431;
+  --accent-dim: rgba(26, 116, 49, 0.1);
+  --on-accent: #fff;
+  --warn: #9a6700;
+  --danger: #d70015;
+  --hair: 0.5px solid rgba(60, 60, 67, 0.29);
+  --glass: rgba(255, 255, 255, 0.94);
+  --tabbar-bg: rgba(249, 249, 249, 0.86);
+  --pill-btn: #e5e5ea;
+  --shadow: rgba(0, 0, 0, 0.15);
+  --scrim: rgba(0, 0, 0, 0.35);
+  --warn-dim: rgba(255, 204, 0, 0.18);
+  --caution: #a35200;
+  --caution-dim: rgba(255, 149, 0, 0.14);
+  --save-bar-bg: #fff4cc;
+  --body: #d1d1d6;
+  --body-head: #c7c7cc;
+  --body-line: #fff;
+  --chart-label: #636366;
+  --orange: #e07800;
+  color-scheme: light;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
@@ -63,7 +109,7 @@ button.list-row:active, a.list-row:active { background: var(--surface2); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; }
 .chip.accent { background: var(--accent-dim); color: var(--accent); }
-.chip.warn { background: rgba(255, 214, 10, 0.15); color: var(--warn); }
+.chip.warn { background: var(--warn-dim); color: var(--warn); }
 button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit; cursor: pointer; }
 
 .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-inline: -12px; }
@@ -121,17 +167,17 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .pair { color: var(--accent); font-weight: 700; margin-inline-end: 6px; }
 
 .timer { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30; max-width: 540px; margin: 0 auto;
-  background: rgba(44, 44, 46, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+  background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
 /* Away from the workout: a solid pill, no blur, at most 56 px (P14-16). */
 .timer-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30;
   height: 52px; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 26px;
-  background: var(--surface2); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); }
+  background: var(--surface2); box-shadow: 0 4px 16px var(--shadow); }
 .timer-pill .pill-open { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px 0 12px; background: none; border: 0; color: inherit; font: inherit; border-radius: 22px; min-width: 0; }
 .timer-pill .t { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .timer-pill .pill-what { color: var(--muted); font-size: 15px; white-space: nowrap; }
-.timer-pill .pill-btn { height: 44px; min-width: 64px; padding: 0 16px; border-radius: 22px; border: 0; background: #48484a; color: var(--text); font: inherit; font-weight: 600; }
+.timer-pill .pill-btn { height: 44px; min-width: 64px; padding: 0 16px; border-radius: 22px; border: 0; background: var(--pill-btn); color: var(--text); font: inherit; font-weight: 600; }
 .timer-pill.done .t, .timer-pill.done .pill-what { color: var(--accent); }
-.timer-pill.done .pill-btn { background: var(--accent); color: #000; }
+.timer-pill.done .pill-btn { background: var(--accent); color: var(--on-accent); }
 .timer .t { font-size: 44px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.3ch; }
 .timer.done .t, .timer.done .timer-what { color: var(--accent); }
 .timer-open { display: flex; align-items: center; gap: 14px; width: 100%; min-width: 0; background: none; border: 0; padding: 0 4px; color: inherit; font: inherit; text-align: start; min-height: 48px; }
@@ -182,7 +228,7 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .interval-phase.rest, .interval-phase.setrest { color: var(--warn); }
 
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr);
-  padding-bottom: var(--sab); background: rgba(22, 22, 24, 0.82); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: var(--hair); }
+  padding-bottom: var(--sab); background: var(--tabbar-bg); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: var(--hair); }
 .tab { height: var(--tabbar); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 11px; font-weight: 500; }
 .tab svg { width: 26px; height: 26px; }
 .tab.active { color: var(--accent); }
@@ -206,7 +252,7 @@ details.more > summary { list-style: none; color: var(--accent); font-size: 15px
 details.more > summary::-webkit-details-marker { display: none; }
 
 /* Toasts sit at the bottom, in thumb reach, above the tab bar and above the rest timer when it shows (E6-S2). */
-.toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--sab) + 12px); z-index: 50; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.5); background: var(--surface2); border-radius: 14px; padding: 12px 16px; text-align: center; max-width: 528px; margin: 0 auto; }
+.toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--sab) + 12px); z-index: 50; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 30px var(--shadow); background: var(--surface2); border-radius: 14px; padding: 12px 16px; text-align: center; max-width: 528px; margin: 0 auto; }
 .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
 .chart { width: 100%; height: 160px; display: block; }
 .pr { color: var(--warn); font-weight: 700; font-size: 13px; }
@@ -239,7 +285,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 
 /* Bottom sheet */
 .sheet-wrap { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; justify-content: flex-end; }
-.sheet-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); border: 0; padding: 0; }
+.sheet-backdrop { position: absolute; inset: 0; background: var(--scrim); border: 0; padding: 0; }
 .sheet { position: relative; background: var(--surface); border-radius: 18px 18px 0 0; padding: 4px 16px calc(var(--sab) + 18px); max-height: 82vh; display: flex; flex-direction: column;
   max-width: 560px; width: 100%; margin: 0 auto; animation: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1); transition: transform 180ms ease; }
 .sheet-body { overflow-y: auto; }
@@ -315,7 +361,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .badge .count { font-size: 12px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .badge .got { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; color: var(--tone); }
 .badge .got .icon { width: 14px; height: 14px; }
-.fanfare { border: 0; color: var(--text); text-align: start; position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--sab) + 80px); z-index: 60; max-width: 528px; margin: 0 auto; background: var(--surface2); border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: pop-in .35s cubic-bezier(.2,.9,.3,1.3); }
+.fanfare { border: 0; color: var(--text); text-align: start; position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--sab) + 80px); z-index: 60; max-width: 528px; margin: 0 auto; background: var(--surface2); border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 30px var(--shadow); animation: pop-in .35s cubic-bezier(.2,.9,.3,1.3); }
 .fanfare .medal { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-dim); color: var(--accent); flex: none; }
 @keyframes pop-in { from { transform: translateY(20px) scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .fanfare { animation: none; } }
@@ -337,9 +383,9 @@ details.more > summary::-webkit-details-marker { display: none; }
 .photo-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .photo-cell { aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--surface2); display: grid; place-items: center; color: var(--muted); font-size: 12px; position: relative; border: 0; padding: 0; }
 .photo-cell img { width: 100%; height: 100%; object-fit: cover; }
-.warn { background: rgba(255, 159, 10, 0.14); color: #ffb340; border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+.warn { background: var(--caution-dim); color: var(--caution); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
 .fill-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.list-row input[type=time] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 40px; color-scheme: dark; }
+.list-row input[type=time] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 40px; color-scheme: inherit; }
 
 /* Intro on open (components/Intro.jsx, 1.8 s). The bolt sits where the
    Android splash draws it, so the hand-over is seamless. */
@@ -380,12 +426,12 @@ details.more > summary::-webkit-details-marker { display: none; }
 .wset-row { display: grid; grid-template-columns: 96px 1fr 64px; align-items: center; gap: 10px; min-height: 28px; font-size: 15px; }
 .wset-bar { position: relative; height: 12px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
 .wset-bar > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 6px; }
-.wset-bar > .wset-guide { background: rgba(48, 209, 88, 0.14); border-radius: 0; }
+.wset-bar > .wset-guide { background: var(--accent-dim); border-radius: 0; }
 .wset-bar > .wset-plan { border: 1.5px solid var(--faint); background: none; }
 .wset-bar > .wset-done { background: var(--accent); }
 
 /* "Couldn't save" (QA-07): amber, above the tab bar, never blocks a tap behind it except its own area. */
-.save-bar { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 70; max-width: 540px; margin: 0 auto; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #3a2f00; color: var(--warn); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+.save-bar { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 70; max-width: 540px; margin: 0 auto; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--save-bar-bg); color: var(--warn); box-shadow: 0 8px 30px var(--shadow); }
 .save-bar .small { color: var(--text); opacity: 0.85; }
 
 /* Records (F-03): the rep-max table. */
