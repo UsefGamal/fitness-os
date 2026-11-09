@@ -1,4 +1,5 @@
-// Sounds and haptics for workout moments, in one place:
+// Sounds and haptics for workout moments, in one place (SA-01: on a phone
+// that is on silent, vibrate or Do Not Disturb, sounds go only to headphones):
 //   feedback('restStart' | 'countdown' | 'restDone' | 'stop' | 'workoutStart'
 //            | 'workoutSaved' | 'pr' | 'work' | 'rest' | 'test')
 // Sounds are synthesised (no audio files to license or bundle) and follow
@@ -92,9 +93,13 @@ function play(notes, { volume, soft }) {
   }
 }
 
-function sound(notes, opts) {
+/** Play notes. `onSilenced` runs when the phone is on silent, vibrate or
+ * Do Not Disturb with no headphones in, so the native player skipped it. */
+function sound(notes, opts, onSilenced) {
   if (isNative()) {
-    RestTimer.tone({ notes, ...opts }).catch(() => {
+    RestTimer.tone({ notes, ...opts }).then((r) => {
+      if (r && r.played === false && onSilenced) onSilenced();
+    }).catch(() => {
       // An older APK without the native player: try the WebView.
       try { play(notes, opts); } catch { /* stay silent */ }
     });
@@ -112,8 +117,11 @@ function sound(notes, opts) {
 export function feedback(event, { force = false, inShade = false } = {}) {
   const s = trainingSettings(useData.getState().data);
   const shadeDone = event === 'restDone' && isNative() && inShade;
+  // On a silenced phone the sound is skipped (SA-01), so it buzzes instead,
+  // even with vibration off in Settings: a cue never goes missing.
+  const silenced = () => { if (!s.vibrate) buzz(event); };
   if ((s.sounds || force) && SOUNDS[event] && !shadeDone) {
-    sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' });
+    sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' }, silenced);
   }
   if (s.vibrate && !shadeDone) buzz(event);
 }

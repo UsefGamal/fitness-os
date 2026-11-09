@@ -127,8 +127,10 @@ public class RestTimerPlugin extends Plugin {
     @PluginMethod
     public void tone(PluginCall call) {
         try {
-            TonePlayer.play(call.getArray("notes"), call.getDouble("volume", 0.55), call.getBoolean("soft", false));
-            call.resolve();
+            boolean played = TonePlayer.play(getContext(), call.getArray("notes"), call.getDouble("volume", 0.55), call.getBoolean("soft", false));
+            JSObject out = new JSObject();
+            out.put("played", played);
+            call.resolve(out);
         } catch (Exception e) {
             call.reject("Could not play the sound", e);
         }
@@ -148,5 +150,6 @@ public class RestTimerPlugin extends Plugin {
     protected void handleOnDestroy() {
         RestTimerService.foreground = false;
         RestTimerService.listener = null;
+        TonePlayer.releaseAll();
     }
 }

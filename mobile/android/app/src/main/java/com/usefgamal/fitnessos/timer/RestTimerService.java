@@ -324,7 +324,7 @@ public class RestTimerService extends Service {
         boolean chime = sound && foreground;
         if (chime) {
             try {
-                TonePlayer.play(new org.json.JSONArray(DONE_NOTES), 0.9, false);
+                TonePlayer.play(this, new org.json.JSONArray(DONE_NOTES), 0.9, false);
             } catch (org.json.JSONException ignored) {
                 // Fixed notes: can't happen.
             }
