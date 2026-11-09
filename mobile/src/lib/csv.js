@@ -41,7 +41,7 @@ export function mealsCsv(data) {
 
 /** RFC 4180 parsing with a guessed delimiter (Strong uses ";" in some locales). */
 export function parseCsv(text) {
-  const src = text.replace(/^﻿/, '');
+  const src = text.replace(/^\uFEFF/, '');
   const firstLine = src.split(/\r?\n/, 1)[0];
   const delim = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
   const rows = [];

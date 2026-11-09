@@ -126,7 +126,7 @@ function introFor() {
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   if (!data || !shouldPlayIntro({ hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
   const today = todayISO();
-  let next = null;
+  let next;
   try {
     next = programDayFor(today, activePlan(data, content), data.session_moves || []);
   } catch {
