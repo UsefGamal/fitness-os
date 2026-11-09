@@ -13,6 +13,7 @@ import content from '../content.json';
 import * as D from '../lib/data.js';
 import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
+import { keepPhotoLock } from '../lib/photoLock.js';
 import { hasMirror, onMirrorResult, readMirror, writeMirror } from './mirror.js';
 import { SAVE_OK, recordSave } from '../lib/saveHealth.js';
 import { snapshot } from './snapshots.js';
@@ -171,6 +172,7 @@ export const useData = create((set, get) => ({
   async replaceAll(data, reason = 'import') {
     if (blocked) return;
     await snapshot(JSON.stringify(stamp(get().data)), reason);
+    data = keepPhotoLock(get().data, data);
     set({ data, activeWorkoutId: null });
     pending = data;
     flushSave();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { LOCKED, photoLockOn, photoLockStep, photosOpen, RELOCK_MS, setPhotoLock } from './photoLock.js';
+import { keepPhotoLock, LOCKED, photoLockOn, photoLockStep, photosOpen, RELOCK_MS, setPhotoLock } from './photoLock.js';
 
 test('P14-13: the lock is on by default and can be switched off', () => {
   assert.equal(photoLockOn({ settings: {} }), true);
@@ -39,4 +39,16 @@ test('P14-13: locked stays locked; lock and unknown events', () => {
   assert.deepEqual(photoLockStep(photoLockStep(LOCKED, 'unlock'), 'lock'), LOCKED);
   assert.deepEqual(photoLockStep(undefined, 'nothing'), LOCKED);
   assert.equal(photosOpen(null), false);
+});
+
+test('pentest AND-01: an imported file never switches the lock off', () => {
+  const here = { settings: {} };
+  const file = setPhotoLock({ settings: { units: 'kg' }, workouts: [] }, false);
+  const kept = keepPhotoLock(here, file);
+  assert.equal(photoLockOn(kept), true);
+  assert.equal(kept.settings.units, 'kg');
+  // Lock already off on this phone, or on in the file: the file is used as it is.
+  assert.equal(keepPhotoLock(setPhotoLock(here, false), file), file);
+  const on = setPhotoLock({ settings: {} }, true);
+  assert.equal(keepPhotoLock(here, on), on);
 });
