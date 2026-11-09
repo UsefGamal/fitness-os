@@ -3,6 +3,7 @@
 // the date in data.achievements = { id: 'YYYY-MM-DD' }. Pure helpers,
 // tested in achievements.test.js.
 import { GROUPS, totalVolume, weekStreaks } from './insights.js';
+import { e1rm, isWorkSet } from './data.js';
 import { weekStart } from './dates.js';
 
 const gymCount = (s) => s.gym;
@@ -38,7 +39,8 @@ export function countPrs(data) {
   const workouts = [...data.workouts].sort((a, b) => (a.log_date === b.log_date ? a.id - b.id : a.log_date < b.log_date ? -1 : 1));
   for (const w of workouts) {
     for (const s of w.sets) {
-      const score = s.reps === 1 ? s.weight_kg : (s.weight_kg || 0) * (1 + (s.reps || 0) / 30);
+      if (!isWorkSet(s)) continue;
+      const score = e1rm(s.weight_kg, s.reps);
       if (!(score > 0)) continue;
       const prev = best.get(s.exercise_id);
       if (prev !== undefined && score > prev) prs += 1;
@@ -55,6 +57,7 @@ function bestWeekGroups(data) {
     const k = weekStart(w.log_date);
     if (!weeks.has(k)) weeks.set(k, new Set());
     for (const s of w.sets) {
+      if (!isWorkSet(s)) continue;
       const g = groupOf.get(s.exercise_id);
       if (GROUPS.includes(g)) weeks.get(k).add(g);
     }
@@ -77,8 +80,9 @@ export function liftRatios(data) {
   const names = new Map(data.exercises.map((e) => [e.id, e.name]));
   for (const w of data.workouts) {
     for (const s of w.sets) {
+      if (!isWorkSet(s)) continue;
       const name = names.get(s.exercise_id) || '';
-      const score = s.reps === 1 ? s.weight_kg : (s.weight_kg || 0) * (1 + (s.reps || 0) / 30);
+      const score = e1rm(s.weight_kg, s.reps);
       for (const [k, re] of Object.entries(LIFTS)) if (re.test(name)) out[k] = Math.max(out[k], Math.round((score / bw) * 100) / 100);
     }
   }

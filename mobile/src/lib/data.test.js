@@ -116,3 +116,27 @@ test('shopping ticks belong to one week and reset the next', () => {
   d = D.toggleShopping(d, '2026-11-01', 'boiled_egg|unit');
   assert.equal(D.shoppingChecked(d, '2026-11-01').size, 0);
 });
+
+// F-00: one work-set rule and a rep cap on the e1RM estimate.
+test('isWorkSet leaves out warm-ups by flag or by set type', () => {
+  assert.equal(D.isWorkSet({ reps: 5, weight_kg: 60, is_warmup: false }), true);
+  assert.equal(D.isWorkSet({ reps: 5, weight_kg: 20, is_warmup: true }), false);
+  assert.equal(D.isWorkSet({ reps: 5, weight_kg: 20, set_type: 'warmup' }), false);
+  assert.equal(D.isWorkSet(null), false);
+});
+
+test('e1rm counts reps only up to 12', () => {
+  assert.equal(D.e1rm(100, 12), D.e1rm(100, 25));
+  assert.ok(D.e1rm(100, 12) > D.e1rm(100, 11));
+  assert.equal(D.e1rm(100, 1), 100);
+});
+
+test('a warm-up is never a best, a baseline or a prefill', () => {
+  const d = { ...fresh(), exercises: [{ id: 1, name: 'Bench Press', muscle_group: 'Chest' }], workouts: [
+    { id: 1, log_date: '2026-11-01', workout_type: 'gym', sets: [{ id: 1, exercise_id: 1, set_number: 1, reps: 8, weight_kg: 60, is_warmup: false }] },
+    { id: 2, log_date: '2026-11-03', workout_type: 'gym', sets: [{ id: 2, exercise_id: 1, set_number: 1, reps: 5, weight_kg: 100, is_warmup: true }] },
+  ] };
+  assert.equal(D.personalBests(d).get(1).weight_kg, 60);
+  assert.equal(D.setKind(d, 2, d.workouts[1].sets[0]), null);
+  assert.equal(D.lastSets(d, 1)[0].weight_kg, 60);
+});

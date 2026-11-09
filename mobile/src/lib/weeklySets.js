@@ -3,6 +3,7 @@
 // for its helpers (content/exercise_targets.py, else the catalogue's tags).
 // The guide is 10-20 hard sets a week per muscle. Pure helpers; tests in
 // weeklySets.test.js.
+import { isWorkSet } from './data.js';
 import { weekStart } from './dates.js';
 import { MUSCLE, MUSCLES, targetFor } from './muscles.js';
 import { effectiveDay } from './planEdit.js';
@@ -29,7 +30,7 @@ export function doneThisWeek(data, training, today, entryOf = () => null) {
   for (const w of data.workouts) {
     if (w.log_date < from || w.log_date > today) continue;
     for (const s of w.sets || []) {
-      if (s.is_warmup) continue;
+      if (!isWorkSet(s)) continue;
       const name = byId.get(s.exercise_id);
       const target = name ? targetFor(name, training, entryOf(name)) : null;
       if (target) add(muscles, target, 1);

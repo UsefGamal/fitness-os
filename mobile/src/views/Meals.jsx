@@ -14,6 +14,8 @@ import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
 import { mealWhat } from '../lib/widget.js';
 import CountUp from '../components/CountUp.jsx';
+import { mealTickEvent } from '../lib/rewards.js';
+import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -63,8 +65,8 @@ function Targets() {
         </div>
         <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
         <div className="row">
-          <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 250))}>{t('mealsSimple.add250')}</button>
-          <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 500))}>{t('mealsSimple.add500')}</button>
+          <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 250)); feedback('water'); }}>{t('mealsSimple.add250')}</button>
+          <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 500)); feedback('water'); }}>{t('mealsSimple.add500')}</button>
         </div>
       </section>
 
@@ -154,7 +156,11 @@ function MealPlan() {
                 <div className="muted small">{fasting ? rTimes[meal.slot] : meal.time_window}</div>
               </div>
               <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={`${label(meal.slot)} eaten`}
-                onClick={() => update((d) => D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick }))}>
+                onClick={() => {
+                  const ev = mealTickEvent({ nowDone: !log?.completed, doneBefore: done, slots: N.meal_slots.length });
+                  update((d) => D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick }));
+                  if (ev) feedback(ev);
+                }}>
                 {log?.completed ? <Icon name="check" /> : null}
               </button>
             </div>

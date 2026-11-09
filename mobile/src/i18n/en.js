@@ -118,6 +118,8 @@ export default {
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
 
   'settings.title': 'Settings',
+  'settings.touchSounds': 'Touch sounds',
+  'settings.touchSoundsNote': "A soft tick for each set, meal and water, a chime for a saved workout or a full day of meals, and a bigger one only for a real new best. Your phone's silent mode always wins.",
   'settings.profile': 'Profile and macro targets',
   'settings.quests': 'Quests',
   'settings.data': 'Your data',
