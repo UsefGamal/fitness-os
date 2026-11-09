@@ -22,6 +22,7 @@ import { activePlan } from '../lib/plan.js';
 import { MUSCLE, dayMuscles } from '../lib/muscles.js';
 import { backupDue } from '../lib/durable.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
+import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { hasScreenLock } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
@@ -250,8 +251,8 @@ export default function Today() {
         </div>
         <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ width: `${Math.min(100, (water / WATER_GOAL) * 100)}%` }} /></div>
         <div className="row">
-          <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 250))}>+250 ml</button>
-          <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 500))}>+500 ml</button>
+          <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 250)); feedback('water'); }}>+250 ml</button>
+          <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 500)); feedback('water'); }}>+500 ml</button>
           <button type="button" className="btn ghost small" aria-label="Undo 250 ml" onClick={() => update((d) => D.addWater(d, today, -250))} disabled={!water}>Undo</button>
         </div>
       </section>

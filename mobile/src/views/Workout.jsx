@@ -292,7 +292,11 @@ export default function Workout() {
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
     const ni = nextIndex(day, after, data, current);
     const rest = restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] });
-    if (settings.auto_rest && rest > 0) timer.start(rest, day.exercises[ni].name);
+    const resting = settings.auto_rest && rest > 0;
+    if (resting) timer.start(rest, day.exercises[ni].name);
+    // The set tick (SA-03) never stacks: a best plays its own sound and the
+    // rest-start cue replaces the tick.
+    else if (kind !== 'best') feedback('set');
     if (ni !== current) setCurrent(ni);
   };
 
