@@ -186,7 +186,8 @@ class HealthPlugin : Plugin() {
     @PluginMethod
     fun readWeights(call: PluginCall) {
         val c = client(call) ?: return
-        val since = Instant.ofEpochMilli((call.getDouble("since") ?: 0.0).toLong())
+        // A time in ms arrives as a Long, which getDouble() returns as null.
+        val since = Instant.ofEpochMilli((call.data.opt("since") as? Number)?.toLong() ?: 0L)
         scope.launch {
             try {
                 val out = JSArray()

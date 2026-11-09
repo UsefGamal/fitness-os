@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import { t } from '../lib/i18n.js';
 import { syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
 import { trainingSettings } from '../lib/training.js';
+import { recordError } from './errors.js';
 import { feedback } from './feedback.js';
 import { isNative, RestTimer } from './native.js';
 import { useData } from './useData.js';
@@ -67,8 +68,10 @@ async function toShade() {
     };
     await RestTimer.start({ endsAt: endsAt || Date.now(), pausedLeft: pausedLeft || 0, total, label, ...currentWorkout(), sound: sounds, texts });
     useTimer.setState({ inShade: true });
-  } catch {
-    // The plugin failed: the in-app timer still works.
+  } catch (err) {
+    // The plugin failed: the in-app timer still works, and the bug report
+    // shows why (it failed silently before, so the shade never showed).
+    recordError(new Error(`Rest timer in notifications: ${err?.message || err}`));
   }
   checkShade();
 }

@@ -144,6 +144,11 @@ public class CrashPlugin extends Plugin {
                 default: break;
             }
             if (what == null) continue;
+            // Android closing the app while it sits in the background, with
+            // no rest timer running, is its normal clean-up, not an error:
+            // leave it out of the report (it filled Yusuf's 0.9.0 report).
+            if (info.getReason() == ApplicationExitInfo.REASON_LOW_MEMORY
+                && info.getImportance() > ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE) continue;
             String desc = info.getDescription();
             add(ctx, what + where(info) + (desc != null && !desc.isEmpty() ? ": " + desc : ""), false);
         }
