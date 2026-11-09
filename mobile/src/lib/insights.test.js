@@ -53,3 +53,13 @@ test('a planned day lights the groups of its exercises', async () => {
   const { dayGroups } = await import('./insights.js');
   assert.deepEqual([...dayGroups({ exercises }, [{ name: 'Bench' }, { name: 'Unknown' }])], ['Chest']);
 });
+
+test('warm-ups stay out of group sets, recovery, volume and the e1RM chart (F-00)', () => {
+  const d = { exercises: [{ id: 1, name: 'Bench Press', muscle_group: 'Chest' }], body_logs: [], workouts: [
+    { id: 1, log_date: '2026-11-08', workout_type: 'gym', sets: [{ id: 1, exercise_id: 1, reps: 5, weight_kg: 40, is_warmup: true }] },
+  ] };
+  assert.equal(setsByGroup(d, '2026-11-09').Chest, 0);
+  assert.equal(lastTrained(d, '2026-11-09').Chest, null);
+  assert.equal(totalVolume(d), 0);
+  assert.deepEqual(e1rmSeries(d, 1), []);
+});
