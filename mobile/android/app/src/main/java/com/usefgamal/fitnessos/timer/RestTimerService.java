@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.Color;
 import android.os.Build;
@@ -16,47 +17,85 @@ import android.os.Looper;
 import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.ServiceCompat;
 
 import com.usefgamal.fitnessos.MainActivity;
 import com.usefgamal.fitnessos.R;
 
 /**
- * The rest timer in the notification shade: an ongoing notification that
- * counts down (Android draws the countdown itself, so nothing ticks here),
- * with +15s and Skip buttons. When the time is up it posts a "Rest done"
- * notification that buzzes and plays the notification sound (or stays
- * silent when sounds are off in the app's settings), then stops. Running as a foreground service
- * keeps the process alive for the few minutes of a rest, and a partial
- * wakelock held for the length of the rest keeps the CPU awake, so the
- * Handler's delayed "done" fires on time with the screen locked (TL-02:
- * without it the countdown stops while the CPU sleeps and the buzz can come
- * minutes late). The lock goes on Skip, Stop, at the end, or by its timeout.
+ * The rest timer in the notification shade: an ongoing notification with the
+ * workout's name, the next exercise, a countdown (Android draws it, so it
+ * keeps going with the app closed), a progress bar, and Pause/Resume, +15s and
+ * Skip buttons. On Android 16 it also asks to be a Live Update, so the
+ * countdown shows as a chip in the status bar.
+ *
+ * When the time is up it posts a "Rest done" notification that buzzes and
+ * plays the notification sound (or stays silent when sounds are off in the
+ * app's settings), then stops. Running as a foreground service keeps the
+ * process alive for the few minutes of a rest, and a partial wakelock held for
+ * the length of the rest keeps the CPU awake, so the Handler's delayed "done"
+ * fires on time with the screen locked (TL-02). The lock goes on Pause, Skip,
+ * Stop, at the end, or by its timeout.
+ *
+ * The rest is also saved to SharedPreferences, so when a phone (Xiaomi,
+ * Infinix...) kills the app mid-rest, Android's sticky restart, or the app's
+ * next open (RestTimerPlugin.state), picks it up again.
  */
 public class RestTimerService extends Service {
     public static final String ACTION_START = "com.usefgamal.fitnessos.timer.START";
     public static final String ACTION_ADD = "com.usefgamal.fitnessos.timer.ADD";
+    public static final String ACTION_PAUSE = "com.usefgamal.fitnessos.timer.PAUSE";
+    public static final String ACTION_RESUME = "com.usefgamal.fitnessos.timer.RESUME";
     public static final String ACTION_STOP = "com.usefgamal.fitnessos.timer.STOP";
     public static final String EXTRA_ENDS_AT = "endsAt";
+    public static final String EXTRA_PAUSED_LEFT = "pausedLeft";
+    public static final String EXTRA_TOTAL = "total";
     public static final String EXTRA_LABEL = "label";
+    public static final String EXTRA_WORKOUT = "workout";
+    public static final String EXTRA_SETS = "sets";
     public static final String EXTRA_SECONDS = "seconds";
     public static final String EXTRA_SOUND = "sound";
 
-    static final String CHANNEL_RUNNING = "rest_timer";
+    // v2: the first channel was "low" importance, which many phones (Xiaomi,
+    // Infinix) fold away as a silent notification with no status bar icon,
+    // so the countdown looked missing. A channel's importance can't change
+    // after it's made, hence the new id; the old one is deleted.
+    static final String CHANNEL_RUNNING = "rest_timer_v2";
+    static final String CHANNEL_RUNNING_OLD = "rest_timer";
     static final String CHANNEL_DONE = "rest_done";
     static final String CHANNEL_DONE_SILENT = "rest_done_silent";
     static final int ID_RUNNING = 9101;
     static final int ID_DONE = 9102;
+    private static final String PREFS = "rest_timer";
+    private static final long MAX_REST_MS = 60L * 60L * 1000L;
 
     /** Tells the app (RestTimerPlugin) when the shade buttons change the timer. */
     public interface Listener {
-        void onChanged(long endsAt, String label);
+        /** pausedLeft is 0 while running. */
+        void onChanged(long endsAt, long pausedLeft, String label);
         void onStopped(boolean finished);
     }
 
     static volatile Listener listener;
+    /** When the rest ends; 0 when there is none. Kept (stale) while paused. */
     static volatile long endsAt = 0;
+    /** Time left while paused, else 0. */
+    static volatile long pausedLeft = 0;
+    /** The whole rest, for the progress bar (0 = unknown). */
+    static volatile long totalMs = 0;
     static volatile String label = "";
+    static volatile String workout = "";
+    static volatile int sets = 0;
+    /** The last rest was ended with Skip in the shade (the app reads it on return). */
+    static volatile boolean skipped = false;
+    static volatile boolean sound = true;
+    /** The app is on screen: play the "rest done" chime directly instead of relying on the notification sound. */
+    static volatile boolean foreground = false;
+
+    static boolean active() {
+        return endsAt > 0 || pausedLeft > 0;
+    }
 
     // The shade texts in the app's language, sent from JS with each start
     // (P14-12: native text goes through i18n). English until the first start.
@@ -76,89 +115,186 @@ public class RestTimerService extends Service {
         String v = TEXTS.get(key);
         return v != null ? v : fallback;
     }
-    static volatile boolean sound = true;
-    /** The app is on screen: play the "rest done" chime directly instead of relying on the notification sound. */
-    static volatile boolean foreground = false;
+
     private static final String DONE_NOTES = "[[660,0,0.35],[990,0.18,0.5]]";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable finish = this::finish;
+    /** Moves the progress bar once a second while the rest runs. */
+    private final Runnable tick = new Runnable() {
+        @Override
+        public void run() {
+            if (endsAt <= 0 || pausedLeft > 0) return;
+            show(false);
+        }
+    };
     private PowerManager.WakeLock wakeLock;
     /** Slack on the wakelock's own timeout: it outlives the rest by a little, never by much. */
     private static final long WAKE_SLACK_MS = 10_000L;
 
-    public static void start(Context context, long endsAt, String label, boolean sound) {
+    public static void start(Context context, long endsAt, long pausedLeft, long totalMs, String label, String workout, int sets, boolean sound) {
         Intent i = new Intent(context, RestTimerService.class).setAction(ACTION_START)
-            .putExtra(EXTRA_ENDS_AT, endsAt).putExtra(EXTRA_LABEL, label).putExtra(EXTRA_SOUND, sound);
+            .putExtra(EXTRA_ENDS_AT, endsAt).putExtra(EXTRA_PAUSED_LEFT, pausedLeft).putExtra(EXTRA_TOTAL, totalMs)
+            .putExtra(EXTRA_LABEL, label).putExtra(EXTRA_WORKOUT, workout).putExtra(EXTRA_SETS, sets)
+            .putExtra(EXTRA_SOUND, sound);
         androidx.core.content.ContextCompat.startForegroundService(context, i);
     }
 
+    /** Put the saved rest back in the shade (after the process was killed). */
+    static void startSaved(Context context) {
+        start(context, endsAt, pausedLeft, totalMs, label, workout, sets, sound);
+    }
+
+    public static void send(Context context, String action) {
+        if (!active()) return;
+        context.startService(new Intent(context, RestTimerService.class).setAction(action));
+    }
+
     public static void stop(Context context) {
-        if (endsAt == 0) return;
-        context.startService(new Intent(context, RestTimerService.class).setAction(ACTION_STOP));
+        send(context, ACTION_STOP);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : null;
+        long now = System.currentTimeMillis();
         if (ACTION_START.equals(action)) {
             endsAt = intent.getLongExtra(EXTRA_ENDS_AT, 0);
-            String l = intent.getStringExtra(EXTRA_LABEL);
-            label = l != null ? l : "";
+            pausedLeft = Math.max(0, Math.min(intent.getLongExtra(EXTRA_PAUSED_LEFT, 0), MAX_REST_MS));
+            totalMs = Math.max(0, Math.min(intent.getLongExtra(EXTRA_TOTAL, 0), MAX_REST_MS));
+            label = orEmpty(intent.getStringExtra(EXTRA_LABEL));
+            workout = orEmpty(intent.getStringExtra(EXTRA_WORKOUT));
+            sets = intent.getIntExtra(EXTRA_SETS, 0);
             sound = intent.getBooleanExtra(EXTRA_SOUND, true);
+            skipped = false;
             nm().cancel(ID_DONE);
+            save(this);
             show(true);
-        } else if (ACTION_ADD.equals(action) && endsAt > 0) {
-            endsAt = Math.max(System.currentTimeMillis(), endsAt) + intent.getIntExtra(EXTRA_SECONDS, 15) * 1000L;
+        } else if (ACTION_ADD.equals(action) && active()) {
+            long add = intent.getIntExtra(EXTRA_SECONDS, 15) * 1000L;
+            if (pausedLeft > 0) {
+                pausedLeft = Math.min(pausedLeft + add, MAX_REST_MS);
+            } else {
+                endsAt = Math.min(Math.max(now, endsAt) + add, now + MAX_REST_MS);
+            }
+            if (totalMs > 0) totalMs += add; // the bar keeps its place
+            save(this);
             show(false);
-            Listener ls = listener;
-            if (ls != null) ls.onChanged(endsAt, label);
+            changed();
+        } else if (ACTION_PAUSE.equals(action) && endsAt > 0 && pausedLeft == 0) {
+            pausedLeft = Math.max(1000L, endsAt - now);
+            save(this);
+            show(false);
+            changed();
+        } else if (ACTION_RESUME.equals(action) && pausedLeft > 0) {
+            endsAt = now + pausedLeft;
+            pausedLeft = 0;
+            save(this);
+            show(false);
+            changed();
         } else if (ACTION_STOP.equals(action)) {
             boolean fromShade = intent.getBooleanExtra("fromShade", false);
-            end(false);
+            if (fromShade) skipped = true;
+            end();
             Listener ls = listener;
             if (fromShade && ls != null) ls.onStopped(false);
-        } else {
+        } else if (action == null && restore(this) && (pausedLeft > 0 || endsAt > now)) {
+            // The phone killed the app mid-rest and Android restarted the
+            // service: carry on with the saved rest.
+            show(true);
+        } else if (!active()) {
             // Restarted by the system with no timer to show.
-            end(false);
+            end();
         }
-        return START_NOT_STICKY;
+        // Sticky: if the phone kills the process mid-rest, Android starts the
+        // service again and the saved rest comes back (above).
+        return START_STICKY;
+    }
+
+    private static String orEmpty(String s) {
+        return s != null ? s : "";
+    }
+
+    private void changed() {
+        Listener ls = listener;
+        if (ls != null) ls.onChanged(endsAt, pausedLeft, label);
+    }
+
+    private static String clock(long ms) {
+        long s = Math.max(0, (ms + 999) / 1000);
+        return (s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
     }
 
     private void show(boolean first) {
         ensureChannels();
-        long left = endsAt - System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        boolean paused = pausedLeft > 0;
+        long left = paused ? pausedLeft : endsAt - now;
         if (left <= 0) {
+            if (first) startForegroundWith(placeholder()); // a foreground start must post a notification
             finish();
             return;
         }
-        Notification n = new NotificationCompat.Builder(this, CHANNEL_RUNNING)
+        String rest = paused ? tx("paused", "Paused") : tx("rest", "Rest");
+        String title = workout.isEmpty() ? rest : rest + " · " + workout;
+        String next = label.isEmpty() ? tx("restTimer", "Rest timer") : tx("then", "Then {label}").replace("{label}", label);
+        String text = paused ? tx("left", "{time} left").replace("{time}", clock(left)) + " · " + next : next;
+        NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_RUNNING)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
-            .setContentTitle(tx("rest", "Rest"))
-            .setContentText(label.isEmpty() ? tx("restTimer", "Rest timer") : tx("then", "Then {label}").replace("{label}", label))
-            .setWhen(endsAt)
-            .setShowWhen(true)
-            .setUsesChronometer(true)
-            .setChronometerCountDown(true)
+            .setContentTitle(title)
+            .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(openApp())
-            .addAction(0, "+15s", self(ACTION_ADD, 1).putExtra(EXTRA_SECONDS, 15).let())
-            .addAction(0, tx("skip", "Skip"), self(ACTION_STOP, 2).putExtra("fromShade", true).let())
-            .build();
-        if (first) {
-            int type = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
-            ServiceCompat.startForeground(this, ID_RUNNING, n, type);
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setContentIntent(openApp());
+        if (sets > 0) b.setSubText(tx("sets", "{n} sets done").replace("{n}", String.valueOf(sets)));
+        if (paused) {
+            b.setShowWhen(false);
         } else {
-            nm().notify(ID_RUNNING, n);
+            b.setWhen(endsAt).setShowWhen(true).setUsesChronometer(true).setChronometerCountDown(true);
+        }
+        long whole = Math.max(totalMs, left);
+        if (whole > 0) {
+            int max = (int) Math.min(Integer.MAX_VALUE, (whole + 999) / 1000);
+            int done = (int) Math.max(0, Math.min(max, (whole - left) / 1000));
+            b.setProgress(max, done, false);
+        }
+        b.addAction(0, paused ? tx("resume", "Resume") : tx("pause", "Pause"), self(paused ? ACTION_RESUME : ACTION_PAUSE, 3).let());
+        b.addAction(0, "+15s", self(ACTION_ADD, 1).putExtra(EXTRA_SECONDS, 15).let());
+        b.addAction(0, tx("skip", "Skip"), self(ACTION_STOP, 2).putExtra("fromShade", true).let());
+        // Android 16: a Live Update, with the time left as the status bar chip.
+        b.setRequestPromotedOngoing(true);
+        b.setShortCriticalText(paused ? rest : clock(left));
+        Notification n = b.build();
+        if (first) startForegroundWith(n);
+        else nm().notify(ID_RUNNING, n);
+
+        handler.removeCallbacks(finish);
+        handler.removeCallbacks(tick);
+        if (paused) {
+            releaseAwake(); // nothing to wake for while paused
+            return;
         }
         holdAwake(left + WAKE_SLACK_MS);
-        handler.removeCallbacks(finish);
         handler.postDelayed(finish, left);
+        handler.postDelayed(tick, Math.min(1000L, left));
+    }
+
+    private Notification placeholder() {
+        return new NotificationCompat.Builder(this, CHANNEL_RUNNING)
+            .setSmallIcon(R.drawable.ic_stat_bolt)
+            .setContentTitle(tx("rest", "Rest"))
+            .setSilent(true)
+            .build();
+    }
+
+    private void startForegroundWith(Notification n) {
+        int type = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
+        ServiceCompat.startForeground(this, ID_RUNNING, n, type);
     }
 
     /** (Re)take the partial wakelock for `ms`. The timeout means it can never be left held. */
@@ -196,7 +332,7 @@ public class RestTimerService extends Service {
         Notification done = new NotificationCompat.Builder(this, sound && !chime ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
-            .setContentTitle(tx("done", "Rest done"))
+            .setContentTitle(workout.isEmpty() ? tx("done", "Rest done") : tx("done", "Rest done") + " · " + workout)
             .setContentText(label.isEmpty() ? tx("nextSet", "Time for your next set") : tx("nextSetLabel", "Next set: {label}").replace("{label}", label))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -206,27 +342,83 @@ public class RestTimerService extends Service {
             .setContentIntent(openApp())
             .build();
         nm().notify(ID_DONE, done);
-        end(true);
+        end();
         Listener ls = listener;
         if (ls != null) ls.onStopped(true);
     }
 
-    private void end(boolean finished) {
+    private void end() {
         handler.removeCallbacks(finish);
+        handler.removeCallbacks(tick);
         releaseAwake();
         endsAt = 0;
+        pausedLeft = 0;
+        save(this);
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
         nm().cancel(ID_RUNNING);
         stopSelf();
     }
 
+    /** Keep the rest on disk, so it survives the process being killed (endsAt 0 = none). */
+    static void save(Context c) {
+        try {
+            c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putLong(EXTRA_ENDS_AT, endsAt).putLong(EXTRA_PAUSED_LEFT, pausedLeft).putLong(EXTRA_TOTAL, totalMs)
+                .putString(EXTRA_LABEL, label).putString(EXTRA_WORKOUT, workout).putInt(EXTRA_SETS, sets)
+                .putBoolean(EXTRA_SOUND, sound).apply();
+        } catch (RuntimeException ignored) {
+            // No storage: the rest just isn't kept.
+        }
+    }
+
+    /** Load the saved rest when nothing is in memory (a new process). True if one is on. */
+    static boolean restore(Context c) {
+        if (active()) return true;
+        try {
+            SharedPreferences p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            long now = System.currentTimeMillis();
+            long savedEnds = p.getLong(EXTRA_ENDS_AT, 0);
+            long savedPaused = p.getLong(EXTRA_PAUSED_LEFT, 0);
+            if (savedPaused <= 0 && savedEnds <= now) return false;
+            if (savedEnds > now + MAX_REST_MS) return false;
+            endsAt = savedEnds;
+            pausedLeft = Math.min(Math.max(0, savedPaused), MAX_REST_MS);
+            totalMs = Math.min(Math.max(0, p.getLong(EXTRA_TOTAL, 0)), MAX_REST_MS);
+            label = orEmpty(p.getString(EXTRA_LABEL, ""));
+            workout = orEmpty(p.getString(EXTRA_WORKOUT, ""));
+            sets = p.getInt(EXTRA_SETS, 0);
+            sound = p.getBoolean(EXTRA_SOUND, true);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** Can the countdown show? False when the app's notifications or the rest timer channel are off. */
+    static boolean canShow(Context c) {
+        if (!NotificationManagerCompat.from(c).areNotificationsEnabled()) return false;
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationManager nm = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
+            NotificationChannel ch = nm != null ? nm.getNotificationChannel(CHANNEL_RUNNING) : null;
+            if (ch != null && ch.getImportance() == NotificationManager.IMPORTANCE_NONE) return false;
+        }
+        return true;
+    }
+
     private void ensureChannels() {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager m = nm();
+        if (m.getNotificationChannel(CHANNEL_RUNNING_OLD) != null) m.deleteNotificationChannel(CHANNEL_RUNNING_OLD);
         if (m.getNotificationChannel(CHANNEL_RUNNING) == null) {
-            NotificationChannel c = new NotificationChannel(CHANNEL_RUNNING, tx("restTimer", "Rest timer"), NotificationManager.IMPORTANCE_LOW);
+            // Default importance so it sits with the other notifications and
+            // shows its icon in the status bar, but with no sound or buzz:
+            // the countdown itself is silent, only "Rest done" alerts.
+            NotificationChannel c = new NotificationChannel(CHANNEL_RUNNING, tx("restTimer", "Rest timer"), NotificationManager.IMPORTANCE_DEFAULT);
             c.setDescription("The countdown between sets");
             c.setShowBadge(false);
+            c.setSound(null, null);
+            c.enableVibration(false);
+            c.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             m.createNotificationChannel(c);
         }
         if (m.getNotificationChannel(CHANNEL_DONE) == null) {
@@ -292,6 +484,7 @@ public class RestTimerService extends Service {
     @Override
     public void onDestroy() {
         handler.removeCallbacks(finish);
+        handler.removeCallbacks(tick);
         releaseAwake();
         super.onDestroy();
     }

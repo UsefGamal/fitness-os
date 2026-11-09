@@ -16,9 +16,10 @@ public class RestTimerPlugin extends Plugin {
         RestTimerService.foreground = true;
         RestTimerService.listener = new RestTimerService.Listener() {
             @Override
-            public void onChanged(long endsAt, String label) {
+            public void onChanged(long endsAt, long pausedLeft, String label) {
                 JSObject o = new JSObject();
                 o.put("endsAt", endsAt);
+                o.put("pausedLeft", pausedLeft);
                 o.put("label", label);
                 notifyListeners("changed", o, true);
             }
@@ -42,8 +43,13 @@ public class RestTimerPlugin extends Plugin {
         // Never more than an hour from now (pentest AND-03), whatever JS sends.
         long now = System.currentTimeMillis();
         long ends = Math.max(now, Math.min(endsAt.longValue(), now + MAX_REST_MS));
+        Double paused = call.getDouble("pausedLeft", 0.0);
+        Double total = call.getDouble("total", 0.0); // seconds
+        long pausedMs = Math.max(0, Math.min(paused == null ? 0 : paused.longValue(), MAX_REST_MS));
+        long totalMs = Math.max(0, Math.min(total == null ? 0 : (long) (total * 1000), MAX_REST_MS));
         RestTimerService.setTexts(call.getObject("texts"));
-        RestTimerService.start(getContext(), ends, call.getString("label", ""), call.getBoolean("sound", true));
+        RestTimerService.start(getContext(), ends, pausedMs, totalMs, call.getString("label", ""),
+            call.getString("workout", ""), call.getInt("sets", 0), call.getBoolean("sound", true));
         call.resolve();
     }
 
@@ -53,12 +59,68 @@ public class RestTimerPlugin extends Plugin {
         call.resolve();
     }
 
+    /** Pause the shade countdown; it stays in the shade with Resume. */
+    @PluginMethod
+    public void pause(PluginCall call) {
+        RestTimerService.send(getContext(), RestTimerService.ACTION_PAUSE);
+        call.resolve();
+    }
+
+    /**
+     * The shade timer: { endsAt (0 = none), pausedLeft (ms, 0 = running),
+     * label, skipped (ended with Skip in the shade) }. If the phone killed the app mid-rest, the saved rest
+     * is loaded and put back in the shade first.
+     */
     @PluginMethod
     public void state(PluginCall call) {
+        if (!RestTimerService.active() && RestTimerService.restore(getContext())) {
+            RestTimerService.startSaved(getContext());
+        }
         JSObject o = new JSObject();
         o.put("endsAt", RestTimerService.endsAt);
+        o.put("pausedLeft", RestTimerService.pausedLeft);
         o.put("label", RestTimerService.label);
+        o.put("skipped", RestTimerService.skipped);
         call.resolve(o);
+    }
+
+    /** { enabled }: false when the app's notifications or the rest timer channel are switched off. */
+    @PluginMethod
+    public void status(PluginCall call) {
+        JSObject o = new JSObject();
+        o.put("enabled", RestTimerService.canShow(getContext()));
+        call.resolve(o);
+    }
+
+    /** Open Android's notification settings for the app (or the rest timer channel when only it is off). */
+    @PluginMethod
+    public void openSettings(PluginCall call) {
+        android.content.Context c = getContext();
+        android.content.Intent i;
+        boolean appOn = androidx.core.app.NotificationManagerCompat.from(c).areNotificationsEnabled();
+        if (android.os.Build.VERSION.SDK_INT >= 26 && appOn) {
+            i = new android.content.Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, c.getPackageName())
+                .putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, RestTimerService.CHANNEL_RUNNING);
+        } else if (android.os.Build.VERSION.SDK_INT >= 26) {
+            i = new android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, c.getPackageName());
+        } else {
+            i = new android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:" + c.getPackageName()));
+        }
+        try {
+            i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            c.startActivity(i);
+        } catch (Exception e) {
+            try {
+                c.startActivity(new android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:" + c.getPackageName())).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (Exception ignored) {
+                // No settings screen: nothing to open.
+            }
+        }
+        call.resolve();
     }
 
     /** A workout sound: { notes: [[hz, start s, length s]...], volume 0..1, soft }. */

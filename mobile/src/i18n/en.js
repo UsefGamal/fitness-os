@@ -104,6 +104,11 @@ export default {
   'shade.done': 'Rest done',
   'shade.nextSet': 'Time for your next set',
   'shade.nextSetLabel': 'Next set: {label}',
+  'shade.paused': 'Paused',
+  'shade.pause': 'Pause',
+  'shade.resume': 'Resume',
+  'shade.left': '{time} left',
+  'shade.sets': '{n} sets done',
   'report.note': 'This is exactly what will be sent. Edit or remove anything, and add what you were doing at the end.',
   'report.length': '{n} of {max} characters',
   'report.send': 'Send',
@@ -134,6 +139,8 @@ export default {
   'meals.setTargets': 'Set your targets',
 
   'timer.over': 'Rest over. Next: {label}',
+  'timer.noShade': 'Notifications are off, so the rest timer can\'t show there or buzz when the screen is off.',
+  'timer.allowShade': 'Turn on',
 
   'common.cancel': 'Cancel',
   'history.deleteTitle': 'Delete workout',
