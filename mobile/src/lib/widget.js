@@ -36,6 +36,11 @@ export function mealWhat(option) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/** "Hide numbers on the widget" (Settings > Modules). */
+export function widgetPrivate(data) {
+  return data?.settings?.widget_private === true;
+}
+
 export function widgetDays(data, content, today) {
   const T = activePlan(data, content);
   const N = content.nutrition;
@@ -43,6 +48,9 @@ export function widgetDays(data, content, today) {
   const times = effectiveTimes(data, content, today);
   const isRest = (d) => sessionKeyOn(d, T, moves) === 'rest';
   const streak = D.trainingStreak(data, today, isRest);
+  // SEC-11: the widget is on the home screen for anyone to see; this hides
+  // protein, water and what the next meal is.
+  const hide = widgetPrivate(data);
   const trained = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const showMeals = D.moduleOn(data, 'meals');
   const showWater = D.moduleOn(data, 'water');
@@ -79,8 +87,8 @@ export function widgetDays(data, content, today) {
       date,
       streak: i === 0 && streak > 0 ? String(streak) : '',
       tonight: evening && !eveningDone(data, date, evening) ? `Tonight ${times.evening_time} · ${evening.label}` : '',
-      meals: meals.map(({ protein: _p, ...m }) => m),
-      stats: stats.join(' · '),
+      meals: meals.map(({ protein: _p, ...m }) => (hide ? { ...m, what: '' } : m)),
+      stats: hide ? '' : stats.join(' · '),
       week,
     };
     out.push(

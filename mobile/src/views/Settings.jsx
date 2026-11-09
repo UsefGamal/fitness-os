@@ -10,6 +10,7 @@ import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
+import { widgetPrivate } from '../lib/widget.js';
 import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
@@ -73,7 +74,7 @@ export default function Settings() {
       return;
     }
     try {
-      const { granted, extras } = await Health.connect();
+      const { granted, extras } = await Health.connect({ extras: false });
       setHcExtras(extras || []);
       if (!granted) {
         setMsg('Health Connect needs both permissions: read weight and write exercise.');
@@ -88,7 +89,7 @@ export default function Settings() {
   };
   const allowActivity = async () => {
     try {
-      const { extras } = await Health.connect();
+      const { extras } = await Health.connect({ extras: true });
       setHcExtras(extras || []);
       const r = await syncHealth({ all: true });
       setMsg(extras?.length ? `Reading ${extrasText(extras)}. ${n(r?.days || 0, 'day')} found.` : 'Nothing extra allowed. You can change this in Health Connect any time.');
@@ -343,6 +344,10 @@ export default function Settings() {
         })}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Switching a module off only hides it. Nothing is deleted.</p>
+      <div className="list">
+        <Toggle on={widgetPrivate(data)} title={t('widget.private')} note={t('widget.privateNote')}
+          onClick={() => update((d) => ({ ...d, settings: { ...d.settings, widget_private: !widgetPrivate(d) } }))} />
+      </div>
       </>) : null}
 
       {show('about') ? (<>

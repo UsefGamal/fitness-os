@@ -69,9 +69,29 @@ public class CrashPlugin extends Plugin {
         });
     }
 
+    // Pentest AND-06: a page that kills the renderer on every start must not
+    // turn into an endless reopen loop. At most 3 reopens a minute.
+    private static final int MAX_REOPENS = 3;
+    private static final long REOPEN_WINDOW_MS = 60_000L;
+    private static final long[] reopenedAt = new long[MAX_REOPENS];
+    private static int reopenNext = 0;
+
+    private static synchronized boolean mayReopen() {
+        long now = System.currentTimeMillis();
+        long oldest = reopenedAt[reopenNext];
+        if (oldest != 0 && now - oldest < REOPEN_WINDOW_MS) return false;
+        reopenedAt[reopenNext] = now;
+        reopenNext = (reopenNext + 1) % MAX_REOPENS;
+        return true;
+    }
+
     private void reopen() {
         Activity activity = getActivity();
         if (activity == null) return;
+        if (!mayReopen()) {
+            activity.finish();
+            return;
+        }
         Intent intent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
