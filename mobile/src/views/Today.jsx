@@ -228,7 +228,7 @@ export default function Today() {
           <strong><Icon name="star" className="icon" /> Quests</strong>
           <span className="muted small">{questsDone}/{dailyQuests.length} habits · {totalPoints(data)} pts <Icon name="chev" className="icon" /></span>
         </div>
-        <div className="progress" style={{ marginTop: 10 }}><span style={{ width: `${(questsDone / dailyQuests.length) * 100}%` }} /></div>
+        <div className="progress" style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${((questsDone / dailyQuests.length) * 100) / 100})` }} /></div>
       </Link>
 
       {D.moduleOn(data, 'meals') ? (
@@ -238,7 +238,7 @@ export default function Today() {
           <span className="muted small">{mealsDone}/{content.nutrition.meal_slots.length} logged <Icon name="chev" className="icon" /></span>
         </div>
         <div className="muted small" style={{ margin: '4px 0 10px' }}>{mealDay.label}</div>
-        <div className="progress"><span style={{ width: `${(mealsDone / content.nutrition.meal_slots.length) * 100}%` }} /></div>
+        <div className="progress"><span style={{ transform: `scaleX(${((mealsDone / content.nutrition.meal_slots.length) * 100) / 100})` }} /></div>
       </Link>
       ) : null}
 
@@ -248,7 +248,7 @@ export default function Today() {
           <strong><Icon name="drop" className="icon" /> Water</strong>
           <span className="muted small">{water} / {WATER_GOAL} ml</span>
         </div>
-        <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ width: `${Math.min(100, (water / WATER_GOAL) * 100)}%` }} /></div>
+        <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
         <div className="row">
           <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 250))}>+250 ml</button>
           <button type="button" className="btn secondary small grow" onClick={() => update((d) => D.addWater(d, today, 500))}>+500 ml</button>

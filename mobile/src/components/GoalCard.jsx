@@ -35,7 +35,7 @@ export default function GoalCard({ data, today }) {
       {p.target != null ? (
         <>
           <div className="progress" style={{ margin: '10px 0 6px' }} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((p.share_done ?? 0) * 100)}>
-            <span style={{ width: `${Math.round((p.share_done ?? 0) * 100)}%` }} />
+            <span style={{ transform: `scaleX(${(Math.round((p.share_done ?? 0) * 100)) / 100})` }} />
           </div>
           <div className="small">{t(p.mode === 'gain' ? 'goal.soFarGain' : 'goal.soFar', { done: Math.max(0, p.done_kg), left: p.left_kg, target: p.target })}</div>
         </>

@@ -9,9 +9,11 @@
 // with the screen off too; the app only plays it when the shade isn't used.
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
+import { restQuiet } from '../lib/motion.js';
 import { trainingSettings, VOLUMES } from '../lib/training.js';
 import { isNative, RestTimer } from './native.js';
 import { useData } from './useData.js';
+import { useTimer } from './useTimer.js';
 
 // Notes as [frequency Hz, start s, length s].
 const SOUNDS = {
@@ -110,9 +112,12 @@ function sound(notes, opts) {
 /** Play the sound (and buzz) for a workout moment, if switched on.
  * `inShade`: the rest timer runs in the phone's shade, which chimes itself. */
 export function feedback(event, { force = false, inShade = false } = {}) {
+  // SA-06: in the last 3 s of a rest only the timer speaks; anything else
+  // just buzzes (the 3-2-1 and rest-done cues themselves are not held back).
+  const quiet = !force && !['countdown', 'restDone', 'stop'].includes(event) && restQuiet(useTimer.getState().endsAt);
   const s = trainingSettings(useData.getState().data);
   const shadeDone = event === 'restDone' && isNative() && inShade;
-  if ((s.sounds || force) && SOUNDS[event] && !shadeDone) {
+  if ((s.sounds || force) && SOUNDS[event] && !shadeDone && !quiet) {
     sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' });
   }
   if (s.vibrate && !shadeDone) buzz(event);

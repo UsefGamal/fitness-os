@@ -28,7 +28,7 @@ export default function Shopping() {
           <strong>{got} of {total} in the basket</strong>
           {got ? <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, shopping: { week, checked: [] } }))}>Clear</button> : null}
         </div>
-        <div className="progress"><span style={{ width: `${total ? (got / total) * 100 : 0}%` }} /></div>
+        <div className="progress"><span style={{ transform: `scaleX(${(total ? (got / total) * 100 : 0) / 100})` }} /></div>
       </section>
       {groups.map((g) => (
         <div key={g.name}>

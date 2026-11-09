@@ -38,7 +38,7 @@ export default function Quests() {
         </div>
         {badge.next ? (
           <>
-            <div className="progress" style={{ margin: '10px 0 6px' }}><span style={{ width: `${badge.pct}%` }} /></div>
+            <div className="progress" style={{ margin: '10px 0 6px' }}><span style={{ transform: `scaleX(${(badge.pct) / 100})` }} /></div>
             <div className="muted small">{badge.next.threshold - points} to {badge.next.name}</div>
           </>
         ) : <div className="muted small">Every badge earned.</div>}
