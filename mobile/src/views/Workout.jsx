@@ -155,7 +155,7 @@ export default function Workout() {
   const target = useMemo(() => {
     if (!active || !ex || !exRow) return null;
     if (recovery) return null; // same loads as last time: no progression in a recovery week
-    const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets);
+    const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets.filter(D.isWorkSet)).filter((s) => s.length);
     const small = entry ? entry.mechanic === 'isolation' : !barbell;
     return progressionTarget(ex.reps, ex.sets, sessions, { step: small ? 1 : 2.5 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,7 +304,11 @@ export default function Workout() {
       return restFor(x, settings, { mechanic: mech, override: restOverride[x.name] });
     };
     const rest = roundDone(day.exercises, done, current) ? roundRest(day.exercises, current, restOf) : 0;
-    if (settings.auto_rest && rest > 0) timer.start(rest, day.exercises[ni].name);
+    const resting = settings.auto_rest && rest > 0;
+    if (resting) timer.start(rest, day.exercises[ni].name);
+    // The set tick (SA-03) never stacks: a best plays its own sound and the
+    // rest-start cue replaces the tick.
+    else if (kind !== 'best') feedback('set');
     if (ni !== current) setCurrent(ni);
   };
 

@@ -15,6 +15,7 @@ export function defaultTraining() {
     sounds: true,
     volume: 'medium',
     sound_set: 'classic',
+    reward_sounds: 'gentle', // lib/rewards.js REWARD_LEVELS: ticks for sets, meals and water
     vibrate: true,
     target_min: 0, // 0 = no target workout length
     bar: 'olympic', // lib/plates.js BARS

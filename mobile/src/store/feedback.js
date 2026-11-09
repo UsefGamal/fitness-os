@@ -1,4 +1,5 @@
-// Sounds and haptics for workout moments, in one place:
+// Sounds and haptics for workout moments, in one place (SA-01: on a phone
+// that is on silent, vibrate or Do Not Disturb, sounds go only to headphones):
 //   feedback('restStart' | 'countdown' | 'restDone' | 'stop' | 'workoutStart'
 //            | 'workoutSaved' | 'pr' | 'work' | 'rest' | 'test')
 // Sounds are synthesised (no audio files to license or bundle) and follow
@@ -9,6 +10,8 @@
 // with the screen off too; the app only plays it when the shade isn't used.
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
+import { todayISO } from '../lib/dates.js';
+import { daysTickingMeals, isReward, rewardScale } from '../lib/rewards.js';
 import { trainingSettings, VOLUMES } from '../lib/training.js';
 import { isNative, RestTimer } from './native.js';
 import { useData } from './useData.js';
@@ -25,6 +28,11 @@ const SOUNDS = {
   work: [[1046, 0, 0.3]],
   rest: [[523, 0, 0.25]],
   test: [[660, 0, 0.35], [990, 0.18, 0.5]],
+  // Reward ticks (SA-03): short, soft and under 120 ms.
+  set: [[1760, 0, 0.06]],
+  meal: [[1319, 0, 0.07]],
+  water: [[1047, 0, 0.04], [1397, 0.035, 0.05]],
+  mealsDone: [[659, 0, 0.1], [880, 0.08, 0.1], [1319, 0.16, 0.22]],
 };
 
 // Browser fallback patterns (ms) when there is no native haptics engine.
@@ -36,6 +44,10 @@ const VIBRATION = {
   rest: [60],
   restStart: [20],
   tap: [8],
+  set: [12],
+  meal: [10],
+  water: [8],
+  mealsDone: [30, 50, 30],
 };
 
 // The phone's haptics engine: short, crisp taps instead of a motor buzz.
@@ -47,6 +59,10 @@ const HAPTIC = {
   rest: () => Haptics.impact({ style: ImpactStyle.Light }),
   workoutStart: () => Haptics.impact({ style: ImpactStyle.Medium }),
   workoutSaved: () => Haptics.notification({ type: NotificationType.Success }),
+  set: () => Haptics.impact({ style: ImpactStyle.Light }),
+  meal: () => Haptics.impact({ style: ImpactStyle.Light }),
+  water: () => Haptics.impact({ style: ImpactStyle.Light }),
+  mealsDone: () => Haptics.notification({ type: NotificationType.Success }),
   pr: async () => {
     await Haptics.impact({ style: ImpactStyle.Heavy });
     setTimeout(() => Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {}), 140);
@@ -92,9 +108,13 @@ function play(notes, { volume, soft }) {
   }
 }
 
-function sound(notes, opts) {
+/** Play notes. `onSilenced` runs when the phone is on silent, vibrate or
+ * Do Not Disturb with no headphones in, so the native player skipped it. */
+function sound(notes, opts, onSilenced) {
   if (isNative()) {
-    RestTimer.tone({ notes, ...opts }).catch(() => {
+    RestTimer.tone({ notes, ...opts }).then((r) => {
+      if (r && r.played === false && onSilenced) onSilenced();
+    }).catch(() => {
       // An older APK without the native player: try the WebView.
       try { play(notes, opts); } catch { /* stay silent */ }
     });
@@ -110,10 +130,24 @@ function sound(notes, opts) {
 /** Play the sound (and buzz) for a workout moment, if switched on.
  * `inShade`: the rest timer runs in the phone's shade, which chimes itself. */
 export function feedback(event, { force = false, inShade = false } = {}) {
-  const s = trainingSettings(useData.getState().data);
+  const data = useData.getState().data;
+  const s = trainingSettings(data);
+  if (isReward(event) && !force) {
+    // Rewards follow Settings > Touch sounds (Off / Gentle / Full), not the
+    // Sounds switch, which is for the workout cues.
+    const scale = rewardScale(event, { level: s.reward_sounds, daysUsing: daysTickingMeals(data, todayISO()) });
+    if (scale > 0 && SOUNDS[event]) {
+      sound(SOUNDS[event], { volume: (VOLUMES[s.volume] ?? VOLUMES.medium) * scale, soft: s.sound_set === 'soft' });
+    }
+    if (s.vibrate) buzz(event);
+    return;
+  }
   const shadeDone = event === 'restDone' && isNative() && inShade;
+  // On a silenced phone the sound is skipped (SA-01), so it buzzes instead,
+  // even with vibration off in Settings: a cue never goes missing.
+  const silenced = () => { if (!s.vibrate) buzz(event); };
   if ((s.sounds || force) && SOUNDS[event] && !shadeDone) {
-    sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' });
+    sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' }, silenced);
   }
   if (s.vibrate && !shadeDone) buzz(event);
 }

@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
 import { todayISO } from '../lib/dates.js';
 import { MODULES } from '../lib/data.js';
+import { REWARD_LEVELS } from '../lib/rewards.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
@@ -21,7 +22,7 @@ import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
 import RamadanSettings from '../components/RamadanSettings.jsx';
 import ReminderCheck from '../components/ReminderCheck.jsx';
-import { t } from '../lib/i18n.js';
+import { t, t as tr } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
 import { shareTextFile } from '../store/share.js';
 import ReportSheet from '../components/ReportSheet.jsx';
@@ -441,7 +442,7 @@ function TrainingSettings({ data, update }) {
 
       <div className="section-label">Sounds and vibration</div>
       <div className="list">
-        <Toggle icon="sound" on={t.sounds} onClick={() => set({ sounds: !t.sounds })} title="Sounds" note="Rest start, 3-2-1, rest done, workout start and save, new records" />
+        <Toggle icon="sound" on={t.sounds} onClick={() => set({ sounds: !t.sounds })} title="Sounds" note="Rest start, 3-2-1, rest done and workout start" />
         {t.sounds ? (
           <>
             <Choice label="Volume" value={t.volume} onChange={(v) => set({ volume: v })} options={Object.keys(VOLUMES).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} />
@@ -449,6 +450,8 @@ function TrainingSettings({ data, update }) {
             <button type="button" className="list-row" onClick={() => { unlockAudio(); feedback('test', { force: true }); }}><Icon name="play" /><div className="grow">Play a test sound</div></button>
           </>
         ) : null}
+        <Choice label={tr('settings.touchSounds')} value={t.reward_sounds} onChange={(v) => set({ reward_sounds: v })} options={Object.entries(REWARD_LEVELS)} />
+        <p className="muted small" style={{ margin: '0 16px 8px' }}>{tr('settings.touchSoundsNote')}</p>
         <Toggle on={t.vibrate} onClick={() => set({ vibrate: !t.vibrate })} title="Vibrate" note="Buzz at rest done, new records and saved workouts" />
       </div>
     </>

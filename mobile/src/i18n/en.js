@@ -119,6 +119,8 @@ export default {
 
   'settings.title': 'Settings',
   'workout.restAfterRound': 'rest {rest} after the round',
+  'settings.touchSounds': 'Touch sounds',
+  'settings.touchSoundsNote': "A soft tick for each set, meal and water, a chime for a saved workout or a full day of meals, and a bigger one only for a real new best. Your phone's silent mode always wins.",
   'settings.profile': 'Profile and macro targets',
   'settings.quests': 'Quests',
   'settings.data': 'Your data',
