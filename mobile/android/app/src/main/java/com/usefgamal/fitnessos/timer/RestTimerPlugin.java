@@ -35,7 +35,10 @@ public class RestTimerPlugin extends Plugin {
 
     @PluginMethod
     public void start(PluginCall call) {
-        Double endsAt = call.getDouble("endsAt");
+        // Read numbers as Number: a time in ms (1.7e12) arrives as a Long, and
+        // Capacitor's getDouble() returns null for a Long, which made every
+        // start fail with "endsAt is required" (the shade never showed).
+        Number endsAt = number(call, "endsAt");
         if (endsAt == null) {
             call.reject("endsAt is required");
             return;
@@ -43,14 +46,23 @@ public class RestTimerPlugin extends Plugin {
         // Never more than an hour from now (pentest AND-03), whatever JS sends.
         long now = System.currentTimeMillis();
         long ends = Math.max(now, Math.min(endsAt.longValue(), now + MAX_REST_MS));
-        Double paused = call.getDouble("pausedLeft", 0.0);
-        Double total = call.getDouble("total", 0.0); // seconds
+        Number paused = number(call, "pausedLeft");
+        Number total = number(call, "total"); // seconds
         long pausedMs = Math.max(0, Math.min(paused == null ? 0 : paused.longValue(), MAX_REST_MS));
-        long totalMs = Math.max(0, Math.min(total == null ? 0 : (long) (total * 1000), MAX_REST_MS));
+        long totalMs = Math.max(0, Math.min(total == null ? 0 : (long) (total.doubleValue() * 1000), MAX_REST_MS));
+        Number sets = number(call, "sets");
         RestTimerService.setTexts(call.getObject("texts"));
         RestTimerService.start(getContext(), ends, pausedMs, totalMs, call.getString("label", ""),
-            call.getString("workout", ""), call.getInt("sets", 0), call.getBoolean("sound", true));
+            call.getString("workout", ""), sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true));
         call.resolve();
+    }
+
+    /** A number argument whatever JSON made of it (Integer, Long or Double), or null. */
+    static Number number(PluginCall call, String name) {
+        Object v = call.getData().opt(name);
+        if (!(v instanceof Number)) return null;
+        double d = ((Number) v).doubleValue();
+        return Double.isNaN(d) || Double.isInfinite(d) ? null : (Number) v;
     }
 
     @PluginMethod
