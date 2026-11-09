@@ -6,7 +6,7 @@ import * as D from './data.js';
 import { sessionKeyOn } from './schedule.js';
 import { content } from './testContent.js';
 import { setEvening } from './evening.js';
-import { mealWhat, nextMeal, WIDGET_DAYS, widgetDays } from './widget.js';
+import { mealWhat, nextMeal, WIDGET_DAYS, widgetDays, widgetPrivate } from './widget.js';
 
 const T = content.training;
 const today = '2026-11-01'; // a Sunday
@@ -76,4 +76,17 @@ test('meals and water stay off the widget when their modules are off', () => {
   const [first] = widgetDays(data, content, today);
   assert.deepEqual(first.meals, []);
   assert.equal(first.stats, '');
+});
+
+test('SEC-11: "Hide numbers on the widget" keeps protein, water and the meal off the home screen', () => {
+  const data = D.emptyData(content);
+  const [shown] = widgetDays(data, content, today);
+  assert.notEqual(shown.stats, '');
+  assert.equal(widgetPrivate(data), false);
+  const hidden = { ...data, settings: { ...data.settings, widget_private: true } };
+  const [first] = widgetDays(hidden, content, today);
+  assert.equal(first.stats, '');
+  assert.ok(first.meals.length > 0);
+  assert.ok(first.meals.every((m) => m.what === '' && m.name));
+  assert.equal(first.title, shown.title);
 });

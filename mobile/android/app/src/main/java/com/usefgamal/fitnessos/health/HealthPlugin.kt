@@ -87,10 +87,17 @@ class HealthPlugin : Plugin() {
         }
     }
 
+    /**
+     * SEC-09: turning Health Connect on asks only for the two it needs
+     * (read weight, write exercise). Steps, active calories, sleep and
+     * resting heart rate are asked for only from "Allow activity",
+     * with { extras: true }.
+     */
     @PluginMethod
     fun connect(call: PluginCall) {
         if (client(call) == null) return
-        startActivityForResult(call, contract.createIntent(context, permissions + extras), "permissionsResult")
+        val ask = if (call.getBoolean("extras", false) == true) permissions + extras else permissions
+        startActivityForResult(call, contract.createIntent(context, ask), "permissionsResult")
     }
 
     @ActivityCallback

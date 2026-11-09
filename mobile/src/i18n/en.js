@@ -49,6 +49,8 @@ export default {
   'import.gate.hide_kcal': 'Calories hidden',
   'import.gate.hide_weight': 'Weight hidden',
   'import.keepSafety': 'Yes, keep these on and import',
+  'widget.private': 'Hide numbers on the widget',
+  'widget.privateNote': 'Protein, water and the next meal stay off your home screen',
   'import.useFileSafety': "No, they've changed: use the backup's",
   'backup.noLock': "This phone has no screen lock, so Android doesn't back up Fitness OS to your Google account.",
   'crash.backupSaved': 'Backup saved to Documents.',

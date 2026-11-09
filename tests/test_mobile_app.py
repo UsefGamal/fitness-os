@@ -83,6 +83,7 @@ import subprocess  # noqa: E402
 import xml.etree.ElementTree as ET  # noqa: E402
 
 RES_XML = ANDROID / "res" / "xml"
+RES_XML_28 = ANDROID / "res" / "xml-v28"  # Android 9-11 backup rules
 GRADLE = (ROOT / "mobile" / "android" / "app" / "build.gradle").read_text(encoding="utf-8")
 
 
@@ -94,7 +95,7 @@ def test_progress_photos_never_go_to_android_backup():
     for section in ("cloud-backup", "device-transfer"):
         excludes = [(e.get("domain"), e.get("path")) for e in rules.find(section).findall("exclude")]
         assert ("file", "progress-photos/") in excludes, section
-    legacy = ET.parse(RES_XML / "backup_rules.xml").getroot()
+    legacy = ET.parse(RES_XML_28 / "backup_rules.xml").getroot()
     assert ("file", "progress-photos/") in [(e.get("domain"), e.get("path")) for e in legacy.findall("exclude")]
 
 
@@ -104,7 +105,7 @@ def test_health_data_never_goes_to_an_unencrypted_cloud_backup():
     rules = ET.parse(RES_XML / "data_extraction_rules.xml").getroot()
     assert rules.find("cloud-backup").get("disableIfNoEncryptionCapabilities") == "true"
     # Android 9-11: every include needs encryption or a phone-to-phone move.
-    legacy = ET.parse(RES_XML / "backup_rules.xml").getroot()
+    legacy = ET.parse(RES_XML_28 / "backup_rules.xml").getroot()
     includes = legacy.findall("include")
     assert includes, "with no include, Android 11- would back up everything with no flag"
     paths = {(e.get("domain"), e.get("path")) for e in includes}
@@ -115,6 +116,34 @@ def test_health_data_never_goes_to_an_unencrypted_cloud_backup():
     for path in paths:
         flags = {e.get("requireFlags") for e in includes if (e.get("domain"), e.get("path")) == path}
         assert flags == {"clientSideEncryption", "deviceToDeviceTransfer"}, path
+
+
+def test_android_8_backs_up_nothing():
+    """Pentest AND-07: Android 8.0/8.1 ignores requireFlags, so the default
+    res/xml rules (used only there, below xml-v28) exclude every domain."""
+    rules = ET.parse(RES_XML / "backup_rules.xml").getroot()
+    assert rules.findall("include") == []
+    excludes = {(e.get("domain"), e.get("path")) for e in rules.findall("exclude")}
+    for domain in ("root", "file", "database", "sharedpref", "external"):
+        assert (domain, ".") in excludes, domain
+
+
+def test_crash_lines_stay_on_the_phone():
+    """Pentest AND-06: CrashPlugin's SharedPreferences never go to a backup."""
+    crash = ("sharedpref", "fitness-os-crash.xml")
+    rules = ET.parse(RES_XML / "data_extraction_rules.xml").getroot()
+    for section in ("cloud-backup", "device-transfer"):
+        assert crash in [(e.get("domain"), e.get("path")) for e in rules.find(section).findall("exclude")], section
+    legacy = ET.parse(RES_XML_28 / "backup_rules.xml").getroot()
+    assert crash in [(e.get("domain"), e.get("path")) for e in legacy.findall("exclude")]
+
+
+def test_launcher_activity_and_file_provider_are_narrow():
+    """Pentest AND-05 (task hijacking on Android 8-10) and SEC-10."""
+    assert 'android:taskAffinity=""' in MANIFEST
+    paths = ET.parse(RES_XML / "file_paths.xml").getroot()
+    external = [e.get("path") for e in paths.findall("external-path")]
+    assert external == ["Documents/"]
 
 
 def test_the_health_privacy_text_mentions_android_backup():

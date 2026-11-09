@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
+    <!-- SEC-10: only what the app shares. Exports saved to Documents
+         (store/mirror.js) and files handed to the share sheet from the
+         cache (store/share.js), not all of external storage. -->
+    <external-path name="documents" path="Documents/" />
     <cache-path name="my_cache_images" path="." />
 </paths>
