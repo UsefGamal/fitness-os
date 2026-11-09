@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { DONE_GRACE_MS, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
+import { DONE_GRACE_MS, shadeLines, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
 
 const now = 1_000_000;
 const running = { endsAt: now + 60_000, total: 90, label: 'Squat', pausedLeft: null };
@@ -63,4 +63,12 @@ test('a rest that ended a while ago is not brought back; one that just ended is'
 test('junk in storage is ignored', () => {
   for (const raw of [null, '', 'nope', '{', '42', 'null', '{"endsAt":"soon"}']) assert.equal(timerToRestore(raw, now), null);
   assert.equal(timerToRestore(JSON.stringify({ endsAt: now + 1000, label: 'x'.repeat(500) }), now).label.length, 200);
+});
+
+test('the notification lines name the next set and the workout so far', () => {
+  assert.deepEqual(shadeLines({ setNo: 3, setsPlanned: 4, weightKg: 60, reps: 8, workout: 'Lower A', done: 7, planned: 18 }),
+    { detail: 'Set 3 of 4 · 60 kg × 8', progress: 'Lower A · 7/18 sets' });
+  assert.deepEqual(shadeLines({ setNo: 1, setsPlanned: 3, targetReps: '8-10', workout: 'Push' }), { detail: 'Set 1 of 3 · 8-10 reps', progress: 'Push' });
+  assert.equal(shadeLines({ setNo: 2, weightKg: 22.5, reps: 12 }).detail, 'Set 2 · 22.5 kg × 12');
+  assert.deepEqual(shadeLines(), { detail: '', progress: '' });
 });

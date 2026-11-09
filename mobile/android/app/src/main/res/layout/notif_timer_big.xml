@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rest timer notification, open: the folded row, a draining bar, the
+     workout so far, and -15s / Pause / +15s / Skip. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include layout="@layout/notif_timer" />
+
+    <ProgressBar
+        android:id="@+id/n_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="12dp"
+        android:max="100"
+        android:progressBackgroundTint="#3a3a3c"
+        android:progressTint="#30d158" />
+
+    <TextView
+        android:id="@+id/n_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#8e8e93"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/n_less"
+            style="@style/NotifButton"
+            android:text="−15s" />
+
+        <TextView
+            android:id="@+id/n_pause"
+            style="@style/NotifButton"
+            android:background="@drawable/notif_btn_go"
+            android:textColor="#000000" />
+
+        <TextView
+            android:id="@+id/n_more"
+            style="@style/NotifButton"
+            android:text="+15s" />
+
+        <TextView
+            android:id="@+id/n_skip"
+            style="@style/NotifButton"
+            android:layout_marginEnd="0dp" />
+    </LinearLayout>
+</LinearLayout>
