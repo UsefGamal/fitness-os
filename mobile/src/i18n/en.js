@@ -118,6 +118,7 @@ export default {
   'update.safe': "Your data is safe and unchanged on this phone. Install the latest APK over this one; don't uninstall, because that deletes the data.",
 
   'settings.title': 'Settings',
+  'workout.restAfterRound': 'rest {rest} after the round',
   'settings.profile': 'Profile and macro targets',
   'settings.quests': 'Quests',
   'settings.data': 'Your data',

@@ -16,6 +16,7 @@ import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { progressionTarget } from '../lib/progression.js';
 import { alternatives } from '../lib/similar.js';
+import { roundDone, roundRest } from '../lib/superset.js';
 import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
 import { buildSession, buildSwaps, ownedKinds } from '../lib/equipment.js';
 import { activeMs, clock, pauseWorkout, restFor, restoreSet, resumeWorkout, targetProgress, trainingSettings } from '../lib/training.js';
@@ -291,7 +292,18 @@ export default function Workout() {
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
     const ni = nextIndex(day, after, data, current);
-    const rest = restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] });
+    // Supersets (F-01a): straight on to the partner, rest once the round is
+    // done, for the longest rest in the pair.
+    const done = day.exercises.map((x) => {
+      const e = D.exerciseByName(data, x.name);
+      return e ? after.sets.filter((s) => s.exercise_id === e.id).length : 0;
+    });
+    const restOf = (j) => {
+      const x = day.exercises[j];
+      const mech = j === current ? entry?.mechanic : catalogue ? entryFor(x.name, content.training, catalogue.byId)?.mechanic : null;
+      return restFor(x, settings, { mechanic: mech, override: restOverride[x.name] });
+    };
+    const rest = roundDone(day.exercises, done, current) ? roundRest(day.exercises, current, restOf) : 0;
     if (settings.auto_rest && rest > 0) timer.start(rest, day.exercises[ni].name);
     if (ni !== current) setCurrent(ni);
   };
@@ -400,7 +412,7 @@ export default function Workout() {
             <button type="button" className="row between" style={{ width: '100%', background: 'none', border: 0, padding: 0, color: 'inherit', textAlign: 'start' }} onClick={() => setCurrent(i)} aria-expanded={isCurrent}>
               <div className="grow">
                 <div className="ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
-                <div className="ex-meta">{x.sets} × {x.reps}{x.rir ? ` · leave ${x.rir} in the tank` : ''} · rest {x.rest}</div>
+                <div className="ex-meta">{x.sets} × {x.reps}{x.rir ? ` · leave ${x.rir} in the tank` : ''} · {x.pair ? t('workout.restAfterRound', { rest: x.rest }) : `rest ${x.rest}`}</div>
               </div>
               <span className={`chip${sets.length >= x.sets ? ' accent' : ''}`}>{sets.length}/{x.sets}</span>
             </button>
