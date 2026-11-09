@@ -13,6 +13,7 @@ import { sessionKeyOn } from '../lib/schedule.js';
 import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
 import { mealWhat } from '../lib/widget.js';
+import CountUp from '../components/CountUp.jsx';
 import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
@@ -62,7 +63,7 @@ function Targets() {
           <strong><Icon name="drop" className="icon" /> {t('mealsSimple.water')}</strong>
           <span className="muted small">{water} / {WATER_GOAL} ml</span>
         </div>
-        <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ width: `${Math.min(100, (water / WATER_GOAL) * 100)}%` }} /></div>
+        <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
         <div className="row">
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 250)); feedback('water'); }}>{t('mealsSimple.add250')}</button>
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 500)); feedback('water'); }}>{t('mealsSimple.add500')}</button>
@@ -130,8 +131,8 @@ function MealPlan() {
       </div>
 
       <div className="stat-grid">
-        <div className="stat"><div className="label">{t('meals.kcalEaten')}</div><div className="value">{eaten.kcal}<span className="unit">/ {target.kcal}</span></div></div>
-        <div className="stat"><div className="label">{t('meals.proteinEaten')}</div><div className="value">{eaten.protein}<span className="unit">/ {target.protein} g</span></div></div>
+        <div className="stat"><div className="label">{t('meals.kcalEaten')}</div><div className="value"><CountUp value={eaten.kcal} /><span className="unit">/ {target.kcal}</span></div></div>
+        <div className="stat"><div className="label">{t('meals.proteinEaten')}</div><div className="value"><CountUp value={eaten.protein} /><span className="unit">/ {target.protein} g</span></div></div>
       </div>
       <div className="muted small" style={{ margin: '-4px 4px 12px' }}>{t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link></div>
       {dayDrift(totals, target).map((r) => (

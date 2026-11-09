@@ -78,7 +78,9 @@ button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit
 .week-day.done .s { color: var(--accent); }
 
 .progress { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-.progress > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.progress > span { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left center; transition: transform 320ms cubic-bezier(.2, .8, .2, 1); will-change: transform; }
+/* Bars fill by transform, never width, so a fill never relayouts the page (SA-05). */
+[dir="rtl"] .progress > span { transform-origin: right center; }
 
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .stat { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
@@ -189,6 +191,9 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .check { width: 28px; height: 28px; border-radius: 14px; border: 2px solid var(--surface3); display: grid; place-items: center; background: none; flex: none; color: var(--on-accent); }
 .check.on { background: var(--accent); border-color: var(--accent); }
+/* A tick pops once when it turns on (SA-05): transform only, 180 ms. */
+.check.on.pop { animation: tick-pop 180ms cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes tick-pop { 0% { transform: scale(.82); } 100% { transform: scale(1); } }
 /* The tick stays 28px to look at but takes taps across 44px (E3-S12, E6-S6). */
 .check { position: relative; }
 .check::after { content: ''; position: absolute; inset: -8px; }
@@ -228,6 +233,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 [dir="rtl"] .route.pop-in { animation-name: push-in; }
 @media (prefers-reduced-motion: reduce) {
   .route.tab-in, .route.push-in, .route.pop-in { animation: none; }
+  .check.on.pop, .count-up { animation: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }
 
@@ -347,7 +353,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .intro-line { font-size: 17px; color: var(--muted); opacity: 0; animation: intro-up 0.4s ease-out 0.9s forwards; }
 @keyframes intro-ring { to { stroke-dashoffset: 0; } }
 @keyframes intro-fade { to { opacity: 1; } }
-@keyframes intro-charge { 0% { transform: scale(1); } 40% { transform: scale(1.14); filter: drop-shadow(0 0 14px rgba(48, 209, 88, 0.7)); } 100% { transform: scale(1); } }
+@keyframes intro-charge { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
 @keyframes intro-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes intro-out { to { opacity: 0; transform: scale(1.04); visibility: hidden; } }
 

@@ -10,11 +10,13 @@
 // with the screen off too; the app only plays it when the shade isn't used.
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
+import { restQuiet } from '../lib/motion.js';
 import { todayISO } from '../lib/dates.js';
 import { daysTickingMeals, isReward, rewardScale } from '../lib/rewards.js';
 import { trainingSettings, VOLUMES } from '../lib/training.js';
 import { isNative, RestTimer } from './native.js';
 import { useData } from './useData.js';
+import { useTimer } from './useTimer.js';
 
 // Notes as [frequency Hz, start s, length s].
 const SOUNDS = {
@@ -130,13 +132,16 @@ function sound(notes, opts, onSilenced) {
 /** Play the sound (and buzz) for a workout moment, if switched on.
  * `inShade`: the rest timer runs in the phone's shade, which chimes itself. */
 export function feedback(event, { force = false, inShade = false } = {}) {
+  // SA-06: in the last 3 s of a rest only the timer speaks; anything else
+  // just buzzes (the 3-2-1 and rest-done cues themselves are not held back).
+  const quiet = !force && !['countdown', 'restDone', 'stop'].includes(event) && restQuiet(useTimer.getState().endsAt);
   const data = useData.getState().data;
   const s = trainingSettings(data);
   if (isReward(event) && !force) {
     // Rewards follow Settings > Touch sounds (Off / Gentle / Full), not the
     // Sounds switch, which is for the workout cues.
     const scale = rewardScale(event, { level: s.reward_sounds, daysUsing: daysTickingMeals(data, todayISO()) });
-    if (scale > 0 && SOUNDS[event]) {
+    if (scale > 0 && SOUNDS[event] && !quiet) {
       sound(SOUNDS[event], { volume: (VOLUMES[s.volume] ?? VOLUMES.medium) * scale, soft: s.sound_set === 'soft' });
     }
     if (s.vibrate) buzz(event);
@@ -146,7 +151,7 @@ export function feedback(event, { force = false, inShade = false } = {}) {
   // On a silenced phone the sound is skipped (SA-01), so it buzzes instead,
   // even with vibration off in Settings: a cue never goes missing.
   const silenced = () => { if (!s.vibrate) buzz(event); };
-  if ((s.sounds || force) && SOUNDS[event] && !shadeDone) {
+  if ((s.sounds || force) && SOUNDS[event] && !shadeDone && !quiet) {
     sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' }, silenced);
   }
   if (s.vibrate && !shadeDone) buzz(event);

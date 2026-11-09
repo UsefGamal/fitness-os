@@ -28,6 +28,7 @@
     "src/components/Alternatives.jsx": 2,
     "src/components/BodyMap.jsx": 5,
     "src/components/ConfirmSheet.jsx": 0,
+    "src/components/CountUp.jsx": 0,
     "src/components/CrashScreen.jsx": 0,
     "src/components/DayPicker.jsx": 0,
     "src/components/DaySheet.jsx": 0,
