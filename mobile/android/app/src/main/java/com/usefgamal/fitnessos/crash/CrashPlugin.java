@@ -145,9 +145,26 @@ public class CrashPlugin extends Plugin {
             }
             if (what == null) continue;
             String desc = info.getDescription();
-            add(ctx, what + (desc != null && !desc.isEmpty() ? ": " + desc : ""), false);
+            add(ctx, what + where(info) + (desc != null && !desc.isEmpty() ? ": " + desc : ""), false);
         }
         prefs.edit().putLong(SEEN, newest).apply();
+    }
+
+    /**
+     * Where the app was when it ended and how much memory it held, so a
+     * report tells a normal background clean-up from a real problem:
+     * " (in the background, 180 MB)", " (rest timer running, 210 MB)" or
+     * " (on screen, 900 MB)".
+     */
+    private static String where(ApplicationExitInfo info) {
+        int imp = info.getImportance();
+        String place;
+        if (imp <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) place = "on screen";
+        else if (imp <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE) place = "rest timer running";
+        else if (imp <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE) place = "partly visible";
+        else place = "in the background";
+        long kb = Math.max(info.getRss(), info.getPss());
+        return " (" + place + (kb > 0 ? ", " + (kb / 1024) + " MB" : "") + ")";
     }
 
     /** Return the saved lines and clear them: { crashes: [{ at, message }] }. */
