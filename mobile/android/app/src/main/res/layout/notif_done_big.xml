@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Rest done" notification, open: the folded row, the workout so far, and
+     +30s rest / Open workout. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include layout="@layout/notif_done" />
+
+    <TextView
+        android:id="@+id/d_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#8e8e93"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/d_more"
+            style="@style/NotifButton" />
+
+        <TextView
+            android:id="@+id/d_open"
+            style="@style/NotifButton"
+            android:layout_marginEnd="0dp"
+            android:background="@drawable/notif_btn_go"
+            android:textColor="#000000" />
+    </LinearLayout>
+</LinearLayout>

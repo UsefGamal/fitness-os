@@ -67,3 +67,21 @@ export function timerToRestore(raw, now = Date.now()) {
   if (!Number.isFinite(s.endsAt) || s.endsAt <= now - DONE_GRACE_MS) return null;
   return { endsAt: s.endsAt, total, label, pausedLeft: null };
 }
+
+/**
+ * The two text lines the notification shows under the exercise name:
+ * `detail` is the next set ("Set 3 of 4 · 60 kg × 8", or "Set 1 of 3 · 8-10
+ * reps" when the load isn't known yet) and `progress` the workout so far
+ * ("Lower A · 7/18 sets"). Empty parts are left out.
+ */
+export function shadeLines({ setNo, setsPlanned, weightKg, reps, targetReps, workout, done, planned } = {}) {
+  const parts = [];
+  if (setNo > 0) parts.push(setsPlanned > 0 ? `Set ${Math.min(setNo, 99)} of ${setsPlanned}` : `Set ${Math.min(setNo, 99)}`);
+  if (weightKg > 0 && reps > 0) parts.push(`${+Number(weightKg).toFixed(2)} kg × ${reps}`);
+  else if (reps > 0) parts.push(`${reps} reps`);
+  else if (targetReps) parts.push(`${String(targetReps).slice(0, 12)} reps`);
+  const prog = [];
+  if (workout) prog.push(String(workout).slice(0, 60));
+  if (planned > 0) prog.push(`${Math.max(0, done || 0)}/${planned} sets`);
+  return { detail: parts.join(' · '), progress: prog.join(' · ') };
+}

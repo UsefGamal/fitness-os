@@ -41,11 +41,12 @@ function keep(state) {
 // imported plan can't keep the shade timer and its wakelock going for days.
 export const MAX_REST_S = 30 * 60;
 
-/** The workout under way, for the shade: its name and the sets done so far. */
+/** The workout under way, for the shade: its name and the sets done so far
+ * (the name is kept in `notes`), used when the caller sent no lines. */
 function currentWorkout() {
   const { data, activeWorkoutId } = useData.getState();
   const w = (data?.workouts || []).find((x) => x.id === activeWorkoutId && !x.finished_at);
-  return w ? { workout: String(w.label || '').slice(0, 80), sets: Array.isArray(w.sets) ? w.sets.length : 0 } : { workout: '', sets: 0 };
+  return w ? { workout: String(w.label || w.notes || '').slice(0, 80), sets: Array.isArray(w.sets) ? w.sets.length : 0 } : { workout: '', sets: 0 };
 }
 
 /** Put the app's timer, as it is now, in the shade (running or paused). */
@@ -58,15 +59,20 @@ async function toShade() {
       await LocalNotifications.requestPermissions(); // Android 13+ needs it for any notification
     }
     // The permission dialog can take a while: send the timer as it is now.
-    const { endsAt, pausedLeft, total, label } = useTimer.getState();
+    const { endsAt, pausedLeft, total, label, lines } = useTimer.getState();
     if (!endsAt && pausedLeft == null) return;
     const { sounds } = trainingSettings(useData.getState().data);
     const texts = {
       rest: t('shade.rest'), restTimer: t('shade.restTimer'), then: t('shade.then'), skip: t('shade.skip'),
       done: t('shade.done'), nextSet: t('shade.nextSet'), nextSetLabel: t('shade.nextSetLabel'),
       paused: t('shade.paused'), pause: t('shade.pause'), resume: t('shade.resume'), left: t('shade.left'), sets: t('shade.sets'),
+      next: t('shade.next'), go: t('shade.go'), moreRest: t('shade.moreRest'), openWorkout: t('shade.openWorkout'),
     };
-    await RestTimer.start({ endsAt: endsAt || Date.now(), pausedLeft: pausedLeft || 0, total, label, ...currentWorkout(), sound: sounds, texts });
+    const w = currentWorkout();
+    await RestTimer.start({
+      endsAt: endsAt || Date.now(), pausedLeft: pausedLeft || 0, total, label, ...w,
+      detail: lines?.detail || '', progress: lines?.progress || w.workout, sound: sounds, texts,
+    });
     useTimer.setState({ inShade: true });
   } catch (err) {
     // The plugin failed: the in-app timer still works, and the bug report
@@ -91,14 +97,17 @@ export const useTimer = create((set, get) => ({
   endsAt: null,
   total: 0,
   label: '',
+  lines: null, // { detail, progress } for the notification (lib/restTimer.js shadeLines)
   pausedLeft: null, // ms left while paused, else null
   inShade: false, // the countdown also runs in the notification shade, which chimes at the end
   shadeBlocked: false, // notifications are off, so the countdown can't show in the shade
-  start(seconds, label) {
+  /** Start a rest before `label` (the next exercise); `lines` are the
+   * notification's next-set and workout lines (shadeLines). */
+  start(seconds, label, lines = null) {
     if (!(seconds > 0)) return;
     seconds = Math.min(seconds, MAX_REST_S);
     const endsAt = Date.now() + seconds * 1000;
-    set({ endsAt, total: seconds, label, pausedLeft: null });
+    set({ endsAt, total: seconds, label, lines, pausedLeft: null });
     feedback('restStart');
     toShade();
   },

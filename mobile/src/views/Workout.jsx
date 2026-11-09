@@ -26,6 +26,7 @@ import { feedback, unlockAudio } from '../store/feedback.js';
 import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
 import { useCatalogue } from '../store/catalogue.js';
+import { shadeLines } from '../lib/restTimer.js';
 import { useTimer } from '../store/useTimer.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
@@ -305,7 +306,15 @@ export default function Workout() {
     };
     const rest = roundDone(day.exercises, done, current) ? roundRest(day.exercises, current, restOf) : 0;
     const resting = settings.auto_rest && rest > 0;
-    if (resting) timer.start(rest, day.exercises[ni].name);
+    if (resting) {
+      const nx = day.exercises[ni];
+      timer.start(rest, nx.name, shadeLines({
+        setNo: done[ni] + 1, setsPlanned: nx.sets, targetReps: nx.reps,
+        // The same exercise again: the load just lifted is the best guess.
+        ...(ni === current ? { weightKg: w, reps: r } : {}),
+        workout: day.label, done: done.reduce((n, k) => n + k, 0), planned: totalTarget,
+      }));
+    }
     // The set tick (SA-03) never stacks: a best plays its own sound and the
     // rest-start cue replaces the tick.
     else if (kind !== 'best') feedback('set');
@@ -443,7 +452,7 @@ export default function Workout() {
                 {barbell && weight > barKg ? <div className="plate-line">Per side: {plateText(platesPerSide(weight, barKg, settings.plates).plates)} kg{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (makes ${platesPerSide(weight, barKg, settings.plates).loaded} kg)`}</div> : null}
                 <div className="rest-now">
                   <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> Log set {sets.length + 1}</button>
-                  <button type="button" className="btn secondary" aria-label="Start the rest timer" onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name); }}><Icon name="timer" /> Rest</button>
+                  <button type="button" className="btn secondary" aria-label="Start the rest timer" onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget })); }}><Icon name="timer" /> Rest</button>
                 </div>
                 <div className="ex-actions">
                   <button type="button" className="chip" onClick={() => tweak((t, n) => addExtraSet(t, n, x.orig))}>+ Set</button>

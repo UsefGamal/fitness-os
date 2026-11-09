@@ -53,7 +53,9 @@ public class RestTimerPlugin extends Plugin {
         Number sets = number(call, "sets");
         RestTimerService.setTexts(call.getObject("texts"));
         RestTimerService.start(getContext(), ends, pausedMs, totalMs, call.getString("label", ""),
-            call.getString("workout", ""), sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true));
+            // The workout line: "Lower A · 7/18 sets" from the app, else the workout's name.
+            call.getString("progress", call.getString("workout", "")), call.getString("detail", ""),
+            sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true));
         call.resolve();
     }
 
