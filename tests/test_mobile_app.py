@@ -165,7 +165,27 @@ def test_bad_tags_are_refused():
 def test_only_tags_build_a_signed_release():
     wf = (ROOT / ".github" / "workflows" / "android.yml").read_text(encoding="utf-8")
     assert 'tags: ["v*"]' in wf
-    assert "scripts/build-apk.sh release" in wf
+    assert "scripts/build-apk.sh unsigned" in wf
+    assert "scripts/sign-apk.sh" in wf
     assert "if: ${{ startsWith(github.ref, 'refs/tags/v') }}" in wf  # the release job (P14-08)
     assert "check-apk.sh dist/fitness-os-release.apk com.usefgamal.fitnessos" in wf
     assert "check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug" in wf
+
+
+def test_only_the_sign_step_sees_the_key():
+    """PT-02 / SEC-05: npm, the tests, Vite and Gradle run with no signing
+    secret; one step that runs only zipalign and apksigner holds it."""
+    wf = (ROOT / ".github" / "workflows" / "android.yml").read_text(encoding="utf-8")
+    steps = wf.split("      - ")
+    with_secrets = [s for s in steps if "secrets.FITNESS_OS_" in s]
+    assert len(with_secrets) == 1
+    step = with_secrets[0]
+    assert "scripts/sign-apk.sh" in step
+    for tool in ("build-apk.sh", "npm ", "gradlew", "npx "):
+        assert tool not in step, tool
+    sign_lines = (ROOT / "scripts" / "sign-apk.sh").read_text(encoding="utf-8").splitlines()
+    sign = "\n".join(line for line in sign_lines if not line.lstrip().startswith("#"))
+    for tool in ("npm", "gradlew", "node "):
+        assert tool not in sign, tool
+    build = (ROOT / "scripts" / "build-apk.sh").read_text(encoding="utf-8")
+    assert "unset FITNESS_OS_KEYSTORE FITNESS_OS_KEYSTORE_PASSWORD" in build

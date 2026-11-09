@@ -136,7 +136,16 @@ jobs:
       - name: Version from the tag
         run: scripts/version-from-tag.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
 
-      - name: Build signed release APK
+      # PT-02 / SEC-05: the build (npm ci, tests, Vite, Gradle) runs with no
+      # signing secret in its environment. Only the next step sees the key,
+      # and it runs nothing but zipalign and apksigner.
+      - name: Build unsigned release APKs
+        run: |
+          # P14-02: one tag, two APKs: Yusuf's and the friends one.
+          FITNESS_OS_FLAVOR=yusuf scripts/build-apk.sh unsigned
+          FITNESS_OS_FLAVOR=friends scripts/build-apk.sh unsigned
+
+      - name: Sign the release APKs
         env:
           KEYSTORE_B64: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 }}
           FITNESS_OS_KEYSTORE_PASSWORD: ${{ secrets.FITNESS_OS_KEYSTORE_PASSWORD }}
@@ -147,11 +156,10 @@ jobs:
             echo "::error::A release needs the FITNESS_OS_KEYSTORE_BASE64 and FITNESS_OS_KEYSTORE_PASSWORD secrets (see mobile/README.md, Releases)."
             exit 1
           fi
-          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
-          # P14-02: one tag, one key, two APKs: Yusuf's and the friends one.
-          FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" FITNESS_OS_FLAVOR=yusuf scripts/build-apk.sh release
-          FITNESS_OS_KEYSTORE="$RUNNER_TEMP/release.jks" FITNESS_OS_FLAVOR=friends scripts/build-apk.sh release
-          rm -f "$RUNNER_TEMP/release.jks"
+          scripts/sign-apk.sh \
+            dist/fitness-os-unsigned.apk dist/fitness-os-release.apk \
+            dist/fitness-os-unsigned-friends.apk dist/fitness-os-release-friends.apk
+          rm -f dist/fitness-os-unsigned*.apk
 
       - name: Check release ID, version and signing key
         env:
