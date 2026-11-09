@@ -42,7 +42,7 @@ export default function History() {
     if (!g) groups.push((g = { exercise_id: s.exercise_id, name: data.exercises.find((e) => e.id === s.exercise_id)?.name || 'Exercise', sets: [] }));
     g.sets.push(s);
   }
-  const volume = w.sets.reduce((v, s) => v + s.weight_kg * s.reps, 0);
+  const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) ? s.weight_kg * s.reps : 0), 0);
 
   const remove = () => {
     if (activeWorkoutId === w.id) setActiveWorkout(null);
