@@ -19,7 +19,7 @@ const RING_C = 2 * Math.PI * RING_R;
  * (`compact`) it is a small solid pill with the time and Skip (P14-16). */
 export default function RestTimer({ compact = false }) {
   const navigate = useNavigate();
-  const { endsAt, total, label, pausedLeft, add, pause, resume, skip, stop, start } = useTimer();
+  const { endsAt, total, label, pausedLeft, shadeBlocked, allowShade, add, pause, resume, skip, stop, start } = useTimer();
   const [now, setNow] = useState(Date.now());
   const [full, setFull] = useState(false);
   const beeped = useRef(null);
@@ -70,6 +70,14 @@ export default function RestTimer({ compact = false }) {
   const done = left === 0 && !paused;
   const fraction = total ? Math.min(1, leftMs / (total * 1000)) : 0;
   const restart = (sec = total) => start(sec, label);
+  // Notifications are off, so the countdown can't show in the shade or buzz
+  // with the screen off: say so, with the way to turn them on.
+  const shadeHint = shadeBlocked && !done ? (
+    <div className="timer-hint" role="note">
+      <span className="small">{t('timer.noShade')}</span>
+      <button type="button" className="pill-btn" onClick={allowShade}>{t('timer.allowShade')}</button>
+    </div>
+  ) : null;
 
   const controls = done ? (
     <div className="timer-ctl">
@@ -117,6 +125,7 @@ export default function RestTimer({ compact = false }) {
         </svg>
         <div className="big-next">Next: {label}</div>
         {controls}
+        {shadeHint}
         <div className="timer-presets" role="group" aria-label="Start a new rest">
           {PRESETS.map((sec) => (
             <button key={sec} type="button" className={`tpre${sec === total ? ' on' : ''}`} onClick={() => restart(sec)}>{clock(sec)}</button>
@@ -139,6 +148,7 @@ export default function RestTimer({ compact = false }) {
       </button>
       <div className="timer-bar" aria-hidden="true"><i ref={barRef} style={{ transform: `scaleX(${fraction})` }} /></div>
       {controls}
+      {shadeHint}
     </div>
   );
 }
