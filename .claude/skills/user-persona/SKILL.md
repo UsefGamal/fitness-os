@@ -5,16 +5,16 @@ description: Use whenever making a UX, design, or feature-priority judgment call
 
 # The user
 
-Fitness OS has one user: a data engineer with a desk job, training for a 6-month body-recomposition program (103kg → 75-80kg, Aug 2026 – Jan 2027), based in Cairo (Africa/Cairo timezone — see `clock.py`). Plays padel ~2x/week (1.5h) alongside the structured 4-day Upper/Lower gym program. Prefers Egyptian/Syrian-leaning food, no fish/seafood.
+Fitness OS has one user: a data engineer with a desk job, training for a 6-month body-recomposition program (103kg → 75-80kg, Aug 2026 – Jan 2027), based in Cairo (Africa/Cairo timezone; CI runs the date tests in it). Plays padel ~2x/week (1.5h) alongside the structured 4-day Upper/Lower gym program. Prefers Egyptian/Syrian-leaning food, no fish/seafood.
 
-This isn't a demographic sketch for a market that doesn't exist — every field here is either read directly from `models.Profile`'s defaults or stated in the README. Update this file if any of it goes stale (e.g. the program window ends, the goal changes) rather than leaving it to drift from the real `Profile` row.
+This isn't a demographic sketch for a market that doesn't exist — every field here comes from the app's profile defaults or the README. Update this file if any of it goes stale (e.g. the program window ends, the goal changes) rather than leaving it to drift from the real profile.
 
 ## Context of use — when and how the app actually gets opened
 
-- **On a phone, one-handed, mid-activity** — logging a set between reps at the gym, checking the meal plan before eating, marking hydration after a glass of water. Not sitting down to "review the app." This is *the* reason it's a PWA (`static/manifest.json`, `display: standalone`) with a bottom tab bar, not a reason that's been forgotten since.
+- **On a phone, one-handed, mid-activity** — logging a set between reps at the gym, checking the meal plan before eating, marking hydration after a glass of water. Not sitting down to "review the app." This is *the* reason it's a phone-first Android app with a bottom tab bar, not a reason that's been forgotten since.
 - **Sessions are short and frequent**, not long and occasional. A single visit is usually "do the one thing I opened this for" (log today's weight, mark a meal eaten, log a set) — not a browsing session.
-- **Daily touchpoints**: dashboard check (streak, today's checklist), meal-slot logging (up to 5x/day), gym/home/cardio/padel logging (per session), hydration quick-add (multiple times/day). **Weekly/biweekly touchpoints**: body measurements (`/body`, deliberately reached via More, not the tab bar — see README). **Passive touchpoints**: the daily digest and weekly recap emails, meant to surface the day/week's plan and outcome without opening the app at all.
-- **The instance may be cold** (Render free tier spins down after inactivity) — the very first tap of a session can hit a multi-second wake-up delay. This is infrastructure, not UX, but it shapes the same thing UX does: the cost of opening the app. A design that adds friction on top of an already-possible cold start compounds a real, existing cost.
+- **Daily touchpoints**: dashboard check (streak, today's checklist), meal-slot logging (up to 5x/day), gym/home/cardio/padel logging (per session), hydration quick-add (multiple times/day). **Weekly/biweekly touchpoints**: body measurements (`/body`, deliberately reached via More, not the tab bar — see README). **Passive touchpoints**: reminders and the home-screen widget, meant to surface the day's plan without opening the app at all.
+- **It opens offline, straight from the phone**: there's no server and no account, and data lives only on the phone. Opening the app should cost nothing, so don't add steps that bring back the friction a server used to cause.
 
 ## What "low effort" means for this specific user
 
