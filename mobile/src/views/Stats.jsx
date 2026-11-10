@@ -14,6 +14,7 @@ import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExe
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
+import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7 } from '../lib/statsView.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -21,22 +22,56 @@ const MEASURES = [
   ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
 ];
 const VOLUME_FILL = [null, 'rgba(48,209,88,0.35)', 'rgba(48,209,88,0.65)', '#30d158'];
-const STATE_FILL = { recovering: '#ff9f0a', ready: 'rgba(48,209,88,0.65)', untrained: null };
 const MODES = [['volume', 'Volume'], ['recovery', 'Recovery'], ['untrained', 'Untrained']];
 
-function Heat({ data, today }) {
+/** The shared header: two numbers, consistency with the calendar folded
+ * away, and the two links. */
+function Summary({ data, today }) {
   const grid = useMemo(() => yearGrid(data, today), [data, today]);
   const weeks = weekStreaks(data, today);
-  const days = grid.flat().filter((d) => d.count).length;
+  const days = activeDays(data.workouts, today);
   return (
-    <section className="card stack">
-      <div className="row between"><strong>Training days</strong><span className="muted small">{days} in the last year</span></div>
-      <YearHeatmap grid={grid} />
-      <div className="row" style={{ gap: 18 }}>
-        <span className="row" style={{ gap: 6 }}><Icon name="flame" /><span><strong>{weeks.current}</strong> <span className="muted small">week streak</span></span></span>
-        <span className="muted small">Best {weeks.longest} weeks</span>
+    <>
+      <div className="tile-grid">
+        <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.sessions7')}</div><div className="macro-value">{sessionsLast7(data.workouts, today)}</div></div>
+        <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.streak')}</div><div className="macro-value">{t('stats.weeks', { n: weeks.current })}</div></div>
       </div>
-    </section>
+      <details className="card consistency">
+        <summary>
+          <div className="grow">
+            <div className="row between"><strong>{t('stats.consistency')}</strong><span className="muted small">{t('stats.last6')}</span></div>
+            <div className="row between" style={{ alignItems: 'baseline', marginTop: 4 }}>
+              <span className="macro-value" style={{ fontSize: 28 }}>{t('stats.days', { n: days })}</span>
+              <span className="muted small">{t('stats.best', { n: weeks.longest })}</span>
+            </div>
+            <div className="small" style={{ color: 'var(--accent)', marginTop: 2 }}>{t('stats.showCalendar')} <Icon name="chev" className="icon inline chev" /></div>
+          </div>
+        </summary>
+        <div style={{ marginTop: 12 }}><YearHeatmap grid={grid} /></div>
+      </details>
+      <div className="list">
+        <Link to="/history" className="list-row"><Icon name="calendar" /><div className="grow"><div>{t('stats.history')}</div><div className="meta">{t('stats.historyMeta', { n: data.workouts.length })}</div></div><Icon name="chev" className="icon chev" /></Link>
+        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">{t('plan.library')}</div><Icon name="chev" className="icon chev" /></Link>
+      </div>
+    </>
+  );
+}
+
+const STATUS_FILL = { recovering: '#ff9f0a', ready: '#30d158', untrained: '#ff453a', none: null };
+const LEGEND = {
+  volume: [['v3', VOLUME_FILL[3], 'stats.lg.full'], ['v2', VOLUME_FILL[2], 'stats.lg.some'], ['v1', VOLUME_FILL[1], 'stats.lg.little'], ['v0', null, 'stats.lg.none']],
+  recovery: [['ready', STATUS_FILL.ready, 'stats.st.ready'], ['recovering', STATUS_FILL.recovering, 'stats.st.recovering'], ['untrained', STATUS_FILL.untrained, 'stats.st.untrained'], ['none', null, 'stats.st.none']],
+  untrained: [['untrained', STATUS_FILL.untrained, 'stats.st.untrained'], ['ok', null, 'stats.lg.trained']],
+};
+const STATUS_ICON = { ready: 'check', recovering: 'timer', untrained: 'alert', none: 'minus' };
+
+function Legend({ mode }) {
+  return (
+    <div className="legend" role="list">
+      {LEGEND[mode].map(([k, c, label]) => (
+        <span key={k} className="legend-item" role="listitem"><i style={{ background: c || 'var(--surface3)' }} />{t(label)}</span>
+      ))}
+    </div>
   );
 }
 
@@ -46,61 +81,108 @@ function Muscles({ data, today }) {
   const sets = setsByGroup(data, today, 7);
   const state = recoveryState(data, today);
   const last = lastTrained(data, today);
+  const status = Object.fromEntries(GROUPS.map((g) => [g, groupStatus(state[g], last[g])]));
   const fill = Object.fromEntries(GROUPS.map((g) => [g, mode === 'volume' ? VOLUME_FILL[volumeLevel(sets[g])]
-    : mode === 'recovery' ? STATE_FILL[state[g]] : state[g] === 'untrained' ? '#ff453a' : null]));
-  const caption = mode === 'volume' ? 'Working sets in the last 7 days. Brighter means more; 12+ sets a week is a full dose.'
-    : mode === 'recovery' ? 'Orange: trained in the last 48 hours, still recovering. Green: ready.'
-      : 'Red: no sets in 7 days or more.';
+    : mode === 'recovery' ? STATUS_FILL[status[g]] : status[g] === 'untrained' || status[g] === 'none' ? STATUS_FILL.untrained : null]));
+  const pick = (g) => setGroup(group === g ? null : g);
+  const untrained = GROUPS.filter((g) => status[g] === 'untrained' || status[g] === 'none');
   return (
-    <section className="card">
-      <div className="seg" style={{ marginBottom: 10 }}>
-        {MODES.map(([k, l]) => <button key={k} type="button" className={mode === k ? 'on' : ''} onClick={() => setMode(k)}>{l}</button>)}
-      </div>
-      <BodyMap groupFill={fill} label={caption} onPick={(g) => setGroup(group === g ? null : g)} />
-      <p className="muted small" style={{ textAlign: 'center', margin: '8px 0 0' }}>{caption}</p>
-      <div className="group-rows">
-        {GROUPS.map((g) => (
-          <button key={g} type="button" className={`group-row${group === g ? ' on' : ''}`} onClick={() => setGroup(group === g ? null : g)}>
-            <span>{g}</span>
-            <div className="progress"><span style={{ transform: `scaleX(${(Math.min(100, (sets[g] / 12) * 100)) / 100})` }} /></div>
-            <span className="muted small" style={{ textAlign: 'end' }}>{mode === 'volume' ? `${sets[g]} sets` : last[g] ? formatDate(last[g]).split(',')[0] : 'never'}</span>
-          </button>
-        ))}
-      </div>
-      {group ? <GroupExercises data={data} group={group} /> : <p className="muted small" style={{ textAlign: 'center', margin: '10px 0 0' }}>Tap a muscle to see its exercises.</p>}
-    </section>
+    <>
+      <section className="card">
+        <div className="seg" style={{ marginBottom: 12 }}>
+          {MODES.map(([k]) => <button key={k} type="button" className={mode === k ? 'on' : ''} onClick={() => setMode(k)}>{t(`stats.mode.${k}`)}</button>)}
+        </div>
+        <BodyMap groupFill={fill} label={t(`stats.cap.${mode}`)} onPick={pick} />
+        <Legend mode={mode} />
+        <p className="muted small" style={{ textAlign: 'center', margin: '8px 0 0' }}>{t(`stats.cap.${mode}`)}</p>
+      </section>
+
+      {mode === 'volume' ? <WeeklySets data={data} today={today} /> : null}
+
+      {mode === 'recovery' ? (
+        <section className="card">
+          <h2 className="section-title" style={{ margin: '0 0 8px' }}>{t('stats.recoveryTitle')}</h2>
+          <div className="list inset">
+            {GROUPS.map((g) => {
+              const ago = daysSince(last[g], today);
+              return (
+                <button key={g} type="button" className={`list-row${group === g ? ' on' : ''}`} onClick={() => pick(g)} aria-expanded={group === g}>
+                  <span className={`status-dot st-${status[g]}`}><Icon name={STATUS_ICON[status[g]]} className="icon" /></span>
+                  <div className="grow"><div>{g}</div><div className="meta">{t(`stats.st.${status[g]}`)}</div></div>
+                  <span className="muted small">{ago == null ? t('stats.never') : ago === 0 ? t('stats.todayShort') : t('stats.daysAgo', { n: ago })}</span>
+                </button>
+              );
+            })}
+          </div>
+          {group ? <GroupExercises data={data} group={group} /> : <p className="muted small" style={{ margin: '10px 4px 0' }}>{t('stats.tapGroup')}</p>}
+        </section>
+      ) : null}
+
+      {mode === 'untrained' ? (
+        <section className="card">
+          <h2 className="section-title" style={{ margin: '0 0 8px' }}>{t('stats.untrainedTitle')}</h2>
+          {untrained.length ? (
+            <div className="list inset">
+              {untrained.map((g) => (
+                <button key={g} type="button" className="list-row" onClick={() => pick(g)} aria-expanded={group === g}>
+                  <span className="status-dot st-untrained"><Icon name="alert" className="icon" /></span>
+                  <div className="grow"><div>{g}</div><div className="meta">{last[g] ? t('stats.lastOn', { date: formatDate(last[g]) }) : t('stats.neverTrained')}</div></div>
+                  <Icon name="chev" className="icon chev" />
+                </button>
+              ))}
+            </div>
+          ) : <p className="small" style={{ margin: 0 }}><Icon name="check" className="icon inline" /> {t('stats.allTrained')}</p>}
+          {group && untrained.includes(group) ? <GroupExercises data={data} group={group} /> : null}
+        </section>
+      ) : null}
+    </>
   );
 }
 
 const SCALE = 25; // the bar's full width, in sets
 const BAND_TONE = { none: 'var(--faint)', low: 'var(--warn)', good: 'var(--accent)', high: 'var(--warn)' };
 
-/** Hard sets per muscle this week against the 10-20 guide (E4-S19). */
+/** Hard sets this week (E4-S19), as six groups that open to their muscles
+ * with the 10-20 guide. The set-counting rules are weeklySets.js's. */
 function WeeklySets({ data, today }) {
   const T = activePlan(data, content);
   const done = doneThisWeek(data, T, today);
   const planned = plannedThisWeek(data, T, today);
   const rows = muscleRows(done.muscles, planned.muscles);
+  const groups = groupVolume(rows, GUIDE);
   const low = rows.filter((r) => r.band === 'low' || r.band === 'none').map((r) => r.label);
   const pct = (n) => `${Math.min(100, (n / SCALE) * 100)}%`;
   return (
     <section className="card">
-      <h2 style={{ margin: '0 0 4px' }}>{t('wsets.title')}</h2>
-      <p className="muted small" style={{ margin: '0 0 10px' }}>{t('wsets.note', { low: GUIDE.low, high: GUIDE.high })}</p>
-      <div className="wsets">
-        {rows.map((r) => (
-          <div key={r.key} className="wset-row">
-            <span>{r.label}</span>
-            <div role="img" className="wset-bar" aria-label={t('wsets.rowLabel', { muscle: r.label, done: r.done, planned: r.planned })}>
-              <span className="wset-guide" style={{ insetInlineStart: pct(GUIDE.low), width: `${((GUIDE.high - GUIDE.low) / SCALE) * 100}%` }} />
-              <span className="wset-plan" style={{ width: pct(r.planned), borderColor: BAND_TONE[r.band] }} />
-              <span className="wset-done" style={{ width: pct(r.done) }} />
+      <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('stats.volTitle')}</h2><span className="muted small" style={{ whiteSpace: 'nowrap' }}>{t('stats.thisWeek')}</span></div>
+      <p className="muted small" style={{ margin: '4px 0 12px' }}>{t('stats.guide', { low: GUIDE.low, high: GUIDE.high })}</p>
+      {groups.map((g) => (
+        <details key={g.group} className="vol-group">
+          <summary>
+            <div className="grow">
+              <div className="row between"><strong>{g.group}</strong><span className="muted small">{t('stats.groupSets', { done: g.done, planned: g.planned })}</span></div>
+              <div className="progress" style={{ marginTop: 8 }}><span style={{ transform: `scaleX(${g.planned ? Math.min(1, g.done / g.planned) : g.done ? 1 : 0})` }} /></div>
+              <div className="muted small" style={{ marginTop: 4 }}>{t('stats.inRange', { n: g.inRange, all: g.muscles.length })}</div>
             </div>
-            <span aria-hidden="true" className="muted small" style={{ textAlign: 'end' }}>{t('wsets.count', { done: r.done, planned: r.planned })}</span>
+            <Icon name="chev" className="icon chev" />
+          </summary>
+          <div className="wsets">
+            {g.muscles.map((r) => (
+              <div key={r.key} className="wset-row">
+                <span>{r.label}</span>
+                <div role="img" className="wset-bar" aria-label={t('wsets.rowLabel', { muscle: r.label, done: r.done, planned: r.planned })}>
+                  <span className="wset-guide" style={{ insetInlineStart: pct(GUIDE.low), width: `${((GUIDE.high - GUIDE.low) / SCALE) * 100}%` }} />
+                  <span className="wset-plan" style={{ width: pct(r.planned), borderColor: BAND_TONE[r.band] }} />
+                  <span className="wset-done" style={{ width: pct(r.done) }} />
+                </div>
+                <span aria-hidden="true" className="muted small" style={{ textAlign: 'end' }}>{t('wsets.count', { done: r.done, planned: r.planned })}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <p className="muted small" style={{ margin: '10px 0 0' }}>{t('wsets.legend')}</p>
+        </details>
+      ))}
+      <p className="muted small" style={{ margin: '12px 0 0' }}>{t('stats.countNote')}</p>
+      <p className="muted small" style={{ margin: '6px 0 0' }}>{t('wsets.legend')}</p>
       {low.length ? <p className="small" style={{ margin: '6px 0 0' }}>{t('wsets.lowPlan', { list: low.join(', '), low: GUIDE.low })}</p> : null}
       {done.unknown ? <p className="muted small" style={{ margin: '6px 0 0' }}>{t('wsets.unknown', { n: done.unknown })}</p> : null}
     </section>
@@ -126,7 +208,7 @@ function GroupExercises({ data, group }) {
   );
 }
 
-function Strength({ data }) {
+function Strength({ data, today }) {
   const tracked = useMemo(() => trackedExercises(data), [data]);
   const [pick, setPick] = useState(null);
   const id = pick ?? tracked[0]?.id;
@@ -134,18 +216,40 @@ function Strength({ data }) {
   const bests = [...D.personalBests(data).values()]
     .map((b) => ({ ...b, name: data.exercises.find((e) => e.id === b.exercise_id)?.name || 'Exercise' }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  if (!tracked.length) return <div className="card empty">Log a few weighted sets and your strength trends show up here.</div>;
+  if (!tracked.length) {
+    return (
+      <section className="card empty-cta">
+        <Icon name="barbell" className="icon big-icon" />
+        <h2 className="section-title" style={{ margin: '8px 0 4px' }}>{t('stats.strEmptyTitle')}</h2>
+        <p className="muted small" style={{ margin: '0 0 16px' }}>{t('stats.strEmptyNote')}</p>
+        <Link to="/workout" className="btn"><Icon name="play" /> {t('stats.strEmptyCta')}</Link>
+      </section>
+    );
+  }
+  const rec = recordSummary(D.personalBests(data).values(), today);
+  const change = seriesChange(series);
   return (
     <>
+      <div className="tile-grid">
+        <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.prs')}</div><div className="macro-value">{rec.total}</div></div>
+        <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.newPrs')}</div><div className="macro-value" style={{ color: rec.recent ? 'var(--accent)' : undefined }}>{rec.recent}</div></div>
+      </div>
       <section className="card stack">
-        <label className="field"><span>Estimated 1RM</span>
+        {change ? (
+          <div>
+            <div className="row between"><strong>{tracked.find((x) => x.id === id)?.name}</strong>{change.change ? <span className="small" style={{ color: change.change > 0 ? 'var(--accent)' : 'var(--muted)' }}>{change.change > 0 ? '+' : ''}{change.change} kg</span> : null}</div>
+            <div className="macro-value">{Math.round(change.now)} kg</div>
+            <div className="muted small">{t('stats.e1rm')}</div>
+          </div>
+        ) : null}
+        <label className="field"><span>{t('stats.exercise')}</span>
           <select value={id} onChange={(e) => setPick(Number(e.target.value))}>
             {tracked.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.sessions})</option>)}
           </select>
         </label>
         <LineChart points={series} label="Estimated one-rep max" />
       </section>
-      <div className="section-label">Records</div>
+      <h2 className="section-title">{t('stats.records')}</h2>
       <div className="list">
         {bests.map((b) => (
           <button key={b.exercise_id} type="button" className="list-row" onClick={() => setPick(b.exercise_id)}>
@@ -170,22 +274,32 @@ function progressText(b) {
 function Badges({ data, today }) {
   const all = badges(data, today);
   const earned = all.filter((b) => b.earned).length;
+  const latest = latestBadge(all);
   return (
     <>
-      <p className="muted small" style={{ margin: '0 4px 10px' }}>{earned} of {all.length} earned</p>
-      <div className="badges">
-        {all.map((b) => (
-          <div key={b.id} className={`badge tone-${b.tone}${b.earned ? ' on' : ''}`} style={{ '--p': `${Math.round(b.fraction * 360)}deg` }}>
-            <span className="medal" aria-hidden="true">
-              <span className="medal-in"><Icon name={b.icon} /></span>
-              {b.tier > 1 ? <span className="tier">{ROMAN[b.tier]}</span> : null}
-            </span>
-            <span className="name">{b.label}</span>
-            <span className="meta">{b.earned && b.date ? formatDate(b.date) : b.note}</span>
-            {b.earned ? <span className="got"><Icon name="check" /> Earned</span> : <span className="count">{progressText(b)}</span>}
+      <section className="card">
+        <div className="row between" style={{ alignItems: 'baseline' }}><h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2><span className="macro-value" style={{ fontSize: 28 }}>{earned} / {all.length}</span></div>
+        <div className="progress" style={{ margin: '12px 0 8px' }} role="progressbar" aria-label={t('stats.achievements')} aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={earned}><span style={{ transform: `scaleX(${all.length ? earned / all.length : 0})` }} /></div>
+        <div className="muted small">{latest ? t('stats.latestBadge', { name: latest.label, date: formatDate(latest.date) }) : t('stats.noBadge')}</div>
+      </section>
+      {badgeGroups(all).map((g) => (
+        <div key={g.key}>
+          <div className="section-head"><h2 className="section-title">{t(`stats.cat.${g.key}`)}</h2><span className="muted small">{g.badges.filter((b) => b.earned).length}/{g.badges.length}</span></div>
+          <div className="badges">
+            {g.badges.map((b) => (
+              <div key={b.id} className={`badge tone-${b.tone}${b.earned ? ' on' : ''}`} style={{ '--p': `${Math.round(b.fraction * 360)}deg` }}>
+                <span className="medal" aria-hidden="true">
+                  <span className="medal-in"><Icon name={b.earned ? b.icon : 'lock'} /></span>
+                  {b.tier > 1 ? <span className="tier">{ROMAN[b.tier]}</span> : null}
+                </span>
+                <span className="name">{b.label}</span>
+                <span className="meta">{b.earned && b.date ? formatDate(b.date) : b.note}</span>
+                {b.earned ? <span className="got"><Icon name="check" /> {t('stats.earned')}</span> : <span className="count">{progressText(b)}</span>}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </>
   );
 }
@@ -215,16 +329,8 @@ function Body({ data, update, today }) {
 
   return (
     <>
-      <div className="stat-grid">
-        <div className="stat"><div className="label">Now</div><div className="value">{latest ? latest.weight_kg : '–'}<span className="unit">kg</span></div></div>
-        <div className="stat"><div className="label">Change</div><div className="value">{latest && first ? (latest.weight_kg - first.weight_kg).toFixed(1) : '–'}<span className="unit">kg</span></div></div>
-      </div>
-      <section className="card">
-        <div className="row between"><strong>Weight</strong>{goalLow ? <span className="muted small">Goal {goalLow}–{goalHigh} kg</span> : null}</div>
-        <WeightChart logs={data.body_logs.slice(-60)} goalLow={goalLow} goalHigh={goalHigh} />
-      </section>
       <form className="card stack" onSubmit={save}>
-        <strong>Log today</strong>
+        <div className="row between"><strong>{t('stats.logToday')}</strong>{latest ? <span className="muted small">{t('stats.lastLog', { kg: latest.weight_kg, date: formatDate(latest.log_date) })}</span> : null}</div>
         <div className="measure-grid">
           <label className="field"><span>Weight (kg)</span><input type="number" inputMode="decimal" step="0.1" value={form.weight} onChange={set('weight')} required /></label>
           <label className="field"><span>Waist (cm)</span><input type="number" inputMode="decimal" step="0.5" value={form.waist_cm || ''} onChange={set('waist_cm')} placeholder={lastOf('waist_cm')?.waist_cm ? String(lastOf('waist_cm').waist_cm) : 'Optional'} /></label>
@@ -235,6 +341,15 @@ function Body({ data, update, today }) {
         {more ? null : <button type="button" className="btn ghost small" onClick={() => setMore(true)}><Icon name="plus" /> Chest, arm, hips, thigh</button>}
         <button type="submit" className="btn">Save</button>
       </form>
+      <div className="stat-grid three">
+        <div className="stat"><div className="label">{t('stats.now')}</div><div className="value">{latest ? latest.weight_kg : '–'}<span className="unit">{t('home.kg')}</span></div></div>
+        <div className="stat"><div className="label">{t('stats.change')}</div><div className="value">{latest && first ? (latest.weight_kg - first.weight_kg).toFixed(1) : '–'}<span className="unit">{t('home.kg')}</span></div></div>
+        <div className="stat"><div className="label">{t('stats.goal')}</div><div className="value">{goalLow ? `${goalLow}–${goalHigh}` : '–'}</div></div>
+      </div>
+      <section className="card">
+        <div className="row between"><strong>Weight</strong>{goalLow ? <span className="muted small">Goal {goalLow}–{goalHigh} kg</span> : null}</div>
+        <WeightChart logs={data.body_logs.slice(-60)} goalLow={goalLow} goalHigh={goalHigh} />
+      </section>
       <div className="list">
         <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
       </div>
@@ -281,22 +396,16 @@ export default function Stats() {
   const weightOn = D.moduleOn(data, 'weight');
   const tabs = [['muscles', 'Muscles'], ['strength', 'Strength'], ...(weightOn ? [['body', 'Body']] : []), ['badges', 'Badges']];
   const [tab, setTab] = useState('muscles');
-  const weekAgo = new Date(Date.now() - 7 * 86400000);
-  const thisWeek = data.workouts.filter((w) => new Date(w.log_date) >= weekAgo).length;
 
   return (
     <div className="page">
-      <h1 className="page-title">Stats</h1>
-      <div className="list">
-        <Link to="/history" className="list-row"><Icon name="calendar" /><div className="grow"><div>History</div><div className="meta">{thisWeek} sessions in the last 7 days · {data.workouts.length} in total</div></div><Icon name="chev" className="icon chev" /></Link>
-        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>
-      </div>
-      <Heat data={data} today={today} />
-      <div className="seg" style={{ marginBottom: 14 }}>
+      <h1 className="page-title">{t('tab.stats')}</h1>
+      <Summary data={data} today={today} />
+      <div className="seg stats-tabs" style={{ margin: '4px 0 12px' }}>
         {tabs.map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
-      {tab === 'muscles' ? <><Muscles data={data} today={today} /><WeeklySets data={data} today={today} /></> : null}
-      {tab === 'strength' ? <Strength data={data} /> : null}
+      {tab === 'muscles' ? <Muscles data={data} today={today} /> : null}
+      {tab === 'strength' ? <Strength data={data} today={today} /> : null}
       {tab === 'body' && weightOn ? <Body data={data} update={update} today={today} /> : null}
       {tab === 'badges' ? <Badges data={data} today={today} /> : null}
     </div>

@@ -539,3 +539,29 @@ details[open].macro-more > summary .chev, details[open].meal-more > summary .che
 .pick.on { background: var(--accent-dim); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .pick .icon { width: 16px; height: 16px; }
 .meal-items { border-top: var(--hair); padding-top: 8px; display: grid; gap: 6px; }
+
+/* Stats (Nov 2026): a short shared header, then one tab's dashboard. */
+details.consistency > summary { list-style: none; cursor: pointer; display: flex; }
+details.consistency > summary::-webkit-details-marker { display: none; }
+details[open].consistency .chev { transform: rotate(-90deg); }
+details.consistency .chev { transform: rotate(90deg); width: 14px; height: 14px; }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; margin-top: 10px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.legend-item i { width: 12px; height: 12px; border-radius: 4px; }
+.list.inset { background: var(--surface2); }
+.list.inset .list-row.on { background: var(--surface3); }
+.status-dot { width: 28px; height: 28px; border-radius: 14px; display: grid; place-items: center; flex: none; background: var(--surface3); color: var(--muted); }
+.status-dot .icon { width: 16px; height: 16px; }
+.status-dot.st-ready { background: rgba(48, 209, 88, 0.18); color: var(--accent); }
+.status-dot.st-recovering { background: rgba(255, 159, 10, 0.18); color: var(--orange); }
+.status-dot.st-untrained { background: rgba(255, 69, 58, 0.18); color: var(--danger); }
+details.vol-group { border-top: var(--hair); }
+details.vol-group > summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; min-height: 44px; }
+details.vol-group > summary::-webkit-details-marker { display: none; }
+details.vol-group .chev { color: var(--faint); }
+details[open].vol-group > summary .chev { transform: rotate(90deg); }
+details.vol-group .wsets { padding: 0 0 12px; }
+.empty-cta { text-align: center; padding: 24px 20px; }
+.big-icon { width: 40px; height: 40px; color: var(--accent); }
+.stat-grid.three { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-grid.three .value { font-size: 20px; }
