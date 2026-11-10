@@ -1,13 +1,13 @@
 {
  "/ 360 ltr": {
-  "axe": 3,
+  "axe": 2,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 360 ltr": {
   "axe": 3,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -108,14 +108,14 @@
   "errors": 0
  },
  "/ 390 ltr": {
-  "axe": 3,
+  "axe": 2,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 390 ltr": {
   "axe": 3,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -216,14 +216,14 @@
   "errors": 0
  },
  "/ 412 ltr": {
-  "axe": 3,
+  "axe": 2,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 412 ltr": {
   "axe": 3,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -324,14 +324,14 @@
   "errors": 0
  },
  "/ 360 rtl": {
-  "axe": 3,
+  "axe": 2,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 360 rtl": {
   "axe": 3,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -432,14 +432,14 @@
   "errors": 0
  },
  "/ 390 rtl": {
-  "axe": 3,
+  "axe": 2,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 390 rtl": {
   "axe": 3,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -540,14 +540,14 @@
   "errors": 0
  },
  "/ 412 rtl": {
-  "axe": 3,
+  "axe": 2,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 412 rtl": {
   "axe": 3,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },

@@ -4,7 +4,7 @@ import { t } from '../lib/i18n.js';
 import { activeBlock, isWeekEdited, resetWeek, setWeekday, WEEKDAYS } from '../lib/plan.js';
 
 /** Choose which session goes on each weekday, every week. */
-export default function MyWeek({ data, update, content, training }) {
+export default function MyWeek({ data, update, content, training, open = false }) {
   const [refused, setRefused] = useState(false);
   if (!activeBlock(data)) return null;
   const schedule = training.trainer_plan.schedule;
@@ -18,7 +18,7 @@ export default function MyWeek({ data, update, content, training }) {
   // Start the list on the person's week start.
   const order = data.profile?.week_start === 'mon' ? [...WEEKDAYS.slice(1), WEEKDAYS[0]] : WEEKDAYS;
   return (
-    <details className="card more">
+    <details className="card more" open={open || undefined}>
       <summary>{t('week.myWeek')}</summary>
       <p className="muted small" style={{ margin: '8px 0' }}>{t('week.myWeekNote')}</p>
       <div className="stack" style={{ gap: 8 }}>

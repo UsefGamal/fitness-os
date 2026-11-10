@@ -33,6 +33,7 @@ export default function Profile() {
     start_weight_kg: num(p.start_weight_kg),
     goal_weight_low_kg: num(p.goal_weight_low_kg),
     goal_weight_high_kg: num(p.goal_weight_high_kg),
+    name: typeof p.name === 'string' ? p.name.trim().slice(0, 30) : undefined,
   };
   const errors = [];
   if (!(clean.height_cm >= 100 && clean.height_cm <= 250)) errors.push('Height must be between 100 and 250 cm.');
@@ -90,6 +91,7 @@ export default function Profile() {
       </section>
 
       <form className="card stack" onSubmit={save}>
+        <label className="field"><span>{t('profile.name')}</span><input type="text" autoComplete="given-name" maxLength={30} value={p.name ?? ''} onChange={set('name')} /></label>
         <div className="row">
           <label className="field grow"><span>Height (cm)</span><input type="number" inputMode="decimal" value={p.height_cm ?? ''} onChange={set('height_cm')} /></label>
           <label className="field grow"><span>Sex</span>

@@ -33,7 +33,7 @@ export async function shareFile(title, uri) {
 }
 
 // Files this app handed to the share sheet before (backups, copies, CSVs).
-const SHARED = /^fitness-os-[\w.-]+\.(json|csv|txt)$/;
+const SHARED = /^fitness-os-[\w.-]+\.(json|csv|txt|ics)$/;
 
 /** Delete earlier shared files from the cache (pentest JS-03). The newest
  * is kept until the next share, because the app it went to may still be
