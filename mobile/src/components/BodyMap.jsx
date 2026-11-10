@@ -6,8 +6,7 @@
 //   groupFill: { group: color } to colour whole groups (Stats modes)
 //   size:      max width in px (small for the mini maps on cards)
 //   onPick:    called with the app group of a tapped outline
-//   bare:      no FRONT/BACK labels or key, and only the side(s) with a
-//              lit muscle (tiny maps in list rows)
+//   bare:      no FRONT/BACK labels or key (tiny maps in list rows)
 //   focus:     an angle key (lib/muscles.js ANGLES): that part of the
 //              muscle is bright and the rest of it dim
 import { useId } from 'react';
@@ -65,10 +64,7 @@ export default function BodyMap({ hit = null, primary = [], secondary = [], grou
   // The focused muscle shows dim, with its angle drawn bright on top.
   if (region && lit.has(region.shape)) lit.set(region.shape, 'secondary');
   const showKey = !bare && (secondary.length > 0 || Boolean(region));
-  // A bare map shows one figure when only that side has lit muscles.
-  const litOn = (shapes) => shapes.some(([m]) => lit.get(m) === 'primary');
-  const side = bare && litOn(FRONT) !== litOn(BACK) ? (litOn(FRONT) ? 'front' : 'back') : null;
-  const viewBox = side === 'front' ? '0 0 100 200' : side === 'back' ? '110 0 100 200' : bare ? '0 0 210 200' : '0 0 210 212';
+  const viewBox = bare ? '0 0 210 200' : '0 0 210 212';
   return (
     <figure style={{ margin: 0 }}>
       <svg viewBox={viewBox} style={{ width: '100%', maxWidth: size, display: 'block', margin: '0 auto' }} role="img" aria-label={label}>
