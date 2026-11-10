@@ -381,24 +381,26 @@ export default function Workout() {
           <button type="button" className="undo" onClick={() => { update((d) => restoreSet(d, active.id, undo.set)); setUndo(null); }}><Icon name="undo" className="icon" /> {t('workout.undo')}</button>
         </div>
       ) : null}
-      <div className="row between" style={{ marginTop: 8 }}>
-        <div>
-          <h1 className="page-title" style={{ margin: '0 4px' }}>{day.label}</h1>
-          <div className="muted small" style={{ margin: '2px 4px 8px' }}>
-            {paused ? 'Paused · ' : ''}{elapsed(ms)}{lengthTarget ? ` of ${settings.target_min}` : ''} · {totalDone}/{totalTarget} sets · tempo {T.trainer_plan.tempo}
+      <section className="card workout-head">
+        <div className="row between" style={{ gap: 8 }}>
+          <h1 className="section-title" style={{ margin: 0 }}>{day.label}</h1>
+          <div className="row" style={{ gap: 4 }}>
+            <span className={`chip${paused ? ' warn' : ' accent'}`}>{t(paused ? 'workout.paused' : 'workout.inProgress')}</span>
+            <MoreMenu title={t('workout.more')} actions={[{ key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') }]} />
           </div>
         </div>
-        <div className="row" style={{ gap: 4 }}>
-          <button type="button" className="btn small" onClick={() => setFinishing(true)}>Finish</button>
-          <MoreMenu title={t('workout.more')} actions={[{ key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') }]} />
+        <div className="row between muted small" style={{ margin: '2px 0 12px' }}>
+          <span>{elapsed(ms)}{lengthTarget ? ` / ${settings.target_min} min` : ''} · {t('workout.setsOf', { done: totalDone, all: totalTarget })}</span>
+          <span>{t('plan.tempo', { tempo: T.trainer_plan.tempo })}</span>
         </div>
-      </div>
-      {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
-      <div className="row" style={{ gap: 8, margin: '0 0 12px' }}>
-        <button type="button" className="btn small secondary grow" onClick={() => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id)))}>
-          <Icon name={paused ? 'play' : 'pause'} /> {paused ? 'Resume' : 'Pause'}
-        </button>
-      </div>
+        {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '0 0 12px' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
+        <div className="row" style={{ gap: 8 }}>
+          <button type="button" className="btn secondary grow" onClick={() => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id)))}>
+            <Icon name={paused ? 'play' : 'pause'} /> {t(paused ? 'workout.resume' : 'workout.pause')}
+          </button>
+          <button type="button" className="btn outline" style={{ width: 'auto' }} onClick={() => setFinishing(true)}><Icon name="check" /> {t('workout.finish')}</button>
+        </div>
+      </section>
 
       {finishing ? (
         <section className="card stack">
@@ -420,66 +422,88 @@ export default function Workout() {
       {day.exercises.map((x, i) => {
         const sets = doneSets[x.name] || [];
         const isCurrent = i === current;
-        return (
-          <div key={`${x.name}-${i}`} className={`ex-card${isCurrent ? ' current' : ''}`}>
-            <button type="button" className="row between" style={{ width: '100%', background: 'none', border: 0, padding: 0, color: 'inherit', textAlign: 'start' }} onClick={() => setCurrent(i)} aria-expanded={isCurrent}>
-              <div className="grow">
-                <div className="ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
-                <div className="ex-meta">{x.sets} × {x.reps}{x.rir ? ` · leave ${x.rir} in the tank` : ''} · {x.pair ? t('workout.restAfterRound', { rest: x.rest }) : `rest ${x.rest}`}</div>
+        const restText = x.pair ? t('workout.restAfterRound', { rest: x.rest }) : x.rest ? t('plan.rest', { rest: x.rest }) : null;
+        const meta = [`${x.sets} × ${x.reps}`, restText, x.rir ? t('workout.rir', { rir: x.rir }) : null].filter(Boolean).join(' · ');
+        const dots = (
+          <span className="set-dots" aria-label={t('workout.setsOf', { done: sets.length, all: x.sets })}>
+            {Array.from({ length: Math.max(x.sets, sets.length) }, (_, k) => <i key={k} className={k < sets.length ? 'on' : ''} />)}
+          </span>
+        );
+        if (!isCurrent) {
+          return (
+            <button key={`${x.name}-${i}`} type="button" className={`ex-card collapsed${sets.length >= x.sets ? ' finished' : ''}`} onClick={() => setCurrent(i)} aria-expanded={false}>
+              <div className="row between" style={{ gap: 8 }}>
+                <div className="grow ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
+                {dots}
               </div>
-              <span className={`chip${sets.length >= x.sets ? ' accent' : ''}`}>{sets.length}/{x.sets}</span>
             </button>
-            {isCurrent ? (
-              <div className="stack" style={{ marginTop: 12 }}>
-                {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
-                {x.note ? <div className="ex-note">{x.note}</div> : null}
-                {exerciseNote(data, x.name) ? <div className="ex-note">Note: {exerciseNote(data, x.name)}</div> : null}
-                {sets.map((s) => (
-                  <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
-                  <div className="set-row">
-                    <span className="set-n done">{s.set_number}</span>
-                    <span>{s.weight_kg} kg × {s.reps}</span>
-                    <span />
-                    <button type="button" className="icon-btn" aria-label={`Delete set ${s.set_number}`} onClick={() => removeSet(s)}><Icon name="trash" /></button>
-                  </div>
-                  </SwipeRow>
-                ))}
-                {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
-                <div className="row" style={{ alignItems: 'flex-end' }}>
-                  <div className="grow"><Stepper label="kg" value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
-                  <div className="grow"><Stepper label="reps" value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
-                </div>
-                {barbell && weight > barKg ? <div className="plate-line">Per side: {plateText(platesPerSide(weight, barKg, settings.plates).plates)} kg{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (makes ${platesPerSide(weight, barKg, settings.plates).loaded} kg)`}</div> : null}
-                <div className="rest-now">
-                  <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> Log set {sets.length + 1}</button>
-                  <button type="button" className="btn secondary" aria-label="Start the rest timer" onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget })); }}><Icon name="timer" /> Rest</button>
-                </div>
-                <div className="ex-actions">
-                  <button type="button" className="chip" onClick={() => tweak((t, n) => addExtraSet(t, n, x.orig))}>+ Set</button>
-                  <button type="button" className="chip" disabled={i === day.exercises.length - 1} onClick={() => { tweak((t, n) => skipToEnd(t, n, i)); }}>Skip for now</button>
-                  <button type="button" className="chip" disabled={i === 0} aria-label={`Move ${x.name} up`} onClick={() => { tweak((t, n) => moveBy(t, n, i, -1)); setCurrent(i - 1); }}>↑</button>
-                  <button type="button" className="chip" disabled={i === day.exercises.length - 1} aria-label={`Move ${x.name} down`} onClick={() => { tweak((t, n) => moveBy(t, n, i, 1)); setCurrent(i + 1); }}>↓</button>
-                  <button type="button" className="chip" onClick={() => setSheet('swap')}>Swap</button>
-                  {barbell ? <button type="button" className="chip" onClick={() => setSheet('warmups')}>Warm-ups</button> : null}
-                  <button type="button" className="chip" onClick={() => { setNoteText(exerciseNote(data, x.name)); setSheet('note'); }}>Note</button>
-                </div>
-                <label className="field row" style={{ alignItems: 'center', gap: 10 }}>
-                  <span className="grow">Rest after this exercise</span>
-                  <select style={{ width: 'auto' }} value={restOverride[x.name] ?? ''} onChange={(e) => setRestOverride({ ...restOverride, [x.name]: e.target.value === '' ? undefined : Number(e.target.value) })}>
-                    <option value="">{x.rest_sec ? `Plan (${clock(x.rest_sec)})` : 'Default'}</option>
-                    {REST_STEPS.map((sec) => <option key={sec} value={sec}>{clock(sec)}</option>)}
-                    <option value="0">No timer</option>
-                  </select>
-                </label>
-                <div className="row between">
-                  {safeVideo(x.video) ? <a href={safeVideo(x.video)} target="_blank" rel="noreferrer" className="small"><Icon name="video" className="icon" /> Form video</a> : <span />}
-                  {x.alternative ? <span className="muted small">Taken? {x.alternative}</span> : null}
-                </div>
+          );
+        }
+        return (
+          <div key={`${x.name}-${i}`} className="ex-card current">
+            <div className="row between" style={{ gap: 8, alignItems: 'flex-start' }}>
+              <div className="grow">
+                <div className="ex-name big">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
+                <div className="ex-meta">{meta}</div>
               </div>
-            ) : null}
+              <span className={`chip${sets.length >= x.sets ? ' accent' : ''}`}>{t('workout.setsChip', { done: sets.length, all: x.sets })}</span>
+            </div>
+            <div className="stack" style={{ marginTop: 12 }}>
+              {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
+              {x.note ? <div className="ex-note">{x.note}</div> : null}
+              {exerciseNote(data, x.name) ? <div className="ex-note">{t('workout.yourNote', { note: exerciseNote(data, x.name) })}</div> : null}
+              {sets.length ? (
+                <div className="done-sets">
+                  {sets.map((s) => (
+                    <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
+                      <div className="set-row">
+                        <span className="set-n done">{s.set_number}</span>
+                        <span>{t('workout.setLine', { kg: s.weight_kg, reps: s.reps })}</span>
+                        <span />
+                        <button type="button" className="icon-btn" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="trash" /></button>
+                      </div>
+                    </SwipeRow>
+                  ))}
+                </div>
+              ) : null}
+              {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
+              <div className="row" style={{ alignItems: 'flex-end' }}>
+                <div className="grow"><Stepper label={t('workout.kgLabel')} value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
+                <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
+              </div>
+              {barbell && weight > barKg ? <div className="plate-line">{t('workout.perSide', { plates: plateText(platesPerSide(weight, barKg, settings.plates).plates) })}{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (${t('workout.makes', { kg: platesPerSide(weight, barKg, settings.plates).loaded })})`}</div> : null}
+              <button type="button" className="btn glow log-btn" onClick={() => logSet()}><Icon name="check" /> {t('workout.logSet', { n: sets.length + 1 })}</button>
+              {settings.auto_rest ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
+              <div className="tool-row">
+                <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget })); }}><Icon name="timer" /> {t('workout.rest')}</button>
+                <button type="button" className="tbtn" onClick={() => tweak((tw, n) => addExtraSet(tw, n, x.orig))}><Icon name="plus" /> {t('workout.addSet')}</button>
+                <button type="button" className="tbtn" aria-haspopup="dialog" onClick={() => setSheet('exmore')}><span className="more-dots" aria-hidden="true">⋯</span> {t('workout.moreShort')}</button>
+              </div>
+            </div>
           </div>
         );
       })}
+      {sheet === 'exmore' && ex ? (
+        <Sheet title={ex.name} onClose={() => setSheet(null)}>
+          <div className="list">
+            <button type="button" className="list-row" onClick={() => setSheet('swap')}><Icon name="undo" /><div className="grow"><div>{t('workout.swap')}</div>{ex.alternative ? <div className="meta">{t('plan.taken', { alt: ex.alternative })}</div> : null}</div><Icon name="chev" className="icon chev" /></button>
+            {barbell ? <button type="button" className="list-row" onClick={() => setSheet('warmups')}><Icon name="barbell" /><div className="grow">{t('workout.warmups')}</div><Icon name="chev" className="icon chev" /></button> : null}
+            <button type="button" className="list-row" onClick={() => { setNoteText(exerciseNote(data, ex.name)); setSheet('note'); }}><Icon name="book" /><div className="grow">{t('workout.note')}</div><Icon name="chev" className="icon chev" /></button>
+            <button type="button" className="list-row" disabled={current === day.exercises.length - 1} onClick={() => { tweak((tw, n) => skipToEnd(tw, n, current)); setSheet(null); }}><Icon name="skip" /><div className="grow">{t('workout.skip')}</div></button>
+            <button type="button" className="list-row" disabled={current === 0} onClick={() => { tweak((tw, n) => moveBy(tw, n, current, -1)); setCurrent(current - 1); setSheet(null); }}><span className="rot-up"><Icon name="chev" /></span><div className="grow">{t('workout.moveUp')}</div></button>
+            <button type="button" className="list-row" disabled={current === day.exercises.length - 1} onClick={() => { tweak((tw, n) => moveBy(tw, n, current, 1)); setCurrent(current + 1); setSheet(null); }}><span className="rot-down"><Icon name="chev" /></span><div className="grow">{t('workout.moveDown')}</div></button>
+            {safeVideo(ex.video) ? <a className="list-row" href={safeVideo(ex.video)} target="_blank" rel="noreferrer"><Icon name="video" /><div className="grow">{t('workout.video')}</div><Icon name="chev" className="icon chev" /></a> : null}
+          </div>
+          <label className="field" style={{ marginTop: 12 }}>
+            <span>{t('workout.restAfter')}</span>
+            <select value={restOverride[ex.name] ?? ''} onChange={(e) => setRestOverride({ ...restOverride, [ex.name]: e.target.value === '' ? undefined : Number(e.target.value) })}>
+              <option value="">{ex.rest_sec ? t('workout.restPlan', { rest: clock(ex.rest_sec) }) : t('workout.restDefault')}</option>
+              {REST_STEPS.map((sec) => <option key={sec} value={sec}>{clock(sec)}</option>)}
+              <option value="0">{t('workout.noTimer')}</option>
+            </select>
+          </label>
+        </Sheet>
+      ) : null}
       {sheet === 'discard' ? (
         <ConfirmSheet title={t('workout.discard')} body={t('workout.discardConfirm', { label: day.label, sets: setsText(active.sets.length) })} action={t('workout.discard')} onConfirm={discard} onClose={() => setSheet(null)} />
       ) : null}

@@ -1,5 +1,5 @@
 {
-  "total": 320,
+  "total": 284,
   "files": {
     "src/views/Catalogue.jsx": 7,
     "src/views/CatalogueDetail.jsx": 7,
@@ -10,7 +10,7 @@
     "src/views/Intervals.jsx": 17,
     "src/views/Lab.jsx": 2,
     "src/views/Library.jsx": 13,
-    "src/views/Meals.jsx": 6,
+    "src/views/Meals.jsx": 1,
     "src/views/MyRoutine.jsx": 0,
     "src/views/Photos.jsx": 12,
     "src/views/Plan.jsx": 9,
@@ -22,9 +22,9 @@
     "src/views/Setup.jsx": 0,
     "src/views/Shopping.jsx": 5,
     "src/views/Snapshots.jsx": 0,
-    "src/views/Stats.jsx": 31,
+    "src/views/Stats.jsx": 13,
     "src/views/Today.jsx": 1,
-    "src/views/Workout.jsx": 42,
+    "src/views/Workout.jsx": 29,
     "src/components/Alternatives.jsx": 2,
     "src/components/BodyMap.jsx": 5,
     "src/components/ConfirmSheet.jsx": 0,
