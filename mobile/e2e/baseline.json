@@ -30,7 +30,7 @@
   "errors": 0
  },
  "/meals 360 ltr": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -138,7 +138,7 @@
   "errors": 0
  },
  "/meals 390 ltr": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -246,7 +246,7 @@
   "errors": 0
  },
  "/meals 412 ltr": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -354,7 +354,7 @@
   "errors": 0
  },
  "/meals 360 rtl": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -462,7 +462,7 @@
   "errors": 0
  },
  "/meals 390 rtl": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -570,7 +570,7 @@
   "errors": 0
  },
  "/meals 412 rtl": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0

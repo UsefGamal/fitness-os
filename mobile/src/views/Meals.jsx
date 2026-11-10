@@ -115,26 +115,48 @@ function MealPlan() {
   const rTimes = fasting ? effectiveTimes(data, content, date).meal_times : null;
   const label = (slot) => (fasting ? t(`ramadan.meal.${slot}`) : slotLabel(slot));
 
+  const pct = (v, of) => (of ? Math.min(1, v / of) : 0);
+  const itemMacros = (key) => N.foods[key] || null;
+  const itemName = (key) => N.food_names?.[key] || key.replace(/_/g, ' ');
+
   return (
     <div className="page">
-      <div className="row between">
-        <h1 className="page-title">Meals</h1>
-        <Link to="/shopping" className="btn secondary small"><Icon name="cart" /> Shopping</Link>
+      <div className="plan-head">
+        <h1 className="page-title">{t('tab.meals')}</h1>
+        <Link to="/shopping" className="chip big-chip"><Icon name="cart" className="icon" /> {t('meals.shopping')}</Link>
       </div>
-      <div className="row between card" style={{ padding: 6 }}>
-        <button type="button" className="icon-btn" aria-label="Previous day" onClick={() => setDate(addDays(date, -1))}><Icon name="back" /></button>
-        <div style={{ textAlign: 'center' }}>
-          <div><strong>{date === today ? 'Today' : formatDate(date)}</strong></div>
-          <div className="muted small">{day.label}{day.is_refeed ? ' · refeed' : ''}</div>
+      <div className="row between card day-nav">
+        <button type="button" className="icon-btn" aria-label={t('meals.prevDay')} onClick={() => setDate(addDays(date, -1))}><Icon name="back" /></button>
+        <div style={{ textAlign: 'center' }} className="grow">
+          <div className="session-name">{date === today ? t('meals.today') : formatDate(date)}{day.is_refeed ? ` · ${t('meals.refeed')}` : ''}</div>
+          <div className="muted small">{day.label}</div>
         </div>
-        <button type="button" className="icon-btn" aria-label="Next day" onClick={() => setDate(addDays(date, 1))}><Icon name="chev" /></button>
+        <button type="button" className="icon-btn" aria-label={t('meals.nextDay')} onClick={() => setDate(addDays(date, 1))}><Icon name="chev" /></button>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat"><div className="label">{t('meals.kcalEaten')}</div><div className="value"><CountUp value={eaten.kcal} /><span className="unit">/ {target.kcal}</span></div></div>
-        <div className="stat"><div className="label">{t('meals.proteinEaten')}</div><div className="value"><CountUp value={eaten.protein} /><span className="unit">/ {target.protein} g</span></div></div>
+      <div className="tile-grid">
+        <div className="stat-tile macro">
+          <div className="stat-tile-label">{t('meals.kcalEaten')}</div>
+          <div className="macro-value"><CountUp value={eaten.kcal} /></div>
+          <div className="stat-tile-label">/ {target.kcal}</div>
+          <div className="progress" style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.kcal, target.kcal)})` }} /></div>
+        </div>
+        <div className="stat-tile macro">
+          <div className="stat-tile-label">{t('meals.proteinEaten')}</div>
+          <div className="macro-value"><CountUp value={eaten.protein} /></div>
+          <div className="stat-tile-label">/ {target.protein} g</div>
+          <div className="progress" style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.protein, target.protein)})` }} /></div>
+        </div>
       </div>
-      <div className="muted small" style={{ margin: '-4px 4px 12px' }}>{t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link></div>
+      <details className="macro-more">
+        <summary>
+          <span className="grow">{t('meals.carbsFat', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat })}</span>
+          <Icon name="chev" className="icon chev" />
+        </summary>
+        <div className="muted small" style={{ padding: '4px 0 8px' }}>
+          {t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
+        </div>
+      </details>
       {dayDrift(totals, target).map((r) => (
         <div key={r.key} className="warn" role="note">
           {r.label} with these picks: {r.total} {r.unit}, {Math.round(Math.abs(r.diff) * 100)}% {r.over ? 'over' : 'under'} your {r.target} {r.unit} target.
@@ -142,20 +164,21 @@ function MealPlan() {
         </div>
       ))}
       {fasting ? <div className="card small"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.mealsNote')}</span></div>
-        : training ? <div className="card small"><span className="chip accent">Training day</span> <span className="muted">{N.pre_workout_note}</span></div> : null}
+        : training ? <div className="card tip-card small"><Icon name="bolt" /><div className="grow"><strong>{t('meals.trainingDay')}</strong> <span className="muted">{N.pre_workout_note}</span></div></div> : null}
 
+      <div className="section-head"><h2 className="section-title">{t(date === today ? 'meals.todays' : 'meals.thisDay')}</h2><span className="muted small">{t('meals.eatenOf', { done, all: N.meal_slots.length })}</span></div>
       {day.meals.map((meal) => {
         const log = D.mealLog(data, date, meal.slot);
         const pick = picks[meal.slot];
         const opt = meal.options.find((o) => o.key === pick) || meal.options[0];
         return (
-          <section key={meal.slot} className="card">
+          <section key={meal.slot} className={`card meal-card${log?.completed ? ' eaten' : ''}`}>
             <div className="row between">
-              <div>
-                <strong>{label(meal.slot)}</strong>
+              <div className="grow">
+                <div className="session-name">{label(meal.slot)}</div>
                 <div className="muted small">{fasting ? rTimes[meal.slot] : meal.time_window}</div>
               </div>
-              <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={`${label(meal.slot)} eaten`}
+              <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={t('meals.eatenAria', { meal: label(meal.slot) })}
                 onClick={() => {
                   const ev = mealTickEvent({ nowDone: !log?.completed, doneBefore: done, slots: N.meal_slots.length });
                   update((d) => D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick }));
@@ -164,15 +187,35 @@ function MealPlan() {
                 {log?.completed ? <Icon name="check" /> : null}
               </button>
             </div>
-            <div className="seg" style={{ margin: '12px 0 10px' }}>
+            <div className="pick-row" role="radiogroup" aria-label={t('meals.pickAria', { meal: label(meal.slot) })}>
               {meal.options.map((o, i) => (
-                <button key={o.key} type="button" className={o.key === opt.key ? 'on' : ''} onClick={() => update((d) => D.setMeal(d, date, meal.slot, { option_key: o.key }))}>
-                  {String.fromCharCode(65 + i)} · {o.cuisine}
+                <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => D.setMeal(d, date, meal.slot, { option_key: o.key }))}>
+                  {o.key === opt.key ? <Icon name="check" className="icon" /> : null}{String.fromCharCode(65 + i)} · {o.cuisine}
                 </button>
               ))}
             </div>
-            <div>{mealWhat(opt)}</div>
-            <div className="muted small" style={{ marginTop: 4 }}>{opt.kcal} kcal · {opt.protein} g protein · {opt.carbs} g carbs · {opt.fat} g fat</div>
+            <details className="meal-more">
+              <summary>
+                <div className="grow">
+                  <div>{mealWhat(opt)}</div>
+                  <div className="muted small" style={{ marginTop: 2 }}>{t('meals.kcalProtein', { kcal: opt.kcal, protein: opt.protein })}</div>
+                </div>
+                <Icon name="chev" className="icon chev" />
+              </summary>
+              <div className="meal-items">
+                {[...(opt.items || []).reduce((acc, key) => acc.set(key, (acc.get(key) || 0) + 1), new Map())].map(([key, n]) => {
+                  const m = itemMacros(key);
+                  const nm = itemName(key);
+                  return (
+                    <div key={key} className="row between small">
+                      <span className="grow">{nm.charAt(0).toUpperCase() + nm.slice(1)}{n > 1 ? ` ×${n}` : ''}</span>
+                      {m ? <span className="muted">{t('meals.itemMacros', { kcal: Math.round(m[0] * n), protein: Math.round(m[1] * n * 10) / 10 })}</span> : null}
+                    </div>
+                  );
+                })}
+                <div className="muted small" style={{ marginTop: 6 }}>{t('meals.fullMacros', { kcal: opt.kcal, protein: opt.protein, carbs: opt.carbs, fat: opt.fat })}</div>
+              </div>
+            </details>
           </section>
         );
       })}
