@@ -20,7 +20,7 @@ import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activeBlock, activePlan } from '../lib/plan.js';
 import { sessionIcs, sessionMinutes } from '../lib/calendar.js';
-import { MUSCLE, dayMuscles, targetFor, targetLabel } from '../lib/muscles.js';
+import { MUSCLE, dayMuscles, targetFor } from '../lib/muscles.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -173,10 +173,8 @@ export default function Plan() {
     const e = catalogue ? entryFor(name, T, catalogue.byId) : null;
     return e ? `/catalogue/${e.id}` : null;
   };
-  const photoOf = (name) => {
-    const e = catalogue ? entryFor(name, T, catalogue.byId) : null;
-    return e ? photoSrc(thumbOf(e)) : null;
-  };
+  // The muscles an exercise targets, for its row's small body map.
+  const targetOf = (name) => targetFor(name, T, catalogue ? entryFor(name, T, catalogue.byId) : null);
   const options = [
     ...(day && today <= picked.date ? [{ key: 'change', icon: 'calendar', label: t('plan.opt.change'), note: t('plan.opt.changeNote'), onClick: () => setChoosing(true) }] : []),
     ...(day && picked.date >= today ? [{ key: 'move', icon: 'undo', label: t('plan.opt.move'), note: t('plan.opt.moveNote'), onClick: () => setOpt('move') }] : []),
@@ -229,7 +227,7 @@ export default function Plan() {
                 <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> {t('plan.follow')}</Link>
               </details>
               {day.exercises.map((ex, i) => (
-                <ExerciseRow key={`${ex.name}-${i}`} ex={ex} target={targetFor(ex.name, T) ? targetLabel(targetFor(ex.name, T)) : null} photo={photoOf(ex.name)} to={exerciseLink(ex.name)} />
+                <ExerciseRow key={`${ex.name}-${i}`} ex={ex} target={targetOf(ex.name)} to={exerciseLink(ex.name)} />
               ))}
               {day.cardio_after ? <div className="card tip-card small"><Icon name="bulb" /><div className="grow muted">{t('plan.after', { text: day.cooldown[0] })}</div></div> : null}
               <div className="action-stack">

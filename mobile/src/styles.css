@@ -495,6 +495,9 @@ a.ex-row:active { transform: scale(0.99); background: var(--surface2); }
 .ex-row .chev { color: var(--faint); }
 .ex-thumb { width: 56px; height: 56px; flex: none; border-radius: 12px; overflow: hidden; background: var(--surface2); display: grid; place-items: center; color: var(--faint); align-self: flex-start; }
 .ex-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ex-thumb.map { width: 64px; height: 72px; padding: 4px; }
+.ex-thumb.map svg { max-height: 64px; }
+.ex-thumb.map figure { width: 100%; }
 .tip-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid rgba(255, 214, 10, 0.25); background: rgba(255, 214, 10, 0.06); }
 .tip-card .icon { color: var(--warn); }
 .btn.outline { background: none; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--surface3); }
