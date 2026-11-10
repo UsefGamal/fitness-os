@@ -4,7 +4,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import BodyMap from '../components/BodyMap.jsx';
 import DayPicker from '../components/DayPicker.jsx';
 import Icon from '../components/Icon.jsx';
+import ExerciseRow from '../components/ExerciseRow.jsx';
+import MoreMenu from '../components/MoreMenu.jsx';
 import MyWeek from '../components/MyWeek.jsx';
+import Sheet from '../components/Sheet.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { entryFor, groupOf, photoSrc, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
@@ -15,37 +18,16 @@ import { dayGroups } from '../lib/insights.js';
 import { effectiveTimes } from '../lib/ramadan.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
-import { activePlan } from '../lib/plan.js';
+import { activeBlock, activePlan } from '../lib/plan.js';
+import { sessionIcs, sessionMinutes } from '../lib/calendar.js';
 import { MUSCLE, dayMuscles, targetFor, targetLabel } from '../lib/muscles.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
 import { alternatives } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { saveExport } from '../store/mirror.js';
-import { dataUrlOf, shareFile, shareText } from '../store/share.js';
-import { safeVideo } from '../lib/links.js';
+import { dataUrlOf, shareFile, shareText, shareTextFile } from '../store/share.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
-
-function ExerciseList({ day, training }) {
-  return day.exercises.map((ex, i) => (
-    <div key={`${ex.name}-${i}`} className="ex-card">
-      <div className="row between">
-        <div className="grow">
-          <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
-          {targetFor(ex.name, training) ? <div className="ex-target">{targetLabel(targetFor(ex.name, training))}</div> : null}
-          <div className="ex-meta">
-            {ex.sets} × {ex.reps}{ex.rir ? ` · leave ${ex.rir} in the tank` : ''}{ex.rest ? ` · rest ${ex.rest}` : ''}
-          </div>
-        </div>
-        {safeVideo(ex.video) ? <a className="icon-btn" href={safeVideo(ex.video)} target="_blank" rel="noreferrer" aria-label={`${ex.name} form video`}><Icon name="video" /></a> : null}
-      </div>
-      {ex.swapped_from ? <div className="ex-meta">Instead of {ex.swapped_from}</div> : null}
-      {ex.note ? <div className="ex-note">{ex.note}</div> : null}
-      {ex.film_form ? <div className="ex-meta">Film your form on this one.</div> : null}
-      {ex.alternative ? <div className="ex-meta">Machine taken? {ex.alternative}</div> : null}
-    </div>
-  ));
-}
 
 function EditList({ day, sessionKey }) {
   const { data, update } = useData();
@@ -130,6 +112,8 @@ export default function Plan() {
   const picked = week.find((d) => d.date === pickedRaw.date) || pickedRaw;
   const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState(false);
+  // Which options sheet is open: 'move' | 'week' | 'evening' | 'terms'.
+  const [opt, setOpt] = useState(null);
   const navigate = useNavigate();
   const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
   const dayHits = dayMuscles(day?.exercises, T);
@@ -140,10 +124,13 @@ export default function Plan() {
     if (!to) return;
     update((d) => moveSession(d, T, picked.date, to));
     setPicked({ ...picked, date: to });
+    setOpt(null);
   };
   const { catalogue } = useCatalogue();
   const [shareMsg, setShareMsg] = useState('');
   const night = eveningOn(data, picked.date);
+  const trainingDays = T.trainer_plan.schedule.filter((e) => e.session !== 'rest').length;
+  const typical = sessionMinutes(day || P.effectiveDay(firstTraining.key, T, data));
   const weekDays = () => week.map((w) => ({ date: w.date, day: w.key === 'rest' ? null : P.effectiveDay(w.key, T, data), evening: eveningOn(data, w.date) }));
   const shareWeek = async () => {
     const r = await shareText('My training week', weekText(weekDays(), { time: times.session_time, eveningTime: times.evening_time }));
@@ -169,94 +156,148 @@ export default function Plan() {
       setShareMsg('Could not save the page. Check storage permission and try again.');
     }
   };
+  const addToCalendar = async () => {
+    const at = effectiveTimes(data, content, picked.date).session_time;
+    try {
+      const ics = sessionIcs({ date: picked.date, time: at, minutes: sessionMinutes(day), title: day.label, description: [day.focus, day.cardio_after ? t('plan.after', { text: day.cooldown[0] }) : null].filter(Boolean).join('\n') });
+      const r = await shareTextFile(t('plan.calendarShare'), `fitness-os-${picked.date}-${picked.key}.ics`, ics);
+      setShareMsg(t(r === 'shared' ? 'plan.calendarDone' : 'plan.calendarWeb'));
+    } catch {
+      setShareMsg(t('plan.calendarFail'));
+    }
+  };
+  // Where a tap on an exercise goes: its Library page, else the catalogue.
+  const exerciseLink = (name) => {
+    const own = data.exercises.find((e) => e.name === name);
+    if (own) return `/library/${own.id}`;
+    const e = catalogue ? entryFor(name, T, catalogue.byId) : null;
+    return e ? `/catalogue/${e.id}` : null;
+  };
+  const photoOf = (name) => {
+    const e = catalogue ? entryFor(name, T, catalogue.byId) : null;
+    return e ? photoSrc(thumbOf(e)) : null;
+  };
+  const options = [
+    ...(day && today <= picked.date ? [{ key: 'change', icon: 'calendar', label: t('plan.opt.change'), note: t('plan.opt.changeNote'), onClick: () => setChoosing(true) }] : []),
+    ...(day && picked.date >= today ? [{ key: 'move', icon: 'undo', label: t('plan.opt.move'), note: t('plan.opt.moveNote'), onClick: () => setOpt('move') }] : []),
+    ...(activeBlock(data) ? [{ key: 'week', icon: 'dumbbell', label: t('plan.opt.week'), note: t('plan.opt.weekNote'), onClick: () => setOpt('week') }] : []),
+    { key: 'evening', icon: 'moon', label: t('plan.opt.evening'), note: t('plan.opt.eveningNote', { time: times.evening_time }), onClick: () => setOpt('evening') },
+    { key: 'share', icon: 'upload', label: t('plan.opt.share'), note: t('plan.opt.shareNote'), onClick: shareWeek },
+    { key: 'print', icon: 'download', label: t('plan.opt.print'), note: t('plan.opt.printNote'), onClick: printWeek },
+    { key: 'terms', icon: 'info', label: t('plan.opt.terms'), onClick: () => setOpt('terms') },
+  ];
 
   return (
     <div className="page">
-      <h1 className="page-title">Plan</h1>
-      <p className="page-sub">{T.trainer_plan.name}, {times.session_time} sessions, tempo {T.trainer_plan.tempo}.</p>
-      <div className="list">
-        <Link to="/plan/routines" className="list-row"><Icon name="dumbbell" /><div className="grow"><div>{t('routines.open')}</div><div className="meta small">{t('routines.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
+      <div className="plan-head">
+        <h1 className="page-title">{t('tab.plan')}</h1>
+        {T.trainer_plan.tempo ? <span className="chip"><Icon name="timer" className="icon inline" /> {t('plan.tempo', { tempo: T.trainer_plan.tempo })}</span> : null}
+        <MoreMenu title={t('plan.options')} actions={options} />
       </div>
-      <section className="card"><WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} /></section>
+      <p className="plan-sub">{t('plan.overview', { name: T.trainer_plan.name, days: trainingDays, min: typical })} · {times.session_time}</p>
+
+      <Link to="/plan/routines" className="card route-card">
+        <div className="session-icon"><Icon name="dumbbell" /></div>
+        <div className="grow"><div className="session-name">{t('routines.open')}</div><div className="session-sub">{t('routines.openNote')}</div></div>
+        <Icon name="chev" className="icon chev" />
+      </Link>
+
+      <WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} />
 
       {day ? (
         <>
-          <div className="row between" style={{ margin: '18px 4px 6px' }}>
-            <div className="section-label" style={{ margin: 0 }}>{longWeekday(picked.date)} · {day.label}{day.edited ? ' · edited' : ''}</div>
-            <button type="button" className="btn ghost small" style={{ minHeight: 32 }} onClick={() => setEditing(!editing)}>{editing ? 'Done' : 'Edit'}</button>
+          <div className="day-head">
+            <h2 className="section-title">{t('plan.dayTitle', { day: longWeekday(picked.date), label: day.label })}{day.edited ? ` · ${t('plan.edited')}` : ''}</h2>
+            <button type="button" className="btn ghost small" onClick={() => setEditing(!editing)}>{t(editing ? 'plan.doneEdit' : 'plan.edit')}</button>
           </div>
-          <div className="row" style={{ alignItems: 'center', gap: 10, margin: '0 4px 10px' }}>
+          <div className="day-focus">
             <p className="muted small grow" style={{ margin: 0 }}>{day.focus}</p>
-            <div style={{ width: 96, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={96} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
+            <div style={{ width: 64, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={64} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
           </div>
+          {movedHere ? (
+            <button type="button" className="pill-row" style={{ margin: '0 0 12px' }} onClick={() => { update((d) => undoMove(d, picked.date)); pick(movedHere.from); }}>
+              <Icon name="undo" /><span className="grow">{t('plan.putBack', { day: longWeekday(movedHere.from) })}</span>
+            </button>
+          ) : null}
           {editing ? (
             <EditList day={day} sessionKey={picked.key} />
           ) : (
             <>
               <details className="card more">
-                <summary>Warm-up: {day.pre_cardio}, then {day.warmup_items.length} drills</summary>
+                <summary>{t('plan.warmup', { what: day.pre_cardio, n: day.warmup_items.length })}</summary>
                 <div className="stack" style={{ marginTop: 8 }}>{day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}</div>
-                <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> Follow along</Link>
+                <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> {t('plan.follow')}</Link>
               </details>
-              <ExerciseList day={day} training={T} />
-              {day.cardio_after ? <div className="card muted small">After: {day.cooldown[0]}</div> : null}
-              <div className="row" style={{ gap: 8, alignItems: 'center', margin: '0 0 10px' }}>
-                {movedHere ? (
-                  <button type="button" className="btn ghost small grow" onClick={() => { update((d) => undoMove(d, picked.date)); pick(movedHere.from); }}>Moved from {longWeekday(movedHere.from)} · put it back</button>
-                ) : null}
-                {today <= picked.date ? <button type="button" className="btn secondary small" style={{ width: 'auto' }} onClick={() => setChoosing(true)}>{t('week.change')}</button> : null}
-                {picked.date >= today ? (
-                  <label className="field grow" style={{ margin: 0 }}>
-                    <select value="" aria-label={`Move ${day.label} to another day`} onChange={(e) => move(e.target.value)}>
-                      <option value="">Move {day.label} to…</option>
-                      {moveTargets(picked.date, T, moves).filter((d) => d >= today).map((d) => <option key={d} value={d}>{longWeekday(d)}{d === today ? ' (today)' : ''}</option>)}
-                    </select>
-                  </label>
-                ) : null}
+              {day.exercises.map((ex, i) => (
+                <ExerciseRow key={`${ex.name}-${i}`} ex={ex} target={targetFor(ex.name, T) ? targetLabel(targetFor(ex.name, T)) : null} photo={photoOf(ex.name)} to={exerciseLink(ex.name)} />
+              ))}
+              {day.cardio_after ? <div className="card tip-card small"><Icon name="bulb" /><div className="grow muted">{t('plan.after', { text: day.cooldown[0] })}</div></div> : null}
+              <div className="action-stack">
+                {picked.date === today ? (
+                  <button type="button" className="btn glow" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button>
+                ) : (
+                  <button type="button" className="btn secondary" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> {t('plan.doToday', { label: day.label })}</button>
+                )}
+                {picked.date >= today ? <button type="button" className="btn outline" onClick={addToCalendar}><Icon name="calendar" /> {t('plan.calendar')}</button> : null}
               </div>
-              {picked.date === today ? (
-                <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> Start {day.label}</button>
-              ) : (
-                <button type="button" className="btn secondary" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> Do {day.label} today instead</button>
-              )}
             </>
           )}
         </>
       ) : (
-        <div className="card empty">
+        <div className="card empty" style={{ marginTop: 16 }}>
           {t('week.rest')}. {t('week.restNote')}
           {today <= picked.date ? <button type="button" className="btn secondary small" style={{ marginTop: 10 }} onClick={() => setChoosing(true)}>{t('week.changeDay')}</button> : null}
         </div>
       )}
+      {night ? (
+        <button type="button" className="pill-row" style={{ margin: '0 0 12px' }} onClick={() => (picked.date === today ? navigate(night.route) : setOpt('evening'))}>
+          <Icon name="moon" /><span className="grow">{t('plan.tonight', { time: times.evening_time, label: night.label })}</span><Icon name="chev" className="icon chev" />
+        </button>
+      ) : null}
+      {shareMsg ? <p className="muted small" role="status" style={{ margin: '0 4px 12px' }}>{shareMsg}</p> : null}
       {choosing ? <DayPicker date={picked.date} dayName={longWeekday(picked.date)} training={T} data={data} update={update} onClose={() => setChoosing(false)} /> : null}
-      <MyWeek data={data} update={update} content={content} training={T} />
-
-      <label className="field" style={{ marginTop: 12 }}>
-        <span>{longWeekday(picked.date)} at {times.evening_time} (every week)</span>
-        <select value={night?.key || ''} onChange={(e) => update((d) => setEvening(d, weekdayName(picked.date), e.target.value || null))}>
-          <option value="">Nothing at {times.evening_time}</option>
-          {EVENING_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-        </select>
-      </label>
-      {night && picked.date === today ? <button type="button" className="btn secondary" style={{ marginTop: 8 }} onClick={() => navigate(night.route)}><Icon name="play" /> {night.label} now</button> : null}
-
-      <div className="row" style={{ gap: 8, marginTop: 12 }}>
-        <button type="button" className="btn secondary small grow" onClick={shareWeek}><Icon name="upload" /> Share the week</button>
-        <button type="button" className="btn secondary small grow" onClick={printWeek}><Icon name="download" /> Printable page</button>
-      </div>
-      {shareMsg ? <p className="muted small" role="status" style={{ margin: '8px 4px 0' }}>{shareMsg}</p> : null}
 
       <div className="list" style={{ marginTop: 12 }}>
+        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">{t('plan.library')}</div><Icon name="chev" className="icon chev" /></Link>
         <Link to="/plan/mine" className="list-row"><Icon name="plus" /><div className="grow"><div>{t('my.open')}</div><div className="meta small">{t('my.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
-        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">Exercise library</div><Icon name="chev" className="icon chev" /></Link>
       </div>
-      <details className="card more">
-        <summary>What the plan's terms mean</summary>
-        <div className="stack small" style={{ marginTop: 8 }}>
-          {Object.entries(T.trainer_plan.glossary).map(([k, v]) => <div key={k}><strong>{k.replace(/_/g, ' ')}:</strong> <span className="muted">{v}</span></div>)}
-          <div className="muted">{T.progression_note}</div>
-        </div>
-      </details>
+
+      {opt === 'move' && day ? (
+        <Sheet title={t('plan.opt.move')} onClose={() => setOpt(null)}>
+          <label className="field">
+            <span>{t('plan.moveTo', { label: day.label })}</span>
+            <select value="" aria-label={t('plan.moveAria', { label: day.label })} onChange={(e) => move(e.target.value)}>
+              <option value="">{t('plan.moveTo', { label: day.label })}</option>
+              {moveTargets(picked.date, T, moves).filter((d) => d >= today).map((d) => <option key={d} value={d}>{longWeekday(d)}{d === today ? t('plan.todayTag') : ''}</option>)}
+            </select>
+          </label>
+        </Sheet>
+      ) : null}
+      {opt === 'week' ? (
+        <Sheet title={t('plan.opt.week')} onClose={() => setOpt(null)}>
+          <MyWeek data={data} update={update} content={content} training={T} open />
+        </Sheet>
+      ) : null}
+      {opt === 'evening' ? (
+        <Sheet title={t('plan.opt.evening')} onClose={() => setOpt(null)}>
+          <label className="field">
+            <span>{t('plan.evening', { day: longWeekday(picked.date), time: times.evening_time })}</span>
+            <select value={night?.key || ''} onChange={(e) => update((d) => setEvening(d, weekdayName(picked.date), e.target.value || null))}>
+              <option value="">{t('plan.nothingAt', { time: times.evening_time })}</option>
+              {EVENING_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </label>
+          {night && picked.date === today ? <button type="button" className="btn secondary" style={{ marginTop: 12 }} onClick={() => navigate(night.route)}><Icon name="play" /> {t('plan.eveningNow', { label: night.label })}</button> : null}
+        </Sheet>
+      ) : null}
+      {opt === 'terms' ? (
+        <Sheet title={t('plan.opt.terms')} onClose={() => setOpt(null)}>
+          <div className="stack small">
+            {Object.entries(T.trainer_plan.glossary).map(([k, v]) => <div key={k}><strong>{k.replace(/_/g, ' ')}:</strong> <span className="muted">{v}</span></div>)}
+            <div className="muted">{T.progression_note}</div>
+          </div>
+        </Sheet>
+      ) : null}
     </div>
   );
 }
