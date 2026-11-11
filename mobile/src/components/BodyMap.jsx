@@ -7,12 +7,13 @@
 //   size:      max width in px (small for the mini maps on cards)
 //   onPick:    called with the app group of a tapped outline
 //   bare:      no FRONT/BACK labels or key (tiny maps in list rows)
+//   zoom:      show only the area of the lit main muscle (thumbnails)
 //   focus:     an angle key (lib/muscles.js ANGLES): that part of the
 //              muscle is bright and the rest of it dim
 import { useId } from 'react';
 
-import { GROUP_OF_SHAPE, shading } from '../lib/muscleMap.js';
-import { REGION_OF, partBox, pickOutlines } from '../lib/muscles.js';
+import { BACK_DX, GROUP_OF_SHAPE, SHAPES_OF, shading, zoomBox } from '../lib/muscleMap.js';
+import { ANGLES, REGION_OF, partBox, pickOutlines } from '../lib/muscles.js';
 import { BACK, FRONT } from './muscleShapes.js';
 
 const FILL = { primary: 'rgba(48,209,88,0.85)', secondary: 'rgba(48,209,88,0.35)' };
@@ -57,19 +58,20 @@ function Figure({ shapes, dx, lit, groupFill, onPick, region, uid }) {
   );
 }
 
-export default function BodyMap({ hit = null, primary = [], secondary = [], groupFill = null, size = 320, onPick, focus = null, label = 'Muscle map', bare = false }) {
+export default function BodyMap({ hit = null, primary = [], secondary = [], groupFill = null, size = 320, onPick, focus = null, label = 'Muscle map', bare = false, zoom = false }) {
   const uid = useId().replace(/:/g, '');
   const region = focus ? REGION_OF[focus] || null : null;
   const lit = shading({ primary, secondary, groups: hit });
   // The focused muscle shows dim, with its angle drawn bright on top.
-  if (region && lit.has(region.shape)) lit.set(region.shape, 'secondary');
+  if (region) for (const shape of SHAPES_OF[ANGLES[focus].muscle] || [region.shape]) if (lit.has(shape)) lit.set(shape, 'secondary');
   const showKey = !bare && (secondary.length > 0 || Boolean(region));
-  const viewBox = bare ? '0 0 210 200' : '0 0 210 212';
+  const box = zoom ? zoomBox(lit, FRONT, BACK) : null;
+  const viewBox = box ? `${box.x} ${box.y} ${box.size} ${box.size}` : bare ? '0 0 210 200' : '0 0 210 212';
   return (
     <figure style={{ margin: 0 }}>
       <svg viewBox={viewBox} style={{ width: '100%', maxWidth: size, display: 'block', margin: '0 auto' }} role="img" aria-label={label}>
         <Figure shapes={FRONT} dx={0} lit={lit} groupFill={groupFill} onPick={onPick} region={region} uid={uid} />
-        <Figure shapes={BACK} dx={110} lit={lit} groupFill={groupFill} onPick={onPick} region={region} uid={uid} />
+        <Figure shapes={BACK} dx={BACK_DX} lit={lit} groupFill={groupFill} onPick={onPick} region={region} uid={uid} />
         {bare ? null : <text x={50} y={210} textAnchor="middle" fill="#8e8e93" fontSize="7" letterSpacing="1">FRONT</text>}
         {bare ? null : <text x={160} y={210} textAnchor="middle" fill="#8e8e93" fontSize="7" letterSpacing="1">BACK</text>}
       </svg>
