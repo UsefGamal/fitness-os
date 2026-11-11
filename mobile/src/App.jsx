@@ -16,6 +16,9 @@ import { closeTopOverlay } from './lib/overlays.js';
 import RestTimer from './components/RestTimer.jsx';
 import { useTimer } from './store/useTimer.js';
 import TabBar from './components/TabBar.jsx';
+import useSwipeTabs from './components/useSwipeTabs.js';
+import { moduleOn } from './lib/data.js';
+import { tabPaths } from './lib/swipeNav.js';
 import { todayISO } from './lib/dates.js';
 import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
@@ -63,14 +66,19 @@ const Session = lazy(() => import('./views/Session.jsx'));
 const TABS = new Set(['/', '/plan', '/workout', '/meals', '/stats']);
 
 function Shell() {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
   const back = useNavigationType() === 'POP';
   const timing = useTimer((t) => Boolean(t.endsAt));
+  // Swipe left or right on a tab page to open the tab next to it.
+  const mealsOn = useData((s) => moduleOn(s.data, 'meals'));
+  const locale = useData((s) => localeOf(s.data));
+  const swipe = useSwipeTabs(pathname, { rtl: dirOf(locale) === 'rtl', tabs: tabPaths(mealsOn) });
+  const tabAnim = state?.swipe === 'forward' ? 'push-in' : state?.swipe === 'back' ? 'pop-in' : 'tab-in';
   return (
     <>
       {/* New pages open at the top; Back returns to where you were (UX-03). */}
       <ScrollRestoration />
-      <div key={pathname} className={`route ${TABS.has(pathname) ? 'tab-in' : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
+      <div key={pathname} {...swipe} className={`route ${TABS.has(pathname) ? tabAnim : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
         <ErrorBoundary key={pathname}>
           <Suspense fallback={<div className="page" />}>
             <Outlet />

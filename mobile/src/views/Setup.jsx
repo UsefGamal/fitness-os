@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
+import { isTime } from '../lib/times.js';
 import { macroTargets } from '../lib/macros.js';
 import { routineById } from '../lib/routines.js';
 import { DAY_CHOICES, GOALS, bodyComplete, bodyErrors, finishSetup, isMinor, pickRoutine, skipSetup } from '../lib/setup.js';
@@ -68,6 +69,7 @@ export default function Setup({ onDone }) {
         <>
           <h1 className="page-title">{t('setup.aboutTitle')}</h1>
           <p className="page-sub">{t('setup.aboutSub')}</p>
+          <label className="field"><span>{t('setup.name')}</span><input type="text" autoComplete="given-name" maxLength={30} value={a.name ?? ''} onChange={(e) => set('name', e.target.value)} /></label>
           <div className="seg" style={{ marginBottom: 12 }} role="group" aria-label={t('setup.sex')}>
             {['male', 'female'].map((g) => <button key={g} type="button" className={a.gender === g ? 'on' : ''} aria-pressed={a.gender === g} onClick={() => set('gender', g)}>{t(`setup.${g}`)}</button>)}
           </div>
@@ -110,6 +112,7 @@ export default function Setup({ onDone }) {
           <div className="seg" style={{ marginBottom: 12 }} role="group" aria-label={t('setup.days')}>
             {DAY_CHOICES.map((n) => <button key={n} type="button" className={a.days === n ? 'on' : ''} aria-pressed={a.days === n} onClick={() => set('days', n)}>{n === 5 ? '5+' : n}</button>)}
           </div>
+          <label className="field"><span>{t('setup.time')}</span><input type="time" step="300" value={a.session_time ?? content.training.session_time} onChange={(e) => isTime(e.target.value) && set('session_time', e.target.value)} /><span className="muted small">{t('setup.timeNote')}</span></label>
           <div className="section-label">{t('setup.experience')}</div>
           <div className="list">
             {choice('experience', 'new', t('setup.expNew'), t('setup.expNewNote'))}

@@ -206,6 +206,9 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .seg { display: flex; background: var(--surface2); border-radius: 10px; padding: 2px; gap: 2px; }
 .seg button { flex: 1; min-height: 44px; border: 0; border-radius: 8px; background: none; color: var(--text); font-size: 14px; font-weight: 600; }
 .seg button.on { background: var(--surface3); }
+/* Stats tabs stay pinned under the status bar while the tab scrolls (UX-21). */
+.stats-tabs { position: sticky; top: calc(var(--sat) + 8px); z-index: 5; margin: 4px 0 12px; box-shadow: 0 0 0 8px var(--bg); }
+.stats-tabs button { font-size: 13px; padding: 0 2px; }
 
 details.more > summary { list-style: none; color: var(--accent); font-size: 15px; min-height: 44px; display: flex; align-items: center; }
 details.more > summary::-webkit-details-marker { display: none; }
@@ -424,7 +427,10 @@ details.more > summary::-webkit-details-marker { display: none; }
 
 .hero-card { display: block; color: inherit; border-radius: var(--radius-lg); padding: 16px 16px 16px 20px;
   background: linear-gradient(135deg, rgba(48, 209, 88, 0.14), rgba(48, 209, 88, 0.02) 55%), var(--surface); }
-.hero-card:active { transform: scale(0.99); }
+.hero-link { display: block; color: inherit; }
+.hero-link:active { opacity: 0.85; }
+.mini-btn.hero-log { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.mini-btn.hero-log .icon { width: 16px; height: 16px; color: var(--accent); }
 .hero-top { display: flex; align-items: flex-end; gap: 8px; }
 .hero-label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; font-weight: 600; }
 .hero-label .icon { color: var(--accent); }
@@ -502,6 +508,9 @@ a.ex-row:active { transform: scale(0.99); background: var(--surface2); }
 .btn.outline { background: none; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--surface3); }
 .btn.glow { background: linear-gradient(180deg, #3ee06a, var(--accent)); box-shadow: 0 6px 20px rgba(48, 209, 88, 0.25); }
 .action-stack { display: grid; gap: 8px; margin: 16px 0 12px; }
+.action-stack:empty { display: none; }
+.start-bar { position: sticky; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 10; margin: 16px 0 8px; }
+.start-bar .btn { box-shadow: 0 0 0 6px var(--bg), 0 10px 28px rgba(0, 0, 0, 0.7); }
 
 /* Workout (Nov 2026): the active exercise first, one row of tools. */
 .workout-head { border-radius: var(--radius-lg); }

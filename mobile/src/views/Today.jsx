@@ -8,6 +8,7 @@ import MetricStrip from '../components/MetricStrip.jsx';
 import QuickAction from '../components/QuickAction.jsx';
 import StatTile from '../components/StatTile.jsx';
 import WeekStrip from '../components/WeekStrip.jsx';
+import WeighInSheet from '../components/WeighInSheet.jsx';
 import WeightCard from '../components/WeightCard.jsx';
 import WorkoutCard from '../components/WorkoutCard.jsx';
 import { formatDate, longWeekday } from '../lib/dates.js';
@@ -82,6 +83,7 @@ export default function Today() {
     setShown(d);
     if (!hinted) { setHinted(true); try { localStorage.setItem(WEEK_HINT_KEY, '1'); } catch { /* private mode */ } }
   };
+  const [weighing, setWeighing] = useState(false);
   const name = firstName(data.profile);
   const greet = t(`home.greet.${partOfDay(new Date().getHours())}`);
   const addWater = (ml) => { update((d) => D.addWater(d, today, ml)); feedback('water'); };
@@ -106,27 +108,9 @@ export default function Today() {
           <Icon name="chev" className="icon chev" />
         </Link>
       ) : null}
-      {backup ? (
-        <section className="card banner" role="status">
-          <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
-            <Icon name="download" className="icon tone-accent" />
-            <div className="grow small">
-              <strong>{t('home.backupTitle')}</strong>
-              <div className="muted">{backup.days == null ? t('home.backupNever') : t('home.backupDays', { days: backup.days })} {t('home.backupWhy')}{backup.noLock ? ` ${t('backup.noLock')}` : ''}</div>
-            </div>
-          </div>
-          <div className="row" style={{ gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-            <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}>{t('home.later')}</button>
-            <Link className="btn small" to="/settings/data">{t('home.backupNow')}</Link>
-          </div>
-        </section>
-      ) : null}
       {ramadanActive(data, today) ? (
         <div className="card small banner" role="note"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.homeNote', { time: times.session_time })}</span></div>
       ) : null}
-
-      {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} /> : null}
-      <MetricStrip tiles={tiles} />
 
       <WorkoutCard
         next={next}
@@ -151,6 +135,26 @@ export default function Today() {
             <div className="session-name">{tonight.label}</div>
           </div>
           {eveningDone(data, today, tonight) ? <span className="chip accent"><Icon name="check" className="icon" /> {t('home.done')}</span> : <button type="button" className="btn secondary small" onClick={() => navigate(tonight.route)}><Icon name="play" /> {t('home.startShort')}</button>}
+        </section>
+      ) : null}
+
+      {/* Today's session and Start come first (UX-01); weight is next, one tap to log (UX-03). */}
+      {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} onLog={() => setWeighing(true)} /> : null}
+      {weighing ? <WeighInSheet data={data} update={update} today={today} onClose={() => setWeighing(false)} /> : null}
+      <MetricStrip tiles={tiles} />
+      {backup ? (
+        <section className="card banner" role="status">
+          <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
+            <Icon name="download" className="icon tone-accent" />
+            <div className="grow small">
+              <strong>{t('home.backupTitle')}</strong>
+              <div className="muted">{backup.days == null ? t('home.backupNever') : t('home.backupDays', { days: backup.days })} {t('home.backupWhy')}{backup.noLock ? ` ${t('backup.noLock')}` : ''}</div>
+            </div>
+          </div>
+          <div className="row" style={{ gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}>{t('home.later')}</button>
+            <Link className="btn small" to="/settings/data">{t('home.backupNow')}</Link>
+          </div>
         </section>
       ) : null}
 

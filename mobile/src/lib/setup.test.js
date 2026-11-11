@@ -120,3 +120,17 @@ test('setup saves the level: new is beginner, some experience is intermediate', 
   assert.equal(finishSetup(emptyData(content), content, { ...base, experience: 'new' }, '2026-11-11').settings.training.level, 'beginner');
   assert.equal(finishSetup(emptyData(content), content, { ...base, experience: 'some' }, '2026-11-11').settings.training.level, 'intermediate');
 });
+
+test('setup keeps the weight as the first weigh-in, the name and the training time (UX-30, UX-31)', () => {
+  const d = finishSetup(emptyData(content), content, { ...BODY, goal: 'lose', name: '  Omar Ali ', session_time: '18:30' }, TODAY);
+  assert.equal(d.body_logs.length, 1);
+  assert.equal(d.body_logs[0].weight_kg, BODY.weight_kg);
+  assert.equal(d.body_logs[0].log_date, TODAY);
+  assert.equal(d.profile.name, 'Omar Ali');
+  assert.equal(d.settings.times.session_time, '18:30');
+  // Skipped body step: no weigh-in, the name is still kept, a bad time is dropped.
+  const s = finishSetup(emptyData(content), content, { goal: 'lose', name: 'Omar', session_time: '25:00' }, TODAY);
+  assert.equal(s.body_logs.length, 0);
+  assert.equal(s.profile.name, 'Omar');
+  assert.equal(s.settings?.times?.session_time, undefined);
+});
