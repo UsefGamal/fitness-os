@@ -30,6 +30,7 @@ import { shadeLines } from '../lib/restTimer.js';
 import { useTimer } from '../store/useTimer.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
+import { isShortSession } from '../lib/summary.js';
 import { useToday } from '../store/today.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
@@ -364,11 +365,12 @@ export default function Workout() {
     syncHealth().catch(() => {});
     timer.stop();
     setActiveWorkout(null);
-    navigate(`/history/${active.id}`);
+    navigate(`/history/${active.id}`, { state: { finished: true } });
   };
 
   const totalTarget = day.exercises.reduce((n, x) => n + x.sets, 0);
   const totalDone = Object.values(doneSets).reduce((n, s) => n + s.length, 0);
+  const short = isShortSession(totalDone, totalTarget);
   const ms = activeMs(active, now);
   const lengthTarget = targetProgress(ms, settings.target_min);
   const paused = Boolean(active.paused_at);
@@ -415,8 +417,9 @@ export default function Workout() {
           </label>
           <label className="field"><span>Anything hurt?</span><input type="text" value={pain} onChange={(e) => setPain(e.target.value)} placeholder="Optional" /></label>
           {day.cardio_after ? <div className="muted small">Don't forget: {day.cooldown[0]}</div> : null}
-          <button type="button" className="btn" onClick={finish}><Icon name="check" /> Save workout</button>
-          <button type="button" className="btn ghost" onClick={() => setFinishing(false)}>Keep going</button>
+          {short ? <div className="small" role="status">{t('workout.shortNote', { done: totalDone, all: totalTarget })}</div> : null}
+          <button type="button" className={`btn${short ? ' secondary' : ''}`} onClick={finish}><Icon name="check" /> {t(short ? 'workout.saveShort' : 'workout.save')}</button>
+          <button type="button" className={`btn${short ? '' : ' ghost'}`} onClick={() => setFinishing(false)}>{t('workout.keepGoing')}</button>
         </section>
       ) : null}
 
