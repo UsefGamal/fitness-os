@@ -5,7 +5,9 @@
 
 import { addDays } from './dates.js';
 import { saveProfile } from './macros.js';
+import { levelFromSetup } from './levels.js';
 import { startRoutine } from './routines.js';
+import { setTraining } from './training.js';
 
 export const DAY_CHOICES = [2, 3, 4, 5];
 export const GOALS = ['lose', 'recomp', 'maintain', 'gain'];
@@ -98,6 +100,7 @@ export function finishSetup(data, content, a, today) {
   }
   const routine = pickRoutine(a);
   d = startRoutine(d, content, routine, today);
+  d = setTraining(d, { level: levelFromSetup(a.experience) });
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },

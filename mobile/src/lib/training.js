@@ -20,6 +20,7 @@ export function defaultTraining() {
     target_min: 0, // 0 = no target workout length
     bar: 'olympic', // lib/plates.js BARS
     plates: [25, 20, 15, 10, 5, 2.5, 1.25], // sizes you own, kg
+    level: null, // lib/levels.js LEVELS; null = not chosen, so nothing is labelled
   };
 }
 
