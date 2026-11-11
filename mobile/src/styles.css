@@ -584,3 +584,9 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .big-icon { width: 40px; height: 40px; color: var(--accent); }
 .stat-grid.three { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .stat-grid.three .value { font-size: 20px; }
+
+/* Folded exercise: one grey line of what's coming (UX-12). */
+.ex-card.collapsed .ex-next { margin-top: 2px; text-align: start; }
+/* Meals: the training-day note as plain text, not a card (UX-19). */
+.train-line { margin: 4px 4px 12px; }
+.train-line .icon { width: 14px; height: 14px; vertical-align: -2px; color: var(--accent); }

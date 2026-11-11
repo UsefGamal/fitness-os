@@ -26,7 +26,7 @@ import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
 import { backupDue } from '../lib/durable.js';
-import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
+import { hardWeeksInARow, isRecoveryWeek, recoveryDue, setRecoveryWeek } from '../lib/recovery.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { hasScreenLock } from '../store/native.js';
@@ -170,13 +170,14 @@ export default function Today() {
           <div className="grow small"><strong>{t('recovery.chip')}</strong> <span className="muted">{t('recovery.short')}</span></div>
           <button type="button" className="btn ghost small" onClick={() => update((d) => setRecoveryWeek(d, today, false))}>{t('recovery.off')}</button>
         </div>
-      ) : (
+      ) : null}
+      {recoveryDue(data, today) ? (
         <button type="button" className="pill-row" onClick={() => update((d) => setRecoveryWeek(d, today, true))}>
           <Icon name="calendar" />
-          <span className="grow">{t('recovery.on')}</span>
+          <span className="grow">{t('recovery.due', { n: hardWeeksInARow(data, today) })}</span>
           <Icon name="chev" className="icon chev" />
         </button>
-      )}
+      ) : null}
       {shown ? <DaySheet day={shown} data={data} training={T} today={today} time={times.session_time} log={data.workouts.find((w) => w.log_date === shown.date && w.workout_type === 'gym' && (w.finished_at || w.sets.length))} onClose={() => setShown(null)} /> : null}
 
       <h2 className="section-title">{t('home.quickStats')}</h2>
