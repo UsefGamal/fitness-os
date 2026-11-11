@@ -199,13 +199,22 @@ export function e1rm(weightKg, reps) {
   return reps === 1 ? weightKg : weightKg * (1 + Math.min(reps, E1RM_MAX_REPS) / 30);
 }
 
-/** Best set per exercise (by estimated 1RM), excluding one workout if given. */
+/** Does this exercise need a load to mean anything (UX-11)? Bodyweight
+ * moves and exercises with no equipment recorded don't. */
+export function needsWeight(exercise) {
+  return !!exercise?.equipment && exercise.equipment !== 'Bodyweight';
+}
+
+/** Best set per exercise (by estimated 1RM), excluding one workout if given.
+ * A 0 kg set of a weighted lift is a slip, never a best (UX-11). */
 export function personalBests(data, excludeWorkoutId = null) {
   const best = new Map();
+  const weighted = new Set((data.exercises || []).filter(needsWeight).map((e) => e.id));
   for (const w of data.workouts) {
     if (w.id === excludeWorkoutId) continue;
     for (const s of w.sets) {
       if (!isWorkSet(s)) continue;
+      if (!(s.weight_kg > 0) && weighted.has(s.exercise_id)) continue;
       const score = e1rm(s.weight_kg, s.reps);
       const cur = best.get(s.exercise_id);
       if (!cur || score > cur.score) best.set(s.exercise_id, { ...s, score, log_date: w.log_date });

@@ -140,3 +140,14 @@ test('a warm-up is never a best, a baseline or a prefill', () => {
   assert.equal(D.setKind(d, 2, d.workouts[1].sets[0]), null);
   assert.equal(D.lastSets(d, 1)[0].weight_kg, 60);
 });
+
+test('a 0 kg set of a weighted lift is never a best; bodyweight moves still count (UX-11)', () => {
+  const d = { ...fresh(), exercises: [{ id: 1, name: 'Cable Raise', muscle_group: 'Shoulders', equipment: 'Cable' }, { id: 2, name: 'Push-up', muscle_group: 'Chest', equipment: 'Bodyweight' }], workouts: [
+    { id: 1, log_date: '2026-11-01', workout_type: 'gym', sets: [{ id: 1, exercise_id: 1, set_number: 1, reps: 10, weight_kg: 0 }, { id: 2, exercise_id: 2, set_number: 1, reps: 15, weight_kg: 0 }] },
+  ] };
+  assert.equal(D.needsWeight(d.exercises[0]), true);
+  assert.equal(D.needsWeight(d.exercises[1]), false);
+  assert.equal(D.needsWeight({ id: 3, name: 'Custom' }), false);
+  assert.equal(D.personalBests(d).has(1), false);
+  assert.equal(D.personalBests(d).has(2), true);
+});
