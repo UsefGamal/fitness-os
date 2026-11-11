@@ -1,13 +1,13 @@
 {
  "/ 360 ltr": {
-  "axe": 6,
+  "axe": 4,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 360 ltr": {
   "axe": 5,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -36,7 +36,7 @@
   "errors": 0
  },
  "/stats 360 ltr": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -108,14 +108,14 @@
   "errors": 0
  },
  "/ 390 ltr": {
-  "axe": 5,
+  "axe": 4,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 390 ltr": {
   "axe": 5,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -144,7 +144,7 @@
   "errors": 0
  },
  "/stats 390 ltr": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -216,14 +216,14 @@
   "errors": 0
  },
  "/ 412 ltr": {
-  "axe": 5,
+  "axe": 4,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 412 ltr": {
   "axe": 5,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -252,7 +252,7 @@
   "errors": 0
  },
  "/stats 412 ltr": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -324,14 +324,14 @@
   "errors": 0
  },
  "/ 360 rtl": {
-  "axe": 6,
+  "axe": 4,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 360 rtl": {
   "axe": 5,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -360,7 +360,7 @@
   "errors": 0
  },
  "/stats 360 rtl": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -432,14 +432,14 @@
   "errors": 0
  },
  "/ 390 rtl": {
-  "axe": 5,
+  "axe": 4,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 390 rtl": {
   "axe": 5,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -468,7 +468,7 @@
   "errors": 0
  },
  "/stats 390 rtl": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -540,14 +540,14 @@
   "errors": 0
  },
  "/ 412 rtl": {
-  "axe": 5,
+  "axe": 4,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 412 rtl": {
   "axe": 5,
-  "taps": 1,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
@@ -576,7 +576,7 @@
   "errors": 0
  },
  "/stats 412 rtl": {
-  "axe": 1,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0

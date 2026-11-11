@@ -205,6 +205,12 @@ export function needsWeight(exercise) {
   return !!exercise?.equipment && exercise.equipment !== 'Bodyweight';
 }
 
+/** True when a set of this exercise can't be logged yet: it needs a load
+ * and none is set. */
+export function missingWeight(exercise, kg) {
+  return needsWeight(exercise) && !(kg > 0);
+}
+
 /** Best set per exercise (by estimated 1RM), excluding one workout if given.
  * A 0 kg set of a weighted lift is a slip, never a best (UX-11). */
 export function personalBests(data, excludeWorkoutId = null) {

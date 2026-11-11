@@ -24,7 +24,7 @@ export default function Shopping() {
     <div className="page">
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Shopping list</h1>
-      <p className="page-sub">{t('shop.range', { from: formatDate(today), to: formatDate(addDays(today, 6)) })} <Link to="/meals">{t('shop.change')}</Link></p>
+      <p className="page-sub">{t('shop.range', { from: formatDate(today), to: formatDate(addDays(today, 6)) })} <Link to="/meals" style={{ textDecoration: 'underline' }}>{t('shop.change')}</Link></p>
       <section className="card">
         <div className="row between" style={{ marginBottom: 10 }}>
           <strong>{got} of {total} in the basket</strong>

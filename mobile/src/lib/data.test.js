@@ -148,6 +148,9 @@ test('a 0 kg set of a weighted lift is never a best; bodyweight moves still coun
   assert.equal(D.needsWeight(d.exercises[0]), true);
   assert.equal(D.needsWeight(d.exercises[1]), false);
   assert.equal(D.needsWeight({ id: 3, name: 'Custom' }), false);
+  assert.equal(D.missingWeight(d.exercises[0], 0), true);
+  assert.equal(D.missingWeight(d.exercises[0], 2.5), false);
+  assert.equal(D.missingWeight(d.exercises[1], 0), false);
   assert.equal(D.personalBests(d).has(1), false);
   assert.equal(D.personalBests(d).has(2), true);
 });

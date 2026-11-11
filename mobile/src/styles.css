@@ -429,8 +429,8 @@ details.more > summary::-webkit-details-marker { display: none; }
   background: linear-gradient(135deg, rgba(48, 209, 88, 0.14), rgba(48, 209, 88, 0.02) 55%), var(--surface); }
 .hero-link { display: block; color: inherit; }
 .hero-link:active { opacity: 0.85; }
-.hero-log { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.hero-log .icon { width: 16px; height: 16px; color: var(--accent); }
+.mini-btn.hero-log { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.mini-btn.hero-log .icon { width: 16px; height: 16px; color: var(--accent); }
 .hero-top { display: flex; align-items: flex-end; gap: 8px; }
 .hero-label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; font-weight: 600; }
 .hero-label .icon { color: var(--accent); }
