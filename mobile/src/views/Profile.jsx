@@ -66,6 +66,9 @@ export default function Profile() {
           <span style={{ fontSize: 30, fontWeight: 700 }}>{preview.kcal}</span><span className="muted">kcal</span>
         </div>
         <div className="muted small">Protein {preview.protein} g · carbs {preview.carbs} g · fat {preview.fat} g · fiber {preview.fiber} g</div>
+        {preview.source !== 'plan' ? (
+          <details className="explain">
+            <summary>{t('profile.how')}</summary>
         {preview.source !== 'plan' && preview.mode === 'maintain' ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.maintain', preview)}</div> : null}
         {preview.source !== 'plan' && preview.mode === 'recomp' ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.recomp', { ...preview, protein_per_kg: PROTEIN_G_PER_KG.recomp })}</div> : null}
         {preview.source !== 'plan' && preview.mode === 'gain' ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.gain', { ...preview, surplus: GAIN_SURPLUS })}</div> : null}
@@ -85,6 +88,8 @@ export default function Profile() {
         {preview.reasons?.includes('capped') ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.capped', preview)}</div> : null}
         {preview.reasons?.includes('floor') ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.floor', preview)}</div> : null}
         {safeDate ? <div className="muted small" style={{ marginTop: 8 }}>{t('profile.safeDate', { pace: preview.pace, goal: preview.goal_weight, date: formatDate(safeDate) })}</div> : null}
+          </details>
+        ) : null}
         {safeDate && p.goal_date && p.goal_date < safeDate ? (
           <button type="button" className="btn secondary small" style={{ marginTop: 8, minHeight: 44 }} onClick={() => { setP({ ...p, goal_date: safeDate }); setSaved(false); }}>{t('profile.useDate', { date: formatDate(safeDate) })}</button>
         ) : null}

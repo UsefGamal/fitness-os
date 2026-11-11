@@ -379,6 +379,11 @@ details.more > summary::-webkit-details-marker { display: none; }
 .chip-btn { flex: none; min-height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: var(--surface2); color: var(--text); font-size: 15px; font-weight: 600; }
 .chip-btn.on { background: var(--accent-dim); color: var(--accent); }
 .chip-btn:active { transform: scale(0.97); }
+/* An explanation folded behind one link (Profile's "How we got this number", UX-28). */
+details.explain { margin-top: 4px; }
+details.explain > summary { color: var(--accent); font-size: 15px; min-height: 44px; display: flex; align-items: center; cursor: pointer; list-style: none; }
+details.explain > summary::-webkit-details-marker { display: none; }
+details.explain > div:first-of-type { margin-top: 0 !important; }
 /* The muscle or angle an exercise works, on Plan's exercise cards. */
 .ex-target { color: var(--accent); font-size: 14px; font-weight: 600; margin-top: 2px; }
 
