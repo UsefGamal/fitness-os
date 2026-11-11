@@ -33,7 +33,7 @@ export const DATA_KEYS = new Set([
   'schemaVersion', 'version', 'saved_at', 'profile', 'goals', 'safety', 'diet', 'program', 'checkins',
   'rewards', 'exercises', 'body_logs', 'hydration_logs', 'workouts', 'meal_logs', 'bonus_logs', 'shopping',
   'settings', 'session_moves', 'exercise_notes', 'achievements', 'evening_plan', 'progress_photos',
-  'health_daily', 'plan_overrides', 'setup', '_unknown',
+  'health_daily', 'plan_overrides', 'setup', 'my_foods', '_unknown',
 ]);
 const BAD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 

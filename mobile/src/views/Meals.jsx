@@ -14,6 +14,8 @@ import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
 import { mealWhat } from '../lib/widget.js';
 import CountUp from '../components/CountUp.jsx';
+import OtherFoodSheet from '../components/OtherFoodSheet.jsx';
+import { clearCustomMeal, customMeals } from '../lib/myFoods.js';
 import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
@@ -104,14 +106,17 @@ function MealPlan() {
   }, [today]);
   const day = mealDayFor(date, N);
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
-  const totals = dayTotals(day, picks);
+  // Meals where something else was eaten count with their own numbers (UX-20).
+  const custom = customMeals(data, date);
+  const [otherFor, setOtherFor] = useState(null);
+  const totals = dayTotals(day, picks, null, custom);
   const training = sessionKeyOn(date, activePlan(data, content), data.session_moves || []) !== 'rest';
   // The note is for before the session: gone once that day's workout is saved (UX-19).
   const trained = Boolean(D.workoutOn(data, date)?.finished_at);
   const target = macroTargets(data, N, today);
   const eatenSlots = new Set(N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed));
   const done = eatenSlots.size;
-  const eaten = dayTotals(day, picks, eatenSlots);
+  const eaten = dayTotals(day, picks, eatenSlots, custom);
   // Ramadan: the same meals, at suhoor, iftar and after taraweeh.
   const fasting = ramadanActive(data, date);
   const rTimes = fasting ? effectiveTimes(data, content, date).meal_times : null;
@@ -183,45 +188,60 @@ function MealPlan() {
               <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={t('meals.eatenAria', { meal: label(meal.slot) })}
                 onClick={() => {
                   const ev = mealTickEvent({ nowDone: !log?.completed, doneBefore: done, slots: N.meal_slots.length });
-                  update((d) => D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick }));
+                  update((d) => (log?.custom ? clearCustomMeal(d, date, meal.slot) : D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick })));
                   if (ev) feedback(ev);
                 }}>
                 {log?.completed ? <Icon name="check" /> : null}
               </button>
             </div>
-            <div className="pick-row" role="radiogroup" aria-label={t('meals.pickAria', { meal: label(meal.slot) })}>
-              {meal.options.map((o, i) => (
-                <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => D.setMeal(d, date, meal.slot, { option_key: o.key }))}>
-                  {String.fromCharCode(65 + i)} · {o.cuisine}
-                </button>
-              ))}
-            </div>
-            <details className="meal-more">
-              <summary>
+            {log?.custom ? (
+              <div className="ate-else">
                 <div className="grow">
-                  <div>{mealWhat(opt)}</div>
-                  <div className="muted small" style={{ marginTop: 2 }}>{t('meals.kcalProtein', { kcal: opt.kcal, protein: opt.protein })}</div>
+                  <div>{log.custom.name || t('other.unnamed')}</div>
+                  <div className="muted small" style={{ marginTop: 2 }}>{t('meals.kcalProtein', { kcal: log.custom.kcal, protein: log.custom.protein })}</div>
                 </div>
-                <Icon name="chev" className="icon chev" />
-              </summary>
-              <div className="meal-items">
-                {[...(opt.items || []).reduce((acc, key) => acc.set(key, (acc.get(key) || 0) + 1), new Map())].map(([key, n]) => {
-                  const m = itemMacros(key);
-                  const nm = itemName(key);
-                  return (
-                    <div key={key} className="row between small">
-                      <span className="grow">{nm.charAt(0).toUpperCase() + nm.slice(1)}{n > 1 ? ` ×${n}` : ''}</span>
-                      {m ? <span className="muted">{t('meals.itemMacros', { kcal: Math.round(m[0] * n), protein: Math.round(m[1] * n * 10) / 10 })}</span> : null}
-                    </div>
-                  );
-                })}
-                <div className="muted small" style={{ marginTop: 6 }}>{t('meals.fullMacros', { kcal: opt.kcal, protein: opt.protein, carbs: opt.carbs, fat: opt.fat })}</div>
+                <button type="button" className="btn ghost small" onClick={() => setOtherFor(meal.slot)}>{t('other.change')}</button>
               </div>
-            </details>
+            ) : (
+              <>
+              <div className="pick-row" role="radiogroup" aria-label={t('meals.pickAria', { meal: label(meal.slot) })}>
+                {meal.options.map((o, i) => (
+                  <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => D.setMeal(d, date, meal.slot, { option_key: o.key }))}>
+                    {String.fromCharCode(65 + i)} · {o.cuisine}
+                  </button>
+                ))}
+              </div>
+              <details className="meal-more">
+                <summary>
+                  <div className="grow">
+                    <div>{mealWhat(opt)}</div>
+                    <div className="muted small" style={{ marginTop: 2 }}>{t('meals.kcalProtein', { kcal: opt.kcal, protein: opt.protein })}</div>
+                  </div>
+                  <Icon name="chev" className="icon chev" />
+                </summary>
+                <div className="meal-items">
+                  {[...(opt.items || []).reduce((acc, key) => acc.set(key, (acc.get(key) || 0) + 1), new Map())].map(([key, n]) => {
+                    const m = itemMacros(key);
+                    const nm = itemName(key);
+                    return (
+                      <div key={key} className="row between small">
+                        <span className="grow">{nm.charAt(0).toUpperCase() + nm.slice(1)}{n > 1 ? ` ×${n}` : ''}</span>
+                        {m ? <span className="muted">{t('meals.itemMacros', { kcal: Math.round(m[0] * n), protein: Math.round(m[1] * n * 10) / 10 })}</span> : null}
+                      </div>
+                    );
+                  })}
+                  <div className="muted small" style={{ marginTop: 6 }}>{t('meals.fullMacros', { kcal: opt.kcal, protein: opt.protein, carbs: opt.carbs, fat: opt.fat })}</div>
+                </div>
+              </details>
+                <button type="button" className="btn ghost small ate-else-btn" onClick={() => setOtherFor(meal.slot)}>{t('other.open')}</button>
+              </>
+            )}
+            {log?.custom ? <button type="button" className="btn ghost small ate-else-btn" onClick={() => update((d) => clearCustomMeal(d, date, meal.slot))}>{t('other.back')}</button> : null}
           </section>
         );
       })}
       <SwitchView to="targets" />
+      {otherFor ? <OtherFoodSheet data={data} update={update} date={date} slot={otherFor} mealName={label(otherFor)} entry={custom[otherFor]} onClose={() => setOtherFor(null)} /> : null}
     </div>
   );
 }

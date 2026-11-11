@@ -68,6 +68,8 @@ export function widgetDays(data, content, today) {
       ? day.meals
         .map((m) => {
           const log = D.mealLog(data, date, m.slot);
+          // Something else was eaten here (UX-20): show and count that.
+          if (log?.custom) return { time: times.meal_times[m.slot] || '', name: slotLabel(m.slot), what: log.custom.name || 'Something else', done: Boolean(log.completed), protein: log.custom.protein || 0 };
           return { time: times.meal_times[m.slot] || '', name: slotLabel(m.slot), what: mealWhat(optionFor(m, log)), done: Boolean(log?.completed), protein: optionFor(m, log).protein || 0 };
         })
         .sort((a, b) => (a.time < b.time ? -1 : 1))

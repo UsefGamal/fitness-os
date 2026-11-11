@@ -42,7 +42,7 @@ export function bodyCsv(data) {
 /** Meal ticks, one row per meal slot logged. */
 export function mealsCsv(data) {
   const rows = [...(data.meal_logs || [])].sort((a, b) => (a.log_date < b.log_date ? -1 : 1));
-  return rowsToCsv([['date', 'meal', 'eaten', 'option', 'drink'], ...rows.map((m) => [m.log_date, m.meal_slot, m.completed ? 'yes' : 'no', m.option_key ?? '', m.drink_key ?? ''])]);
+  return rowsToCsv([['date', 'meal', 'eaten', 'option', 'drink', 'ate_instead', 'kcal', 'protein_g'], ...rows.map((m) => [m.log_date, m.meal_slot, m.completed ? 'yes' : 'no', m.option_key ?? '', m.drink_key ?? '', m.custom ? m.custom.name || 'something else' : '', m.custom?.kcal ?? '', m.custom?.protein ?? ''])]);
 }
 
 /** RFC 4180 parsing with a guessed delimiter (Strong uses ";" in some locales). */
