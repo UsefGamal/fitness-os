@@ -154,3 +154,15 @@ test('a 0 kg set of a weighted lift is never a best; bodyweight moves still coun
   assert.equal(D.personalBests(d).has(1), false);
   assert.equal(D.personalBests(d).has(2), true);
 });
+
+test('lastTopKg is the heaviest work set of the last earlier workout (UX-12)', () => {
+  const set = (id, kg, extra = {}) => ({ id, exercise_id: 1, weight_kg: kg, reps: 8, is_warmup: false, ...extra });
+  const d = { workouts: [
+    { id: 1, log_date: '2026-11-01', sets: [set(1, 80)] },
+    { id: 2, log_date: '2026-11-05', sets: [set(2, 90, { is_warmup: true }), set(3, 60), set(4, 62.5)] },
+    { id: 3, log_date: '2026-11-08', sets: [set(5, 70)] },
+  ] };
+  assert.equal(D.lastTopKg(d, 1, 3), 62.5);
+  assert.equal(D.lastTopKg(d, 2), null);
+  assert.equal(D.lastTopKg({ workouts: [{ id: 1, log_date: '2026-11-01', sets: [set(1, 0)] }] }, 1), null);
+});

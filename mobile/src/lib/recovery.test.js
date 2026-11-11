@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { emptyData } from './data.js';
 import * as D from './data.js';
-import { isRecoveryWeek, recoveryDay, recoveryRir, recoverySets, setRecoveryWeek, weekOf, withoutRecovery } from './recovery.js';
+import { hardWeeksInARow, isRecoveryWeek, recoveryDay, recoveryDue, recoveryRir, recoverySets, setRecoveryWeek, weekOf, withoutRecovery } from './recovery.js';
 import { content } from './testContent.js';
 
 test('weeks start on the profile\'s day', () => {
@@ -48,4 +48,19 @@ test('recovery sessions are marked and left out of progression', () => {
   assert.equal(d.workouts[1].is_deload, false);
   const history = [{ workoutId: d.workouts[0].id }, { workoutId: d.workouts[1].id }];
   assert.deepEqual(withoutRecovery(history, d.workouts), [{ workoutId: d.workouts[1].id }]);
+});
+
+test('Home suggests a recovery week after four hard weeks in a row (UX-05)', () => {
+  const gym = (id, date, done = true) => ({ id, log_date: date, workout_type: 'gym', finished_at: done ? 1 : null, sets: [] });
+  let d = { ...emptyData(content), workouts: [gym(1, '2026-10-13'), gym(2, '2026-10-20'), gym(3, '2026-10-27'), gym(4, '2026-11-03'), gym(5, '2026-11-10')] };
+  assert.equal(hardWeeksInARow(d, '2026-11-11'), 4); // this week is not counted
+  assert.equal(recoveryDue(d, '2026-11-11'), true);
+  // A gap, an unfinished workout or an earlier recovery week breaks the run.
+  assert.equal(hardWeeksInARow({ ...d, workouts: d.workouts.filter((w) => w.id !== 3) }, '2026-11-11'), 1);
+  assert.equal(hardWeeksInARow({ ...d, workouts: d.workouts.map((w) => (w.id === 4 ? gym(4, '2026-11-03', false) : w)) }, '2026-11-11'), 0);
+  assert.equal(hardWeeksInARow(setRecoveryWeek(d, '2026-10-27', true), '2026-11-11'), 1);
+  // Already a recovery week: nothing to suggest.
+  d = setRecoveryWeek(d, '2026-11-11', true);
+  assert.equal(recoveryDue(d, '2026-11-11'), false);
+  assert.equal(recoveryDue(emptyData(content), '2026-11-11'), false);
 });
