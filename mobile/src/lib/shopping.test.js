@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { formatShoppingQty, parseShoppingUnit, shoppingList } from './shopping.js';
+import { formatShoppingQty, parseShoppingUnit, picksFrom, shoppingList } from './shopping.js';
 import { content } from './testContent.js';
 
 const N = content.nutrition;
@@ -34,4 +34,22 @@ test('the first plan week merges portions (matches the Python list)', () => {
   // P14-19: sentence case, never a title-cased key.
   for (const i of groups.flatMap((g) => g.items)) assert.doesNotMatch(i.name, /\b[a-z]+_|(?:\s[A-Z][a-z]+){2}/, i.name);
   assert.deepEqual(groups.map((g) => g.name), N.category_order.filter((c) => groups.some((g) => g.name === c)));
+});
+
+test('the list buys only the picked option of each meal, A by default (UX-18)', () => {
+  const count = (groups) => groups.reduce((n, g) => n + g.items.length, 0);
+  const both = shoppingList(N.plan_start_date, N);
+  const onlyA = shoppingList(N.plan_start_date, N, 7, () => null);
+  assert.ok(count(onlyA) < count(both));
+  // One day, every meal switched to its second option: a different list from all-A.
+  const day = N.plan_start_date;
+  const logs = N.meal_slots.map((slot) => ({ log_date: day, meal_slot: slot, option_key: 'option_b' }));
+  const pick = picksFrom(logs);
+  assert.equal(pick(day, N.meal_slots[0]), 'option_b');
+  assert.equal(pick('1999-01-01', N.meal_slots[0]), null);
+  const a1 = shoppingList(day, N, 1, () => null);
+  const b1 = shoppingList(day, N, 1, pick);
+  assert.notDeepEqual(a1, b1);
+  // A pick the meal doesn't have falls back to the first option.
+  assert.deepEqual(shoppingList(day, N, 1, () => 'option_zzz'), a1);
 });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import test from 'node:test';
 
-import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7 } from './statsView.js';
+import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from './statsView.js';
 
 const rows = [
   { key: 'chest', group: 'Chest', done: 6, planned: 6 },
@@ -46,4 +46,9 @@ test('latestBadge, recordSummary and seriesChange', () => {
   assert.deepEqual(recordSummary([{ log_date: '2026-11-01' }, { log_date: '2026-08-01' }], '2026-11-10'), { total: 2, recent: 1 });
   assert.deepEqual(seriesChange([{ value: 65 }, { value: 70 }]), { now: 70, change: 5 });
   assert.equal(seriesChange([]), null);
+});
+
+test('Stats tabs start with Overview and hide Body when weight is off (UX-21)', () => {
+  assert.deepEqual(statsTabs(true), ['overview', 'muscles', 'strength', 'body', 'badges']);
+  assert.deepEqual(statsTabs(false), ['overview', 'muscles', 'strength', 'badges']);
 });
