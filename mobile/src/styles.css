@@ -122,7 +122,9 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .ex-card:active { transform: scale(0.99); }
 .ex-name { font-weight: 600; font-size: 17px; }
 .ex-meta { color: var(--muted); font-size: 14px; margin-top: 2px; }
-.ex-note { color: var(--warn); font-size: 14px; margin-top: 6px; }
+/* Notes and form cues are plain grey with a small icon; yellow is for warnings only (UX-10). */
+.ex-note { color: var(--muted); font-size: 14px; margin-top: 6px; }
+.ex-note .icon { width: 14px; height: 14px; vertical-align: -2px; color: var(--faint); }
 .pair { color: var(--accent); font-weight: 700; margin-inline-end: 6px; }
 
 .timer { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30; max-width: 540px; margin: 0 auto;
@@ -503,8 +505,8 @@ a.ex-row:active { transform: scale(0.99); background: var(--surface2); }
 .ex-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ex-thumb.map { width: 76px; height: 76px; padding: 4px; display: flex; align-items: center; justify-content: center; }
 .ex-thumb.map figure { width: 100%; }
-.tip-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid rgba(255, 214, 10, 0.25); background: rgba(255, 214, 10, 0.06); }
-.tip-card .icon { color: var(--warn); }
+.tip-card { display: flex; gap: 12px; align-items: flex-start; }
+.tip-card .icon { color: var(--muted); }
 .btn.outline { background: none; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--surface3); }
 .btn.glow { background: linear-gradient(180deg, #3ee06a, var(--accent)); box-shadow: 0 6px 20px rgba(48, 209, 88, 0.25); }
 .action-stack { display: grid; gap: 8px; margin: 16px 0 12px; }
@@ -584,3 +586,9 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .big-icon { width: 40px; height: 40px; color: var(--accent); }
 .stat-grid.three { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .stat-grid.three .value { font-size: 20px; }
+
+/* Stats volume: the maths sits behind one link (UX-22). */
+.how-counted { margin-top: 12px; }
+.how-counted > summary { color: var(--accent); font-size: 15px; min-height: 44px; display: flex; align-items: center; cursor: pointer; list-style: none; }
+.how-counted > summary::-webkit-details-marker { display: none; }
+.how-counted p { margin: 0 0 6px; }

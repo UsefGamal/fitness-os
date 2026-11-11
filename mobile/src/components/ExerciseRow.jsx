@@ -20,7 +20,7 @@ export default function ExerciseRow({ ex, target, to }) {
         {target ? <div className="ex-target">{targetLabel(target)}</div> : null}
         <div className="ex-meta">{meta}</div>
         {ex.swapped_from ? <div className="ex-meta">{t('plan.instead', { name: ex.swapped_from })}</div> : null}
-        {ex.note ? <div className="ex-note">{ex.note}</div> : null}
+        {ex.note ? <div className="ex-note"><Icon name="info" className="icon" /> {ex.note}</div> : null}
         {ex.film_form ? <div className="ex-meta"><Icon name="video" className="icon inline" /> {t('plan.film')}</div> : null}
       </div>
       {to ? <Icon name="chev" className="icon chev" /> : null}

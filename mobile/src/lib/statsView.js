@@ -15,9 +15,20 @@ export function groupVolume(rows, guide = { low: 10, high: 20 }) {
       done: sum('done'),
       planned: sum('planned'),
       inRange: muscles.filter((r) => r.done >= guide.low && r.done <= guide.high).length,
+      state: groupState(muscles, guide),
       muscles,
     };
   }).filter((g) => g.muscles.length);
+}
+
+/** What this week's plan gives a group, in one word (UX-22): 'on_track'
+ * when at least half its muscles get a guide-range number of sets, else
+ * 'high' when more of them are over the guide than under it, else 'low'. */
+export function groupState(muscles, guide = { low: 10, high: 20 }) {
+  const good = muscles.filter((r) => r.planned >= guide.low && r.planned <= guide.high).length;
+  if (muscles.length && good * 2 >= muscles.length) return 'on_track';
+  const high = muscles.filter((r) => r.planned > guide.high).length;
+  return high > muscles.length - good - high ? 'high' : 'low';
 }
 
 /** One group's recovery status for the map and its label:
