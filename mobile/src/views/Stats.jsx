@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
@@ -14,7 +14,7 @@ import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExe
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
-import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7 } from '../lib/statsView.js';
+import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from '../lib/statsView.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -394,16 +394,20 @@ export default function Stats() {
   const { data, update } = useData();
   const today = useToday();
   const weightOn = D.moduleOn(data, 'weight');
-  const tabs = [['muscles', 'Muscles'], ['strength', 'Strength'], ...(weightOn ? [['body', 'Body']] : []), ['badges', 'Badges']];
-  const [tab, setTab] = useState('muscles');
+  // The tabs come first and stay pinned, so picking one changes what is on
+  // screen (UX-21). ?tab=body opens straight on the weigh-ins (UX-03).
+  const [params, setParams] = useSearchParams();
+  const tabs = statsTabs(weightOn);
+  const tab = tabs.includes(params.get('tab')) ? params.get('tab') : tabs[0];
+  const setTab = (k) => setParams(k === tabs[0] ? {} : { tab: k }, { replace: true });
 
   return (
     <div className="page">
       <h1 className="page-title">{t('tab.stats')}</h1>
-      <Summary data={data} today={today} />
-      <div className="seg stats-tabs" style={{ margin: '4px 0 12px' }}>
-        {tabs.map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+      <div className="seg stats-tabs" role="tablist" aria-label={t('tab.stats')}>
+        {tabs.map((k) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{t(`stats.tab.${k}`)}</button>)}
       </div>
+      {tab === 'overview' ? <Summary data={data} today={today} /> : null}
       {tab === 'muscles' ? <Muscles data={data} today={today} /> : null}
       {tab === 'strength' ? <Strength data={data} today={today} /> : null}
       {tab === 'body' && weightOn ? <Body data={data} update={update} today={today} /> : null}

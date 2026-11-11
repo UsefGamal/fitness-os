@@ -278,6 +278,7 @@ export default function Workout() {
 
   const logSet = (w = weight, r = reps) => {
     if (!exRow || r < 1) return;
+    if (D.missingWeight(exRow, w)) return;
     const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
     const kind = D.setKind(data, active.id, set);
     update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w }));
@@ -472,8 +473,9 @@ export default function Workout() {
                 <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
               </div>
               {barbell && weight > barKg ? <div className="plate-line">{t('workout.perSide', { plates: plateText(platesPerSide(weight, barKg, settings.plates).plates) })}{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (${t('workout.makes', { kg: platesPerSide(weight, barKg, settings.plates).loaded })})`}</div> : null}
-              <button type="button" className="btn glow log-btn" onClick={() => logSet()}><Icon name="check" /> {t('workout.logSet', { n: sets.length + 1 })}</button>
-              {settings.auto_rest ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
+              <button type="button" className="btn glow log-btn" disabled={D.missingWeight(exRow, weight)} onClick={() => logSet()}><Icon name="check" /> {t('workout.logSet', { n: sets.length + 1 })}</button>
+              {D.missingWeight(exRow, weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.needWeight')}</div> : null}
+              {settings.auto_rest && !D.missingWeight(exRow, weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
               <div className="tool-row">
                 <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget })); }}><Icon name="timer" /> {t('workout.rest')}</button>
                 <button type="button" className="tbtn" onClick={() => tweak((tw, n) => addExtraSet(tw, n, x.orig))}><Icon name="plus" /> {t('workout.addSet')}</button>

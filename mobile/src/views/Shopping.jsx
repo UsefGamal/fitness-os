@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { addDays, formatDate, weekStart } from '../lib/dates.js';
 import * as D from '../lib/data.js';
-import { shoppingList } from '../lib/shopping.js';
+import { t } from '../lib/i18n.js';
+import { picksFrom, shoppingList } from '../lib/shopping.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -13,7 +14,8 @@ export default function Shopping() {
   const navigate = useNavigate();
   const today = useToday();
   const week = weekStart(today);
-  const groups = useMemo(() => shoppingList(today, content.nutrition), [today]);
+  // Only the option picked for each meal, A when nothing is picked (UX-18).
+  const groups = useMemo(() => shoppingList(today, content.nutrition, 7, picksFrom(data.meal_logs)), [today, data.meal_logs]);
   const checked = D.shoppingChecked(data, week);
   const total = groups.reduce((n, g) => n + g.items.length, 0);
   const got = groups.reduce((n, g) => n + g.items.filter((i) => checked.has(i.key)).length, 0);
@@ -22,7 +24,7 @@ export default function Shopping() {
     <div className="page">
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Shopping list</h1>
-      <p className="page-sub">{formatDate(today)} to {formatDate(addDays(today, 6))}, both options of every meal</p>
+      <p className="page-sub">{t('shop.range', { from: formatDate(today), to: formatDate(addDays(today, 6)) })} <Link to="/meals" style={{ textDecoration: 'underline' }}>{t('shop.change')}</Link></p>
       <section className="card">
         <div className="row between" style={{ marginBottom: 10 }}>
           <strong>{got} of {total} in the basket</strong>

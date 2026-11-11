@@ -80,3 +80,9 @@ export function seriesChange(points) {
   const now = points[points.length - 1].value;
   return { now, change: Math.round((now - points[0].value) * 10) / 10 };
 }
+
+/** The Stats tabs in order (UX-21). Overview holds the streak and
+ * consistency; Body is there only while the weight module is on. */
+export function statsTabs(weightOn) {
+  return ['overview', 'muscles', 'strength', ...(weightOn ? ['body'] : []), 'badges'];
+}
