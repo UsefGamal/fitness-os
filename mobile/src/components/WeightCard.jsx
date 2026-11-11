@@ -14,22 +14,25 @@ const H = 56;
 /** Home's weight hero (redesign of the E10-S1 goal card): the trend
  * weight, how it moved in two weeks, a small line and the one next step.
  * Pace and reach dates stay one tap away on Stats. Never says "behind". */
-export default function WeightCard({ data, today }) {
+export default function WeightCard({ data, today, onLog }) {
   const goal = currentGoal(data);
   const p = goalProgress(data.body_logs, goal, today);
   if (!p) {
+    // Nothing logged yet: the card is the button that logs the first one (UX-03).
     return (
-      <Link to="/stats" className="card hero-card" style={{ display: 'block' }}>
-        <div className="row between"><span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span><Icon name="chev" className="icon chev" /></div>
-        <div className="muted small" style={{ marginTop: 8 }}>{t('goal.noWeighIn')}</div>
-      </Link>
+      <section className="card hero-card">
+        <span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span>
+        <div className="muted small" style={{ margin: '8px 0 12px' }}>{t('goal.noWeighIn')}</div>
+        <button type="button" className="btn secondary" onClick={onLog}><Icon name="plus" /> {t('home.weightFirst')}</button>
+      </section>
     );
   }
   const change = trendChange(p.series);
   const spark = sparkPath(p.series, { w: W, h: H, pad: 6 });
   const down = change && change.kg < 0;
   return (
-    <Link to="/stats" className="card hero-card" aria-label={t('home.weightAria', { trend: p.trend })}>
+    <section className="card hero-card">
+      <Link to="/stats?tab=body" className="hero-link" aria-label={t('home.weightAria', { trend: p.trend })}>
       <div className="hero-top">
         <div className="grow">
           <span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span>
@@ -61,7 +64,12 @@ export default function WeightCard({ data, today }) {
           <div className="small">{t(p.mode === 'gain' ? 'goal.soFarGain' : 'goal.soFar', { done: Math.max(0, p.done_kg), left: p.left_kg, target: p.target })}</div>
         </>
       ) : null}
-      <div className="muted small" style={{ marginTop: 4 }}>{t(`goal.next.${p.status}`, { n: p.logs_needed })} {t('home.weightLatest', { kg: p.latest, date: formatDate(p.latest_date) })}</div>
-    </Link>
+      <div className="muted small" style={{ marginTop: 4 }}>{t(`goal.next.${p.status}`, { n: p.logs_needed })}</div>
+      </Link>
+      <div className="row between" style={{ gap: 8, marginTop: 8 }}>
+        <span className="muted small">{t('home.weightLatest', { kg: p.latest, date: formatDate(p.latest_date) })}</span>
+        <button type="button" className="mini-btn hero-log" onClick={onLog}><Icon name="plus" className="icon" /> {t('home.weightLog')}</button>
+      </div>
+    </section>
   );
 }

@@ -230,10 +230,12 @@ export default function Plan() {
                 <ExerciseRow key={`${ex.name}-${i}`} ex={ex} target={targetOf(ex.name)} to={exerciseLink(ex.name)} />
               ))}
               {day.cardio_after ? <div className="card tip-card small"><Icon name="bulb" /><div className="grow muted">{t('plan.after', { text: day.cooldown[0] })}</div></div> : null}
+              {/* Today's Start stays pinned above the tab bar while the list scrolls (UX-08). */}
+              {picked.date === today ? (
+                <div className="start-bar"><button type="button" className="btn glow" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button></div>
+              ) : null}
               <div className="action-stack">
-                {picked.date === today ? (
-                  <button type="button" className="btn glow" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button>
-                ) : (
+                {picked.date === today ? null : (
                   <button type="button" className="btn secondary" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> {t('plan.doToday', { label: day.label })}</button>
                 )}
                 {picked.date >= today ? <button type="button" className="btn outline" onClick={addToCalendar}><Icon name="calendar" /> {t('plan.calendar')}</button> : null}

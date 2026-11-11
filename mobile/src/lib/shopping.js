@@ -1,8 +1,10 @@
 // The week's shopping list from the static meal plan. Mirrors
 // routers/meals.py's shopping_list_page and content/food_items.py's
-// parse_shopping_unit / format_shopping_qty: seven days from today, both
-// options of every meal (so either can be picked on the day), quantities
-// merged across portion sizes ("chicken 200g" + "chicken 150g").
+// parse_shopping_unit / format_shopping_qty: seven days from today,
+// quantities merged across portion sizes ("chicken 200g" + "chicken 150g").
+// With `pickOf` the list holds only the option picked for each meal (the
+// first one when nothing is picked), so it buys what will be eaten (UX-18).
+// Without it, both options of every meal, as the old web app did.
 import { addDays } from './dates.js';
 import { mealDayFor } from './meals.js';
 
@@ -33,14 +35,23 @@ export function displayName(key, names = {}) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** [{ name, items: [{ key, name, qty }] }] in the plan's category order. */
-export function shoppingList(startIso, nutrition, days = 7) {
+/** The option key picked for each (date, slot), from the meal log. */
+export function picksFrom(mealLogs = []) {
+  const map = new Map(mealLogs.filter((m) => m.option_key).map((m) => [`${m.log_date}|${m.meal_slot}`, m.option_key]));
+  return (date, slot) => map.get(`${date}|${slot}`) || null;
+}
+
+/** [{ name, items: [{ key, name, qty }] }] in the plan's category order.
+ * `pickOf(date, slot)` -> option key or null; leave it out for both options. */
+export function shoppingList(startIso, nutrition, days = 7, pickOf = null) {
   const totals = new Map();
   const category = new Map();
   for (let i = 0; i < days; i += 1) {
-    const day = mealDayFor(addDays(startIso, i), nutrition);
+    const date = addDays(startIso, i);
+    const day = mealDayFor(date, nutrition);
     for (const meal of day.meals) {
-      for (const option of meal.options) {
+      const chosen = pickOf ? [meal.options.find((o) => o.key === pickOf(date, meal.slot)) || meal.options[0]].filter(Boolean) : meal.options;
+      for (const option of chosen) {
         for (const item of option.items) {
           const [base, qty, unit] = parseShoppingUnit(item);
           const k = `${base}|${unit}`;

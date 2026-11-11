@@ -3,9 +3,11 @@
 // Yusuf's phone skips it. Five short screens (welcome, about you, goal,
 // training, done); every one can be skipped. Pure helpers; setup.test.js.
 
+import { logBody } from './data.js';
 import { addDays } from './dates.js';
 import { saveProfile } from './macros.js';
 import { startRoutine } from './routines.js';
+import { isTime, setTimes } from './times.js';
 
 export const DAY_CHOICES = [2, 3, 4, 5];
 export const GOALS = ['lose', 'recomp', 'maintain', 'gain'];
@@ -69,7 +71,9 @@ export function bodyComplete(a, today = new Date().toISOString().slice(0, 10)) {
 }
 
 /** Apply the answers. `a`: { gender, birth_year, height_cm, weight_kg,
- * goal, goal_kg, where, days, experience }; any may be missing (skipped).
+ * goal, goal_kg, where, days, experience, name, session_time }; any may be
+ * missing (skipped). The weight is also the first weigh-in (UX-30), the name
+ * feeds the greeting and the time sets when reminders come (UX-31).
  * Skipping the body facts hides kcal until the profile is filled in. */
 export function finishSetup(data, content, a, today) {
   let d = data;
@@ -96,6 +100,10 @@ export function finishSetup(data, content, a, today) {
   } else if (a.goal) {
     d = { ...d, goals: [{ id: 'g1', set_on: today, direction: goal, start_weight_kg: null, target_low_kg: null, target_high_kg: null, target_date: null, rate_pct_bw_wk: null, ended_on: null }] };
   }
+  const name = typeof a.name === 'string' ? a.name.trim().slice(0, 30) : '';
+  if (name) d = { ...d, profile: { ...(d.profile || {}), name } };
+  if (isTime(a.session_time)) d = setTimes(d, { session_time: a.session_time });
+  if (a.weight_kg > 0 && !bodyErrors({ weight_kg: a.weight_kg }, today).weight_kg) d = logBody(d, { log_date: today, weight_kg: Number(a.weight_kg) });
   const routine = pickRoutine(a);
   d = startRoutine(d, content, routine, today);
   return {
