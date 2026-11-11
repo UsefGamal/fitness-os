@@ -6,16 +6,16 @@
 // group: the app's six groups (Library, Plan). shapes: body-map outlines.
 export const MUSCLES = [
   { key: 'chest', label: 'Chest', group: 'Chest', shapes: ['chest'] },
-  { key: 'lats', label: 'Lats', group: 'Back', shapes: ['upper-back'] },
-  { key: 'middle back', label: 'Middle back', group: 'Back', shapes: ['upper-back', 'trapezius'] },
+  { key: 'lats', label: 'Lats', group: 'Back', shapes: ['lats'] },
+  { key: 'middle back', label: 'Middle back', group: 'Back', shapes: ['upper-back', 'trapezius-mid'] },
   { key: 'lower back', label: 'Lower back', group: 'Back', shapes: ['lower-back'] },
-  { key: 'traps', label: 'Traps', group: 'Back', shapes: ['trapezius'] },
+  { key: 'traps', label: 'Traps', group: 'Back', shapes: ['trapezius', 'trapezius-mid'] },
   { key: 'front delts', label: 'Front delts', group: 'Shoulders', shapes: ['front-deltoids'] },
   { key: 'side delts', label: 'Side delts', group: 'Shoulders', shapes: ['front-deltoids', 'back-deltoids'] },
   { key: 'rear delts', label: 'Rear delts', group: 'Shoulders', shapes: ['back-deltoids'] },
   { key: 'neck', label: 'Neck', group: 'Shoulders', shapes: ['neck'] },
-  { key: 'biceps', label: 'Biceps', group: 'Arms', shapes: ['biceps'] },
-  { key: 'triceps', label: 'Triceps', group: 'Arms', shapes: ['triceps'] },
+  { key: 'biceps', label: 'Biceps', group: 'Arms', shapes: ['biceps-long', 'biceps-short'] },
+  { key: 'triceps', label: 'Triceps', group: 'Arms', shapes: ['triceps-lateral', 'triceps-long'] },
   { key: 'forearms', label: 'Forearms', group: 'Arms', shapes: ['forearm'] },
   { key: 'abdominals', label: 'Abs', group: 'Core', shapes: ['abs', 'obliques'] },
   { key: 'quadriceps', label: 'Quads', group: 'Legs', shapes: ['quadriceps'] },
@@ -52,15 +52,15 @@ export const REGION_OF = {
   upper_chest: { shape: 'chest', part: 'top' },
   mid_chest: { shape: 'chest', part: 'middle' },
   lower_chest: { shape: 'chest', part: 'bottom' },
-  biceps_long: { shape: 'biceps', part: 'outer' },
-  biceps_short: { shape: 'biceps', part: 'inner' },
-  brachialis: { shape: 'biceps', part: 'bottom' },
-  // The back view draws each triceps as a large outline with a smaller one
-  // on its inner side (the long head); `pick` chooses between them.
-  triceps_long: { shape: 'triceps', part: 'whole', pick: 'smallest' },
-  triceps_lateral: { shape: 'triceps', part: 'outer', pick: 'largest' },
-  lats_width: { shape: 'upper-back', part: 'outer' },
-  back_thickness: { shape: 'upper-back', part: 'inner' },
+  biceps_long: { shape: 'biceps-long', part: 'whole' },
+  biceps_short: { shape: 'biceps-short', part: 'whole' },
+  brachialis: { shape: 'biceps-long', part: 'bottom' },
+  // The drawing has each head as its own outline: the biceps long (outer)
+  // and short (inner) heads, the triceps lateral (outer) and long (inner).
+  triceps_long: { shape: 'triceps-long', part: 'whole' },
+  triceps_lateral: { shape: 'triceps-lateral', part: 'whole' },
+  lats_width: { shape: 'lats', part: 'outer' },
+  back_thickness: { shape: 'upper-back', part: 'whole' },
 };
 
 /** The clip box (x, y, width, height) for `part` of an outline whose

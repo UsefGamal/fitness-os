@@ -368,6 +368,13 @@ export default function Workout() {
     navigate(`/history/${active.id}`, { state: { finished: true } });
   };
 
+  // One grey line on a folded exercise: "3 × 10-12 · last 22.5 kg" (UX-12).
+  const upcoming = (x) => {
+    const row = D.exerciseByName(data, x.name);
+    const last = row ? D.lastTopKg(data, row.id, active.id) : null;
+    return last ? t('workout.upcomingLast', { sets: x.sets, reps: x.reps, kg: last }) : t('workout.upcoming', { sets: x.sets, reps: x.reps });
+  };
+
   const totalTarget = day.exercises.reduce((n, x) => n + x.sets, 0);
   const totalDone = Object.values(doneSets).reduce((n, s) => n + s.length, 0);
   const short = isShortSession(totalDone, totalTarget);
@@ -440,6 +447,7 @@ export default function Workout() {
                 <div className="grow ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
                 {dots}
               </div>
+              <div className="muted small ex-next">{upcoming(x)}</div>
             </button>
           );
         }

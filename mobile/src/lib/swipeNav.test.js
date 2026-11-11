@@ -1,34 +1,44 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { swipeTarget, tabPaths } from './swipeNav.js';
+import { dragLock, dragOffset, neighbourTab, swipeCommits, tabPaths } from './swipeNav.js';
 
-const g = (dx, extra = {}) => ({ dx, dy: 0, ms: 200, startX: 200, width: 390, ...extra });
-
-test('a swipe moves one tab over and stops at the ends', () => {
-  assert.deepEqual(swipeTarget('/', g(-120)), { to: '/plan', forward: true });
-  assert.deepEqual(swipeTarget('/plan', g(120)), { to: '/', forward: false });
-  assert.equal(swipeTarget('/', g(120)), null);
-  assert.equal(swipeTarget('/stats', g(-120)), null);
-  assert.deepEqual(swipeTarget('/meals', g(-120)), { to: '/stats', forward: true });
+test('a drag is read as sideways or up/down once it has moved enough', () => {
+  assert.equal(dragLock(4, 3), null);
+  assert.equal(dragLock(-14, 3), 'x');
+  assert.equal(dragLock(14, -12), 'y'); // diagonal: the page scrolls
+  assert.equal(dragLock(2, 20), 'y');
+  assert.equal(dragLock(-30, 20), 'x');
 });
 
-test('short, slow, diagonal and edge swipes do nothing', () => {
-  assert.equal(swipeTarget('/plan', g(-50)), null);
-  assert.equal(swipeTarget('/plan', g(-120, { dy: 80 })), null);
-  assert.equal(swipeTarget('/plan', g(-120, { ms: 900 })), null);
-  assert.equal(swipeTarget('/plan', g(120, { startX: 10 })), null);
-  assert.equal(swipeTarget('/plan', g(-120, { startX: 380 })), null);
+test('the next tab is one over and stops at the ends', () => {
+  assert.equal(neighbourTab('/', true), '/plan');
+  assert.equal(neighbourTab('/plan', false), '/');
+  assert.equal(neighbourTab('/', false), null);
+  assert.equal(neighbourTab('/stats', true), null);
+  assert.equal(neighbourTab('/meals', true), '/stats');
 });
 
-test('only the tabs swipe, and Arabic turns the other way', () => {
-  assert.equal(swipeTarget('/settings', g(-120)), null);
-  assert.equal(swipeTarget('/history/3', g(-120)), null);
-  assert.deepEqual(swipeTarget('/', g(120), { rtl: true }), { to: '/plan', forward: true });
-  assert.equal(swipeTarget('/', g(-120), { rtl: true }), null);
+test('only the tabs swipe', () => {
+  assert.equal(neighbourTab('/settings', true), null);
+  assert.equal(neighbourTab('/history/3', false), null);
 });
 
 test('with Meals off the Library takes its place', () => {
   assert.deepEqual(tabPaths(false), ['/', '/plan', '/workout', '/library', '/stats']);
-  assert.deepEqual(swipeTarget('/workout', g(-120), { tabs: tabPaths(false) }), { to: '/library', forward: true });
+  assert.equal(neighbourTab('/workout', true, tabPaths(false)), '/library');
+});
+
+test('the page follows the finger, and resists where there is no tab', () => {
+  assert.equal(dragOffset(-120, true), -120);
+  assert.equal(dragOffset(-120, false), -30);
+  assert.equal(dragOffset(33.33, true), 33.3);
+});
+
+test('letting go opens the tab after a third of the screen or a flick', () => {
+  assert.equal(swipeCommits({ dx: -130, ms: 900, width: 390 }), true); // slow but far
+  assert.equal(swipeCommits({ dx: -100, ms: 900, width: 390 }), false); // slow and short: settles back
+  assert.equal(swipeCommits({ dx: 60, ms: 100, width: 390 }), true); // a flick
+  assert.equal(swipeCommits({ dx: 30, ms: 40, width: 390 }), false); // too short to be meant
+  assert.equal(swipeCommits({ dx: 0, ms: 0, width: 390 }), false);
 });

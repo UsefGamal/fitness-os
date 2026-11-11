@@ -182,6 +182,13 @@ export function lastSets(data, exerciseId, beforeWorkoutId = null) {
   return workouts[0].sets.filter((s) => s.exercise_id === exerciseId && isWorkSet(s));
 }
 
+/** The heaviest work set of this exercise in the most recent earlier
+ * workout, in kg, or null (never done, or only bodyweight). */
+export function lastTopKg(data, exerciseId, beforeWorkoutId = null) {
+  const top = Math.max(0, ...lastSets(data, exerciseId, beforeWorkoutId).map((s) => s.weight_kg || 0));
+  return top > 0 ? top : null;
+}
+
 /** Sets above this many reps don't add to the estimate (F-00): Epley drifts
  * high past ~12 reps, so a 25-rep set would otherwise read as a best. */
 export const E1RM_MAX_REPS = 12;
