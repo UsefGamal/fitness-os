@@ -160,12 +160,32 @@ test('angle parts are cut from the outline box, mirrored at the midline', () => 
   assert.equal(partBox(sq, 'middle').height.toFixed(2), '4.70');
 });
 
-test('triceps heads pick the inner or outer outline per arm', async () => {
+test('each head is its own outline, and pickOutlines still sorts a mixed list', async () => {
   const { pickOutlines } = await import('./muscles.js');
-  const tri = BACK.find(([m]) => m === 'triceps')[1];
-  assert.deepEqual(pickOutlines(tri, 'smallest'), [2, 3], 'the small inner outlines are the long head');
+  const of = (shapes, m) => shapes.find(([x]) => x === m)[1];
+  // Back: two triceps heads per arm; front: two biceps heads and the long head of the triceps.
+  assert.equal(of(BACK, 'triceps-lateral').length, 2);
+  assert.equal(of(BACK, 'triceps-long').length, 2);
+  assert.equal(of(FRONT, 'biceps-long').length, 2);
+  assert.equal(of(FRONT, 'biceps-short').length, 2);
+  assert.equal(of(FRONT, 'triceps-long').length, 2);
+  const tri = [...of(BACK, 'triceps-lateral'), ...of(BACK, 'triceps-long')];
+  assert.deepEqual(pickOutlines(tri, 'smallest'), [2, 3]);
   assert.deepEqual(pickOutlines(tri, 'largest'), [0, 1]);
   assert.deepEqual(pickOutlines(tri), [0, 1, 2, 3]);
-  const front = FRONT.find(([m]) => m === 'triceps')[1];
-  assert.deepEqual(pickOutlines(front, 'smallest'), [0, 1], 'one outline per arm: keep it');
+});
+
+test('the drawing has every outline the muscles and angles name', () => {
+  const drawn = new Set([...FRONT, ...BACK].map(([m]) => m));
+  for (const [muscle, shapes] of Object.entries(SHAPES_OF)) for (const sh of shapes) assert.ok(drawn.has(sh), `${muscle} -> ${sh}`);
+  for (const [angle, r] of Object.entries(REGION_OF)) assert.ok(drawn.has(r.shape), `${angle} -> ${r.shape}`);
+  for (const m of MUSCLES) for (const sh of m.shapes) assert.ok(drawn.has(sh), `${m.key} -> ${sh}`);
+});
+
+test('the chest is drawn larger than the traps above it, and the back is in four parts', () => {
+  const area = (points) => { const b = partBox(points, 'whole'); return b.width * b.height; };
+  const of = (shapes, m) => shapes.find(([x]) => x === m)[1];
+  assert.ok(area(of(FRONT, 'chest')[0]) > 4 * area(of(FRONT, 'trapezius')[0]));
+  assert.ok(area(of(FRONT, 'chest')[0]) > area(of(BACK, 'trapezius')[0]));
+  for (const m of ['trapezius', 'trapezius-mid', 'upper-back', 'lats']) assert.equal(of(BACK, m).length, 2, m);
 });

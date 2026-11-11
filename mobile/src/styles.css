@@ -28,6 +28,8 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
+/* A page dragged sideways (swipe between tabs) must not widen the screen. */
+html, body { overflow-x: clip; }
 body {
   font: 17px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, Roboto, 'Segoe UI', sans-serif;
   letter-spacing: -0.01em;
@@ -122,7 +124,9 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .ex-card:active { transform: scale(0.99); }
 .ex-name { font-weight: 600; font-size: 17px; }
 .ex-meta { color: var(--muted); font-size: 14px; margin-top: 2px; }
-.ex-note { color: var(--warn); font-size: 14px; margin-top: 6px; }
+/* Notes and form cues are plain grey with a small icon; yellow is for warnings only (UX-10). */
+.ex-note { color: var(--muted); font-size: 14px; margin-top: 6px; }
+.ex-note .icon { width: 14px; height: 14px; vertical-align: -2px; color: var(--faint); }
 .pair { color: var(--accent); font-weight: 700; margin-inline-end: 6px; }
 
 .timer { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30; max-width: 540px; margin: 0 auto;
@@ -236,11 +240,20 @@ details.more > summary::-webkit-details-marker { display: none; }
 @keyframes route-back { from { opacity: 0.4; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
 .route.tab-in { animation: tab-in 160ms ease-out; }
 .route.push-in { animation: push-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* After a swipe the next tab comes in from the side the finger left towards. */
+@keyframes swipe-in-end { from { opacity: 0.4; transform: translate3d(40%, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes swipe-in-start { from { opacity: 0.4; transform: translate3d(-40%, 0, 0); } to { opacity: 1; transform: none; } }
+.route.swipe-fwd { animation: swipe-in-end 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.route.swipe-back { animation: swipe-in-start 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+[dir="rtl"] .route.swipe-fwd { animation-name: swipe-in-start; }
+[dir="rtl"] .route.swipe-back { animation-name: swipe-in-end; }
+/* Up/down scrolling stays the browser's; sideways drags reach the swipe. */
+.route { touch-action: pan-y; }
 .route.pop-in { animation: route-back 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 [dir="rtl"] .route.push-in { animation-name: route-back; }
 [dir="rtl"] .route.pop-in { animation-name: push-in; }
 @media (prefers-reduced-motion: reduce) {
-  .route.tab-in, .route.push-in, .route.pop-in { animation: none; }
+  .route.tab-in, .route.push-in, .route.pop-in, .route.swipe-fwd, .route.swipe-back { animation: none; }
   .check.on.pop, .count-up { animation: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }
@@ -346,6 +359,8 @@ details.more > summary::-webkit-details-marker { display: none; }
 .photo-cell { aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--surface2); display: grid; place-items: center; color: var(--muted); font-size: 12px; position: relative; border: 0; padding: 0; }
 .photo-cell img { width: 100%; height: 100%; object-fit: cover; }
 .warn { background: rgba(255, 159, 10, 0.14); color: #ffb340; border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+/* A warning chip stays chip-sized: the block rule above must not resize it. */
+.chip.warn { padding: 3px 9px; border-radius: 10px; font-size: 13px; margin-bottom: 0; }
 .fill-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .list-row input[type=time] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 40px; color-scheme: dark; }
 
@@ -379,6 +394,11 @@ details.more > summary::-webkit-details-marker { display: none; }
 .chip-btn { flex: none; min-height: 44px; padding: 0 14px; border: 0; border-radius: 22px; background: var(--surface2); color: var(--text); font-size: 15px; font-weight: 600; }
 .chip-btn.on { background: var(--accent-dim); color: var(--accent); }
 .chip-btn:active { transform: scale(0.97); }
+/* An explanation folded behind one link (Profile's "How we got this number", UX-28). */
+details.explain { margin-top: 4px; }
+details.explain > summary { color: var(--accent); font-size: 15px; min-height: 44px; display: flex; align-items: center; cursor: pointer; list-style: none; }
+details.explain > summary::-webkit-details-marker { display: none; }
+details.explain > div:first-of-type { margin-top: 0 !important; }
 /* The muscle or angle an exercise works, on Plan's exercise cards. */
 .ex-target { color: var(--accent); font-size: 14px; font-weight: 600; margin-top: 2px; }
 
@@ -503,8 +523,8 @@ a.ex-row:active { transform: scale(0.99); background: var(--surface2); }
 .ex-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .ex-thumb.map { width: 76px; height: 76px; padding: 4px; display: flex; align-items: center; justify-content: center; }
 .ex-thumb.map figure { width: 100%; }
-.tip-card { display: flex; gap: 12px; align-items: flex-start; border: 1px solid rgba(255, 214, 10, 0.25); background: rgba(255, 214, 10, 0.06); }
-.tip-card .icon { color: var(--warn); }
+.tip-card { display: flex; gap: 12px; align-items: flex-start; }
+.tip-card .icon { color: var(--muted); }
 .btn.outline { background: none; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--surface3); }
 .btn.glow { background: linear-gradient(180deg, #3ee06a, var(--accent)); box-shadow: 0 6px 20px rgba(48, 209, 88, 0.25); }
 .action-stack { display: grid; gap: 8px; margin: 16px 0 12px; }
@@ -589,3 +609,14 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .big-icon { width: 40px; height: 40px; color: var(--accent); }
 .stat-grid.three { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .stat-grid.three .value { font-size: 20px; }
+
+/* Stats volume: the maths sits behind one link (UX-22). */
+.how-counted { margin-top: 12px; }
+.how-counted > summary { color: var(--accent); font-size: 15px; min-height: 44px; display: flex; align-items: center; cursor: pointer; list-style: none; }
+.how-counted > summary::-webkit-details-marker { display: none; }
+.how-counted p { margin: 0 0 6px; }
+/* Folded exercise: one grey line of what's coming (UX-12). */
+.ex-card.collapsed .ex-next { margin-top: 2px; text-align: start; }
+/* Meals: the training-day note as plain text, not a card (UX-19). */
+.train-line { margin: 4px 4px 12px; }
+.train-line .icon { width: 14px; height: 14px; vertical-align: -2px; color: var(--accent); }

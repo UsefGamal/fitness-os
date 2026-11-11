@@ -30,6 +30,28 @@ export function setRecoveryWeek(data, iso, on) {
   return { ...data, program: { ...data.program, blocks: data.program.blocks.map((b) => (b === block ? next : b)) } };
 }
 
+// Home offers a recovery week only after this many hard weeks in a row
+// (UX-05); the switch is always in Plan's menu.
+export const HARD_WEEKS = 4;
+
+/** Weeks in a row, ending last week, with a finished gym workout and no
+ * recovery week among them. */
+export function hardWeeksInARow(data, iso) {
+  const trained = new Set((data.workouts || []).filter((w) => w.finished_at && w.workout_type === 'gym').map((w) => weekOf(data, w.log_date)));
+  let n = 0;
+  let week = addDays(weekOf(data, iso), -7);
+  while (n < 104 && trained.has(week) && !isRecoveryWeek(data, week)) {
+    n += 1;
+    week = addDays(week, -7);
+  }
+  return n;
+}
+
+/** Is it time to suggest a recovery week on Home? */
+export function recoveryDue(data, iso) {
+  return Boolean(activeBlock(data)) && !isRecoveryWeek(data, iso) && hardWeeksInARow(data, iso) >= HARD_WEEKS;
+}
+
 /** Sets for a recovery week: a third fewer, at least 1. */
 export function recoverySets(sets) {
   const n = Number(sets) || 0;

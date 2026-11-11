@@ -19,6 +19,7 @@ import { effectiveTimes } from '../lib/ramadan.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activeBlock, activePlan } from '../lib/plan.js';
+import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { sessionIcs, sessionMinutes } from '../lib/calendar.js';
 import { MUSCLE, dayMuscles, targetFor } from '../lib/muscles.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
@@ -175,7 +176,12 @@ export default function Plan() {
   };
   // The muscles an exercise targets, for its row's small body map.
   const targetOf = (name) => targetFor(name, T, catalogue ? entryFor(name, T, catalogue.byId) : null);
+  // With a routine running, choosing another and the recovery week live in the menu (UX-07, UX-05).
+  const block = activeBlock(data);
+  const resting = isRecoveryWeek(data, today);
   const options = [
+    ...(block ? [{ key: 'routine', icon: 'dumbbell', label: t('routines.open'), note: t('routines.openNote'), onClick: () => navigate('/plan/routines') }] : []),
+    ...(block ? [{ key: 'recovery', icon: 'calendar', label: t(resting ? 'recovery.off' : 'recovery.on'), note: t('recovery.short'), onClick: () => update((d) => setRecoveryWeek(d, today, !resting)) }] : []),
     ...(day && today <= picked.date ? [{ key: 'change', icon: 'calendar', label: t('plan.opt.change'), note: t('plan.opt.changeNote'), onClick: () => setChoosing(true) }] : []),
     ...(day && picked.date >= today ? [{ key: 'move', icon: 'undo', label: t('plan.opt.move'), note: t('plan.opt.moveNote'), onClick: () => setOpt('move') }] : []),
     ...(activeBlock(data) ? [{ key: 'week', icon: 'dumbbell', label: t('plan.opt.week'), note: t('plan.opt.weekNote'), onClick: () => setOpt('week') }] : []),
@@ -194,11 +200,13 @@ export default function Plan() {
       </div>
       <p className="plan-sub">{t('plan.overview', { name: T.trainer_plan.name, days: trainingDays, min: typical })} · {times.session_time}</p>
 
-      <Link to="/plan/routines" className="card route-card">
-        <div className="session-icon"><Icon name="dumbbell" /></div>
-        <div className="grow"><div className="session-name">{t('routines.open')}</div><div className="session-sub">{t('routines.openNote')}</div></div>
-        <Icon name="chev" className="icon chev" />
-      </Link>
+      {block ? null : (
+        <Link to="/plan/routines" className="card route-card">
+          <div className="session-icon"><Icon name="dumbbell" /></div>
+          <div className="grow"><div className="session-name">{t('routines.open')}</div><div className="session-sub">{t('routines.openNote')}</div></div>
+          <Icon name="chev" className="icon chev" />
+        </Link>
+      )}
 
       <WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} />
 

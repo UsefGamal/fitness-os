@@ -12,33 +12,38 @@ import Stepper from './Stepper.jsx';
 const MIN_KG = 20;
 const MAX_KG = 400;
 
-function Form({ data, update, today }) {
+function Form({ data, update, today, entry }) {
   const close = useCloseSheet();
   const latest = D.latestWeight(data);
-  const [kg, setKg] = useState(latest?.weight_kg ?? data.goals?.at(-1)?.start_weight_kg ?? 70);
+  const [kg, setKg] = useState(entry?.weight_kg ?? latest?.weight_kg ?? data.goals?.at(-1)?.start_weight_kg ?? 70);
   const ok = kg >= MIN_KG && kg <= MAX_KG;
   const save = () => {
     if (!ok) return;
-    update((d) => D.logBody(d, { log_date: today, weight_kg: kg }));
+    update((d) => D.logBody(d, { log_date: entry ? entry.log_date : today, weight_kg: kg }));
     feedback('meal');
+    close();
+  };
+  const remove = () => {
+    update((d) => D.deleteBody(d, entry.id));
     close();
   };
   return (
     <div className="stack">
       <Stepper label={t('weighIn.kg')} value={kg} onChange={setKg} step={0.1} min={0} max={MAX_KG} decimals={1} />
-      {latest ? <div className="muted small">{t('stats.lastLog', { kg: latest.weight_kg, date: formatDate(latest.log_date) })}</div> : null}
+      {latest && !entry ? <div className="muted small">{t('stats.lastLog', { kg: latest.weight_kg, date: formatDate(latest.log_date) })}</div> : null}
       <button type="button" className="btn" disabled={!ok} onClick={save}><Icon name="check" /> {t('weighIn.save')}</button>
-      <div className="muted small">{t('weighIn.note')}</div>
+      {entry ? <button type="button" className="btn ghost" style={{ color: 'var(--danger)' }} onClick={remove}><Icon name="trash" /> {t('weighIn.delete')}</button> : <div className="muted small">{t('weighIn.note')}</div>}
     </div>
   );
 }
 
 /** One-tap weigh-in from Home's weight card (UX-03): one number, Save.
- * Waist and the other measures stay on Stats > Body. */
-export default function WeighInSheet({ data, update, today, onClose }) {
+ * Waist and the other measures stay on Stats > Body. With `entry` (a row of
+ * body_logs) it edits that day's weight instead, with Delete inside (UX-23). */
+export default function WeighInSheet({ data, update, today, onClose, entry = null }) {
   return (
-    <Sheet title={t('weighIn.title')} onClose={onClose}>
-      <Form data={data} update={update} today={today} />
+    <Sheet title={entry ? t('weighIn.editTitle', { date: formatDate(entry.log_date) }) : t('weighIn.title')} onClose={onClose}>
+      <Form data={data} update={update} today={today} entry={entry} />
     </Sheet>
   );
 }

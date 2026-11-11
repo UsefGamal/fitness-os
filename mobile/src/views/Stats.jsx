@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import WeighInSheet from '../components/WeighInSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
 import WeightChart from '../components/WeightChart.jsx';
@@ -155,14 +156,14 @@ function WeeklySets({ data, today }) {
   return (
     <section className="card">
       <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('stats.volTitle')}</h2><span className="muted small" style={{ whiteSpace: 'nowrap' }}>{t('stats.thisWeek')}</span></div>
-      <p className="muted small" style={{ margin: '4px 0 12px' }}>{t('stats.guide', { low: GUIDE.low, high: GUIDE.high })}</p>
+      <p className="muted small" style={{ margin: '4px 0 12px' }}>{t('stats.volSub')}</p>
       {groups.map((g) => (
         <details key={g.group} className="vol-group">
           <summary>
             <div className="grow">
-              <div className="row between"><strong>{g.group}</strong><span className="muted small">{t('stats.groupSets', { done: g.done, planned: g.planned })}</span></div>
+              <div className="row between"><strong>{g.group}</strong><span className={`chip${g.state === 'on_track' ? ' accent' : ' warn'}`}>{t(`stats.state.${g.state}`)}</span></div>
               <div className="progress" style={{ marginTop: 8 }}><span style={{ transform: `scaleX(${g.planned ? Math.min(1, g.done / g.planned) : g.done ? 1 : 0})` }} /></div>
-              <div className="muted small" style={{ marginTop: 4 }}>{t('stats.inRange', { n: g.inRange, all: g.muscles.length })}</div>
+              <div className="muted small" style={{ marginTop: 4 }}>{t('stats.groupDone', { done: g.done, planned: g.planned })}</div>
             </div>
             <Icon name="chev" className="icon chev" />
           </summary>
@@ -181,8 +182,12 @@ function WeeklySets({ data, today }) {
           </div>
         </details>
       ))}
-      <p className="muted small" style={{ margin: '12px 0 0' }}>{t('stats.countNote')}</p>
-      <p className="muted small" style={{ margin: '6px 0 0' }}>{t('wsets.legend')}</p>
+      <details className="how-counted">
+        <summary>{t('stats.howCounted')}</summary>
+        <p className="muted small">{t('stats.guide', { low: GUIDE.low, high: GUIDE.high })}</p>
+        <p className="muted small">{t('stats.countNote')}</p>
+        <p className="muted small">{t('wsets.legend')}</p>
+      </details>
       {low.length ? <p className="small" style={{ margin: '6px 0 0' }}>{t('wsets.lowPlan', { list: low.join(', '), low: GUIDE.low })}</p> : null}
       {done.unknown ? <p className="muted small" style={{ margin: '6px 0 0' }}>{t('wsets.unknown', { n: done.unknown })}</p> : null}
     </section>
@@ -308,6 +313,7 @@ function Body({ data, update, today }) {
   const latest = D.latestWeight(data);
   const [form, setForm] = useState({ weight: latest ? String(latest.weight_kg) : '' });
   const [more, setMore] = useState(false);
+  const [editingBody, setEditingBody] = useState(null); // a weigh-in row being edited (UX-23)
   const goalLow = profileOf(data).goal_weight_low_kg;
   const goalHigh = profileOf(data).goal_weight_high_kg;
   const first = data.body_logs[0];
@@ -374,14 +380,15 @@ function Body({ data, update, today }) {
       ) : null}
       {data.body_logs.length ? (
         <>
+          {editingBody ? <WeighInSheet data={data} update={update} today={today} entry={editingBody} onClose={() => setEditingBody(null)} /> : null}
           <div className="section-label">Weigh-ins</div>
           <div className="list">
             {[...data.body_logs].reverse().slice(0, 10).map((b) => (
-              <div key={b.id} className="list-row">
+              <button key={b.id} type="button" className="list-row" aria-label={t('weighIn.editAria', { date: formatDate(b.log_date) })} onClick={() => setEditingBody(b)}>
                 <div className="grow">{b.weight_kg} kg{b.waist_cm ? <span className="meta"> · waist {b.waist_cm} cm</span> : null}</div>
                 <span className="meta">{formatDate(b.log_date)}</span>
-                <button type="button" className="icon-btn" aria-label={`Delete weigh-in on ${b.log_date}`} onClick={() => update((d) => D.deleteBody(d, b.id))}><Icon name="trash" /></button>
-              </div>
+                <Icon name="chev" className="icon chev" />
+              </button>
             ))}
           </div>
         </>

@@ -111,6 +111,8 @@ function MealPlan() {
   const [otherFor, setOtherFor] = useState(null);
   const totals = dayTotals(day, picks, null, custom);
   const training = sessionKeyOn(date, activePlan(data, content), data.session_moves || []) !== 'rest';
+  // The note is for before the session: gone once that day's workout is saved (UX-19).
+  const trained = Boolean(D.workoutOn(data, date)?.finished_at);
   const target = macroTargets(data, N, today);
   const eatenSlots = new Set(N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed));
   const done = eatenSlots.size;
@@ -169,7 +171,7 @@ function MealPlan() {
         </div>
       ))}
       {fasting ? <div className="card small"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.mealsNote')}</span></div>
-        : training ? <div className="card tip-card small"><Icon name="bolt" /><div className="grow"><strong>{t('meals.trainingDay')}</strong> <span className="muted">{N.pre_workout_note}</span></div></div> : null}
+        : training && !trained ? <p className="muted small train-line"><Icon name="bolt" className="icon" /> <strong>{t('meals.trainingDay')}</strong> {N.pre_workout_note}</p> : null}
 
       <div className="section-head"><h2 className="section-title">{t(date === today ? 'meals.todays' : 'meals.thisDay')}</h2><span className="muted small">{t('meals.eatenOf', { done, all: N.meal_slots.length })}</span></div>
       {day.meals.map((meal) => {

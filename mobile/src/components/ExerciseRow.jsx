@@ -13,14 +13,14 @@ export default function ExerciseRow({ ex, target, to }) {
   const body = (
     <>
       <div className="ex-thumb map" aria-hidden="true">
-        {target ? <BodyMap bare primary={target.main} secondary={target.helpers} size={68} /> : <Icon name="dumbbell" />}
+        {target ? <BodyMap bare zoom primary={target.main} secondary={target.helpers} focus={target.angle} size={68} /> : <Icon name="dumbbell" />}
       </div>
       <div className="grow">
         <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
         {target ? <div className="ex-target">{targetLabel(target)}</div> : null}
         <div className="ex-meta">{meta}</div>
         {ex.swapped_from ? <div className="ex-meta">{t('plan.instead', { name: ex.swapped_from })}</div> : null}
-        {ex.note ? <div className="ex-note">{ex.note}</div> : null}
+        {ex.note ? <div className="ex-note"><Icon name="info" className="icon" /> {ex.note}</div> : null}
         {ex.film_form ? <div className="ex-meta"><Icon name="video" className="icon inline" /> {t('plan.film')}</div> : null}
       </div>
       {to ? <Icon name="chev" className="icon chev" /> : null}

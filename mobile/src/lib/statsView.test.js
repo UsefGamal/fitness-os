@@ -52,3 +52,15 @@ test('Stats tabs start with Overview and hide Body when weight is off (UX-21)', 
   assert.deepEqual(statsTabs(true), ['overview', 'muscles', 'strength', 'body', 'badges']);
   assert.deepEqual(statsTabs(false), ['overview', 'muscles', 'strength', 'badges']);
 });
+
+test('a group reads Low, On track or High from what the plan gives its muscles (UX-22)', async () => {
+  const { groupState } = await import('./statsView.js');
+  const m = (...planned) => planned.map((p) => ({ planned: p }));
+  assert.equal(groupState(m(12, 14)), 'on_track');
+  assert.equal(groupState(m(12, 4)), 'on_track'); // half in range is enough
+  assert.equal(groupState(m(4, 0, 12)), 'low');
+  assert.equal(groupState(m(0)), 'low');
+  assert.equal(groupState(m(24, 26, 12)), 'high');
+  assert.equal(groupState(m(24, 4, 3)), 'low'); // more under than over
+  assert.equal(groupState([]), 'low');
+});
