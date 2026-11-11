@@ -5,6 +5,7 @@ import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
 import { entryFor, thumbOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
+import { t } from '../lib/i18n.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 import Catalogue from './Catalogue.jsx';
@@ -17,6 +18,7 @@ export default function Library() {
   const [muscle, setMuscle] = useState(null);
   const query = useDeferredValue(q); // typing stays instant while the list catches up
   const [tab, setTab] = useState('mine');
+  const [showMap, setShowMap] = useState(false);
   const { catalogue } = useCatalogue();
   const [newName, setNewName] = useState('');
   const [newMuscle, setNewMuscle] = useState('Chest');
@@ -39,15 +41,19 @@ export default function Library() {
         <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>All with photos</button>
       </div>
       <input type="text" placeholder="Search exercises" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search exercises" style={{ marginBottom: 12 }} />
-      <section className="card">
-        <BodyMap hit={muscle ? new Set([muscle]) : new Set()} onPick={(g) => setMuscle(muscle === g ? null : g)} label="Tap a muscle group to filter" />
-        <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-          <button type="button" className={`chip${!muscle ? ' accent' : ''}`} style={{ border: 0, minHeight: 32 }} onClick={() => setMuscle(null)}>All</button>
-          {MUSCLES.map((m) => (
-            <button key={m} type="button" className={`chip${muscle === m ? ' accent' : ''}`} style={{ border: 0, minHeight: 32 }} onClick={() => setMuscle(muscle === m ? null : m)}>{m}</button>
-          ))}
-        </div>
-      </section>
+      {/* Search and muscle chips first; the body map opens on request so the list starts on the first screen (UX-25). */}
+      <div className="chip-row" role="group" aria-label={t('library.filter')}>
+        <button type="button" className={`chip-btn${!muscle ? ' on' : ''}`} aria-pressed={!muscle} onClick={() => setMuscle(null)}>{t('library.all')}</button>
+        {MUSCLES.map((m) => (
+          <button key={m} type="button" className={`chip-btn${muscle === m ? ' on' : ''}`} aria-pressed={muscle === m} onClick={() => setMuscle(muscle === m ? null : m)}>{m}</button>
+        ))}
+      </div>
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 4, marginBottom: 8 }} aria-expanded={showMap} onClick={() => setShowMap(!showMap)}><Icon name="person" /> {t(showMap ? 'library.hideMap' : 'library.showMap')}</button>
+      {showMap ? (
+        <section className="card">
+          <BodyMap hit={muscle ? new Set([muscle]) : new Set()} onPick={(g) => setMuscle(muscle === g ? null : g)} label={t('library.mapLabel')} />
+        </section>
+      ) : null}
       {tab === 'all' ? <Catalogue q={query} muscle={muscle} /> : (
       <>
       <div className="section-label">{list.length} exercises</div>

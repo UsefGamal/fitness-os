@@ -648,6 +648,12 @@ export default {
   'stats.change': 'Change',
   'stats.goal': 'Goal',
   'profile.name': 'Your name (optional, for the greeting)',
+  'profile.how': 'How we got this number',
+  'library.filter': 'Filter by muscle group',
+  'library.all': 'All',
+  'library.showMap': 'Pick on the body',
+  'library.hideMap': 'Hide the body map',
+  'library.mapLabel': 'Tap a muscle group to filter',
 
   'setup.back': 'Back',
   'setup.step': '{n} of {of}',
