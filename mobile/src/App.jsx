@@ -73,7 +73,7 @@ function Shell() {
   const mealsOn = useData((s) => moduleOn(s.data, 'meals'));
   const locale = useData((s) => localeOf(s.data));
   const swipe = useSwipeTabs(pathname, { rtl: dirOf(locale) === 'rtl', tabs: tabPaths(mealsOn) });
-  const tabAnim = state?.swipe === 'forward' ? 'push-in' : state?.swipe === 'back' ? 'pop-in' : 'tab-in';
+  const tabAnim = state?.swipe === 'forward' ? 'swipe-fwd' : state?.swipe === 'back' ? 'swipe-back' : 'tab-in';
   return (
     <>
       {/* New pages open at the top; Back returns to where you were (UX-03). */}
