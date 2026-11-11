@@ -86,7 +86,7 @@ export default function Today() {
         <h1 className="greeting">
           {name ? <><span className="greet-small">{t('home.greetName', { greet })}</span><span className="greet-name">{name} <span aria-hidden="true">👋</span></span></> : <span className="greet-name">{greet}</span>}
         </h1>
-        <div className="muted small">{formatDate(today)}</div>
+        <div className="muted small home-date">{formatDate(today)}</div>
       </header>
 
       {data.setup?.needs_body ? (
