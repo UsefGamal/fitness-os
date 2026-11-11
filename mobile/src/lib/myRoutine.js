@@ -94,6 +94,16 @@ export function addExercise(data, key, { name, group = 'Other', equipment = null
   return editSession(withLib, key, (s) => ({ ...s, exercises: [...s.exercises, row(clean)] }));
 }
 
+/** Replace exercise `i` with another, keeping its sets, reps and rest. The
+ * new one joins the Library when it isn't there, so it can be logged. */
+export function swapExercise(data, key, i, { name, group = 'Other', equipment = null }) {
+  const clean = String(name || '').trim();
+  const s = mySession(data, key);
+  if (!clean || !s || !s.exercises[i]) return data;
+  const withLib = exerciseByName(data, clean) ? data : addCustomExercise(data, { name: clean, muscle_group: group, equipment });
+  return editSession(withLib, key, (x) => ({ ...x, exercises: x.exercises.map((e, j) => (j === i ? { ...e, name: clean } : e)) }));
+}
+
 /** Change sets, reps or rest of exercise `i`. */
 export function setExercise(data, key, i, { sets, reps, restSec }) {
   return editSession(data, key, (s) => ({

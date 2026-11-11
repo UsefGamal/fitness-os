@@ -9,6 +9,7 @@ import { REWARD_LEVELS } from '../lib/rewards.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
+import { LEVELS } from '../lib/levels.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { widgetPrivate } from '../lib/widget.js';
@@ -418,6 +419,14 @@ function TrainingSettings({ data, update }) {
         </div>
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Used for the plates-per-side line and warm-up sets on barbell lifts.</p>
+
+      <div className="section-label">{tr('levels.title')}</div>
+      <div className="list">
+        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+          {LEVELS.map((l) => <button key={l} type="button" className={`chip${t.level === l ? ' accent' : ''}`} aria-pressed={t.level === l} onClick={() => set({ level: t.level === l ? null : l })}>{tr(`levels.${l}`)}</button>)}
+        </div>
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{tr('levels.note')}</p>
 
       <div className="section-label">Equipment you have</div>
       <div className="list">

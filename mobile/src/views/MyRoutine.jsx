@@ -6,13 +6,17 @@ import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import Sheet from '../components/Sheet.jsx';
 import Stepper from '../components/Stepper.jsx';
-import { filterCatalogue, groupOf } from '../lib/catalogue.js';
+import { entryFor, filterCatalogue, groupOf } from '../lib/catalogue.js';
+import { ownedKinds } from '../lib/equipment.js';
 import { t } from '../lib/i18n.js';
 import { dayGroups } from '../lib/insights.js';
+import { isAdvanced, swapOptions } from '../lib/levels.js';
 import { musclesIn } from '../lib/muscles.js';
 import * as M from '../lib/myRoutine.js';
+import { activePlan } from '../lib/plan.js';
+import { trainingSettings } from '../lib/training.js';
 import { useCatalogue } from '../store/catalogue.js';
-import { useData } from '../store/useData.js';
+import { content, useData } from '../store/useData.js';
 
 const SHORT = { sunday: 'my.sun', monday: 'my.mon', tuesday: 'my.tue', wednesday: 'my.wed', thursday: 'my.thu', friday: 'my.fri', saturday: 'my.sat' };
 
@@ -78,6 +82,7 @@ function Editor({ sessionKey }) {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [swapping, setSwapping] = useState(null); // index of the exercise being swapped
   const session = M.mySession(data, sessionKey);
   const [name, setName] = useState(session?.label || '');
   if (!session) {
@@ -122,6 +127,7 @@ function Editor({ sessionKey }) {
           <section key={`${x.name}-${i}`} className="card">
             <div className="row between" style={{ alignItems: 'center' }}>
               <strong className="grow">{x.name}</strong>
+              <button type="button" className="btn ghost small" style={{ width: 'auto' }} aria-label={t('my.swapAria', { name: x.name })} onClick={() => setSwapping(i)}>{t('my.swap')}</button>
               <button type="button" className="icon-btn" aria-label={t('my.up', { name: x.name })} disabled={i === 0} onClick={() => update((d) => M.moveExercise(d, sessionKey, i, -1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="back" /></span></button>
               <button type="button" className="icon-btn" aria-label={t('my.down', { name: x.name })} disabled={i === session.exercises.length - 1} onClick={() => update((d) => M.moveExercise(d, sessionKey, i, 1))}><span style={{ display: 'inline-flex', transform: 'rotate(-90deg)' }}><Icon name="back" /></span></button>
               <button type="button" className="icon-btn" aria-label={t('my.remove', { name: x.name })} onClick={() => update((d) => M.removeExercise(d, sessionKey, i))}><Icon name="trash" /></button>
@@ -147,6 +153,10 @@ function Editor({ sessionKey }) {
       <button type="button" className="btn ghost" style={{ marginTop: 18, color: 'var(--danger)' }} onClick={() => setDeleting(true)}><Icon name="trash" /> {t('my.delete')}</button>
 
       {adding ? <AddSheet data={data} onPick={(p) => update((d) => M.addExercise(d, sessionKey, p))} onClose={() => setAdding(false)} /> : null}
+      {swapping != null && session.exercises[swapping] ? (
+        <SwapSheet data={data} name={session.exercises[swapping].name} others={session.exercises.map((x) => x.name)}
+          onPick={(p) => { update((d) => M.swapExercise(d, sessionKey, swapping, p)); setSwapping(null); }} onClose={() => setSwapping(null)} />
+      ) : null}
       {deleting ? (
         <ConfirmSheet
           title={t('my.deleteTitle', { name: session.label })}
@@ -157,6 +167,41 @@ function Editor({ sessionKey }) {
         />
       ) : null}
     </div>
+  );
+}
+
+/** Same-muscle replacements for one exercise of the session: what the
+ * person's equipment allows first, then their level, then the best match. */
+function SwapSheet({ data, name, others, onPick, onClose }) {
+  const { catalogue } = useCatalogue();
+  const settings = trainingSettings(data);
+  const entry = catalogue ? entryFor(name, activePlan(data, content), catalogue.byId) : null;
+  const options = entry ? swapOptions(entry, catalogue.exercises, { level: settings.level, owned: ownedKinds(settings), skip: others }) : [];
+  // No catalogue match: other Library exercises for the same muscle group.
+  const group = data.exercises.find((e) => e.name === name)?.muscle_group;
+  const taken = new Set(others);
+  const own = entry ? [] : data.exercises.filter((e) => group && e.muscle_group === group && !taken.has(e.name)).slice(0, LIMIT);
+  return (
+    <Sheet title={t('my.swapTitle', { name })} onClose={onClose}>
+      <p className="muted small" style={{ margin: '0 4px 10px' }}>{t('my.swapNote')}</p>
+      <div className="list">
+        {options.map((r) => (
+          <button key={r.entry.id} type="button" className="list-row" onClick={() => onPick({ name: r.entry.name, group: groupOf(r.entry), equipment: r.entry.equipment })}>
+            <div className="grow">
+              <div>{r.entry.name}</div>
+              <div className="meta small">{[r.entry.equipment || t('my.bodyOnly'), t('my.match', { pct: Math.round(r.score * 100) }), r.doable ? null : t('my.needsKit')].filter(Boolean).join(' · ')}</div>
+            </div>
+            {r.advanced ? <span className="chip">{t('levels.advanced')}</span> : null}
+          </button>
+        ))}
+        {own.map((e) => (
+          <button key={e.id} type="button" className="list-row" onClick={() => onPick({ name: e.name, group: e.muscle_group, equipment: e.equipment })}>
+            <div className="grow"><div>{e.name}</div><div className="meta small">{e.muscle_group}</div></div>
+          </button>
+        ))}
+        {!options.length && !own.length ? <div className="empty">{t(catalogue ? 'my.swapNone' : 'my.swapLoading')}</div> : null}
+      </div>
+    </Sheet>
   );
 }
 
@@ -178,6 +223,7 @@ function AddSheet({ data, onPick, onClose }) {
   const more = catalogue && (group || q.trim())
     ? filterCatalogue(catalogue.exercises, { q, group, muscle: fine.some((m) => m.key === muscle) ? muscle : null }).filter((e) => !ownNames.has(e.name.toLowerCase())).slice(0, LIMIT)
     : [];
+  const level = trainingSettings(data).level;
   const pick = (p) => { onPick(p); setAdded((a) => [...a, p.name]); };
   const row = (key, name, meta, p) => (
     <button key={key} type="button" className="list-row" onClick={() => pick(p)}>
@@ -206,7 +252,7 @@ function AddSheet({ data, onPick, onClose }) {
       {more.length ? (
         <>
           <div className="section-label">{t('my.more')}</div>
-          <div className="list">{more.map((e) => row(`c${e.id}`, e.name, e.equipment, { name: e.name, group: groupOf(e), equipment: e.equipment }))}</div>
+          <div className="list">{more.map((e) => row(`c${e.id}`, e.name, [e.equipment, isAdvanced(e.level, level) ? t('levels.advanced') : null].filter(Boolean).join(' · '), { name: e.name, group: groupOf(e), equipment: e.equipment }))}</div>
         </>
       ) : null}
     </Sheet>

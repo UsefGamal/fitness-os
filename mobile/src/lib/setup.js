@@ -6,8 +6,10 @@
 import { logBody } from './data.js';
 import { addDays } from './dates.js';
 import { saveProfile } from './macros.js';
+import { levelFromSetup } from './levels.js';
 import { startRoutine } from './routines.js';
 import { isTime, setTimes } from './times.js';
+import { setTraining } from './training.js';
 
 export const DAY_CHOICES = [2, 3, 4, 5];
 export const GOALS = ['lose', 'recomp', 'maintain', 'gain'];
@@ -106,6 +108,7 @@ export function finishSetup(data, content, a, today) {
   if (a.weight_kg > 0 && !bodyErrors({ weight_kg: a.weight_kg }, today).weight_kg) d = logBody(d, { log_date: today, weight_kg: Number(a.weight_kg) });
   const routine = pickRoutine(a);
   d = startRoutine(d, content, routine, today);
+  d = setTraining(d, { level: levelFromSetup(a.experience) });
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },

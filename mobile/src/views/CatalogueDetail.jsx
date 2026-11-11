@@ -11,16 +11,21 @@ import { ANGLES, MUSCLE, angleOf, helpersOf, musclesOf } from '../lib/muscles.js
 export const labels = (keys) => keys.map((m) => MUSCLE[m]?.label || capitalize(m)).join(', ');
 import * as D from '../lib/data.js';
 import { useCatalogue } from '../store/catalogue.js';
+import { isAdvanced } from '../lib/levels.js';
+import { trainingSettings } from '../lib/training.js';
 import { useData } from '../store/useData.js';
 
 export function HowTo({ entry, target = null }) {
   const main = target ? target.main : musclesOf(entry);
   const helpers = target ? target.helpers : helpersOf(entry);
   const angle = target ? target.angle : angleOf(entry);
+  const { data } = useData();
+  const advanced = isAdvanced(entry.level, trainingSettings(data).level);
   return (
     <>
       <div className="row" style={{ flexWrap: 'wrap', gap: 6, margin: '0 0 12px' }}>
         {entry.level ? <span className="chip">{capitalize(entry.level)}</span> : null}
+        {advanced ? <span className="chip warn">{t('levels.advanced')}</span> : null}
         {entry.equipment ? <span className="chip">{capitalize(entry.equipment)}</span> : null}
         {entry.mechanic ? <span className="chip">{capitalize(entry.mechanic)}</span> : null}
         {entry.force ? <span className="chip">{capitalize(entry.force)}</span> : null}

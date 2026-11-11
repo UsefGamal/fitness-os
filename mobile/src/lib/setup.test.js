@@ -115,6 +115,12 @@ test('under 18: no deficit, whatever goal was picked', () => {
   assert.ok(m.kcal >= m.tdee - 1, `kcal ${m.kcal} is maintenance (tdee ${m.tdee})`);
 });
 
+test('setup saves the level: new is beginner, some experience is intermediate', () => {
+  const base = { gender: 'male', birth_year: 1995, height_cm: 178, weight_kg: 80, goal: 'maintain' };
+  assert.equal(finishSetup(emptyData(content), content, { ...base, experience: 'new' }, '2026-11-11').settings.training.level, 'beginner');
+  assert.equal(finishSetup(emptyData(content), content, { ...base, experience: 'some' }, '2026-11-11').settings.training.level, 'intermediate');
+});
+
 test('setup keeps the weight as the first weigh-in, the name and the training time (UX-30, UX-31)', () => {
   const d = finishSetup(emptyData(content), content, { ...BODY, goal: 'lose', name: '  Omar Ali ', session_time: '18:30' }, TODAY);
   assert.equal(d.body_logs.length, 1);

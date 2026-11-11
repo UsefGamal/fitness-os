@@ -116,3 +116,18 @@ test('data without a block is left alone', () => {
   assert.deepEqual(M.mySessions(d), []);
   assert.deepEqual(M.daysOf(d, 'x'), []);
 });
+
+test('swapping keeps sets, reps and rest and adds the new exercise to the Library', () => {
+  let { data, key } = M.createSession(fresh(), 'Push');
+  data = M.addExercise(data, key, { name: 'Bench Press', group: 'Chest' });
+  data = M.setExercise(data, key, 0, { sets: 4, reps: '6-8', restSec: 120 });
+  const next = M.swapExercise(data, key, 0, { name: 'Incline Push-Up Wide', group: 'Chest', equipment: 'body only' });
+  const ex = M.mySession(next, key).exercises[0];
+  assert.equal(ex.name, 'Incline Push-Up Wide');
+  assert.equal(ex.sets, 4);
+  assert.equal(ex.reps, '6-8');
+  assert.equal(ex.rest_sec, 120);
+  assert.ok(exerciseByName(next, 'Incline Push-Up Wide'));
+  assert.equal(M.swapExercise(data, key, 5, { name: 'X' }), data);
+  assert.equal(M.swapExercise(data, key, 0, { name: ' ' }), data);
+});
