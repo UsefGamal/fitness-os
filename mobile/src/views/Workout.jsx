@@ -462,8 +462,8 @@ export default function Workout() {
             </div>
             <div className="stack" style={{ marginTop: 12 }}>
               {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
-              {x.note ? <div className="ex-note">{x.note}</div> : null}
-              {exerciseNote(data, x.name) ? <div className="ex-note">{t('workout.yourNote', { note: exerciseNote(data, x.name) })}</div> : null}
+              {x.note ? <div className="ex-note"><Icon name="info" className="icon" /> {x.note}</div> : null}
+              {exerciseNote(data, x.name) ? <div className="ex-note"><Icon name="info" className="icon" /> {t('workout.yourNote', { note: exerciseNote(data, x.name) })}</div> : null}
               {sets.length ? (
                 <div className="done-sets">
                   {sets.map((s) => (

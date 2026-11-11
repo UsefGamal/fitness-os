@@ -10,7 +10,7 @@ import { t } from '../lib/i18n.js';
 import { workoutSummary } from '../lib/summary.js';
 import { useData } from '../store/useData.js';
 
-function SetEditor({ set, onSave, onCancel }) {
+function SetEditor({ set, onSave, onCancel, onDelete }) {
   const [w, setW] = useState(set.weight_kg);
   const [r, setR] = useState(set.reps);
   return (
@@ -23,6 +23,7 @@ function SetEditor({ set, onSave, onCancel }) {
         <button type="button" className="btn small grow" onClick={() => onSave({ weight_kg: w, reps: r })}>Save set</button>
         <button type="button" className="btn ghost small" onClick={onCancel}>Cancel</button>
       </div>
+      <button type="button" className="btn ghost small" style={{ color: 'var(--danger)' }} onClick={onDelete}><Icon name="trash" /> {t('history.deleteSet', { n: set.set_number })}</button>
     </div>
   );
 }
@@ -99,7 +100,7 @@ export default function History() {
           <strong>{g.name}</strong>
           <div style={{ marginTop: 6 }}>
             {g.sets.map((s) => (editing === s.id ? (
-              <SetEditor key={s.id} set={s} onCancel={() => setEditing(null)} onSave={(changes) => { update((d) => D.updateSet(d, w.id, s.id, changes)); setEditing(null); }} />
+              <SetEditor key={s.id} set={s} onCancel={() => setEditing(null)} onSave={(changes) => { update((d) => D.updateSet(d, w.id, s.id, changes)); setEditing(null); }} onDelete={() => { update((d) => D.deleteSet(d, w.id, s.id)); setEditing(null); }} />
             ) : (
               <div key={s.id} className="set-row">
                 <span className="set-n done">{s.set_number}</span>
@@ -107,7 +108,7 @@ export default function History() {
                   {s.weight_kg} kg × {s.reps}{s.rpe ? <span className="muted"> · RPE {s.rpe}</span> : null}
                 </button>
                 <span />
-                <button type="button" className="icon-btn" aria-label={`Delete set ${s.set_number}`} onClick={() => update((d) => D.deleteSet(d, w.id, s.id))}><Icon name="trash" /></button>
+                <Icon name="chev" className="icon chev" />
               </div>
             )))}
           </div>
