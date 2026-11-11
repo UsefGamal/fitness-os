@@ -190,7 +190,7 @@ function MealPlan() {
             <div className="pick-row" role="radiogroup" aria-label={t('meals.pickAria', { meal: label(meal.slot) })}>
               {meal.options.map((o, i) => (
                 <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => D.setMeal(d, date, meal.slot, { option_key: o.key }))}>
-                  {o.key === opt.key ? <Icon name="check" className="icon" /> : null}{String.fromCharCode(65 + i)} · {o.cuisine}
+                  {String.fromCharCode(65 + i)} · {o.cuisine}
                 </button>
               ))}
             </div>

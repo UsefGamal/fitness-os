@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
@@ -7,6 +7,7 @@ import Stepper from '../components/Stepper.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
+import { workoutSummary } from '../lib/summary.js';
 import { useData } from '../store/useData.js';
 
 function SetEditor({ set, onSave, onCancel }) {
@@ -30,6 +31,7 @@ export default function History() {
   const { id } = useParams();
   const { data, update, activeWorkoutId, setActiveWorkout } = useData();
   const navigate = useNavigate();
+  const justFinished = Boolean(useLocation().state?.finished);
   const [editing, setEditing] = useState(null);
   const [editDate, setEditDate] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -44,6 +46,8 @@ export default function History() {
   }
   const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) ? s.weight_kg * s.reps : 0), 0);
 
+  const sum = justFinished ? workoutSummary(data, w.id) : null;
+
   const remove = () => {
     if (activeWorkoutId === w.id) setActiveWorkout(null);
     update((d) => D.deleteWorkout(d, w.id));
@@ -52,7 +56,27 @@ export default function History() {
 
   return (
     <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      {sum ? (
+        <section className="card finish-card" aria-label={t('finish.title')}>
+          <div className="finish-tick"><Icon name="check" /></div>
+          <h2 className="finish-title">{t('finish.title')}</h2>
+          <p className="muted" style={{ margin: '2px 0 14px' }}>{t(sum.weekSessions === 1 ? 'finish.weekOne' : 'finish.week', { n: sum.weekSessions })}</p>
+          <div className="finish-stats">
+            {sum.durationMin ? <div><strong>{sum.durationMin}</strong><span>{t('finish.min')}</span></div> : null}
+            <div><strong>{sum.sets}</strong><span>{t('finish.sets')}</span></div>
+            <div><strong>{sum.volumeKg.toLocaleString('en')}</strong><span>{t('finish.lifted')}</span></div>
+          </div>
+          {sum.bests.length ? (
+            <div className="finish-bests">
+              <div className="muted small">{t(sum.bests.length === 1 ? 'finish.bestOne' : 'finish.bests', { n: sum.bests.length })}</div>
+              {sum.bests.map((b) => <div key={b.name} className="row between"><span>{b.name}</span><strong>{t('workout.setLine', { kg: b.kg, reps: b.reps })}</strong></div>)}
+            </div>
+          ) : null}
+          <button type="button" className="btn" onClick={() => navigate('/', { replace: true })}>{t('finish.done')}</button>
+        </section>
+      ) : (
+        <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      )}
       <h1 className="page-title" style={{ marginTop: 4 }}>{w.notes || w.workout_type}</h1>
       {editDate ? (
         <div className="row" style={{ margin: '-8px 0 16px' }}>
