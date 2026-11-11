@@ -546,6 +546,11 @@ details[open].macro-more > summary .chev, details[open].meal-more > summary .che
 .pick-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 4px; }
 .pick { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; border-radius: 12px; background: var(--surface2); color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; }
 .pick.on { background: var(--accent-dim); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* "I ate something else" (UX-20). */
+.ate-else { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.btn.small.ate-else-btn { padding: 0; margin-top: 4px; font-size: 14px; justify-content: flex-start; }
+.my-food { padding-block: 0; }
+.my-food-pick { min-height: 56px; border: 0; background: none; color: inherit; font: inherit; text-align: start; padding: 8px 0; }
 
 /* Finish summary (UX-14): the one moment after Save, above the saved sets. */
 .finish-card { text-align: center; padding: 20px 16px 16px; }

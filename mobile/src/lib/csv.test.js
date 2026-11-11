@@ -78,7 +78,8 @@ test('preview skips duplicates; import adds workouts and new exercises only', ()
 
 test('body and meal CSVs', () => {
   assert.equal(bodyCsv({ body_logs: [{ log_date: '2026-11-01', weight_kg: 82, waist_cm: 90 }] }), 'date,weight_kg,waist_cm,chest_cm,arm_cm,hips_cm,thigh_cm,sleep_hours\n2026-11-01,82,90,,,,,\n');
-  assert.match(mealsCsv({ meal_logs: [{ log_date: '2026-11-01', meal_slot: 'lunch', completed: true, option_key: 'option_a' }] }), /2026-11-01,lunch,yes,option_a,\n$/);
+  assert.match(mealsCsv({ meal_logs: [{ log_date: '2026-11-01', meal_slot: 'lunch', completed: true, option_key: 'option_a' }] }), /2026-11-01,lunch,yes,option_a,,,,\n$/);
+  assert.match(mealsCsv({ meal_logs: [{ log_date: '2026-11-02', meal_slot: 'dinner', completed: true, option_key: null, custom: { name: 'Pizza', kcal: 900, protein: 30 } }] }), /2026-11-02,dinner,yes,,,Pizza,900,30\n$/);
 });
 
 test('pentest PT-04: cells a spreadsheet would run as formulas come out as text', () => {
