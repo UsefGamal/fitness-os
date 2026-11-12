@@ -3,11 +3,29 @@
 // routers/bonus.py, except the week starts on Sunday like the rest of the
 // app (the old site used ISO Monday weeks).
 import { daysBetween, weekStart } from './dates.js';
-import { nextId } from './data.js';
-import { profileOf } from './macros.js';
-import { celebratesWeightLoss } from './safety.js';
+import { moduleOn, nextId, waterGoal } from './data.js';
+import { goalDirection, profileOf } from './macros.js';
+import { rewardsWeightLoss } from './safety.js';
 
 const byKey = (quests) => Object.fromEntries(quests.bonus_tasks.map((t) => [t.key, t]));
+
+/** Quests can be switched off in Settings > Modules (REW-1). Points
+ * already earned are kept. */
+export function questsOn(data) {
+  return moduleOn(data, 'quests');
+}
+
+/** The quests this person sees, with their own numbers: the water habit
+ * names their water goal, and the 5 kg milestone is only there for a
+ * weight-loss goal (never while weight is hidden or a cut is off), unless
+ * it was already earned. */
+export function questList(data, quests, today) {
+  const loss = rewardsWeightLoss(data, goalDirection(data), today);
+  const earned = new Set(data.bonus_logs.map((b) => b.task_key));
+  return quests.bonus_tasks
+    .filter((t) => t.key !== 'first_5kg' || loss || earned.has(t.key))
+    .map((t) => (t.key === 'hydration' ? { ...t, label: `Hit your water goal (${Math.round(waterGoal(data) / 100) / 10} L)` } : t));
+}
 
 export function totalPoints(data) {
   return data.bonus_logs.reduce((s, b) => s + (b.points || 0), 0);
@@ -70,8 +88,9 @@ export function weeklyConditions(data, today) {
  * for training on rest days. Old awards of it still count their points. */
 export function onceConditions(data, today) {
   let lost5 = false;
-  // Never while weight is hidden or a cut is off (SAFE-1).
-  if (data.body_logs.length && celebratesWeightLoss(data, today)) {
+  // Only for a weight-loss goal, and never while weight is hidden or a cut
+  // is off (SAFE-1, REW-1).
+  if (data.body_logs.length && rewardsWeightLoss(data, goalDirection(data), today)) {
     const start = profileOf(data).start_weight_kg || data.body_logs[0].weight_kg;
     const lowest = Math.min(...data.body_logs.map((b) => b.weight_kg));
     lost5 = start - lowest >= 5;
@@ -84,6 +103,7 @@ export function onceConditions(data, today) {
 
 /** Award any weekly/once quest that just became true. Returns the same object when nothing changed. */
 export function syncQuests(data, today, quests) {
+  if (!questsOn(data)) return data;
   const tasks = byKey(quests);
   const done = doneKeys(data, today, quests);
   const met = [...Object.entries(weeklyConditions(data, today)), ...Object.entries(onceConditions(data, today))]

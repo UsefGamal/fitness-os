@@ -12,15 +12,15 @@ import WeightCard from '../components/WeightCard.jsx';
 import WorkoutCard from '../components/WorkoutCard.jsx';
 import { formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
-import { dayGroups } from '../lib/insights.js';
+import { dayGroups, weekStreaks } from '../lib/insights.js';
 import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { firstName, partOfDay, watchTiles } from '../lib/home.js';
 import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
-import { doneKeys, totalPoints } from '../lib/quests.js';
-import { isChangedOn, programDayFor, sessionKeyOn } from '../lib/schedule.js';
+import { doneKeys, questsOn } from '../lib/quests.js';
+import { isChangedOn, programDayFor } from '../lib/schedule.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
@@ -55,7 +55,8 @@ export default function Today() {
   const mealSlots = content.nutrition.meal_slots.length;
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
   const water = D.waterOn(data, today);
-  const streak = D.trainingStreak(data, today, (d) => sessionKeyOn(d, T, moves) === 'rest');
+  const weeks = weekStreaks(data, today);
+  const streak = weeks.current;
   const mealDay = mealDayFor(today, content.nutrition);
   const dailyQuests = content.quests.bonus_tasks.filter((q) => q.frequency === 'daily');
   const questsDone = dailyQuests.filter((q) => doneKeys(data, today, content.quests).has(q.key)).length;
@@ -182,7 +183,7 @@ export default function Today() {
 
       <div className="section-head">
         <h2 className="section-title">{t('home.quickStats')}</h2>
-        {streak > 0 ? <span className="chip accent"><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
+        {streak > 0 ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
       </div>
       <div className="tile-grid">
         {D.moduleOn(data, 'water') ? (
@@ -197,7 +198,7 @@ export default function Today() {
         {D.moduleOn(data, 'meals') ? (
           <StatTile to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={`${t('home.meals')} · ${mealDay.label}`} />
         ) : null}
-        <StatTile to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={`${t('home.quests')} · ${totalPoints(data)} pts`} />
+        {questsOn(data) ? <StatTile to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={t('home.quests')} /> : null}
       </div>
 
       {/* Other sessions fold into one row (UX-04); open when one is logged today. */}

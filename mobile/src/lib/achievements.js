@@ -5,11 +5,14 @@
 import { GROUPS, totalVolume, weekStreaks } from './insights.js';
 import { e1rm, isWorkSet } from './data.js';
 import { weekStart } from './dates.js';
-import { celebratesWeightLoss } from './safety.js';
+import { goalDirection } from './macros.js';
+import { celebratesWeightLoss, rewardsWeightLoss } from './safety.js';
 
-// Badges that cheer a smaller body: off while weight is hidden or a cut is
-// off (SAFE-1). They are left out, not shown as locked.
-export const WEIGHT_BADGES = ['lost5', 'waist5', 'weigh30'];
+// Badges that cheer a smaller body are left out, not shown as locked
+// (SAFE-1, REW-1): the waist badge while weight is hidden or a cut is off;
+// the 5 kg badge also for every goal that is not weight loss.
+export const WEIGHT_BADGES = ['lost5', 'waist5'];
+const LOSS_GOAL_BADGES = ['lost5'];
 
 const gymCount = (s) => s.gym;
 
@@ -33,8 +36,7 @@ export const BADGES = [
   { id: 'dead2', label: 'Double deadlift', note: 'Deadlift 2 × your bodyweight (est. 1RM)', goal: 2, value: (s) => s.ratio.deadlift, unit: '× BW', icon: 'barbell', tone: 'indigo', tier: 3 },
   { id: 'lost5', label: '5 kg down', note: 'Weigh 5 kg less than your first weigh-in', goal: 5, value: (s) => s.lost, unit: 'kg', icon: 'scale', tone: 'green', tier: 1 },
   { id: 'waist5', label: 'Belt notch', note: 'Waist 5 cm smaller than your first measure', goal: 5, value: (s) => s.waist, unit: 'cm', icon: 'tape', tone: 'green', tier: 1 },
-  { id: 'meals7', label: 'Clean week', note: 'Tick every meal for a whole week', goal: 1, value: (s) => s.mealWeeks, icon: 'meals', tone: 'green', tier: 1 },
-  { id: 'weigh30', label: 'On the scale', note: 'Log 30 weigh-ins', goal: 30, value: (s) => s.weighIns, icon: 'scale', tone: 'green', tier: 2 },
+  { id: 'meals7', label: 'Every meal ticked', note: 'Tick every meal for a whole week', goal: 1, value: (s) => s.mealWeeks, icon: 'meals', tone: 'green', tier: 1 },
 ];
 
 /** Count of sets that beat every earlier set of the same exercise. */
@@ -118,7 +120,6 @@ export function badgeStats(data, today) {
     volume: totalVolume(data),
     early: data.workouts.filter((w) => w.started_at && new Date(w.started_at).getHours() < 8).length,
     bestWeekGroups: bestWeekGroups(data),
-    weighIns: data.body_logs.length,
     ratio: liftRatios(data),
     lost: drop(data.body_logs, 'weight_kg'),
     waist: drop(data.body_logs, 'waist_cm'),
@@ -131,7 +132,8 @@ export function badges(data, today) {
   const stats = badgeStats(data, today);
   const kept = data.achievements || {};
   const cheer = celebratesWeightLoss(data, today);
-  return BADGES.filter((b) => cheer || !WEIGHT_BADGES.includes(b.id)).map((b) => {
+  const loss = rewardsWeightLoss(data, goalDirection(data), today);
+  return BADGES.filter((b) => (cheer || !WEIGHT_BADGES.includes(b.id)) && (loss || !LOSS_GOAL_BADGES.includes(b.id))).map((b) => {
     const value = b.value(stats);
     return { ...b, value, earned: value >= b.goal, fraction: Math.min(1, value / b.goal), date: kept[b.id] || null };
   });

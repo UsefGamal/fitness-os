@@ -56,6 +56,13 @@ export function profileOf(data) {
   return { ...(data.profile || {}), ...goal };
 }
 
+/** The current goal's direction; 'lose' when none was ever set (the app's
+ * first plan was a cut). */
+export function goalDirection(data) {
+  const d = currentGoal(data)?.direction;
+  return DIRECTIONS.includes(d) ? d : 'lose';
+}
+
 /** Save the Profile form: body facts to profile, goal fields to the
  * current goal (a first goal is created if there is none). */
 export function saveProfile(data, form, today) {
@@ -181,7 +188,7 @@ export function macroTargets(data, nutrition, today) {
   const b = bmr(weight, p.height_cm, age, p.gender);
   const activeAvg = data.settings?.health?.adaptive === true ? activeKcalAverage(data.health_daily, today) : null;
   const t = activeAvg != null ? watchTdee(b, activeAvg) : tdee(b, p.activity_level);
-  const asked = DIRECTIONS.includes(currentGoal(data)?.direction) ? currentGoal(data).direction : 'lose';
+  const asked = goalDirection(data);
   // The safety check: no cut while no_deficit is on (or under 18).
   const mode = safeMode(data, asked, today);
   // Ramadan: at most 15% of TDEE, none with the no_fasting_deficit gate.

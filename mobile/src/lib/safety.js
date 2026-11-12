@@ -145,6 +145,13 @@ export function celebratesWeightLoss(data, today) {
   return data?.safety?.hide_weight !== true && !gateOn(data, 'no_deficit', today);
 }
 
+/** Are weight-loss rewards (the 5 kg badge and quest) on? Only for a lose
+ * goal, and never while weight is hidden or a cut is off (REW-1).
+ * `direction` is the current goal's direction. */
+export function rewardsWeightLoss(data, direction, today) {
+  return direction === 'lose' && celebratesWeightLoss(data, today);
+}
+
 /** Show the "check with your doctor" note? Until the person says they have. */
 export function showClearance(data, today) {
   return gateOn(data, 'needs_clearance', today) && data?.safety?.skipped !== true && data?.safety?.clearance_seen !== true;

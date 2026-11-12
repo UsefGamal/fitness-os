@@ -12,7 +12,7 @@ BONUS_TASKS = [
     {"key": "extra_cardio", "label": "Extra padel/cardio session", "points": 15, "icon": "heart-pulse", "frequency": "daily"},
     {"key": "meal_prep", "label": "Meal-prep tomorrow's meals ahead", "points": 10, "icon": "lunchbox", "frequency": "daily"},
     {"key": "mobility", "label": "10 min stretching/mobility", "points": 5, "icon": "activity", "frequency": "daily"},
-    {"key": "hydration", "label": "Hit water goal (3L)", "points": 5, "icon": "droplet", "frequency": "daily"},
+    {"key": "hydration", "label": "Hit your water goal", "points": 5, "icon": "droplet", "frequency": "daily"},
     {"key": "sleep", "label": "7-8 hours sleep last night", "points": 5, "icon": "moon-stars", "frequency": "daily"},
     {"key": "no_processed", "label": "Zero fast food/processed snacks today", "points": 10, "icon": "salad", "frequency": "daily"},
     {"key": "meal_prep_week", "label": "Meal-prep the whole week ahead", "points": 20, "icon": "lunchbox", "frequency": "weekly"},

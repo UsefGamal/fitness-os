@@ -14,10 +14,11 @@
 import { addDays, longWeekday, shortWeekday } from './dates.js';
 import * as D from './data.js';
 import { eveningDone, eveningOn } from './evening.js';
+import { weekStreaks } from './insights.js';
 import { macroTargets } from './macros.js';
 import { activePlan } from './plan.js';
 import { mealDayFor, slotLabel } from './meals.js';
-import { programDayFor, sessionKeyOn, weekView } from './schedule.js';
+import { programDayFor, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
 
 export const WIDGET_DAYS = 7;
@@ -45,8 +46,8 @@ export function widgetDays(data, content, today) {
   const N = content.nutrition;
   const moves = data.session_moves || [];
   const times = effectiveTimes(data, content, today);
-  const isRest = (d) => sessionKeyOn(d, T, moves) === 'rest';
-  const streak = D.trainingStreak(data, today, isRest);
+  // Weeks in a row, the same streak as Home and Stats (REW-1).
+  const streak = weekStreaks(data, today).current;
   // SEC-11: the widget is on the home screen for anyone to see; this hides
   // protein, water and what the next meal is.
   const hide = widgetPrivate(data);
@@ -86,7 +87,7 @@ export function widgetDays(data, content, today) {
 
     const base = {
       date,
-      streak: i === 0 && streak > 0 ? String(streak) : '',
+      streak: i === 0 && streak > 0 ? `${streak} wk` : '',
       tonight: evening && !eveningDone(data, date, evening) ? `Tonight ${times.evening_time} · ${evening.label}` : '',
       meals: meals.map(({ protein: _p, ...m }) => (hide ? { ...m, what: '' } : m)),
       stats: hide ? '' : stats.join(' · '),
