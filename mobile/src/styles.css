@@ -637,6 +637,14 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .whats-new li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.35; }
 .whats-new .icon { flex: none; margin-top: 2px; }
 
+/* Home weight card: the strength line for gain and muscle-building goals. */
+.strength-line { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 10px; padding-top: 8px;
+  border-top: var(--hair); color: var(--muted); font-size: 14px; }
+.strength-line .icon { width: 18px; height: 18px; flex: none; }
+.strength-line.up { color: var(--text); }
+.strength-line.up .icon:first-child { color: var(--accent); }
+.strength-line .chev { opacity: 0.5; }
+.strength-line:active { opacity: 0.7; }
 /* Starter fortnight: "Session 2 of 6" and the how-to on a first set. */
 .starter-line { color: var(--accent); font-size: 13px; font-weight: 600; margin-top: 4px; }
 details.how-to { background: var(--surface2); border-radius: 12px; padding: 0 12px; }

@@ -142,6 +142,27 @@ export function trackedExercises(data) {
     .sort((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name));
 }
 
+/** Home's strength line for gain and muscle-building goals: the lift whose
+ * estimated one-rep max rose most over the last `days` (default 28), from
+ * its first session in that window to its latest. Needs two sessions at
+ * least a week apart. { id, name, kg, days, now } with kg rounded to half
+ * a kilo; kg is 0 when no lift rose (the best one is "holding"); null with
+ * nothing to compare. */
+export function strengthMove(data, today, days = 28) {
+  let best = null;
+  for (const ex of trackedExercises(data)) {
+    const pts = e1rmSeries(data, ex.id).filter((p) => p.value > 0 && p.date <= today && daysBetween(p.date, today) <= days);
+    if (pts.length < 2) continue;
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    const span = daysBetween(first.date, last.date);
+    if (span < 7) continue;
+    const kg = Math.max(0, Math.round((last.value - first.value) * 2) / 2);
+    if (!best || kg > best.kg) best = { id: ex.id, name: ex.name, kg, days: span, now: Math.round(last.value) };
+  }
+  return best;
+}
+
 /** Total kg lifted (weight x reps) across every work set. */
 export function totalVolume(data) {
   return data.workouts.reduce((n, w) => n + w.sets.reduce((m, s) => m + (isWorkSet(s) ? (s.weight_kg || 0) * (s.reps || 0) : 0), 0), 0);

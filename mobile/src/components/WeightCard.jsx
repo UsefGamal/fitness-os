@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { formatDate } from '../lib/dates.js';
 import { trendChange, sparkPath } from '../lib/home.js';
 import { t } from '../lib/i18n.js';
+import { strengthMove } from '../lib/insights.js';
 import { currentGoal } from '../lib/macros.js';
 import { adviceKey, changeGood, goalProgress, statusGood } from '../lib/progress.js';
 import Icon from './Icon.jsx';
@@ -28,6 +29,13 @@ export default function WeightCard({ data, today, onLog }) {
   }
   const change = trendChange(p.series);
   const spark = sparkPath(p.series, { w: W, h: H, pad: 6 });
+  // Gaining and muscle-building are judged by the bar, not the scale: one
+  // line on the lift that moved most, under the weight.
+  const lifting = p.mode === 'gain' || p.mode === 'recomp';
+  const move = lifting ? strengthMove(data, today) : null;
+  const strengthText = !move ? t('home.strengthNone')
+    : move.kg > 0 ? t('home.strengthUp', { name: move.name, kg: move.kg, days: move.days })
+      : t('home.strengthHold', { name: move.name, kg: move.now });
   return (
     <section className="card hero-card">
       <Link to="/stats?tab=body" className="hero-link" aria-label={t('home.weightAria', { trend: p.trend })}>
@@ -64,6 +72,11 @@ export default function WeightCard({ data, today, onLog }) {
       ) : null}
       <div className="muted small" style={{ marginTop: 4 }}>{t(adviceKey(p.mode, p.status), { n: p.logs_needed })}</div>
       </Link>
+      {lifting ? (
+        <Link to="/stats?tab=strength" className={`strength-line${move?.kg > 0 ? ' up' : ''}`} aria-label={`${strengthText}. ${t('home.strengthAria')}`}>
+          <Icon name="barbell" className="icon" /><span className="grow">{strengthText}</span><Icon name="chev" className="icon chev" />
+        </Link>
+      ) : null}
       <div className="row between" style={{ gap: 8, marginTop: 8 }}>
         <span className="muted small">{t('home.weightLatest', { kg: p.latest, date: formatDate(p.latest_date) })}</span>
         <button type="button" className="mini-btn hero-log" onClick={onLog}><Icon name="plus" className="icon" /> {t('home.weightLog')}</button>
