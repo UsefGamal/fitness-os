@@ -75,8 +75,20 @@ export function exerciseByName(data, name) {
 
 // ── Workouts ──────────────────────────────────────────────────────────
 
+/** The next workout id. Ids only go up, even after the newest workout is
+ * deleted (DA-5): Health Connect keys its record on the id, so a reused id
+ * would overwrite another workout's record there. The high-water mark is
+ * settings.ids.workout. */
+export function nextWorkoutId(data) {
+  return Math.max(nextId(data.workouts), (Number(data.settings?.ids?.workout) || 0) + 1);
+}
+
+function withWorkoutId(data, id) {
+  return { ...data, settings: { ...(data.settings || {}), ids: { ...(data.settings?.ids || {}), workout: id } } };
+}
+
 export function startWorkout(data, { date, sessionKey, label, type = 'gym', isDeload = false }) {
-  const id = nextId(data.workouts);
+  const id = nextWorkoutId(data);
   const workout = {
     id,
     log_date: date,
@@ -143,16 +155,28 @@ export function editWorkout(data, workoutId, changes) {
   return updateWorkout(data, workoutId, (w) => ({ ...w, ...changes }));
 }
 
+/** Delete a workout. Its id is remembered so the id is never used again,
+ * and, when Health Connect is on, so the next sync removes its record there
+ * too (settings.health.deleted_workouts, cleared by the sync). */
 export function deleteWorkout(data, workoutId) {
-  return { ...data, workouts: data.workouts.filter((w) => w.id !== workoutId) };
+  const w = data.workouts.find((x) => x.id === workoutId);
+  if (!w) return data;
+  let out = withWorkoutId({ ...data, workouts: data.workouts.filter((x) => x.id !== workoutId) }, Math.max(workoutId, Number(data.settings?.ids?.workout) || 0));
+  const health = out.settings.health;
+  if (health?.enabled && !w.imported) {
+    const gone = [...new Set([...(health.deleted_workouts || []), workoutId])].slice(-MAX_PENDING_DELETES);
+    out = { ...out, settings: { ...out.settings, health: { ...health, deleted_workouts: gone } } };
+  }
+  return out;
 }
+const MAX_PENDING_DELETES = 200;
 
 /** Session types other than gym that are logged in one go (old site's Home,
  * Recovery, Cardio and Padel pages). */
 export const SESSION_TYPES = ['home', 'recovery', 'cardio', 'padel'];
 
 export function logSession(data, { date, type, label, durationMin = null, sessionRpe = null, result = null, notes = null, checklist = [], now = Date.now() }) {
-  const id = nextId(data.workouts);
+  const id = nextWorkoutId(data);
   let itemId = nextId(data.workouts.flatMap((w) => w.checklist_items || []));
   const workout = {
     id,
