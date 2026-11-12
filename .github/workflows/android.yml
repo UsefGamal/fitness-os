@@ -16,6 +16,11 @@ on:
     branches: [main]
     paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml"]
   workflow_dispatch:
+    inputs:
+      update_test_tag:
+        description: "Only run the update-over-install test for this existing release tag (for example v0.9.5)"
+        required: false
+        default: ""
 
 # P14-08: the default token can only read. Only the release job, which
 # waits for Yusuf's approval in the release environment, may write.
@@ -24,7 +29,7 @@ permissions:
 
 jobs:
   apk:
-    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/v') && !inputs.update_test_tag }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -202,8 +207,11 @@ jobs:
   # release is installed on an emulator and this one over it, the way a
   # friend updates. A refused update (wrong key, lower version) or a crash
   # on the first start after the update fails the tag.
+  # It can also be run by hand for a release that already exists (Run
+  # workflow > update_test_tag), which is how a fix to the test itself is
+  # checked without cutting a version.
   update-test:
-    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ always() && ((startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success') || (github.event_name == 'workflow_dispatch' && inputs.update_test_tag != '')) }}
     needs: release
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -221,4 +229,5 @@ jobs:
       - name: Install the previous release, then this one over it
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/update-over-install.sh "$GITHUB_REF_NAME"
+          UPDATE_TAG: ${{ inputs.update_test_tag || github.ref_name }}
+        run: scripts/update-over-install.sh "$UPDATE_TAG"
