@@ -7,6 +7,9 @@ export const WHATS_NEW = [
   {
     version: '0.9.8',
     items: [
+      { icon: 'barbell', text: 'Weight jumps fit the move: 1 kg for small moves, 2 kg for dumbbells, and never much more than a tenth of the load.' },
+      { icon: 'person', text: 'Push-ups, planks and other bodyweight moves grow by reps, then point you to a harder version.' },
+      { icon: 'user', text: 'Setup asks if your day is mostly sitting, on your feet or physical work, so your calories start closer to right.' },
       { icon: 'meals', text: 'A meal you ticked keeps its numbers for good, even when the meal plan changes later.' },
       { icon: 'meals', text: 'Ate something else? You can add its carbs and fat too, if you know them.' },
     ],
