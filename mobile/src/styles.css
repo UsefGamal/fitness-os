@@ -631,3 +631,8 @@ details.vol-group .wsets { padding: 0 0 12px; }
 /* Meals: the training-day note as plain text, not a card (UX-19). */
 .train-line { margin: 4px 4px 12px; }
 .train-line .icon { width: 14px; height: 14px; vertical-align: -2px; color: var(--accent); }
+
+/* What's new after an update (E1-S6). */
+.whats-new { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.whats-new li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.35; }
+.whats-new .icon { flex: none; margin-top: 2px; }

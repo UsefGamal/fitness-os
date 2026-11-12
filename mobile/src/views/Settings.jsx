@@ -25,6 +25,9 @@ import RamadanSettings from '../components/RamadanSettings.jsx';
 import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t, t as tr } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
+import { notesUpTo } from '../lib/whatsNew.js';
+import { WHATS_NEW } from '../lib/whatsNewNotes.js';
+import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
 import { shareTextFile } from '../store/share.js';
 import ReportSheet from '../components/ReportSheet.jsx';
 
@@ -56,6 +59,7 @@ export default function Settings() {
   const fileRef = useRef(null);
   const [msg, setMsg] = useState('');
   const [report, setReport] = useState(false);
+  const [news, setNews] = useState(false);
   const [pendingImport, setPendingImport] = useState(null);
   const csvRef = useRef(null);
   const [csv, setCsv] = useState(null); // { text, unit, parsed, preview }
@@ -212,6 +216,7 @@ export default function Settings() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{page ? t(page.title) : t('settings.title')}</h1>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
       {report ? <ReportSheet onClose={() => setReport(false)} /> : null}
+      {news ? <WhatsNewSheet notes={notesUpTo(APP.version, WHATS_NEW)} onClose={() => setNews(false)} /> : null}
 
       {!page ? (
         <div className="list">
@@ -359,6 +364,7 @@ export default function Settings() {
         <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
         <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
         <p className="muted small" style={{ margin: '4px 16px 12px' }}>{t('about.notInstalled')}</p>
+        {notesUpTo(APP.version, WHATS_NEW).length ? <button type="button" className="list-row" onClick={() => setNews(true)}><Icon name="star" /><div className="grow"><div>{t('whatsNew.title')}</div><div className="meta">{t('whatsNew.note')}</div></div><Icon name="chev" className="icon chev" /></button> : null}
         <button type="button" className="list-row" onClick={() => setReport(true)}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       </>) : null}

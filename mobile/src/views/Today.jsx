@@ -7,6 +7,7 @@ import MetricStrip from '../components/MetricStrip.jsx';
 import QuickAction from '../components/QuickAction.jsx';
 import StatTile from '../components/StatTile.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
+import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
 import WeightCard from '../components/WeightCard.jsx';
 import WorkoutCard from '../components/WorkoutCard.jsx';
 import { formatDate, longWeekday } from '../lib/dates.js';
@@ -25,6 +26,9 @@ import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
 import { backupDue } from '../lib/durable.js';
 import { hardWeeksInARow, isRecoveryWeek, recoveryDue, setRecoveryWeek } from '../lib/recovery.js';
+import { APP } from '../lib/version.js';
+import { markSeen, unseenNotes } from '../lib/whatsNew.js';
+import { WHATS_NEW } from '../lib/whatsNewNotes.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { hasScreenLock } from '../store/native.js';
@@ -72,6 +76,12 @@ export default function Today() {
   const backup = backupDue(data, Date.now(), { screenLock });
   const [picking, setPicking] = useState(false);
   const [weighing, setWeighing] = useState(false);
+  // What's new, once per version (E1-S6). A new install skips straight to "seen".
+  const news = unseenNotes(data, APP.version, WHATS_NEW);
+  const seenVersion = data.settings?.whats_new_seen;
+  useEffect(() => {
+    if (!news.length && seenVersion !== APP.version) update((d) => markSeen(d, APP.version));
+  }, [news.length, seenVersion, update]);
   const name = firstName(data.profile);
   const greet = t(`home.greet.${partOfDay(new Date().getHours())}`);
   const addWater = (ml) => { update((d) => D.addWater(d, today, ml)); feedback('water'); };
@@ -128,6 +138,7 @@ export default function Today() {
 
       {/* Today's session and Start come first (UX-01); weight is next, one tap to log (UX-03). */}
       {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} onLog={() => setWeighing(true)} /> : null}
+      {news.length ? <WhatsNewSheet notes={news} onClose={() => update((d) => markSeen(d, APP.version))} /> : null}
       {weighing ? <WeighInSheet data={data} update={update} today={today} onClose={() => setWeighing(false)} /> : null}
       <MetricStrip tiles={tiles} />
       {/* One thin line, not a card (UX-02). */}
