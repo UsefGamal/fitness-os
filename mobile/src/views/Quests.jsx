@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { badgeProgress, doneKeys, syncQuests, toggleDaily, totalPoints } from '../lib/quests.js';
+import { badgeProgress, doneKeys, questList, syncQuests, toggleDaily, totalPoints } from '../lib/quests.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -21,6 +21,7 @@ export default function Quests() {
     if (syncQuests(data, today, Q) !== data) update((d) => syncQuests(d, today, Q));
   }, [data, today, update]);
   const done = doneKeys(data, today, Q);
+  const list = questList(data, Q, today);
   const points = totalPoints(data);
   const badge = badgeProgress(points, Q);
 
@@ -47,7 +48,7 @@ export default function Quests() {
         <div key={g.key}>
           <div className="section-label">{g.label}</div>
           <div className="list">
-            {Q.bonus_tasks.filter((t) => t.frequency === g.key).map((t) => {
+            {list.filter((t) => t.frequency === g.key).map((t) => {
               const on = done.has(t.key);
               const inner = (
                 <>

@@ -42,3 +42,18 @@ test('bodyweight lifts, weight and waist drops, full meal weeks', () => {
   assert.equal(fullMealWeeks({ meal_logs: meals }), 1);
   assert.equal(fullMealWeeks({ meal_logs: meals.slice(1) }), 0);
 });
+
+// REW-1
+test('the 5 kg badge is only for a weight-loss goal; "On the scale" is gone', () => {
+  const body = { exercises, workouts: [], meal_logs: [], body_logs: [{ log_date: '2026-09-01', weight_kg: 86, waist_cm: 95 }, { log_date: '2026-10-01', weight_kg: 80, waist_cm: 91 }] };
+  const ids = (direction) => badges({ ...body, goals: [{ id: 'g1', set_on: '2026-09-01', direction, ended_on: null }] }, '2026-11-04').map((b) => b.id);
+  assert.ok(ids('lose').includes('lost5'));
+  for (const direction of ['gain', 'recomp', 'maintain']) assert.ok(!ids(direction).includes('lost5'), direction);
+  assert.ok(ids('recomp').includes('waist5'));
+  assert.ok(!ids('lose').includes('weigh30'));
+  assert.equal(badges(body, '2026-11-04').find((b) => b.id === 'meals7').label, 'Every meal ticked');
+  // A badge recorded before stays in the data; it is just not shown.
+  const kept = { ...body, achievements: { weigh30: '2026-10-01' } };
+  assert.equal(newBadges(kept, '2026-11-04').some((b) => b.id === 'weigh30'), false);
+  assert.equal(kept.achievements.weigh30, '2026-10-01');
+});

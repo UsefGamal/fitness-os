@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '0.9.7',
+    items: [
+      { icon: 'bolt', text: 'Your streak now counts weeks, not days. A week is kept with all your sessions but one, so one missed day never breaks it.' },
+      { icon: 'medal', text: 'Badges and quests fit your goal: weight-loss rewards only show when losing weight is your goal.' },
+      { icon: 'drop', text: 'The water quest uses your own water goal.' },
+      { icon: 'star', text: 'Points live on the Quests page. Don\'t want quests? Switch them off in Settings, Modules.' },
+    ],
+  },
+  {
     version: '0.9.6',
     items: [
       { icon: 'home', text: 'Home is shorter: today\'s session, your weight and today\'s numbers. The week is on Plan.' },

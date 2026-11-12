@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import { badgeProgress, doneKeys, longestStreak, syncQuests, toggleDaily, totalPoints } from './quests.js';
+import { badgeProgress, doneKeys, longestStreak, questList, questsOn, syncQuests, toggleDaily, totalPoints } from './quests.js';
 import { content } from './testContent.js';
 
 const Q = content.quests;
@@ -65,4 +65,44 @@ test('the 30-day streak quest is gone; old awards still count', () => {
   d.bonus_logs = [{ id: 1, log_date: '2026-10-30', task_key: 'thirty_day_streak', points: 75 }];
   assert.equal(totalPoints(syncQuests(d, '2026-10-31', Q)) >= 75, true);
   assert.ok(!syncQuests(d, '2026-10-31', Q).bonus_logs.some((b) => b.id !== 1 && b.task_key === 'thirty_day_streak'));
+});
+
+// REW-1: rewards that fit the person.
+const goal = (direction) => [{ id: 'g1', set_on: '2026-09-01', direction, ended_on: null }];
+const lost5 = (direction) => ({ ...base(), goals: goal(direction), body_logs: [{ id: 1, log_date: '2026-09-01', weight_kg: 95 }, { id: 2, log_date: '2026-10-20', weight_kg: 89.8 }] });
+
+test('the 5 kg milestone is only for a weight-loss goal', () => {
+  for (const direction of ['gain', 'recomp', 'maintain']) {
+    const d = lost5(direction);
+    assert.equal(syncQuests(d, '2026-11-04', Q), d, direction);
+    assert.ok(!questList(d, Q, '2026-11-04').some((t) => t.key === 'first_5kg'), direction);
+  }
+  const lose = lost5('lose');
+  assert.ok(questList(lose, Q, '2026-11-04').some((t) => t.key === 'first_5kg'));
+  // Earned before the goal changed: it stays on the list with its points.
+  const earned = { ...syncQuests(lose, '2026-11-04', Q), goals: goal('gain') };
+  assert.ok(questList(earned, Q, '2026-11-04').some((t) => t.key === 'first_5kg'));
+  assert.equal(totalPoints(earned), 50);
+  // Never while a cut is off, whatever the goal says.
+  const gated = { ...lose, safety: { gates: { no_deficit: true } } };
+  assert.ok(!questList(gated, Q, '2026-11-04').some((t) => t.key === 'first_5kg'));
+});
+
+test('the water habit names the person\'s own goal', () => {
+  const label = (d) => questList(d, Q, '2026-11-04').find((t) => t.key === 'hydration').label;
+  assert.equal(label(base()), 'Hit your water goal (3 L)');
+  assert.equal(label({ ...base(), settings: { ...base().settings, water_goal_ml: 2500 } }), 'Hit your water goal (2.5 L)');
+  // Nothing else on the list changes.
+  assert.equal(questList(base(), Q, '2026-11-04').length, Q.bonus_tasks.length);
+});
+
+test('quests are on until switched off; off earns nothing and keeps the points', () => {
+  const d = toggleDaily(lost5('lose'), '2026-11-04', 'extra_walk', Q);
+  assert.equal(questsOn(d), true);
+  const off = { ...d, settings: { ...d.settings, modules: { ...d.settings.modules, quests: false } } };
+  assert.equal(questsOn(off), false);
+  assert.equal(syncQuests(off, '2026-11-04', Q), off);
+  assert.equal(totalPoints(off), 10);
+  // The switch is not written into new data, so old backups read the same.
+  assert.equal('quests' in base().settings.modules, false);
 });
