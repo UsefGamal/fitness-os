@@ -43,18 +43,23 @@ export default function Stepper({ value, onChange, step = 1, min = 0, max = 1000
     if (held.current) { held.current = false; return; }
     set(latest.current + delta);
   };
-  const down = (e, delta) => { if (e.button === 0 || e.pointerType !== 'mouse') start(delta); };
-  const noMenu = (e) => e.preventDefault();
+  // Named handlers, not arrows inside the JSX: the i18n lint reads `=> x}>` there as text.
+  const primary = (e) => e.button === 0 || e.pointerType !== 'mouse';
+  const lessDown = (e) => { if (primary(e)) start(-step); };
+  const moreDown = (e) => { if (primary(e)) start(step); };
+  const lessClick = () => { click(-step); };
+  const moreClick = () => { click(step); };
+  const noMenu = (e) => { e.preventDefault(); };
 
   return (
     <label className="field">
       <span>{label}</span>
       <div className="stepper">
-        <button type="button" aria-label={`Less ${label}`} onPointerDown={(e) => down(e, -step)} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={() => click(-step)}>
+        <button type="button" aria-label={`Less ${label}`} onPointerDown={lessDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={lessClick}>
           <Icon name="minus" />
         </button>
         <input type="number" inputMode="decimal" value={value} onChange={(e) => set(parseFloat(e.target.value))} onFocus={(e) => e.target.select()} />
-        <button type="button" aria-label={`More ${label}`} onPointerDown={(e) => down(e, step)} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={() => click(step)}>
+        <button type="button" aria-label={`More ${label}`} onPointerDown={moreDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={moreClick}>
           <Icon name="plus" />
         </button>
       </div>
