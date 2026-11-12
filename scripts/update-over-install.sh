@@ -6,6 +6,8 @@
 # as a fresh install, or if the app crashes on start after the update.
 #
 #   scripts/update-over-install.sh <this tag>
+# Run it by hand for an existing release: Actions > Android APK > Run
+# workflow, with the tag in "update_test_tag".
 # Needs: GH_TOKEN, the Android SDK (ANDROID_HOME) and KVM.
 set -euo pipefail
 
@@ -33,7 +35,18 @@ SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
 AVDM="$SDK/cmdline-tools/latest/bin/avdmanager"
 yes | "$SDKM" --licenses >/dev/null || true
 "$SDKM" --install "emulator" "platform-tools" "$IMAGE" >/dev/null
-echo no | "$AVDM" create avd --force -n update-test -k "$IMAGE" >/dev/null
+# avdmanager and the emulator must agree on where AVDs live. On the GitHub
+# runner avdmanager wrote under ~/.config/.android/avd while the emulator
+# looked in ~/.android/avd, so every tag since v0.9.0 failed with "Unknown
+# AVD name [update-test]" before anything was installed.
+export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-$HOME/.android/avd}"
+mkdir -p "$ANDROID_AVD_HOME"
+echo no | "$AVDM" create avd --force -n update-test -k "$IMAGE"
+if ! "$SDK/emulator/emulator" -list-avds | grep -qx update-test; then
+  echo "::error::The emulator can't see the AVD that avdmanager just made (looked in $ANDROID_AVD_HOME)."
+  ls -la "$ANDROID_AVD_HOME" "$HOME/.config/.android/avd" 2>/dev/null || true
+  exit 1
+fi
 "$SDK/emulator/emulator" -avd update-test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot >"$WORK/emulator.log" 2>&1 &
 ADB="$SDK/platform-tools/adb"
 EMU_PID=$!
