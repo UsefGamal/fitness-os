@@ -128,3 +128,32 @@ export function goalProgress(logs, goal, today) {
     series,
   };
 }
+
+// ── Words that fit the goal (the card was first written for fat loss) ──
+
+const ADVICE = {
+  gain: { steady: 'goal.next.gain.steady', fast: 'goal.next.gain.fast', slow: 'goal.next.gain.slow', holding: 'goal.next.gain.holding' },
+  recomp: { steady: 'goal.next.recomp.steady', fast: 'goal.next.recomp.fast', slow: 'goal.next.recomp.slow', holding: 'goal.next.recomp.holding' },
+  maintain: { steady: 'goal.next.maintain.steady' },
+};
+
+/** The i18n key of the one-line advice under the weight card. */
+export function adviceKey(mode, status) {
+  return ADVICE[mode]?.[status] || `goal.next.${status}`;
+}
+
+/** Is this status good news for this goal? Holding is, while building
+ * muscle at a steady weight. */
+export function statusGood(mode, status) {
+  if (status === 'steady' || status === 'reached') return true;
+  return mode === 'recomp' && (status === 'holding' || status === 'slow');
+}
+
+/** Is a two-week change of `kg` towards the goal? Losing: down. Gaining:
+ * up. Maintaining or recomposing: neither way is a win, so never. */
+export function changeGood(mode, kg) {
+  if (!Number.isFinite(kg) || kg === 0) return false;
+  if (mode === 'gain') return kg > 0;
+  if (mode === 'maintain' || mode === 'recomp') return false;
+  return kg < 0;
+}

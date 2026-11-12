@@ -7,6 +7,7 @@ import Stepper from '../components/Stepper.jsx';
 import { formatDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
+import { starterJustDone, starterProgress, STARTER_SESSIONS } from '../lib/starter.js';
 import { workoutSummary } from '../lib/summary.js';
 import { useData } from '../store/useData.js';
 
@@ -48,6 +49,11 @@ export default function History() {
   const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) ? s.weight_kg * s.reps : 0), 0);
 
   const sum = justFinished ? workoutSummary(data, w.id) : null;
+  // Starter fortnight: say where a beginner is after this session.
+  const starter = justFinished ? starterProgress(data) : null;
+  const starterNote = !justFinished ? null
+    : starterJustDone(data, w.id) ? t('starter.finished', { all: STARTER_SESSIONS })
+      : starter && starter.done > 0 ? t('starter.done', { n: starter.done, all: starter.total }) : null;
 
   const remove = () => {
     if (activeWorkoutId === w.id) setActiveWorkout(null);
@@ -62,6 +68,7 @@ export default function History() {
           <div className="finish-tick"><Icon name="check" /></div>
           <h2 className="finish-title">{t('finish.title')}</h2>
           <p className="muted" style={{ margin: '2px 0 14px' }}>{t(sum.weekSessions === 1 ? 'finish.weekOne' : 'finish.week', { n: sum.weekSessions })}</p>
+          {starterNote ? <p className="starter-line" style={{ margin: '-6px 0 14px' }}>{starterNote}</p> : null}
           <div className="finish-stats">
             {sum.durationMin ? <div><strong>{sum.durationMin}</strong><span>{t('finish.min')}</span></div> : null}
             <div><strong>{sum.sets}</strong><span>{t('finish.sets')}</span></div>

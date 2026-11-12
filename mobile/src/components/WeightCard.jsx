@@ -3,11 +3,11 @@ import { Link } from 'react-router';
 import { formatDate } from '../lib/dates.js';
 import { trendChange, sparkPath } from '../lib/home.js';
 import { t } from '../lib/i18n.js';
+import { strengthMove } from '../lib/insights.js';
 import { currentGoal } from '../lib/macros.js';
-import { goalProgress } from '../lib/progress.js';
+import { adviceKey, changeGood, goalProgress, statusGood } from '../lib/progress.js';
 import Icon from './Icon.jsx';
 
-const GOOD = new Set(['steady', 'reached']);
 const W = 132;
 const H = 56;
 
@@ -29,7 +29,13 @@ export default function WeightCard({ data, today, onLog }) {
   }
   const change = trendChange(p.series);
   const spark = sparkPath(p.series, { w: W, h: H, pad: 6 });
-  const down = change && change.kg < 0;
+  // Gaining and muscle-building are judged by the bar, not the scale: one
+  // line on the lift that moved most, under the weight.
+  const lifting = p.mode === 'gain' || p.mode === 'recomp';
+  const move = lifting ? strengthMove(data, today) : null;
+  const strengthText = !move ? t('home.strengthNone')
+    : move.kg > 0 ? t('home.strengthUp', { name: move.name, kg: move.kg, days: move.days })
+      : t('home.strengthHold', { name: move.name, kg: move.now });
   return (
     <section className="card hero-card">
       <Link to="/stats?tab=body" className="hero-link" aria-label={t('home.weightAria', { trend: p.trend })}>
@@ -49,12 +55,12 @@ export default function WeightCard({ data, today, onLog }) {
       </div>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         {change ? (
-          <span className={`chip${down === (p.mode !== 'gain') ? ' accent' : ''}`}>
+          <span className={`chip${changeGood(p.mode, change.kg) ? ' accent' : ''}`}>
             {change.kg < 0 ? '↓' : change.kg > 0 ? '↑' : '→'} {t('home.changeKg', { kg: Math.abs(change.kg) })}
           </span>
         ) : null}
         {change ? <span className="muted small">{t('home.changeNote', { days: change.days })}</span> : null}
-        <span className={`chip${GOOD.has(p.status) ? ' accent' : ''}`} style={{ marginInlineStart: 'auto' }}>{t(`goal.status.${p.status}`)}</span>
+        <span className={`chip${statusGood(p.mode, p.status) ? ' accent' : ''}`} style={{ marginInlineStart: 'auto' }}>{t(`goal.status.${p.status}`)}</span>
       </div>
       {p.target != null ? (
         <>
@@ -64,8 +70,13 @@ export default function WeightCard({ data, today, onLog }) {
           <div className="small">{t(p.mode === 'gain' ? 'goal.soFarGain' : 'goal.soFar', { done: Math.max(0, p.done_kg), left: p.left_kg, target: p.target })}</div>
         </>
       ) : null}
-      <div className="muted small" style={{ marginTop: 4 }}>{t(`goal.next.${p.status}`, { n: p.logs_needed })}</div>
+      <div className="muted small" style={{ marginTop: 4 }}>{t(adviceKey(p.mode, p.status), { n: p.logs_needed })}</div>
       </Link>
+      {lifting ? (
+        <Link to="/stats?tab=strength" className={`strength-line${move?.kg > 0 ? ' up' : ''}`} aria-label={`${strengthText}. ${t('home.strengthAria')}`}>
+          <Icon name="barbell" className="icon" /><span className="grow">{strengthText}</span><Icon name="chev" className="icon chev" />
+        </Link>
+      ) : null}
       <div className="row between" style={{ gap: 8, marginTop: 8 }}>
         <span className="muted small">{t('home.weightLatest', { kg: p.latest, date: formatDate(p.latest_date) })}</span>
         <button type="button" className="mini-btn hero-log" onClick={onLog}><Icon name="plus" className="icon" /> {t('home.weightLog')}</button>
