@@ -1,4 +1,4 @@
 # Only content/ and the export scripts are Python now (the web app was
 # retired in phase 11), so these are dev/CI tools only.
-pytest==9.1.1
+pytest==9.2.0
 ruff==0.16.3
