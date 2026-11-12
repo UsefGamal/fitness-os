@@ -1,0 +1,24 @@
+# The repository is public, so its dependencies get watched (SEC-17).
+# Weekly, grouped, a few pull requests at most: versions stay pinned and
+# every update goes through CI like any other change.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule: { interval: weekly, day: sunday }
+    open-pull-requests-limit: 3
+    groups:
+      capacitor: { patterns: ["@capacitor/*", "@capacitor-community/*"] }
+      dev-tools: { dependency-type: development }
+  - package-ecosystem: gradle
+    directory: /mobile/android
+    schedule: { interval: weekly, day: sunday }
+    open-pull-requests-limit: 2
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: sunday }
+    open-pull-requests-limit: 2
+  - package-ecosystem: pip
+    directory: /
+    schedule: { interval: weekly, day: sunday }
+    open-pull-requests-limit: 2

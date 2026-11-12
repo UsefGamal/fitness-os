@@ -5,7 +5,7 @@ import { App } from '@capacitor/app';
 import { todayISO } from '../lib/dates.js';
 import { mergeDaily } from '../lib/activity.js';
 import { linkRoute } from '../lib/routes.js';
-import { healthWorkouts, mergeWeighIns } from '../lib/health.js';
+import { clearHealthDeletes, pendingHealthDeletes, healthWorkouts, mergeWeighIns } from '../lib/health.js';
 import { timesOf } from '../lib/times.js';
 import { widgetDays } from '../lib/widget.js';
 import { openFromReminders, watchReminders } from './notify.js';
@@ -52,6 +52,12 @@ export async function syncHealth({ all = false } = {}) {
   const since = all ? 0 : h.workouts_since;
   const workouts = healthWorkouts(useData.getState().data, timesOf(useData.getState().data, content).session_time).filter((w) => w.version > since);
   if (workouts.length) await Health.writeWorkouts({ workouts });
+  // Workouts deleted in the app leave Health Connect too (DA-5).
+  const gone = pendingHealthDeletes(useData.getState().data);
+  if (gone.length) {
+    await Health.deleteWorkouts({ ids: gone });
+    useData.getState().update((d) => clearHealthDeletes(d, gone));
+  }
   setHealth({ weights_since: startedAt, workouts_since: startedAt });
   const days = await readDaily(all ? 60 : 15);
   return { weighIns: added, workouts: workouts.length, days };

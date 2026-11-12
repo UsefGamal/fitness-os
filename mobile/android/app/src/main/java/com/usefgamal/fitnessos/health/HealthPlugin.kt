@@ -250,6 +250,31 @@ class HealthPlugin : Plugin() {
         }
     }
 
+    /**
+     * Remove the records of workouts deleted in the app: { ids: [1, 2] }.
+     * Only records this app wrote can be named by a clientRecordId, so
+     * nothing from another app can be touched. An id with no record is
+     * ignored.
+     */
+    @PluginMethod
+    fun deleteWorkouts(call: PluginCall) {
+        val c = client(call) ?: return
+        val list = call.getArray("ids") ?: JSArray()
+        scope.launch {
+            try {
+                val ids = (0 until list.length()).map { i -> "fitness-os-workout-${list.getInt(i)}" }
+                if (ids.isNotEmpty()) {
+                    c.deleteRecords(ExerciseSessionRecord::class, emptyList(), ids)
+                }
+                call.resolve(JSObject().put("deleted", ids.size))
+            } catch (e: SecurityException) {
+                call.reject("Fitness OS doesn't have permission to write workouts", "PERMISSION", e)
+            } catch (e: Exception) {
+                call.reject(e.message ?: "Could not delete workouts", e)
+            }
+        }
+    }
+
     private fun exerciseType(kind: String): Int = when (kind) {
         "strength" -> ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING
         "calisthenics" -> ExerciseSessionRecord.EXERCISE_TYPE_CALISTHENICS

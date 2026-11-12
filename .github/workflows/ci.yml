@@ -53,6 +53,10 @@ jobs:
       - name: Type check on the pure helpers (JSDoc + tsc)
         run: npm run typecheck
 
+      # SEC-17: what ships in the APK has no known high-severity hole.
+      - name: No known high-severity holes in shipped packages
+        run: npm audit --omit=dev --audit-level=high
+
   # Every screen at 360/390/412 px, left-to-right and right-to-left:
   # accessibility (axe, contrast), 44px taps, sideways scroll, page errors.
   # Counts may only go down (mobile/e2e/baseline.json), E6-S8.

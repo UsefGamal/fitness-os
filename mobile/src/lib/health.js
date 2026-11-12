@@ -4,6 +4,35 @@ import { fromISO, toISO } from './dates.js';
 import * as D from './data.js';
 
 // How each session type is written to Health Connect.
+// The session type as other apps see it (SEC-15). Health Connect is read
+// by other apps, so only the type and the plan's session name go there,
+// never what the person typed about the session.
+const TYPE_TITLE = { gym: 'Gym', home: 'Home workout', recovery: 'Recovery', cardio: 'Cardio', padel: 'Padel' };
+const MAX_LABEL = 40;
+
+/** "Gym: Upper" from a workout. `notes` holds the session name, and for a
+ * logged session "name · typed notes": only the name is used. */
+export function healthTitle(w) {
+  const type = TYPE_TITLE[w.workout_type] || 'Workout';
+  const label = String(w.notes || '').split(' · ')[0].trim().slice(0, MAX_LABEL);
+  return label && label.toLowerCase() !== type.toLowerCase() ? `${type}: ${label}` : type;
+}
+
+/** Ids of deleted workouts whose Health Connect records are still to be
+ * removed (lib/data.js deleteWorkout). */
+export function pendingHealthDeletes(data) {
+  const list = data.settings?.health?.deleted_workouts;
+  return Array.isArray(list) ? list.filter((id) => Number.isInteger(id) && id > 0) : [];
+}
+
+/** Forget the deletes that were sent. */
+export function clearHealthDeletes(data, sent) {
+  const gone = new Set(sent);
+  const health = data.settings?.health;
+  if (!health?.deleted_workouts) return data;
+  return { ...data, settings: { ...data.settings, health: { ...health, deleted_workouts: health.deleted_workouts.filter((id) => !gone.has(id)) } } };
+}
+
 const KIND = { gym: 'strength', home: 'calisthenics', recovery: 'stretching', cardio: 'walking', padel: 'other' };
 
 /** Add weigh-ins from Health Connect for dates the app has none for (the
@@ -43,6 +72,6 @@ export function healthWorkouts(data, sessionTime = '07:00') {
       const end = w.started_at && w.finished_at > start ? w.finished_at : start + (w.duration_min || 60) * 60000;
       const n = w.sets.length;
       const sets = n ? `${n} set${n === 1 ? '' : 's'}` : '';
-      return { id: w.id, start, end, title: w.notes || w.workout_type, kind: KIND[w.workout_type] || 'other', notes: sets, version: w.finished_at || end };
+      return { id: w.id, start, end, title: healthTitle(w), kind: KIND[w.workout_type] || 'other', notes: sets, version: w.finished_at || end };
     });
 }
