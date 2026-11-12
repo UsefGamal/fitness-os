@@ -24,6 +24,8 @@ import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
 import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
+import { needsScreening } from './lib/safety.js';
+import Screening from './views/Screening.jsx';
 import Setup from './views/Setup.jsx';
 import { programDayFor } from './lib/schedule.js';
 import { activePlan } from './lib/plan.js';
@@ -156,7 +158,7 @@ function listenBackButton() {
 }
 
 export default function App() {
-  const { ready, hydrate, loadError, startError } = useData();
+  const { ready, hydrate, loadError, startError, data } = useData();
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
   const [perms, setPerms] = useState(false);
@@ -213,6 +215,9 @@ export default function App() {
   if (setup) {
     return <><Setup onDone={() => { setSetup(false); setPerms(askPermissionsOnOpen({ native: Capacitor.isNativePlatform(), data: useData.getState().data })); }} /><SaveBar /></>;
   }
+  // A phone set up before the safety check existed (or an older backup
+  // just restored) answers it before anything else (SAFE-1).
+  if (needsScreening(data)) return <><Screening /><SaveBar /></>;
   return (
     <>
       <RouterProvider router={router} />

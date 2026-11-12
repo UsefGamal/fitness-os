@@ -6,6 +6,10 @@ import { readFileSync } from 'node:fs';
 const DAY = 86400000;
 const iso = (t) => new Date(t).toISOString().slice(0, 10);
 
+/** A person who answered the safety check with no limits (SAFE-1), so the
+ * tests see the app and not the check. */
+export const SCREENED = { screen_version: 1, screened_on: '2026-11-06', skipped: false, gates: { no_deficit: false, no_fasting_deficit: false, protein_cap: false, beginner_only: false, needs_clearance: false }, hide_kcal: false, hide_weight: false };
+
 export function bigFixture(end = '2026-11-06', years = 3) {
   const base = JSON.parse(readFileSync(new URL('../src/lib/fixtures/v1-yusuf-like.json', import.meta.url), 'utf8'));
   const last = Date.parse(`${end}T00:00:00Z`);
@@ -32,5 +36,5 @@ export function bigFixture(end = '2026-11-06', years = 3) {
     for (const slot of ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner']) meals.push({ id: meals.length + 1, log_date: date, meal_slot: slot, completed: true, option_key: n % 2 ? 'option_b' : 'option_a', drink_key: null });
     water.push({ id: water.length + 1, log_date: date, ml: 2500 });
   }
-  return { ...base, workouts, body_logs: body, meal_logs: meals, hydration_logs: water, session_moves: [] };
+  return { ...base, workouts, body_logs: body, meal_logs: meals, hydration_logs: water, session_moves: [], safety: SCREENED };
 }

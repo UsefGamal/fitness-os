@@ -400,7 +400,7 @@ function Body({ data, update, today }) {
 export default function Stats() {
   const { data, update } = useData();
   const today = useToday();
-  const weightOn = D.moduleOn(data, 'weight');
+  const weightOn = D.moduleOn(data, 'weight') && data.safety?.hide_weight !== true;
   // The tabs come first and stay pinned, so picking one changes what is on
   // screen (UX-21). ?tab=body opens straight on the weigh-ins (UX-03).
   const [params, setParams] = useSearchParams();

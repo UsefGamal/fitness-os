@@ -19,6 +19,7 @@
 import { activeKcalAverage, watchTdee } from './activity.js';
 import { addDays, daysBetween } from './dates.js';
 import { deficitShare, ramadanActive } from './ramadan.js';
+import { capProtein, isMinorNow, safeMode } from './safety.js';
 
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
 const KCAL_PER_KG_FAT = 7700;
@@ -58,7 +59,10 @@ export function profileOf(data) {
 /** Save the Profile form: body facts to profile, goal fields to the
  * current goal (a first goal is created if there is none). */
 export function saveProfile(data, form, today) {
-  const { start_weight_kg, goal_weight_low_kg, goal_weight_high_kg, goal_date, direction, ...body } = form;
+  const { start_weight_kg, goal_weight_low_kg, goal_weight_high_kg, goal_date, direction: asked, ...body } = form;
+  // Under 18 a cut is never saved, whatever the form sent (SAFE-1).
+  const minor = isMinorNow({ profile: { ...(data.profile || {}), ...body } }, today);
+  const direction = minor && (asked === 'lose' || asked === 'recomp') ? 'maintain' : asked;
   const goalFields = { ...(direction ? { direction } : {}), start_weight_kg: start_weight_kg ?? null, target_low_kg: goal_weight_low_kg ?? null, target_high_kg: goal_weight_high_kg ?? null, target_date: goal_date ?? null };
   const goals = Array.isArray(data.goals) ? data.goals : [];
   const g = currentGoal(data);
@@ -177,12 +181,21 @@ export function macroTargets(data, nutrition, today) {
   const b = bmr(weight, p.height_cm, age, p.gender);
   const activeAvg = data.settings?.health?.adaptive === true ? activeKcalAverage(data.health_daily, today) : null;
   const t = activeAvg != null ? watchTdee(b, activeAvg) : tdee(b, p.activity_level);
-  const mode = DIRECTIONS.includes(currentGoal(data)?.direction) ? currentGoal(data).direction : 'lose';
+  const asked = DIRECTIONS.includes(currentGoal(data)?.direction) ? currentGoal(data).direction : 'lose';
+  // The safety check: no cut while no_deficit is on (or under 18).
+  const mode = safeMode(data, asked, today);
   // Ramadan: at most 15% of TDEE, none with the no_fasting_deficit gate.
   const share = deficitShare(data, today, nutrition.max_deficit_share ?? MAX_DEFICIT_SHARE);
   const energy = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
+  const split = macroSplit(energy.kcal, goalMid ?? weight, mode);
+  // The protein cap is counted on the weight today, and carbs take up the rest.
+  const protein = capProtein(data, split.protein, weight, today);
+  const capped = protein < split.protein;
+  const gated = [...(mode !== asked ? ['no_deficit'] : []), ...(capped ? ['protein_cap'] : [])];
   return {
-    ...macroSplit(energy.kcal, goalMid ?? weight, mode),
+    ...split,
+    ...(capped ? { protein, carbs: pyRound(Math.max(energy.kcal - protein * 4 - split.fat * 9, 0) / 4) } : {}),
+    ...(gated.length ? { gated } : {}),
     source: activeAvg != null ? 'watch' : 'profile',
     mode,
     reasons: energy.reasons,

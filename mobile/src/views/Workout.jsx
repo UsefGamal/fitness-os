@@ -32,6 +32,7 @@ import { howToSteps, showHowTo, starterProgress } from '../lib/starter.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
 import { isShortSession } from '../lib/summary.js';
+import { gentleDay } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
@@ -115,7 +116,8 @@ export default function Workout() {
   const sessionKey = active?.session_key || requested || (scheduledKey !== 'rest' ? scheduledKey : null);
   const recovery = active ? Boolean(active.is_deload) : isRecoveryWeek(data, today);
   const baseDay = sessionKey ? effectiveDay(sessionKey, T, data) : null;
-  const planDay = recovery ? recoveryDay(baseDay) : baseDay;
+  // beginner_only (safety check): every set stops 3 reps short of failure.
+  const planDay = gentleDay(data, recovery ? recoveryDay(baseDay) : baseDay, today);
   // Today's changes (extra sets, skips, swaps) live on the workout, not the plan.
   const day = planDay && active ? applyTweaks(planDay, active.tweaks) : planDay;
 
