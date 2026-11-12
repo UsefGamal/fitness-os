@@ -2,12 +2,10 @@ import { Link, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 
 import DayPicker from '../components/DayPicker.jsx';
-import DaySheet from '../components/DaySheet.jsx';
 import Icon from '../components/Icon.jsx';
 import MetricStrip from '../components/MetricStrip.jsx';
 import QuickAction from '../components/QuickAction.jsx';
 import StatTile from '../components/StatTile.jsx';
-import WeekStrip from '../components/WeekStrip.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
 import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
 import WeightCard from '../components/WeightCard.jsx';
@@ -22,7 +20,7 @@ import { firstName, partOfDay, watchTiles } from '../lib/home.js';
 import { mealDayFor } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, totalPoints } from '../lib/quests.js';
-import { isChangedOn, programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
+import { isChangedOn, programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
@@ -38,7 +36,6 @@ import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
 
 const WATER_GOAL = 3000;
-const WEEK_HINT_KEY = 'fitness-os-week-hint-seen';
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
 export default function Today() {
@@ -50,11 +47,9 @@ export default function Today() {
   const moves = data.session_moves || [];
   const next = programDayFor(today, T, moves);
   const nextDay = next ? P.effectiveDay(next.key, T, data) : null;
-  const week = weekView(today, T, moves);
   const tonight = eveningOn(data, today);
   const nextHits = dayMuscles(nextDay?.exercises, T);
   const nextGroups = dayGroups(data, nextHits.unknown);
-  const done = new Set(data.workouts.filter((w) => w.finished_at || w.sets.length).map((w) => w.log_date));
   const todays = D.workoutOn(data, today);
   const mealSlots = content.nutrition.meal_slots.length;
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
@@ -80,13 +75,6 @@ export default function Today() {
   useEffect(() => { hasScreenLock().then(setScreenLock); }, []);
   const backup = backupDue(data, Date.now(), { screenLock });
   const [picking, setPicking] = useState(false);
-  const [shown, setShown] = useState(null);
-  // The 'Tap a day' hint goes away after the first tap (per phone).
-  const [hinted, setHinted] = useState(() => { try { return localStorage.getItem(WEEK_HINT_KEY) === '1'; } catch { return false; } });
-  const showDay = (d) => {
-    setShown(d);
-    if (!hinted) { setHinted(true); try { localStorage.setItem(WEEK_HINT_KEY, '1'); } catch { /* private mode */ } }
-  };
   const [weighing, setWeighing] = useState(false);
   // What's new, once per version (E1-S6). A new install skips straight to "seen".
   const news = unseenNotes(data, APP.version, WHATS_NEW);
@@ -108,7 +96,7 @@ export default function Today() {
         <h1 className="greeting">
           {name ? <><span className="greet-small">{t('home.greetName', { greet })}</span><span className="greet-name">{name} <span aria-hidden="true">👋</span></span></> : <span className="greet-name">{greet}</span>}
         </h1>
-        <div className="muted small">{formatDate(today)}</div>
+        <div className="muted small home-date">{formatDate(today)}</div>
       </header>
 
       {data.setup?.needs_body ? (
@@ -153,28 +141,18 @@ export default function Today() {
       {news.length ? <WhatsNewSheet notes={news} onClose={() => update((d) => markSeen(d, APP.version))} /> : null}
       {weighing ? <WeighInSheet data={data} update={update} today={today} onClose={() => setWeighing(false)} /> : null}
       <MetricStrip tiles={tiles} />
+      {/* One thin line, not a card (UX-02). */}
       {backup ? (
-        <section className="card banner" role="status">
-          <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
+        <div className="backup-line" role="status">
+          <Link className="grow backup-link" to="/settings/data">
             <Icon name="download" className="icon tone-accent" />
-            <div className="grow small">
-              <strong>{t('home.backupTitle')}</strong>
-              <div className="muted">{backup.days == null ? t('home.backupNever') : t('home.backupDays', { days: backup.days })} {t('home.backupWhy')}{backup.noLock ? ` ${t('backup.noLock')}` : ''}</div>
-            </div>
-          </div>
-          <div className="row" style={{ gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
-            <button type="button" className="btn ghost small" onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}>{t('home.later')}</button>
-            <Link className="btn small" to="/settings/data">{t('home.backupNow')}</Link>
-          </div>
-        </section>
+            <span><strong>{t('home.backupTitle')}</strong> <span className="muted">{backup.days == null ? t('home.backupNeverShort') : t('home.backupDaysShort', { days: backup.days })}{backup.noLock ? ` ${t('home.backupNoLockShort')}` : ''}</span></span>
+          </Link>
+          <button type="button" className="icon-btn" aria-label={t('home.later')} onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}><Icon name="x" /></button>
+        </div>
       ) : null}
 
-      <div className="section-head">
-        <h2 className="section-title">{t('home.thisWeek')}</h2>
-        {streak > 0 ? <span className="chip accent"><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
-      </div>
-      <WeekStrip week={week} doneDates={done} onPick={showDay} />
-      {hinted ? null : <div className="muted small" style={{ margin: '8px 4px 0' }}>{t('daySheet.hint')}</div>}
+      {/* The week strip lives on Plan only (UX-04). */}
       {isRecoveryWeek(data, today) ? (
         <div className="pill-row warn">
           <Icon name="calendar" />
@@ -189,9 +167,11 @@ export default function Today() {
           <Icon name="chev" className="icon chev" />
         </button>
       ) : null}
-      {shown ? <DaySheet day={shown} data={data} training={T} today={today} time={times.session_time} log={data.workouts.find((w) => w.log_date === shown.date && w.workout_type === 'gym' && (w.finished_at || w.sets.length))} onClose={() => setShown(null)} /> : null}
 
-      <h2 className="section-title">{t('home.quickStats')}</h2>
+      <div className="section-head">
+        <h2 className="section-title">{t('home.quickStats')}</h2>
+        {streak > 0 ? <span className="chip accent"><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
+      </div>
       <div className="tile-grid">
         {D.moduleOn(data, 'water') ? (
           <StatTile wide icon="drop" tone="water" value={water} of={`${WATER_GOAL} ml`} label={t('home.water')}>
@@ -208,23 +188,31 @@ export default function Today() {
         <StatTile to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={`${t('home.quests')} · ${totalPoints(data)} pts`} />
       </div>
 
-      <h2 className="section-title">{t('home.quick')}</h2>
-      <div className="tile-grid">
-        {Object.entries(SESSIONS).map(([key, s]) => {
-          const logged = otherToday.find((w) => w.workout_type === key);
-          return (
-            <QuickAction
-              key={key}
-              to={logged ? `/history/${logged.id}` : `/session/${key}`}
-              icon={QUICK[key]?.[0] || 'play'}
-              tone={QUICK[key]?.[1]}
-              title={s.label}
-              note={logged ? `${t('home.loggedToday')}${logged.duration_min ? ` · ${logged.duration_min} min` : ''}` : s.note}
-              done={Boolean(logged)}
-            />
-          );
-        })}
-      </div>
+      {/* Other sessions fold into one row (UX-04); open when one is logged today. */}
+      <details className="other-sessions" open={otherToday.length > 0}>
+        <summary>
+          <Icon name="plus" className="icon" />
+          <span className="grow">{t('home.other')}</span>
+          <span className="muted small">{otherToday.length ? t('home.loggedToday') : t('home.otherNote')}</span>
+          <Icon name="chev" className="icon chev" />
+        </summary>
+        <div className="tile-grid">
+          {Object.entries(SESSIONS).map(([key, s]) => {
+            const logged = otherToday.find((w) => w.workout_type === key);
+            return (
+              <QuickAction
+                key={key}
+                to={logged ? `/history/${logged.id}` : `/session/${key}`}
+                icon={QUICK[key]?.[0] || 'play'}
+                tone={QUICK[key]?.[1]}
+                title={s.label}
+                note={logged ? `${t('home.loggedToday')}${logged.duration_min ? ` · ${logged.duration_min} min` : ''}` : s.note}
+                done={Boolean(logged)}
+              />
+            );
+          })}
+        </div>
+      </details>
     </div>
   );
 }
