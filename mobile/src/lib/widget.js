@@ -21,7 +21,6 @@ import { programDayFor, sessionKeyOn, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
 
 export const WIDGET_DAYS = 7;
-export const WATER_GOAL_ML = 3000;
 
 function optionFor(meal, log) {
   return meal.options.find((o) => o.key === log?.option_key) || meal.options[0];
@@ -77,7 +76,7 @@ export function widgetDays(data, content, today) {
     const eaten = Math.round(meals.filter((m) => m.done).reduce((n, m) => n + m.protein, 0));
     const stats = [];
     if (showMeals) stats.push(`Protein ${eaten}/${protein} g`);
-    if (showWater) stats.push(`Water ${(D.waterOn(data, date) / 1000).toFixed(1)}/${WATER_GOAL_ML / 1000} L`);
+    if (showWater) stats.push(`Water ${(D.waterOn(data, date) / 1000).toFixed(1)}/${D.waterGoal(data) / 1000} L`);
 
     const week = weekView(date, T, moves).map((w) => ({
       d: shortWeekday(w.date)[0],

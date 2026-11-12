@@ -23,8 +23,6 @@ import { useToday } from '../store/today.js';
 
 const N = content.nutrition;
 
-const WATER_GOAL = 3000;
-
 /** Meals opens on the simple targets view or the full plan (E3-S9). */
 export default function Meals() {
   const { data } = useData();
@@ -48,6 +46,7 @@ function Targets() {
   const S = N.simple;
   const perMeal = proteinPerMeal(target.protein, S.meals_per_day);
   const water = D.waterOn(data, today);
+  const WATER_GOAL = D.waterGoal(data);
   const showKcal = !data.safety?.hide_kcal && target.source !== 'plan';
   return (
     <div className="page">

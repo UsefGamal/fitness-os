@@ -4,7 +4,9 @@ import { useNavigate, useParams } from 'react-router';
 import Icon from '../components/Icon.jsx';
 import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
 import { todayISO } from '../lib/dates.js';
+import * as D from '../lib/data.js';
 import { MODULES } from '../lib/data.js';
+import Stepper from '../components/Stepper.jsx';
 import { REWARD_LEVELS } from '../lib/rewards.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
@@ -351,6 +353,12 @@ export default function Settings() {
         })}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Switching a module off only hides it. Nothing is deleted.</p>
+      {D.moduleOn(data, 'water') ? (
+        <div className="card">
+          <Stepper label={t('settings.waterGoal')} value={D.waterGoal(data)} onChange={(ml) => update((d) => D.setWaterGoal(d, ml))} step={D.WATER_GOAL.step} min={D.WATER_GOAL.min} max={D.WATER_GOAL.max} />
+          <div className="muted small" style={{ marginTop: 8 }}>{t('settings.waterGoalNote')}</div>
+        </div>
+      ) : null}
       <div className="list">
         <Toggle on={widgetPrivate(data)} title={t('widget.private')} note={t('widget.privateNote')}
           onClick={() => update((d) => ({ ...d, settings: { ...d.settings, widget_private: !widgetPrivate(d) } }))} />
