@@ -637,6 +637,14 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .whats-new li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.35; }
 .whats-new .icon { flex: none; margin-top: 2px; }
 
+/* Starter fortnight: "Session 2 of 6" and the how-to on a first set. */
+.starter-line { color: var(--accent); font-size: 13px; font-weight: 600; margin-top: 4px; }
+details.how-to { background: var(--surface2); border-radius: 12px; padding: 0 12px; }
+details.how-to > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-weight: 600; font-size: 14px; }
+details.how-to > summary::-webkit-details-marker { display: none; }
+details.how-to[open] > summary .chev { transform: rotate(90deg); }
+details.how-to ol { margin: 0; padding: 0 0 12px 20px; font-size: 14px; line-height: 1.4; color: var(--muted); }
+details.how-to li + li { margin-top: 6px; }
 /* Press states: everything tappable answers a touch (pre-pilot polish).
    Buttons, rows, tiles and cards had theirs; these are the rest. */
 button, a, summary, [role="button"] { -webkit-tap-highlight-color: transparent; }
