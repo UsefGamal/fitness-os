@@ -17,7 +17,7 @@ import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { firstName, partOfDay, watchTiles } from '../lib/home.js';
-import { mealDayFor } from '../lib/meals.js';
+import { mealDayFor, mealStart } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, questsOn } from '../lib/quests.js';
 import { isChangedOn, programDayFor } from '../lib/schedule.js';
@@ -57,7 +57,7 @@ export default function Today() {
   const water = D.waterOn(data, today);
   const weeks = weekStreaks(data, today);
   const streak = weeks.current;
-  const mealDay = mealDayFor(today, content.nutrition);
+  const mealDay = mealDayFor(today, content.nutrition, mealStart(data, content.nutrition));
   const dailyQuests = content.quests.bonus_tasks.filter((q) => q.frequency === 'daily');
   const questsDone = dailyQuests.filter((q) => doneKeys(data, today, content.quests).has(q.key)).length;
   const otherToday = data.workouts.filter((w) => w.log_date === today && w.workout_type !== 'gym');

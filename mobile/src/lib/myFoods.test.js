@@ -75,3 +75,22 @@ test('dayTotals uses what was really eaten for that slot', () => {
   assert.deepEqual(dayTotals(day, {}, new Set(['lunch']), custom), { kcal: 900, protein: 30, carbs: 0, fat: 0, fiber: 0 });
   assert.deepEqual(dayTotals(day), { kcal: 1000, protein: 75, carbs: 100, fat: 25, fiber: 13 });
 });
+
+// DA-1: carbs and fat are optional on "I ate something else".
+test('carbs and fat are kept when given, unknown when left empty', () => {
+  assert.deepEqual(cleanFood({ name: 'Koshari', kcal: 700, protein: 20, carbs: 110, fat: 15 }), { name: 'Koshari', kcal: 700, protein: 20, carbs: 110, fat: 15 });
+  assert.deepEqual(cleanFood({ name: 'Koshari', kcal: 700, protein: 20, carbs: '', fat: null }), { name: 'Koshari', kcal: 700, protein: 20 });
+  assert.deepEqual(cleanFood({ name: 'Koshari', kcal: 700, protein: 20, carbs: '110' }), { name: 'Koshari', kcal: 700, protein: 20, carbs: 110 });
+  // 0 is a real answer, not "unknown".
+  assert.equal(cleanFood({ kcal: 200, protein: 40, fat: 0 }).fat, 0);
+});
+
+test('carbs and fat out of range, or more than the calories can hold, are refused', () => {
+  assert.equal(cleanFood({ kcal: 700, protein: 20, carbs: -1 }), null);
+  assert.equal(cleanFood({ kcal: 700, protein: 20, fat: 501 }), null);
+  assert.equal(cleanFood({ kcal: 700, protein: 20, carbs: 'lots' }), null);
+  // 20*4 + 110*4 + 30*9 = 790 > 700 + 50
+  assert.equal(cleanFood({ kcal: 700, protein: 20, carbs: 110, fat: 30 }), null);
+  // 20*4 + 110*4 + 25*9 = 745 <= 750
+  assert.ok(cleanFood({ kcal: 700, protein: 20, carbs: 110, fat: 25 }));
+});

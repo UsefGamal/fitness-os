@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { addDays, formatDate, weekStart } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
+import { mealStart } from '../lib/meals.js';
 import { picksFrom, shoppingList } from '../lib/shopping.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
@@ -15,7 +16,8 @@ export default function Shopping() {
   const today = useToday();
   const week = weekStart(today);
   // Only the option picked for each meal, A when nothing is picked (UX-18).
-  const groups = useMemo(() => shoppingList(today, content.nutrition, 7, picksFrom(data.meal_logs)), [today, data.meal_logs]);
+  const planStart = mealStart(data, content.nutrition);
+  const groups = useMemo(() => shoppingList(today, content.nutrition, 7, picksFrom(data.meal_logs), planStart), [today, data.meal_logs, planStart]);
   const checked = D.shoppingChecked(data, week);
   const total = groups.reduce((n, g) => n + g.items.length, 0);
   const got = groups.reduce((n, g) => n + g.items.filter((i) => checked.has(i.key)).length, 0);

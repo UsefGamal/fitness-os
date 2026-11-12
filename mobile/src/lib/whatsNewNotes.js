@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '0.9.8',
+    items: [
+      { icon: 'meals', text: 'A meal you ticked keeps its numbers for good, even when the meal plan changes later.' },
+      { icon: 'meals', text: 'Ate something else? You can add its carbs and fat too, if you know them.' },
+    ],
+  },
+  {
     version: '0.9.7',
     items: [
       { icon: 'bolt', text: 'Your streak now counts weeks, not days. A week is kept with all your sessions but one, so one missed day never breaks it.' },
