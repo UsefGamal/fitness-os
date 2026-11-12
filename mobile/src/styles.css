@@ -636,3 +636,21 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .whats-new { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .whats-new li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.35; }
 .whats-new .icon { flex: none; margin-top: 2px; }
+
+/* Press states: everything tappable answers a touch (pre-pilot polish).
+   Buttons, rows, tiles and cards had theirs; these are the rest. */
+button, a, summary, [role="button"] { -webkit-tap-highlight-color: transparent; }
+button.chip, a.chip, .pick, .check, .seg button, .week-day, .tab, .pill-btn, .pill-open, .tpre, .timer-open, .photo-cell, .photos, .my-food-pick, .backup-link, a.banner, .see-all, .undo, details > summary { transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease; }
+button.chip:active, a.chip:active, .pick:active, .pill-btn:active, .pill-open:active, .tpre:active, .timer-open:active { transform: scale(0.96); opacity: 0.85; }
+.check:active { transform: scale(0.9); }
+.seg button:active { background: var(--surface3); opacity: 0.8; }
+button.week-day:active { transform: scale(0.95); background: var(--surface3); }
+.tab:active svg { transform: scale(0.9); }
+.tab svg { transition: transform 0.12s ease; }
+.photo-cell:active, .photos:active { opacity: 0.75; }
+.my-food-pick:active, .backup-link:active, .see-all:active, .undo:active, details > summary:active { opacity: 0.6; }
+a.banner:active { transform: scale(0.99); background: var(--surface2); }
+.page a:not([class]):active { opacity: 0.6; }
+@media (prefers-reduced-motion: reduce) {
+  button.chip:active, a.chip:active, .pick:active, .pill-btn:active, .pill-open:active, .tpre:active, .timer-open:active, .check:active, button.week-day:active, .tab:active svg, a.banner:active { transform: none; }
+}
