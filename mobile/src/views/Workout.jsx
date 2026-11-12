@@ -28,6 +28,7 @@ import { content, useData } from '../store/useData.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { shadeLines } from '../lib/restTimer.js';
 import { useTimer } from '../store/useTimer.js';
+import { howToSteps, showHowTo, starterProgress } from '../lib/starter.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
 import { isShortSession } from '../lib/summary.js';
@@ -381,6 +382,7 @@ export default function Workout() {
   const ms = activeMs(active, now);
   const lengthTarget = targetProgress(ms, settings.target_min);
   const paused = Boolean(active.paused_at);
+  const starter = starterProgress(data);
 
   return (
     <div className="page">
@@ -404,6 +406,7 @@ export default function Workout() {
             { key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') },
           ]} />
         </div>
+        {starter ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
         {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '10px 0 0' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
         {paused ? (
           <div className="row between" style={{ gap: 8, marginTop: 10 }}>
@@ -452,6 +455,9 @@ export default function Workout() {
             </button>
           );
         }
+        // First time a beginner meets this exercise: the how-to is open (starter fortnight).
+        const howToEntry = catalogue && showHowTo(data, x.name) ? entryFor(x.name, content.training, catalogue.byId) : null;
+        const howTo = howToSteps(howToEntry);
         return (
           <div key={`${x.name}-${i}`} className="ex-card current">
             <div className="row between" style={{ gap: 8, alignItems: 'flex-start' }}>
@@ -463,6 +469,12 @@ export default function Workout() {
             </div>
             <div className="stack" style={{ marginTop: 12 }}>
               {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
+              {howTo.length ? (
+                <details className="how-to" open>
+                  <summary><Icon name="bulb" className="icon" /><span className="grow">{t('starter.howTo')}</span><Icon name="chev" className="icon chev" /></summary>
+                  <ol>{howTo.map((step) => <li key={step}>{step}</li>)}</ol>
+                </details>
+              ) : null}
               {x.note ? <div className="ex-note"><Icon name="info" className="icon" /> {x.note}</div> : null}
               {exerciseNote(data, x.name) ? <div className="ex-note"><Icon name="info" className="icon" /> {t('workout.yourNote', { note: exerciseNote(data, x.name) })}</div> : null}
               {sets.length ? (
