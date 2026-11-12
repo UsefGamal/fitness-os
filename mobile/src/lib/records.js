@@ -13,7 +13,9 @@ const round1 = (n) => Math.round(n * 10) / 10;
  *   setVolume:  { kg, from: {kg, reps}, date }  best single set, weight x reps
  *   session:    { kg, date }            best total weight x reps in one workout
  *   repMax:     [{ reps: 1..10, actual: {kg, date} | null, estimated: kg | null }]
- * } */
+ * }
+ * @param {import('../types').Data} data
+ * @param {number} exerciseId */
 export function records(data, exerciseId) {
   let heaviest = null;
   let best = null;

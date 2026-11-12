@@ -143,6 +143,7 @@ export function readWorkoutCsv(text, { unit = 'kg' } = {}) {
   return { source: src.label, workouts, skipped };
 }
 
+/** @type {[string, RegExp][]} */
 const GUESS = [
   ['Chest', /bench|chest|fly|flye|pec|push.?up|dip/i],
   ['Back', /row|pull|lat|chin|deadlift|back|shrug/i],

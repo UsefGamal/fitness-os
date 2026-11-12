@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { e1rmSeries, lastTrained, monthLabels, recoveryState, setsByGroup, totalVolume, trackedExercises, volumeLevel, weekStreaks, yearGrid } from './insights.js';
+import { e1rmSeries, lastTrained, monthLabels, recoveryState, setsByGroup, strengthMove, totalVolume, trackedExercises, volumeLevel, weekStreaks, yearGrid } from './insights.js';
 
 const exercises = [{ id: 1, name: 'Bench', muscle_group: 'Chest' }, { id: 2, name: 'Squat', muscle_group: 'Legs' }];
 const w = (id, log_date, sets) => ({ id, log_date, workout_type: 'gym', sets: sets.map(([exercise_id, weight_kg, reps], i) => ({ id: id * 10 + i, exercise_id, weight_kg, reps })) });
@@ -62,4 +62,24 @@ test('warm-ups stay out of group sets, recovery, volume and the e1RM chart (F-00
   assert.equal(lastTrained(d, '2026-11-09').Chest, null);
   assert.equal(totalVolume(d), 0);
   assert.deepEqual(e1rmSeries(d, 1), []);
+});
+
+test('strengthMove picks the lift that rose most in four weeks', () => {
+  const ex = [...exercises, { id: 90, name: 'Row', muscle_group: 'Back' }];
+  const data = { exercises: ex, workouts: [
+    w(1, '2026-09-01', [[1, 40, 5]]), // outside the window
+    w(2, '2026-10-20', [[1, 60, 5], [90, 50, 5]]),
+    w(3, '2026-11-03', [[1, 62.5, 5], [90, 60, 5]]),
+    w(4, '2026-11-10', [[1, 65, 5]]),
+  ] };
+  assert.deepEqual(strengthMove(data, '2026-11-12'), { id: 90, name: 'Row', kg: 11.5, days: 14, now: 70 });
+  // A lift that did not rise is "holding": kg 0.
+  const flat = { exercises: ex, workouts: [w(1, '2026-11-01', [[1, 60, 5]]), w(2, '2026-11-10', [[1, 55, 5]])] };
+  assert.deepEqual(strengthMove(flat, '2026-11-12'), { id: 1, name: 'Bench', kg: 0, days: 9, now: 64 });
+  // Two sessions under a week apart, one session, or none: nothing to say.
+  assert.equal(strengthMove({ exercises: ex, workouts: [w(1, '2026-11-08', [[1, 60, 5]]), w(2, '2026-11-10', [[1, 70, 5]])] }, '2026-11-12'), null);
+  assert.equal(strengthMove({ exercises: ex, workouts: [w(1, '2026-11-10', [[1, 60, 5]])] }, '2026-11-12'), null);
+  assert.equal(strengthMove({ exercises: ex, workouts: [] }, '2026-11-12'), null);
+  // Sessions after "today" are ignored.
+  assert.equal(strengthMove(data, '2026-10-25'), null);
 });

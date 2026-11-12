@@ -29,6 +29,7 @@ import { hardWeeksInARow, isRecoveryWeek, recoveryDue, setRecoveryWeek } from '.
 import { APP } from '../lib/version.js';
 import { markSeen, unseenNotes } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
+import { starterProgress } from '../lib/starter.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { hasScreenLock } from '../store/native.js';
@@ -130,6 +131,7 @@ export default function Today() {
         changed={isChangedOn(today, moves)}
         ready={readyLevel}
         readyText={readyText}
+        starter={starterProgress(data)}
         onChange={() => setPicking(true)}
         onStart={() => navigate('/workout')}
       />

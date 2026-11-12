@@ -11,6 +11,7 @@ export const WHATS_NEW = [
       { icon: 'play', text: 'During a workout, Pause, Finish and Discard are in one menu, with a Finish button after the last exercise.' },
       { icon: 'download', text: 'The backup reminder is now one thin line.' },
       { icon: 'heart', text: 'A quick safety check: seven yes or no questions, so no target can hurt you. Only the limits are saved, not your answers.' },
+      { icon: 'barbell', text: 'Gaining or building muscle? Home shows the lift that grew most, under your weight.' },
       { icon: 'star', text: 'After an update, this note tells you what changed. You can open it again in Settings.' },
     ],
   },

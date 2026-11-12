@@ -38,7 +38,9 @@ export const DIRECTIONS = ['lose', 'recomp', 'maintain', 'gain'];
 const FAT_G_PER_KG = 0.8;
 const MIN_BMI = 18.5;
 
-/** The goal being worked towards: the latest one that hasn't ended. */
+/** The goal being worked towards: the latest one that hasn't ended.
+ * @param {import('../types').Data} data
+ * @returns {import('../types').Goal | null} */
 export function currentGoal(data) {
   const goals = Array.isArray(data.goals) ? data.goals : [];
   for (let i = goals.length - 1; i >= 0; i -= 1) if (!goals[i].ended_on) return goals[i];

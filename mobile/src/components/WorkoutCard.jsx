@@ -10,7 +10,7 @@ const READY = { good: 'home.ready', easy: 'home.easy', caution: 'home.steady' };
 
 /** Home's main card: today's session (or the next one on a rest day), the
  * muscles it works, the warm-up and the one button that starts it. */
-export default function WorkoutCard({ next, day, hits, groups, time, todays, changed, ready, readyText, onChange, onStart }) {
+export default function WorkoutCard({ next, day, hits, groups, time, todays, changed, ready, readyText, starter, onChange, onStart }) {
   const head = () => (
     <div className="row between" style={{ alignItems: 'flex-start' }}>
       <h2 className="section-title" style={{ margin: 0 }}>{t('home.planTitle')}</h2>
@@ -59,6 +59,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
         <div className="grow">
           <div className="session-name">{next.label}</div>
           <div className="session-sub">{t('home.todayAt', { time })}{changed ? ` · ${t('week.changed')}` : ''}</div>
+          {starter && !todays?.finished_at ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
         </div>
         {!todays ? <button type="button" className="btn ghost small" onClick={onChange}>{t('home.change')}</button> : null}
       </div>

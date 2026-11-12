@@ -54,7 +54,7 @@ export function ageIn(birthYear, today) {
 /** Field -> i18n key of what's wrong, for the fields filled in. */
 export function bodyErrors(a, today) {
   const out = {};
-  const inRange = (v, [lo, hi]) => Number.isFinite(Number(v)) && Number(v) >= lo && Number(v) <= hi;
+  const inRange = (v, range) => Number.isFinite(Number(v)) && Number(v) >= range[0] && Number(v) <= range[1];
   if (a.birth_year != null && !inRange(ageIn(a.birth_year, today), LIMITS.age)) out.birth_year = 'setup.err.age';
   if (a.height_cm != null && !inRange(a.height_cm, LIMITS.height_cm)) out.height_cm = 'setup.err.height';
   if (a.weight_kg != null && !inRange(a.weight_kg, LIMITS.weight_kg)) out.weight_kg = 'setup.err.weight';
