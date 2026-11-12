@@ -18,6 +18,21 @@ export const GOALS = ['lose', 'recomp', 'maintain', 'gain'];
 // weight a week, the slow end of the safe band.
 const SETUP_PACE = 0.005;
 
+// What the day looks like outside training (TRAIN-1, COACH-4). With the
+// training days it picks the activity level the calorie maths uses, in
+// place of a flat "moderate" that is about 250 kcal too high for a desk
+// job. Nobody is 'sedentary' here: everyone trains at least twice a week.
+export const JOBS = ['desk', 'feet', 'manual'];
+
+/** The activity level for a job and training days a week. An unknown job
+ * counts as a desk job (the careful guess). */
+export function activityFor(job, days = 3) {
+  const many = Number(days) >= 4;
+  if (job === 'manual') return many ? 'active' : 'moderate';
+  if (job === 'feet') return many ? 'moderate' : 'light';
+  return 'light';
+}
+
 export function needsSetup(data) {
   if (!data || data.setup) return false;
   return !data.profile && !(data.workouts || []).length && !(data.body_logs || []).length;
@@ -74,7 +89,7 @@ export function bodyComplete(a, today = new Date().toISOString().slice(0, 10)) {
 }
 
 /** Apply the answers. `a`: { gender, birth_year, height_cm, weight_kg,
- * goal, goal_kg, where, days, experience, name, session_time, screening };
+ * goal, goal_kg, where, days, experience, job, name, session_time, screening };
  * any may be missing (skipped). `screening` is the safety check's answers
  * ({ key: true | false }); without it every limit is on (lib/safety.js). The weight is also the first weigh-in (UX-30), the name
  * feeds the greeting and the time sets when reminders come (UX-31).
@@ -93,7 +108,8 @@ export function finishSetup(data, content, a, today) {
       gender: a.gender,
       date_of_birth: `${a.birth_year}-07-01`,
       height_cm: Number(a.height_cm),
-      activity_level: 'moderate',
+      activity_level: activityFor(a.job, a.days ?? 3),
+      ...(JOBS.includes(a.job) ? { job: a.job } : {}),
       direction: goal,
       start_weight_kg: Number(a.weight_kg),
       goal_weight_low_kg: hasGoal ? Number(a.goal_kg) - 1 : null,

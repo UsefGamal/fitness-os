@@ -7,7 +7,7 @@ import { t } from '../lib/i18n.js';
 import { isTime } from '../lib/times.js';
 import { macroTargets } from '../lib/macros.js';
 import { routineById } from '../lib/routines.js';
-import { DAY_CHOICES, GOALS, bodyComplete, bodyErrors, finishSetup, isMinor, pickRoutine, skipSetup } from '../lib/setup.js';
+import { DAY_CHOICES, GOALS, JOBS, bodyComplete, bodyErrors, finishSetup, isMinor, pickRoutine, skipSetup } from '../lib/setup.js';
 import { pushOverlay } from '../lib/overlays.js';
 import { answeredAll, screeningResult } from '../lib/safety.js';
 import { content, useData } from '../store/useData.js';
@@ -130,6 +130,11 @@ export default function Setup({ onDone }) {
           <div className="seg" style={{ marginBottom: 12 }} role="group" aria-label={t('setup.days')}>
             {DAY_CHOICES.map((n) => <button key={n} type="button" className={a.days === n ? 'on' : ''} aria-pressed={a.days === n} onClick={() => set('days', n)}>{n === 5 ? '5+' : n}</button>)}
           </div>
+          <div className="section-label">{t('setup.job')}</div>
+          <div className="seg" style={{ marginBottom: 4 }} role="group" aria-label={t('setup.job')}>
+            {JOBS.map((j) => <button key={j} type="button" className={a.job === j ? 'on' : ''} aria-pressed={a.job === j} onClick={() => set('job', j)}>{t(`job.${j}`)}</button>)}
+          </div>
+          <p className="muted small" style={{ margin: '0 4px 12px' }}>{t('setup.jobNote')}</p>
           <label className="field"><span>{t('setup.time')}</span><input type="time" step="300" value={a.session_time ?? content.training.session_time} onChange={(e) => isTime(e.target.value) && set('session_time', e.target.value)} /><span className="muted small">{t('setup.timeNote')}</span></label>
           <div className="section-label">{t('setup.experience')}</div>
           <div className="list">

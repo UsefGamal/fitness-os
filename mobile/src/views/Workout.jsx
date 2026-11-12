@@ -14,7 +14,7 @@ import { effectiveDay } from '../lib/planEdit.js';
 import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
-import { progressionTarget } from '../lib/progression.js';
+import { isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
 import { alternatives } from '../lib/similar.js';
 import { roundDone, roundRest } from '../lib/superset.js';
 import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
@@ -134,6 +134,7 @@ export default function Workout() {
   const [restOverride, setRestOverride] = useState({}); // exercise name -> seconds for this session
   const [undo, setUndo] = useState(null); // { set, label } after a delete
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
+  const openSwap = () => setSheet('swap');
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
   const [useBuild, setUseBuild] = useState(true);
@@ -161,8 +162,7 @@ export default function Workout() {
     if (!active || !ex || !exRow) return null;
     if (recovery) return null; // same loads as last time: no progression in a recovery week
     const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets.filter(D.isWorkSet)).filter((s) => s.length);
-    const small = entry ? entry.mechanic === 'isolation' : !barbell;
-    return progressionTarget(ex.reps, ex.sets, sessions, { step: small ? 1 : 2.5 });
+    return progressionTarget(ex.reps, ex.sets, sessions, { step: stepFor(entry, { barbell }), bodyweight: entry ? isBodyweight(entry) : null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, ex?.name, exRow?.id, catalogue]);
 
@@ -494,6 +494,7 @@ export default function Workout() {
                 </div>
               ) : null}
               {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
+              {target?.kind === 'harder' && sets.length === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
               <div className="row" style={{ alignItems: 'flex-end' }}>
                 <div className="grow"><Stepper label={t('workout.kgLabel')} value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
                 <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>

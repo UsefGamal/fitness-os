@@ -5,7 +5,9 @@ import Icon from '../components/Icon.jsx';
 import { formatDate } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { ACTIVITY, DIRECTIONS, GAIN_SURPLUS, PROTEIN_G_PER_KG, goalIssues, macroTargets, minGoalWeight, profileOf, safeGoalDate, saveProfile } from '../lib/macros.js';
-import { settleSetup } from '../lib/setup.js';
+import { activePlan } from '../lib/plan.js';
+import { weekView } from '../lib/schedule.js';
+import { JOBS, activityFor, settleSetup } from '../lib/setup.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -26,6 +28,14 @@ export default function Profile() {
   const [p, setP] = useState(() => ({ gender: '', activity_level: 'moderate', ...profileOf(data) }));
   const [saved, setSaved] = useState(false);
   const set = (k) => (e) => { setP({ ...p, [k]: e.target.value }); setSaved(false); };
+  // Picking the job sets the activity level from it and this week's
+  // training days (TRAIN-1); Activity can still be changed by hand after.
+  const trainingDays = weekView(today, activePlan(data, content), data.session_moves || []).filter((w) => w.key !== 'rest').length;
+  const setJob = (e) => {
+    const job = JOBS.includes(e.target.value) ? e.target.value : null;
+    setP({ ...p, job, ...(job ? { activity_level: activityFor(job, trainingDays) } : {}) });
+    setSaved(false);
+  };
 
   const clean = {
     ...p,
@@ -105,6 +115,10 @@ export default function Profile() {
           </label>
         </div>
         <label className="field"><span>Date of birth</span><input type="date" value={p.date_of_birth || ''} max={today} onChange={set('date_of_birth')} /></label>
+        <label className="field"><span>{t('profile.job')}</span>
+          <select value={p.job || ''} onChange={setJob}><option value="">{t('job.unset')}</option>{JOBS.map((j) => <option key={j} value={j}>{t(`job.${j}`)}</option>)}</select>
+          <span className="muted small">{t('profile.jobNote')}</span>
+        </label>
         <label className="field"><span>Activity</span>
           <select value={p.activity_level} onChange={set('activity_level')}>{Object.keys(ACTIVITY).map((k) => <option key={k} value={k}>{ACTIVITY_LABELS[k]}</option>)}</select>
         </label>
