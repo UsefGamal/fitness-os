@@ -16,6 +16,8 @@ import { createRequire } from 'node:module';
 
 import { chromium } from 'playwright';
 
+import { SCREENED } from './bigFixture.mjs';
+
 const require = createRequire(import.meta.url);
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const HERE = new URL('.', import.meta.url);
@@ -79,6 +81,9 @@ export async function run({ shots = false } = {}) {
     for (const dir of DIRS) {
       const raw = structuredClone(FIXTURE);
       raw.profile = { ...(raw.profile || {}), locale: dir === 'rtl' ? 'ar' : 'en' };
+      // The fixture person has answered the safety check with no limits
+      // (SAFE-1), so the screens under test are the app, not the check.
+      raw.safety = SCREENED;
       for (const width of WIDTHS) {
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
         await ctx.clock.setFixedTime(NOW);

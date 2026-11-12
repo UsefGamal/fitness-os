@@ -19,6 +19,7 @@ import { clearCustomMeal, customMeals } from '../lib/myFoods.js';
 import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
+import { kcalHidden } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
 
 const N = content.nutrition;
@@ -47,7 +48,7 @@ function Targets() {
   const perMeal = proteinPerMeal(target.protein, S.meals_per_day);
   const water = D.waterOn(data, today);
   const WATER_GOAL = D.waterGoal(data);
-  const showKcal = !data.safety?.hide_kcal && target.source !== 'plan';
+  const showKcal = !kcalHidden(data) && target.source !== 'plan';
   return (
     <div className="page">
       <h1 className="page-title">{t('mealsSimple.title')}</h1>

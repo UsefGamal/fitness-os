@@ -28,6 +28,7 @@ import { useCatalogue } from '../store/catalogue.js';
 import { saveExport } from '../store/mirror.js';
 import { dataUrlOf, shareFile, shareText, shareTextFile } from '../store/share.js';
 import { content, useData } from '../store/useData.js';
+import { gentleDay } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
 
 function EditList({ day, sessionKey }) {
@@ -116,7 +117,7 @@ export default function Plan() {
   // Which options sheet is open: 'move' | 'week' | 'evening' | 'terms'.
   const [opt, setOpt] = useState(null);
   const navigate = useNavigate();
-  const day = picked.key === 'rest' ? null : P.effectiveDay(picked.key, T, data);
+  const day = picked.key === 'rest' ? null : gentleDay(data, P.effectiveDay(picked.key, T, data), today);
   const dayHits = dayMuscles(day?.exercises, T);
   const moves = data.session_moves || [];
   const movedHere = moves.find((m) => m.to === picked.date && m.from);

@@ -66,6 +66,7 @@ export default function Profile() {
           <span style={{ fontSize: 30, fontWeight: 700 }}>{preview.kcal}</span><span className="muted">kcal</span>
         </div>
         <div className="muted small">Protein {preview.protein} g · carbs {preview.carbs} g · fat {preview.fat} g · fiber {preview.fiber} g</div>
+        {preview.gated?.length ? <div className="small safety-note">{preview.gated.map((g) => t(`safety.gate.${g}`)).join(' ')}</div> : null}
         {preview.source !== 'plan' ? (
           <details className="explain">
             <summary>{t('profile.how')}</summary>
@@ -109,6 +110,7 @@ export default function Profile() {
         </label>
         <label className="field"><span>{t('profile.direction')}</span>
           <select value={p.direction || 'lose'} onChange={set('direction')}>{DIRECTIONS.map((k) => <option key={k} value={k}>{t(`profile.dir.${k}`)}</option>)}</select>
+          {preview.gated?.includes('no_deficit') ? <span className="muted small">{t('safety.noCutGoal')}</span> : null}
         </label>
         <label className="field"><span>Start weight (kg, blank = first weigh-in)</span><input type="number" inputMode="decimal" step="0.1" value={p.start_weight_kg ?? ''} onChange={set('start_weight_kg')} /></label>
         <div className="row">

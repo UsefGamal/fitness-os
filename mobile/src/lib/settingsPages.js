@@ -5,6 +5,7 @@ export const SETTINGS_PAGES = [
   { key: 'training', icon: 'play', title: 'settings.training', note: 'settings.trainingNote' },
   { key: 'times', icon: 'timer', title: 'settings.times', note: 'settings.timesNote' },
   { key: 'health', icon: 'heart', title: 'settings.health', note: 'settings.healthNote' },
+  { key: 'safety', icon: 'check', title: 'settings.safety', note: 'settings.safetyNote' },
   { key: 'modules', icon: 'star', title: 'settings.modules', note: 'settings.modulesNote' },
   { key: 'about', icon: 'gear', title: 'settings.about', note: 'settings.aboutNote' },
 ];

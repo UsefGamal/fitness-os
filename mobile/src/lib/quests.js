@@ -5,6 +5,7 @@
 import { daysBetween, weekStart } from './dates.js';
 import { nextId } from './data.js';
 import { profileOf } from './macros.js';
+import { celebratesWeightLoss } from './safety.js';
 
 const byKey = (quests) => Object.fromEntries(quests.bonus_tasks.map((t) => [t.key, t]));
 
@@ -67,9 +68,10 @@ export function weeklyConditions(data, today) {
 
 /** Once-ever milestones. The 30-day streak quest is gone (E7-S3): it asked
  * for training on rest days. Old awards of it still count their points. */
-export function onceConditions(data) {
+export function onceConditions(data, today) {
   let lost5 = false;
-  if (data.body_logs.length) {
+  // Never while weight is hidden or a cut is off (SAFE-1).
+  if (data.body_logs.length && celebratesWeightLoss(data, today)) {
     const start = profileOf(data).start_weight_kg || data.body_logs[0].weight_kg;
     const lowest = Math.min(...data.body_logs.map((b) => b.weight_kg));
     lost5 = start - lowest >= 5;
@@ -84,7 +86,7 @@ export function onceConditions(data) {
 export function syncQuests(data, today, quests) {
   const tasks = byKey(quests);
   const done = doneKeys(data, today, quests);
-  const met = [...Object.entries(weeklyConditions(data, today)), ...Object.entries(onceConditions(data))]
+  const met = [...Object.entries(weeklyConditions(data, today)), ...Object.entries(onceConditions(data, today))]
     .filter(([key, ok]) => ok && tasks[key] && !done.has(key))
     .map(([key]) => key);
   if (!met.length) return data;

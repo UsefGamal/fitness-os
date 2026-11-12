@@ -23,6 +23,8 @@ import { Health, isNative, signingCode } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
 import { content, useData } from '../store/useData.js';
+import { gatesOn, isMinorNow, screeningState, setHide } from '../lib/safety.js';
+import Screening from './Screening.jsx';
 import RamadanSettings from '../components/RamadanSettings.jsx';
 import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t, t as tr } from '../lib/i18n.js';
@@ -62,6 +64,7 @@ export default function Settings() {
   const [msg, setMsg] = useState('');
   const [report, setReport] = useState(false);
   const [news, setNews] = useState(false);
+  const [screening, setScreening] = useState(false);
   const [pendingImport, setPendingImport] = useState(null);
   const csvRef = useRef(null);
   const [csv, setCsv] = useState(null); // { text, unit, parsed, preview }
@@ -212,6 +215,7 @@ export default function Settings() {
     setMsg(on ? `Reminders on: ${leadText(t.remind_before)} each ${t.session_time} session and at meal times.` : 'Reminders off.');
   };
 
+  if (screening) return <Screening onDone={() => setScreening(false)} onCancel={() => setScreening(false)} />;
   return (
     <div className="page">
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
@@ -363,6 +367,29 @@ export default function Settings() {
         <Toggle on={widgetPrivate(data)} title={t('widget.private')} note={t('widget.privateNote')}
           onClick={() => update((d) => ({ ...d, settings: { ...d.settings, widget_private: !widgetPrivate(d) } }))} />
       </div>
+      </>) : null}
+
+      {show('safety') ? (<>
+      <div className="section-label">{t('safety.section')}</div>
+      <div className="list">
+        <div className="list-row"><div className="grow"><div>{t('safety.title')}</div><div className="meta">{t(`safety.state.${screeningState(data, todayISO())}`)}</div></div></div>
+        <button type="button" className="list-row" onClick={() => setScreening(true)}><Icon name="check" /><div className="grow">{t(data.safety?.skipped ? 'safety.answer' : 'safety.again')}</div><Icon name="chev" className="icon chev" /></button>
+      </div>
+      {gatesOn(data, todayISO()).length ? (
+        <section className="card">
+          <div className="muted small" style={{ marginBottom: 6 }}>{t('safety.limitsOn')}</div>
+          <ul className="safety-gates">
+            {gatesOn(data, todayISO()).map((g) => <li key={g}>{t(`safety.gate.${g}`)}</li>)}
+          </ul>
+          {isMinorNow(data, todayISO()) ? <div className="muted small" style={{ marginTop: 6 }}>{t('safety.minor')}</div> : null}
+        </section>
+      ) : null}
+      <div className="section-label">{t('safety.hideSection')}</div>
+      <div className="list">
+        <Toggle on={data.safety?.hide_weight === true} title={t('safety.hideWeight')} note={t('safety.hideWeightNote')} onClick={() => update((d) => setHide(d, 'hide_weight', d.safety?.hide_weight !== true))} />
+        <Toggle on={data.safety?.hide_kcal === true} title={t('safety.hideKcal')} note={t('safety.hideKcalNote')} onClick={() => update((d) => setHide(d, 'hide_kcal', d.safety?.hide_kcal !== true))} />
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{t('safety.calm')}</p>
       </>) : null}
 
       {show('about') ? (<>

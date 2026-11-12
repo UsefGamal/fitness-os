@@ -6,6 +6,7 @@ import { emptyData } from './data.js';
 import { macroTargets } from './macros.js';
 import { activeBlock } from './plan.js';
 import { bodyComplete, bodyErrors, finishSetup, needsSetup, pickRoutine, settleSetup, setupGoalDate, skipSetup } from './setup.js';
+import { QUESTIONS, gateOn, kcalHidden } from './safety.js';
 import { content } from './testContent.js';
 
 const TODAY = '2026-11-10';
@@ -46,8 +47,10 @@ test('a goal date at 0.5% of body weight a week', () => {
   assert.equal(setupGoalDate(null, 80, TODAY), null);
 });
 
+const ALL_NO = Object.fromEntries(QUESTIONS.map((q) => [q.key, false]));
+
 test('full answers: profile, goal, routine from today, kcal shown', () => {
-  const d = finishSetup(emptyData(content), content, { ...BODY, goal: 'recomp', goal_kg: 80, where: 'gym', days: 4, experience: 'some' }, TODAY);
+  const d = finishSetup(emptyData(content), content, { ...BODY, goal: 'recomp', goal_kg: 80, where: 'gym', days: 4, experience: 'some', screening: ALL_NO }, TODAY);
   assert.equal(d.profile.gender, 'male');
   assert.equal(d.goals.at(-1).direction, 'recomp');
   assert.equal(d.goals.at(-1).target_date, '2027-01-16');
@@ -133,4 +136,19 @@ test('setup keeps the weight as the first weigh-in, the name and the training ti
   assert.equal(s.body_logs.length, 0);
   assert.equal(s.profile.name, 'Omar');
   assert.equal(s.settings?.times?.session_time, undefined);
+});
+
+test('setup without the safety check is gated: maintenance calories, kcal hidden', () => {
+  const d = finishSetup(emptyData(content), content, { ...BODY, goal: 'lose', goal_kg: 80, where: 'gym', days: 3, experience: 'new' }, TODAY);
+  assert.equal(d.safety.skipped, true);
+  assert.equal(gateOn(d, 'no_deficit', TODAY), true);
+  assert.equal(kcalHidden(d), true);
+  const m = macroTargets(d, content.nutrition, TODAY);
+  assert.equal(m.mode, 'maintain');
+  assert.equal(m.deficit, 0);
+  assert.ok(m.gated.includes('no_deficit'));
+  // Skip everything: gated too.
+  const s2 = skipSetup(emptyData(content), TODAY);
+  assert.equal(gateOn(s2, 'protein_cap', TODAY), true);
+  assert.equal(s2.safety.skipped, true);
 });

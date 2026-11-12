@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import Icon from '../components/Icon.jsx';
+import SafetyQuestions from '../components/SafetyQuestions.jsx';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { isTime } from '../lib/times.js';
@@ -8,9 +9,10 @@ import { macroTargets } from '../lib/macros.js';
 import { routineById } from '../lib/routines.js';
 import { DAY_CHOICES, GOALS, bodyComplete, bodyErrors, finishSetup, isMinor, pickRoutine, skipSetup } from '../lib/setup.js';
 import { pushOverlay } from '../lib/overlays.js';
+import { answeredAll, screeningResult } from '../lib/safety.js';
 import { content, useData } from '../store/useData.js';
 
-const STEPS = 5;
+const STEPS = 6;
 
 /** First-time setup (E5-S2): five short screens, each one skippable.
  * Shown full screen before the app on a fresh install only. */
@@ -29,6 +31,9 @@ export default function Setup({ onDone }) {
   useEffect(() => (0 < step ? pushOverlay(back) : undefined), [step]);
   const errors = bodyErrors(a, today);
   const minor = isMinor(a, today);
+  // The safety check can hold calories at maintenance (skipped counts as
+  // gated); the goal is still remembered.
+  const noCut = minor || screeningResult(a.screening || {}).gates.no_deficit;
   function err(k) {
     if (!errors[k]) return null;
     return <span className="field-error" role="alert">{t(errors[k])}</span>;
@@ -43,7 +48,7 @@ export default function Setup({ onDone }) {
     </button>
   );
   const routine = routineById(content, pickRoutine(a));
-  const preview = step === 4 ? macroTargets(finishSetup(data, content, a, today), content.nutrition, today) : null;
+  const preview = step === 5 ? macroTargets(finishSetup(data, content, a, today), content.nutrition, today) : null;
 
   return (
     <div className="page setup">
@@ -89,9 +94,22 @@ export default function Setup({ onDone }) {
 
       {step === 2 ? (
         <>
+          <h1 className="page-title">{t('safety.title')}</h1>
+          <p className="page-sub">{t('safety.sub')}</p>
+          <SafetyQuestions answers={a.screening || {}} onChange={(v) => set('screening', v)} />
+          <div className="stack" style={{ marginTop: 16 }}>
+            <button type="button" className="btn" disabled={!answeredAll(a.screening)} onClick={next}>{t('setup.next')}</button>
+            <button type="button" className="btn ghost" onClick={() => { set('screening', null); next(); }}>{t('safety.skip')}</button>
+          </div>
+          <p className="muted small" style={{ marginTop: 12 }}>{t('safety.skipNote')}</p>
+        </>
+      ) : null}
+
+      {step === 3 ? (
+        <>
           <h1 className="page-title">{t('setup.goalTitle')}</h1>
           <div className="list">{GOALS.filter((g) => !minor || (g !== 'lose' && g !== 'recomp')).map((g) => choice('goal', g, t(`setup.goal.${g}`), t(`setup.goalNote.${g}`)))}</div>
-          {minor ? <p className="muted small">{t('setup.minorGoal')}</p> : null}
+          {minor ? <p className="muted small">{t('setup.minorGoal')}</p> : noCut && (a.goal === 'lose' || a.goal === 'recomp') ? <p className="muted small">{t('safety.noCutGoal')}</p> : null}
           {(a.goal === 'lose' || a.goal === 'recomp') && a.weight_kg ? (
             <label className="field"><span>{t('setup.goalWeight')}</span><input type="number" inputMode="decimal" step="0.5" value={a.goal_kg ?? ''} onChange={num('goal_kg')} aria-invalid={Boolean(errors.goal_kg)} />{err('goal_kg')}</label>
           ) : null}
@@ -102,7 +120,7 @@ export default function Setup({ onDone }) {
         </>
       ) : null}
 
-      {step === 3 ? (
+      {step === 4 ? (
         <>
           <h1 className="page-title">{t('setup.trainTitle')}</h1>
           <div className="seg" style={{ marginBottom: 12 }} role="group" aria-label={t('setup.where')}>
@@ -128,7 +146,7 @@ export default function Setup({ onDone }) {
         </>
       ) : null}
 
-      {step === 4 ? (
+      {step === 5 ? (
         <>
           <h1 className="page-title">{t('setup.doneTitle')}</h1>
           <div className="list">

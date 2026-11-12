@@ -636,3 +636,12 @@ details.vol-group .wsets { padding: 0 0 12px; }
 .whats-new { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .whats-new li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.35; }
 .whats-new .icon { flex: none; margin-top: 2px; }
+
+/* Safety check (SAFE-1): one question per row, Yes / No beside it. */
+.safety-list { display: flex; flex-direction: column; gap: 10px; }
+.safety-q { background: var(--surface); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.safety-text { font-size: 16px; line-height: 1.35; }
+.safety-seg { margin: 0; }
+.safety-seg button { min-height: 44px; }
+.safety-gates { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.safety-note { margin-top: 8px; color: var(--muted); }

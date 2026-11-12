@@ -34,6 +34,7 @@ import { content, useData } from '../store/useData.js';
 import { hasScreenLock } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
+import { markClearanceSeen, showClearance } from '../lib/safety.js';
 
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
@@ -75,6 +76,7 @@ export default function Today() {
   const backup = backupDue(data, Date.now(), { screenLock });
   const [picking, setPicking] = useState(false);
   const [weighing, setWeighing] = useState(false);
+  const clearanceSeen = () => update(markClearanceSeen);
   // What's new, once per version (E1-S6). A new install skips straight to "seen".
   const news = unseenNotes(data, APP.version, WHATS_NEW);
   const seenVersion = data.settings?.whats_new_seen;
@@ -109,6 +111,15 @@ export default function Today() {
         <div className="card small banner" role="note"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.homeNote', { time: times.session_time })}</span></div>
       ) : null}
 
+      {showClearance(data, today) ? (
+        <div className="backup-line" role="status">
+          <Link className="grow backup-link" to="/settings/safety">
+            <Icon name="heart" className="icon tone-accent" />
+            <span><strong>{t('safety.clearance')}</strong> <span className="muted">{t('safety.clearanceWhy')}</span></span>
+          </Link>
+          <button type="button" className="mini-btn" onClick={clearanceSeen}>{t('safety.clearanceDone')}</button>
+        </div>
+      ) : null}
       <WorkoutCard
         next={next}
         day={nextDay}

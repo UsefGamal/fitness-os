@@ -8,6 +8,7 @@ import { addDays } from './dates.js';
 import { saveProfile } from './macros.js';
 import { levelFromSetup } from './levels.js';
 import { startRoutine } from './routines.js';
+import { applyScreening, skipScreening } from './safety.js';
 import { isTime, setTimes } from './times.js';
 import { setTraining } from './training.js';
 
@@ -73,8 +74,9 @@ export function bodyComplete(a, today = new Date().toISOString().slice(0, 10)) {
 }
 
 /** Apply the answers. `a`: { gender, birth_year, height_cm, weight_kg,
- * goal, goal_kg, where, days, experience, name, session_time }; any may be
- * missing (skipped). The weight is also the first weigh-in (UX-30), the name
+ * goal, goal_kg, where, days, experience, name, session_time, screening };
+ * any may be missing (skipped). `screening` is the safety check's answers
+ * ({ key: true | false }); without it every limit is on (lib/safety.js). The weight is also the first weigh-in (UX-30), the name
  * feeds the greeting and the time sets when reminders come (UX-31).
  * Skipping the body facts hides kcal until the profile is filled in. */
 export function finishSetup(data, content, a, today) {
@@ -109,6 +111,7 @@ export function finishSetup(data, content, a, today) {
   const routine = pickRoutine(a);
   d = startRoutine(d, content, routine, today);
   d = setTraining(d, { level: levelFromSetup(a.experience) });
+  d = a.screening ? applyScreening(d, a.screening, today) : skipScreening(d, today);
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },
@@ -118,7 +121,8 @@ export function finishSetup(data, content, a, today) {
 
 /** Skip everything: nothing set, kcal hidden, a "finish your setup" note. */
 export function skipSetup(data, today) {
-  return { ...data, safety: { ...(data.safety || {}), hide_kcal: true }, setup: { done_on: today, routine: null, needs_body: true, skipped: true } };
+  const d = skipScreening(data, today);
+  return { ...d, safety: { ...(d.safety || {}), hide_kcal: true }, setup: { done_on: today, routine: null, needs_body: true, skipped: true } };
 }
 
 /** Once the profile has what the maths needs, the note goes and kcal

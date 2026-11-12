@@ -5,6 +5,11 @@
 import { GROUPS, totalVolume, weekStreaks } from './insights.js';
 import { e1rm, isWorkSet } from './data.js';
 import { weekStart } from './dates.js';
+import { celebratesWeightLoss } from './safety.js';
+
+// Badges that cheer a smaller body: off while weight is hidden or a cut is
+// off (SAFE-1). They are left out, not shown as locked.
+export const WEIGHT_BADGES = ['lost5', 'waist5', 'weigh30'];
 
 const gymCount = (s) => s.gym;
 
@@ -125,7 +130,8 @@ export function badgeStats(data, today) {
 export function badges(data, today) {
   const stats = badgeStats(data, today);
   const kept = data.achievements || {};
-  return BADGES.map((b) => {
+  const cheer = celebratesWeightLoss(data, today);
+  return BADGES.filter((b) => cheer || !WEIGHT_BADGES.includes(b.id)).map((b) => {
     const value = b.value(stats);
     return { ...b, value, earned: value >= b.goal, fraction: Math.min(1, value / b.goal), date: kept[b.id] || null };
   });
