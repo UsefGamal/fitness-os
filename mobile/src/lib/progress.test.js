@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { addDays } from './dates.js';
-import { goalProgress, linearRate, predictedDate, trendSeries } from './progress.js';
+import { adviceKey, changeGood, statusGood, goalProgress, linearRate, predictedDate, trendSeries } from './progress.js';
 
 const weekly = (start, perWeek, n, from = '2026-09-01') => Array.from({ length: n }, (_, i) => ({ id: i + 1, log_date: addDays(from, i * 7), weight_kg: Math.round((start - perWeek * i) * 10) / 10 }));
 const GOAL = { direction: 'lose', start_weight_kg: 103, target_low_kg: 75, target_high_kg: 80, target_date: '2027-03-15' };
@@ -88,4 +88,38 @@ test('recomp: a slow loss is steady, the lose pace is fast', () => {
   const p = goalProgress(quick, recomp, quick[quick.length - 1].log_date);
   assert.equal(p.mode, 'recomp');
   assert.equal(p.status, 'fast');
+});
+
+test('advice fits the goal: gaining and recomposing get their own words', async () => {
+  const en = (await import('../i18n/en.js')).default;
+  assert.equal(adviceKey('lose', 'fast'), 'goal.next.fast');
+  assert.equal(adviceKey('gain', 'fast'), 'goal.next.gain.fast');
+  assert.equal(adviceKey('recomp', 'holding'), 'goal.next.recomp.holding');
+  assert.equal(adviceKey('maintain', 'steady'), 'goal.next.maintain.steady');
+  assert.equal(adviceKey('maintain', 'drifting'), 'goal.next.drifting');
+  assert.equal(adviceKey('gain', 'early'), 'goal.next.early');
+  assert.equal(adviceKey('gain', 'reached'), 'goal.next.reached');
+  // Every key the card can ask for exists.
+  for (const mode of ['lose', 'gain', 'recomp', 'maintain']) {
+    for (const status of ['early', 'steady', 'fast', 'slow', 'holding', 'drifting', 'reached']) {
+      assert.ok(en[adviceKey(mode, status)], `${mode}/${status}`);
+    }
+  }
+  // Nobody gaining is told to protect muscle by eating more, the fat-loss line.
+  assert.doesNotMatch(en[adviceKey('gain', 'fast')], /keep your muscle/);
+});
+
+test('what counts as good news depends on the goal', () => {
+  assert.equal(statusGood('lose', 'steady'), true);
+  assert.equal(statusGood('lose', 'holding'), false);
+  assert.equal(statusGood('recomp', 'holding'), true);
+  assert.equal(statusGood('gain', 'holding'), false);
+  assert.equal(statusGood('gain', 'reached'), true);
+  assert.equal(changeGood('lose', -1.2), true);
+  assert.equal(changeGood('lose', 0.4), false);
+  assert.equal(changeGood('gain', 0.6), true);
+  assert.equal(changeGood('gain', -0.6), false);
+  assert.equal(changeGood('maintain', -0.3), false);
+  assert.equal(changeGood('recomp', -0.3), false);
+  assert.equal(changeGood('lose', 0), false);
 });
