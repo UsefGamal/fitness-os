@@ -444,6 +444,17 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .greet-small { font-size: 20px; font-weight: 500; color: var(--muted); letter-spacing: -0.01em; }
 .greet-name { font-size: 28px; letter-spacing: -0.03em; line-height: 1.15; }
 .banner { margin-bottom: 12px; }
+/* Backup reminder as one thin line (UX-02). */
+.backup-line { display: flex; align-items: center; gap: 4px; margin: 0 0 12px; padding-inline-start: 14px; border-radius: var(--radius); background: var(--surface); font-size: 14px; }
+.backup-link { display: flex; align-items: center; gap: 10px; min-height: 44px; color: inherit; padding: 6px 0; }
+/* Other sessions folded into one row (UX-04). */
+.other-sessions { margin-top: 20px; }
+.other-sessions > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 16px; border-radius: var(--radius); background: var(--surface); cursor: pointer; font-weight: 600; }
+.other-sessions > summary::-webkit-details-marker { display: none; }
+.other-sessions > summary .grow { white-space: nowrap; }
+.other-sessions > summary .muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.other-sessions[open] > summary .chev { transform: rotate(90deg); }
+.other-sessions[open] > summary { margin-bottom: 12px; }
 
 .hero-card { display: block; color: inherit; border-radius: var(--radius-lg); padding: 16px 16px 16px 20px;
   background: linear-gradient(135deg, rgba(48, 209, 88, 0.14), rgba(48, 209, 88, 0.02) 55%), var(--surface); }

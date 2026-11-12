@@ -391,25 +391,26 @@ export default function Workout() {
           <button type="button" className="undo" onClick={() => { update((d) => restoreSet(d, active.id, undo.set)); setUndo(null); }}><Icon name="undo" className="icon" /> {t('workout.undo')}</button>
         </div>
       ) : null}
+      {/* One compact header; Pause, Finish and Discard sit in the one menu (UX-13). */}
       <section className="card workout-head">
         <div className="row between" style={{ gap: 8 }}>
-          <h1 className="section-title" style={{ margin: 0 }}>{day.label}</h1>
-          <div className="row" style={{ gap: 4 }}>
-            <span className={`chip${paused ? ' warn' : ' accent'}`}>{t(paused ? 'workout.paused' : 'workout.inProgress')}</span>
-            <MoreMenu title={t('workout.more')} actions={[{ key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') }]} />
+          <div className="grow" style={{ minWidth: 0 }}>
+            <h1 className="section-title" style={{ margin: 0 }}>{day.label}</h1>
+            <div className="muted small" style={{ marginTop: 2 }}>{elapsed(ms)}{lengthTarget ? ` / ${settings.target_min} min` : ''} · {t('workout.setsOf', { done: totalDone, all: totalTarget })} · {t('plan.tempo', { tempo: T.trainer_plan.tempo })}</div>
           </div>
+          <MoreMenu title={t('workout.more')} actions={[
+            { key: 'pause', label: t(paused ? 'workout.resume' : 'workout.pause'), note: paused ? null : t('workout.pauseNote'), icon: paused ? 'play' : 'pause', onClick: () => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id))) },
+            { key: 'finish', label: t('workout.finishWorkout'), note: t('workout.finishNote', { done: totalDone, all: totalTarget }), icon: 'check', onClick: () => { setFinishing(true); window.scrollTo({ top: 0 }); } },
+            { key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') },
+          ]} />
         </div>
-        <div className="row between muted small" style={{ margin: '2px 0 12px' }}>
-          <span>{elapsed(ms)}{lengthTarget ? ` / ${settings.target_min} min` : ''} · {t('workout.setsOf', { done: totalDone, all: totalTarget })}</span>
-          <span>{t('plan.tempo', { tempo: T.trainer_plan.tempo })}</span>
-        </div>
-        {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '0 0 12px' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
-        <div className="row" style={{ gap: 8 }}>
-          <button type="button" className="btn secondary grow" onClick={() => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id)))}>
-            <Icon name={paused ? 'play' : 'pause'} /> {t(paused ? 'workout.resume' : 'workout.pause')}
-          </button>
-          <button type="button" className="btn outline" style={{ width: 'auto' }} onClick={() => setFinishing(true)}><Icon name="check" /> {t('workout.finish')}</button>
-        </div>
+        {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '10px 0 0' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
+        {paused ? (
+          <div className="row between" style={{ gap: 8, marginTop: 10 }}>
+            <span className="chip warn">{t('workout.paused')}</span>
+            <button type="button" className="btn secondary small" onClick={() => update((d) => resumeWorkout(d, active.id))}><Icon name="play" /> {t('workout.resume')}</button>
+          </div>
+        ) : null}
       </section>
 
       {finishing ? (
@@ -496,6 +497,11 @@ export default function Workout() {
           </div>
         );
       })}
+      {finishing ? null : (
+        <button type="button" className={`btn${totalDone >= totalTarget ? '' : ' outline'}`} style={{ marginTop: 16 }} onClick={() => { setFinishing(true); window.scrollTo({ top: 0 }); }}>
+          <Icon name="check" /> {t('workout.finishWorkout')}
+        </button>
+      )}
       {sheet === 'exmore' && ex ? (
         <Sheet title={ex.name} onClose={() => setSheet(null)}>
           <div className="list">

@@ -28,6 +28,9 @@ function stop(child) {
   try { process.kill(-child.pid, 'SIGTERM'); } catch { child.kill(); }
 }
 
+// Home is up once its Today tiles are drawn (it has no week strip since UX-04).
+const HOME_READY = '.home .tile-grid';
+
 async function serve() {
   const child = spawn('npx', ['vite', 'preview', '--outDir', 'dist-device', '--port', String(PORT), '--strictPort'], { cwd: new URL('..', import.meta.url), stdio: 'ignore', detached: true });
   for (let i = 0; i < 100; i += 1) {
@@ -82,13 +85,13 @@ async function speed(browser) {
   // The first open upgrades the old file once (and keeps a snapshot); the
   // check is the everyday open after that.
   await page.goto(`${URL0}#/`);
-  await page.locator('.week-day.today').first().waitFor({ timeout: 20000 });
+  await page.locator(HOME_READY).first().waitFor({ timeout: 20000 });
   await page.waitForTimeout(1500);
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
   const t0 = Date.now();
   await page.reload();
-  await page.locator('.week-day.today').first().waitFor({ timeout: 20000 });
+  await page.locator(HOME_READY).first().waitFor({ timeout: 20000 });
   const ms = Date.now() - t0;
   check('speed: Home with 3 years of data, 6x slower CPU', ms < HOME_BUDGET_MS && !errors.length, `${ms} ms, budget ${HOME_BUDGET_MS}${errors.length ? `; ${errors.join('; ')}` : ''}`);
   await ctx.close();
@@ -98,12 +101,13 @@ async function midnight(browser) {
   // 23:59:30 on Friday in Cairo, with the app open on Home.
   const { ctx, page, errors } = await context(browser, { store: { [KEY]: fixture() }, time: new Date('2026-11-06T21:59:30Z'), fake: true });
   await page.goto(`${URL0}#/`);
-  const today = page.locator('.week-day.today').first();
+  // Home has no week strip since UX-04: the date under the greeting is the day it shows.
+  const today = page.locator('.home-date').first();
   await today.waitFor({ timeout: 10000 });
-  const before = await today.getAttribute('aria-label');
+  const before = await today.textContent();
   await ctx.clock.runFor(60000);
-  await page.waitForFunction((b) => document.querySelector('.week-day.today')?.getAttribute('aria-label') !== b, before, { timeout: 5000 }).catch(() => {});
-  const after = await today.getAttribute('aria-label');
+  await page.waitForFunction((b) => document.querySelector('.home-date')?.textContent !== b, before, { timeout: 5000 }).catch(() => {});
+  const after = await today.textContent();
   check('midnight: Home moves to Saturday with the app open', /^Fri/.test(before || '') && /^Sat/.test(after || '') && !errors.length, `${before} -> ${after}`);
   await ctx.close();
 }
@@ -117,7 +121,7 @@ async function fakeFs(browser) {
     const local = JSON.parse(fixture(older));
     const { ctx, page, errors } = await context(browser, { store: { [KEY]: JSON.stringify(local), [FS_KEY]: JSON.stringify({ 'fitness-os-data.json': JSON.stringify(file) }) } });
     await page.goto(`${URL0}#/`);
-    await page.locator('.week-day.today').first().waitFor({ timeout: 10000 });
+    await page.locator(HOME_READY).first().waitFor({ timeout: 10000 });
     await page.waitForTimeout(800);
     const note = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}').exercise_notes?.['Leg Press'], KEY);
     check('fake-fs: a newer file copy wins over localStorage', note === 'from the file' && !errors.length, String(note));
@@ -128,7 +132,7 @@ async function fakeFs(browser) {
     const file = JSON.parse(fixture({ saved_at: 2000 }));
     const { ctx, page, errors } = await context(browser, { store: { [KEY]: '{"broken', [FS_KEY]: JSON.stringify({ 'fitness-os-data.json': JSON.stringify(file) }) } });
     await page.goto(`${URL0}#/`);
-    const home = await page.locator('.week-day.today').first().isVisible({ timeout: 10000 }).catch(() => false);
+    const home = await page.locator(HOME_READY).first().isVisible({ timeout: 10000 }).catch(() => false);
     const workouts = await page.evaluate((k) => { try { return JSON.parse(localStorage.getItem(k)).workouts.length; } catch { return -1; } }, KEY);
     check('fake-fs: a broken localStorage copy recovers from the file', home && workouts === file.workouts.length && !errors.length, `home ${home}, workouts ${workouts}/${file.workouts.length}`);
     await ctx.close();
@@ -137,7 +141,7 @@ async function fakeFs(browser) {
   {
     const { ctx, page, errors } = await context(browser, { store: { [KEY]: fixture() } });
     await page.goto(`${URL0}#/`);
-    await page.locator('.week-day.today').first().waitFor({ timeout: 10000 });
+    await page.locator(HOME_READY).first().waitFor({ timeout: 10000 });
     await page.waitForTimeout(1500);
     const ok = await page.evaluate((k) => { try { const m = JSON.parse(localStorage.getItem(k)); return Boolean(JSON.parse(m['fitness-os-data.json']).workouts); } catch { return false; } }, FS_KEY);
     check('fake-fs: the data file is written on start', ok && !errors.length, errors.join('; '));
