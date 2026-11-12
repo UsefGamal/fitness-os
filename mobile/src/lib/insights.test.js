@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { e1rmSeries, lastTrained, monthLabels, recoveryState, setsByGroup, strengthMove, totalVolume, trackedExercises, volumeLevel, weekStreaks, yearGrid } from './insights.js';
+import { e1rmSeries, lastTrained, monthLabels, recoveryState, setsByGroup, plannedPerWeek, strengthMove, totalVolume, trackedExercises, volumeLevel, weekNeed, weekStreaks, yearGrid } from './insights.js';
 
 const exercises = [{ id: 1, name: 'Bench', muscle_group: 'Chest' }, { id: 2, name: 'Squat', muscle_group: 'Legs' }];
 const w = (id, log_date, sets) => ({ id, log_date, workout_type: 'gym', sets: sets.map(([exercise_id, weight_kg, reps], i) => ({ id: id * 10 + i, exercise_id, weight_kg, reps })) });
@@ -37,9 +37,9 @@ test('year grid is Sunday-start weeks ending this week', () => {
 
 test('week streaks: current run and the longest', () => {
   const data = { exercises, workouts: ['2026-10-05', '2026-10-12', '2026-10-19', '2026-10-27', '2026-09-01'].map((d, i) => w(i + 1, d, [])) };
-  assert.deepEqual(weekStreaks(data, '2026-11-04'), { current: 4, longest: 4 });
-  assert.deepEqual(weekStreaks(data, '2026-11-12'), { current: 0, longest: 4 });
-  assert.deepEqual(weekStreaks({ workouts: [] }, '2026-11-04'), { current: 0, longest: 0 });
+  assert.deepEqual(weekStreaks(data, '2026-11-04'), { current: 4, longest: 4, week: { done: 0, need: 1 } });
+  assert.deepEqual(weekStreaks(data, '2026-11-12'), { current: 0, longest: 4, week: { done: 0, need: 1 } });
+  assert.deepEqual(weekStreaks({ workouts: [] }, '2026-11-04'), { current: 0, longest: 0, week: { done: 0, need: 1 } });
 });
 
 test('e1RM series keeps the best set per day', () => {
@@ -82,4 +82,30 @@ test('strengthMove picks the lift that rose most in four weeks', () => {
   assert.equal(strengthMove({ exercises: ex, workouts: [] }, '2026-11-12'), null);
   // Sessions after "today" are ignored.
   assert.equal(strengthMove(data, '2026-10-25'), null);
+});
+
+test('the streak: a week is kept with one planned session missed, by the plan of that week', () => {
+  const sched = (n) => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].map((day, i) => ({ day, session: i < n ? `s${i}` : 'rest' }));
+  const program = { blocks: [{ id: 'b1', started_on: '2026-10-04', schedule: sched(3) }, { id: 'b2', started_on: '2026-10-25', schedule: sched(5) }] };
+  assert.equal(plannedPerWeek(program.blocks[1]), 5);
+  assert.equal(plannedPerWeek(null), 0);
+  const need = weekNeed({ program });
+  assert.equal(need('2026-10-04'), 2, '3 planned: 2 keep the week');
+  assert.equal(need('2026-10-25'), 4, '5 planned: 4 keep the week');
+  assert.equal(need('2026-09-06'), 2, 'before any block: the first plan');
+  assert.equal(weekNeed({})('2026-10-04'), 1);
+  assert.equal(weekNeed({ program: { blocks: [{ started_on: '2026-10-04', schedule: sched(1) }] } })('2026-10-04'), 1, 'never zero');
+  // Weeks start on Sunday. 4 Oct: 2 of 3 (kept). 11 Oct: 3 of 3. 18 Oct: 1 of 3 (broken).
+  // 25 Oct (5 planned): 4 (kept). 1 Nov: 3 so far.
+  const dates = ['2026-10-04', '2026-10-06', '2026-10-11', '2026-10-13', '2026-10-15', '2026-10-19', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-11-01', '2026-11-02', '2026-11-03'];
+  const data = { exercises, program, workouts: dates.map((d, i) => w(i + 1, d, [])) };
+  assert.deepEqual(weekStreaks(data, '2026-11-03'), { current: 1, longest: 2, week: { done: 3, need: 4 } });
+  // One more session this week and it is kept: two in a row.
+  const more = { ...data, workouts: [...data.workouts, w(99, '2026-11-04', [])] };
+  assert.deepEqual(weekStreaks(more, '2026-11-04'), { current: 2, longest: 2, week: { done: 4, need: 4 } });
+  // Two workouts on one day are one training day.
+  const twice = { exercises, program, workouts: [w(1, '2026-10-04', []), w(2, '2026-10-04', [])] };
+  assert.equal(weekStreaks(twice, '2026-10-05').current, 0);
+  // A number still asks for that many every week.
+  assert.equal(weekStreaks(data, '2026-11-03', 1).current, 5);
 });

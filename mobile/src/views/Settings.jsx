@@ -227,7 +227,7 @@ export default function Settings() {
       {!page ? (
         <div className="list">
           <button type="button" className="list-row" onClick={() => navigate('/profile')}><Icon name="user" /><div className="grow">{t('settings.profile')}</div><Icon name="chev" className="icon chev" /></button>
-          <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">{t('settings.quests')}</div><Icon name="chev" className="icon chev" /></button>
+          {D.moduleOn(data, 'quests') ? <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">{t('settings.quests')}</div><Icon name="chev" className="icon chev" /></button> : null}
           {SETTINGS_PAGES.map((p) => (
             <button key={p.key} type="button" className="list-row" onClick={() => navigate(`/settings/${p.key}`)}>
               <Icon name={p.icon} /><div className="grow"><div>{t(p.title)}</div><div className="meta">{t(p.note)}</div></div><Icon name="chev" className="icon chev" />

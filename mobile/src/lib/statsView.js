@@ -62,7 +62,7 @@ const CATEGORY = {
   pr1: 'strength', pr25: 'strength', bench1: 'strength', squat15: 'strength', dead2: 'strength',
   ton10: 'milestones', ton100: 'milestones', full: 'milestones',
   meals7: 'nutrition',
-  lost5: 'body', waist5: 'body', weigh30: 'body',
+  lost5: 'body', waist5: 'body',
 };
 export const BADGE_CATEGORIES = ['consistency', 'strength', 'milestones', 'nutrition', 'body'];
 

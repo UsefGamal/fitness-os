@@ -87,33 +87,64 @@ export function yearGrid(data, today, weeks = 53) {
   return grid;
 }
 
-/** Weeks in a row with at least `min` workouts: { current, longest }. The
- * current week counts once it reaches `min`; until then the run that ended
- * last week still stands. */
-export function weekStreaks(data, today, min = 1) {
-  const perWeek = new Map();
+/** Training days the plan asks for in a week, from a block's schedule. */
+export function plannedPerWeek(block) {
+  const schedule = Array.isArray(block?.schedule) ? block.schedule : [];
+  return schedule.filter((d) => d && d.session && d.session !== 'rest').length;
+}
+
+/** The streak rule (PSY-B1, PRODUCT.md): a week is kept with all planned
+ * sessions but one, and at least one: max(1, planned - 1). So one missed
+ * session never breaks a streak. The plan is the one that was running that
+ * week (the last block started on or before the week's Saturday); with no
+ * plan in the data, one session keeps a week. Returns need(weekStartIso). */
+export function weekNeed(data) {
+  const blocks = (data?.program?.blocks || []).filter((b) => b && b.started_on).sort((a, b) => (a.started_on < b.started_on ? -1 : 1));
+  return (weekIso) => {
+    const end = addDays(weekIso, 6);
+    let block = blocks[0] || null;
+    for (const b of blocks) if (b.started_on <= end) block = b;
+    const planned = plannedPerWeek(block);
+    return planned ? Math.max(1, planned - 1) : 1;
+  };
+}
+
+/** Weeks in a row that were kept: { current, longest, week: { done, need } }.
+ * A week is kept when its training days reach the need: by default the
+ * weekNeed rule above; a number asks for that many every week. Recovery
+ * and Ramadan weeks count like any other. The current week counts once it
+ * is kept; until then the run that ended last week still stands. `week` is
+ * this week so far. This is the one streak the app shows (Home, Stats, the
+ * widget, the streak badges). */
+export function weekStreaks(data, today, min) {
+  const need = typeof min === 'number' ? () => min : weekNeed(data);
+  const days = new Map(); // week -> Set of training days
   for (const w of data.workouts) {
     if (w.log_date > today) continue;
     const k = weekStart(w.log_date);
-    perWeek.set(k, (perWeek.get(k) || 0) + 1);
+    if (!days.has(k)) days.set(k, new Set());
+    days.get(k).add(w.log_date);
   }
-  if (!perWeek.size) return { current: 0, longest: 0 };
-  const hit = (k) => (perWeek.get(k) || 0) >= min;
+  const done = (k) => days.get(k)?.size || 0;
+  const thisWeek = weekStart(today);
+  const week = { done: done(thisWeek), need: need(thisWeek) };
+  if (!days.size) return { current: 0, longest: 0, week };
+  const hit = (k) => done(k) >= need(k);
   let longest = 0;
   let run = 0;
-  const firstWeek = [...perWeek.keys()].sort()[0];
-  for (let k = firstWeek; k <= weekStart(today); k = addDays(k, 7)) {
+  const firstWeek = [...days.keys()].sort()[0];
+  for (let k = firstWeek; k <= thisWeek; k = addDays(k, 7)) {
     run = hit(k) ? run + 1 : 0;
     longest = Math.max(longest, run);
   }
   let current = 0;
-  let k = weekStart(today);
+  let k = thisWeek;
   if (!hit(k)) k = addDays(k, -7);
   while (hit(k)) {
     current += 1;
     k = addDays(k, -7);
   }
-  return { current, longest };
+  return { current, longest, week };
 }
 
 /** Best estimated 1RM per day for one exercise, oldest first.

@@ -90,3 +90,14 @@ test('SEC-11: "Hide numbers on the widget" keeps protein, water and the meal off
   assert.ok(first.meals.every((m) => m.what === '' && m.name));
   assert.equal(first.title, shown.title);
 });
+
+test('the streak is weeks in a row, the same as Home (REW-1)', () => {
+  const d = D.emptyData(content);
+  assert.equal(widgetDays(d, content, today)[0].streak, '');
+  let id = 1;
+  // Six training days in each of the two weeks before this one.
+  for (const start of ['2026-10-18', '2026-10-25']) for (let i = 0; i < 6; i += 1) d.workouts.push({ id: id++, log_date: addDays(start, i), workout_type: 'gym', sets: [] });
+  const days = widgetDays(d, content, today);
+  assert.equal(days[0].streak, '2 wk');
+  assert.equal(days[1].streak, '');
+});

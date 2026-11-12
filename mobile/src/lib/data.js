@@ -35,10 +35,13 @@ export const MODULES = [
   { key: 'meals', label: 'Meals', note: 'Meal plan tab and the meals card on Home' },
   { key: 'water', label: 'Water', note: 'Water card on Home' },
   { key: 'weight', label: 'Weight', note: 'Weigh-ins on Home and Stats' },
+  // On unless switched off; `implicit` keeps it out of the saved defaults,
+  // so older data and backups stay byte-for-byte the same (REW-1).
+  { key: 'quests', label: 'Quests', note: 'Daily habits, points and levels', implicit: true },
 ];
 
 export function defaultSettings() {
-  return { notifications: false, modules: Object.fromEntries(MODULES.map((m) => [m.key, true])) };
+  return { notifications: false, modules: Object.fromEntries(MODULES.filter((m) => !m.implicit).map((m) => [m.key, true])) };
 }
 
 export function moduleOn(data, key) {
