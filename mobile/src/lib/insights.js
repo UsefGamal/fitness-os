@@ -116,7 +116,10 @@ export function weekStreaks(data, today, min = 1) {
   return { current, longest };
 }
 
-/** Best estimated 1RM per day for one exercise, oldest first. */
+/** Best estimated 1RM per day for one exercise, oldest first.
+ * @param {import('../types').Data} data
+ * @param {number} exerciseId
+ * @returns {{ date: string, value: number }[]} */
 export function e1rmSeries(data, exerciseId) {
   const best = new Map();
   for (const w of data.workouts) {
@@ -129,7 +132,9 @@ export function e1rmSeries(data, exerciseId) {
   return [...best].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, value]) => ({ date, value: Math.round(value * 10) / 10 }));
 }
 
-/** Exercises with logged weight, most-trained first: [{ id, name, sessions }]. */
+/** Exercises with logged weight, most-trained first.
+ * @param {import('../types').Data} data
+ * @returns {{ id: number, name: string, sessions: number }[]} */
 export function trackedExercises(data) {
   const sessions = new Map();
   for (const w of data.workouts) {
@@ -142,7 +147,8 @@ export function trackedExercises(data) {
     .sort((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name));
 }
 
-/** Total kg lifted (weight x reps) across every work set. */
+/** Total kg lifted (weight x reps) across every work set.
+ * @param {import('../types').Data} data */
 export function totalVolume(data) {
   return data.workouts.reduce((n, w) => n + w.sets.reduce((m, s) => m + (isWorkSet(s) ? (s.weight_kg || 0) * (s.reps || 0) : 0), 0), 0);
 }

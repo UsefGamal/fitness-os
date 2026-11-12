@@ -15,6 +15,7 @@ cd mobile
 npm ci
 npm test            # export content/, then node --test src/lib/*.test.js
 npm run coverage    # the same with coverage; fails on a drop below coverage-baseline.json
+npm run typecheck   # tsc over src/lib in JSDoc mode; the data file's shape is in src/types.d.ts
 npm run dev         # vite dev server
 npm run build       # production web build into dist/
 node --test src/lib/data.test.js   # one test file (after npm run content)

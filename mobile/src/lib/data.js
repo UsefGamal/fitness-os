@@ -7,6 +7,7 @@
 // older copy to the current schema; this is what a new install starts with.
 import { blockFromContent, CURRENT_SCHEMA, defaultDiet, defaultSafety } from './migrate.js';
 
+/** @returns {import('../types').Data} */
 export function emptyData(content) {
   const planStart = content.nutrition.plan_start_date;
   return {

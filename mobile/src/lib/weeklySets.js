@@ -21,7 +21,11 @@ function add(out, target, sets) {
 
 /** Sets done this week (Sunday to `today`): { muscles: {key: sets}, unknown }.
  * Warm-up sets don't count. `entryOf(name)` finds a catalogue entry for an
- * exercise without a hand-checked target (optional). */
+ * exercise without a hand-checked target (optional).
+ * @param {import('../types').Data} data
+ * @param {any} training
+ * @param {string} today
+ * @param {(name: string) => any} [entryOf] */
 export function doneThisWeek(data, training, today, entryOf = () => null) {
   const from = weekStart(today);
   const byId = new Map(data.exercises.map((e) => [e.id, e.name]));
@@ -40,7 +44,11 @@ export function doneThisWeek(data, training, today, entryOf = () => null) {
   return { muscles, unknown };
 }
 
-/** Sets the plan has this week (every session day of the Sunday-start week). */
+/** Sets the plan has this week (every session day of the Sunday-start week).
+ * @param {import('../types').Data} data
+ * @param {any} training
+ * @param {string} today
+ * @param {(name: string) => any} [entryOf] */
 export function plannedThisWeek(data, training, today, entryOf = () => null) {
   const muscles = {};
   let unknown = 0;

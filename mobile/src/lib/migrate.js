@@ -73,7 +73,10 @@ export function defaultDiet(planStartDate) {
 }
 
 /** The first plan block: the content's weekly plan, copied in so later
- * content changes can't rewrite a plan someone is already following. */
+ * content changes can't rewrite a plan someone is already following.
+ * @param {any} content
+ * @param {{ id?: string, startedOn?: string, overrides?: object }} [opts]
+ * @returns {import('../types').ProgramBlock} */
 export function blockFromContent(content, { id = 'b1', startedOn, overrides = {} } = {}) {
   const T = content.training;
   return {

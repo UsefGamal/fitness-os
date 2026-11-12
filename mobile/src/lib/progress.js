@@ -20,7 +20,9 @@ export const MIN_LOGS = 3;
 // Recomp loses slowly on purpose: about 0.25-0.5% of body weight a week.
 export const BANDS = { lose: [0.5, 1], recomp: [0.25, 0.5], gain: [0.25, 0.5], maintain: [-0.25, 0.25] };
 
-/** [{ date, weight, trend }] in date order, weigh-ins without a weight dropped. */
+/** [{ date, weight, trend }] in date order, weigh-ins without a weight dropped.
+ * @param {import('../types').BodyLog[]} [logs]
+ * @returns {{ date: string, weight: number, trend: number }[]} */
 export function trendSeries(logs = []) {
   const byDate = new Map();
   for (const l of logs) if (l && l.weight_kg > 0 && l.log_date) byDate.set(l.log_date, l); // the last one of a day wins

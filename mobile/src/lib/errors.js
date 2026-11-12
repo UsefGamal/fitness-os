@@ -37,6 +37,7 @@ export function dataCounts(data) {
   };
 }
 
+/** @param {{ app: any, data: any, errors: any[], device?: { platform?: string, model?: string, osVersion?: string, screen?: string, webview?: string }, now?: Date }} report */
 export function bugReport({ app, data, errors, device = {}, now = new Date() }) {
   const lines = [
     'Fitness OS bug report',

@@ -73,6 +73,7 @@ export function timerToRestore(raw, now = Date.now()) {
  * `detail` is the next set ("Set 3 of 4 · 60 kg × 8", or "Set 1 of 3 · 8-10
  * reps" when the load isn't known yet) and `progress` the workout so far
  * ("Lower A · 7/18 sets"). Empty parts are left out.
+ * @param {{ setNo?: number, setsPlanned?: number, weightKg?: number, reps?: number, targetReps?: string | number, workout?: string, done?: number, planned?: number }} [next]
  */
 export function shadeLines({ setNo, setsPlanned, weightKg, reps, targetReps, workout, done, planned } = {}) {
   const parts = [];
