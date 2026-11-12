@@ -166,3 +166,15 @@ test('lastTopKg is the heaviest work set of the last earlier workout (UX-12)', (
   assert.equal(D.lastTopKg(d, 2), null);
   assert.equal(D.lastTopKg({ workouts: [{ id: 1, log_date: '2026-11-01', sets: [set(1, 0)] }] }, 1), null);
 });
+
+test('water goal: 3 litres by default, a personal one within sane limits', () => {
+  assert.equal(D.waterGoal({}), 3000);
+  assert.equal(D.waterGoal({ settings: {} }), 3000);
+  assert.equal(D.waterGoal({ settings: { water_goal_ml: 2500 } }), 2500);
+  assert.equal(D.waterGoal({ settings: { water_goal_ml: 'x' } }), 3000);
+  assert.equal(D.waterGoal({ settings: { water_goal_ml: 200 } }), 1000);
+  assert.equal(D.waterGoal({ settings: { water_goal_ml: 99999 } }), 6000);
+  const d = D.setWaterGoal({ settings: { notifications: true } }, 3750);
+  assert.deepEqual(d.settings, { notifications: true, water_goal_ml: 3750 });
+  assert.equal(D.setWaterGoal({}, 0).settings.water_goal_ml, 3000);
+});

@@ -315,6 +315,20 @@ export function waterOn(data, date) {
   return data.hydration_logs.filter((h) => h.log_date === date).reduce((sum, h) => sum + h.ml, 0);
 }
 
+// Personal water goal (E3-S10): 3 litres unless the person sets their own.
+export const WATER_GOAL = { default: 3000, min: 1000, max: 6000, step: 250 };
+
+export function waterGoal(data) {
+  const ml = Number(data?.settings?.water_goal_ml);
+  if (!Number.isFinite(ml) || ml <= 0) return WATER_GOAL.default;
+  return Math.min(WATER_GOAL.max, Math.max(WATER_GOAL.min, Math.round(ml)));
+}
+
+export function setWaterGoal(data, ml) {
+  const goal = waterGoal({ settings: { water_goal_ml: ml } });
+  return { ...data, settings: { ...data.settings, water_goal_ml: goal } };
+}
+
 export function addWater(data, date, ml) {
   const existing = data.hydration_logs.find((h) => h.log_date === date);
   if (existing) {

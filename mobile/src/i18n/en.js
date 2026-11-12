@@ -446,6 +446,8 @@ export default {
   'home.steady': 'Go steady',
   'home.backupTitle': 'Back up your data',
   'home.later': 'Later',
+  'settings.waterGoal': 'Daily water goal (ml)',
+  'settings.waterGoalNote': 'Used on Home, Meals and the widget. 3000 ml unless you change it.',
   'whatsNew.title': "What's new",
   'whatsNew.titleV': "What's new in {v}",
   'whatsNew.version': 'Version {v}',

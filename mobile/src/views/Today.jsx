@@ -35,7 +35,6 @@ import { hasScreenLock } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
 
-const WATER_GOAL = 3000;
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
 export default function Today() {
@@ -174,7 +173,7 @@ export default function Today() {
       </div>
       <div className="tile-grid">
         {D.moduleOn(data, 'water') ? (
-          <StatTile wide icon="drop" tone="water" value={water} of={`${WATER_GOAL} ml`} label={t('home.water')}>
+          <StatTile wide icon="drop" tone="water" value={water} of={`${D.waterGoal(data)} ml`} label={t('home.water')}>
             <div className="row" style={{ gap: 6 }}>
               <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 250 })} onClick={() => addWater(250)}>{t('home.add250')}</button>
               <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 500 })} onClick={() => addWater(500)}>{t('home.add500')}</button>
