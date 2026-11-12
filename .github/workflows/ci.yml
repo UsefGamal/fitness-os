@@ -50,6 +50,9 @@ jobs:
       - name: Code checks (ESLint)
         run: npm run lint
 
+      - name: Type check on the pure helpers (JSDoc + tsc)
+        run: npm run typecheck
+
   # Every screen at 360/390/412 px, left-to-right and right-to-left:
   # accessibility (axe, contrast), 44px taps, sideways scroll, page errors.
   # Counts may only go down (mobile/e2e/baseline.json), E6-S8.

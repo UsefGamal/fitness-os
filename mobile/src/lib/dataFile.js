@@ -120,6 +120,7 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
     checklist_items: Array.isArray(w.checklist_items) ? w.checklist_items : [],
   }));
   const settings = isObject(raw.settings) ? raw.settings : {};
+  /** @type {Record<string, any>} */
   const cleaned = {
     ...rest,
     profile: isObject(raw.profile) ? raw.profile : null,

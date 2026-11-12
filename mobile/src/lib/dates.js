@@ -23,7 +23,7 @@ export function todayISO(now = new Date()) {
  * calendar date, not by adding 24 h. */
 export function msUntilMidnight(now = new Date()) {
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
-  return Math.max(1000, next - now);
+  return Math.max(1000, next.getTime() - now.getTime());
 }
 
 export function addDays(iso, n) {
@@ -33,7 +33,7 @@ export function addDays(iso, n) {
 }
 
 export function daysBetween(fromIso, toIso) {
-  return Math.round((fromISO(toIso) - fromISO(fromIso)) / 86400000);
+  return Math.round((fromISO(toIso).getTime() - fromISO(fromIso).getTime()) / 86400000);
 }
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];

@@ -21,7 +21,9 @@ export function weekText(days, { title = 'My training week', time = '07:00', eve
 }
 
 /** A printable page. `photoOf(name)` gives an image URL (a data: URL in the
- * saved file) or null. */
+ * saved file) or null.
+ * @param {any[]} days
+ * @param {{ title?: string, time?: string, eveningTime?: string, tempo?: string, photoOf?: (name: string) => string | null }} [opts] */
 export function weekHtml(days, { title = 'My training week', time = '07:00', eveningTime = '20:00', tempo = '', photoOf = () => null } = {}) {
   const blocks = days.map(({ date, day, evening }) => {
     const night = evening ? `<span class="night">${esc(evening.label)} at ${esc(eveningTime)}</span>` : '';
