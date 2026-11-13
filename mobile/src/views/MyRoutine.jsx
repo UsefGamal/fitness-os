@@ -133,8 +133,8 @@ function Editor({ sessionKey }) {
               <button type="button" className="icon-btn" aria-label={t('my.remove', { name: x.name })} onClick={() => update((d) => M.removeExercise(d, sessionKey, i))}><Icon name="trash" /></button>
             </div>
             <div className="row" style={{ gap: 10, alignItems: 'flex-end' }}>
-              <div className="grow"><Stepper label={t('my.sets')} value={x.sets} min={1} max={10} onChange={(v) => edit(i, { sets: v })} /></div>
-              <label className="field grow">
+              <div style={{ flex: 2, minWidth: 0 }}><Stepper label={t('my.sets')} value={x.sets} min={1} max={10} onChange={(v) => edit(i, { sets: v })} /></div>
+              <label className="field" style={{ flex: 1, minWidth: 0 }}>
                 <span>{t('my.reps')}</span>
                 <input type="text" defaultValue={x.reps} maxLength={20} onBlur={(e) => edit(i, { reps: e.target.value })} />
               </label>

@@ -101,3 +101,11 @@ test('P14-12: a day already logged gets no reminder', async () => {
   assert.ok(after.some((x) => x.id === 2000), 'other meals stay');
   assert.ok(after.some((x) => x.id === 1001) === before.some((x) => x.id === 1001), 'an unfinished workout does not count');
 });
+
+test('reminders become notifications on the channel, with the route to open', async () => {
+  const { toNotifications } = await import('./reminders.js');
+  const at = new Date('2026-11-07T05:00:00Z');
+  const out = toNotifications([{ id: 7, title: 'Upper', body: 'At 7:00', route: '/workout', at }], 'reminders');
+  assert.deepEqual(out, [{ id: 7, title: 'Upper', body: 'At 7:00', channelId: 'reminders', extra: { route: '/workout' }, schedule: { at, allowWhileIdle: true } }]);
+  assert.deepEqual(toNotifications([], 'reminders'), []);
+});

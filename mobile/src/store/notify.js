@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 import { todayISO } from '../lib/dates.js';
-import { doneFrom, plannedReminders } from '../lib/reminders.js';
+import { doneFrom, plannedReminders, toNotifications } from '../lib/reminders.js';
 import { reminderRoute } from '../lib/routes.js';
 import { activePlan } from '../lib/plan.js';
 import { dropFastingReminders, effectiveTimes } from '../lib/ramadan.js';
@@ -44,8 +44,7 @@ export async function scheduleReminders(content, enabled) {
   const { session_moves: moves = [], evening_plan: evening = {} } = data;
   // Ramadan: times move after iftar, and nothing rings in fasting hours.
   const planned = plannedReminders(todayISO(), { ...content, training: activePlan(data, content) }, new Date(), moves, evening, effectiveTimes(data, content, todayISO()), doneFrom(data));
-  const list = dropFastingReminders(planned, data)
-    .map((r) => ({ id: r.id, title: r.title, body: r.body, channelId: CHANNEL, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
+  const list = toNotifications(dropFastingReminders(planned, data), CHANNEL);
   if (list.length) await LocalNotifications.schedule({ notifications: list });
 }
 
