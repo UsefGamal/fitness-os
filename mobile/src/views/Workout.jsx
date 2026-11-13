@@ -39,6 +39,14 @@ import { useToday } from '../store/today.js';
 const UNDO_MS = 7000;
 const setsText = (n) => `${n} logged set${n === 1 ? '' : 's'}`;
 
+/** Run `fn` after the next frame is painted, in a task of its own, so
+ * slow work never holds up what a tap shows. Returns a cancel function. */
+function afterPaint(fn) {
+  let id = null;
+  const raf = requestAnimationFrame(() => { id = setTimeout(fn, 0); });
+  return () => { cancelAnimationFrame(raf); clearTimeout(id); };
+}
+
 function targetReps(reps) {
   const m = /\d+/.exec(String(reps || ''));
   return m ? Number(m[0]) : 10;
@@ -191,9 +199,13 @@ export default function Workout() {
   useEffect(() => {
     if (firstScroll.current) { firstScroll.current = false; return; }
     if (!active) return;
-    const el = document.querySelector('.ex-card.current');
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    el?.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    // In its own task, after the new set is on screen (FEEL-1): scrolling
+    // forces a layout of the whole page.
+    return afterPaint(() => {
+      const el = document.querySelector('.ex-card.current');
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el?.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
 
@@ -206,6 +218,22 @@ export default function Workout() {
     }
     return out;
   }, [active, day, data]);
+
+  // "last 22.5 kg" on each folded exercise (UX-12). Earlier workouts don't
+  // change while this one runs, so it isn't worked out again on each set
+  // (FEEL-1: it reads the whole history).
+  const dayNames = day ? day.exercises.map((x) => x.name).join('|') : '';
+  const lastTop = useMemo(() => {
+    if (!active || !day) return {};
+    const out = {};
+    for (const x of day.exercises) {
+      const row = D.exerciseByName(data, x.name);
+      out[x.name] = row ? D.lastTopKg(data, row.id, active.id) : null;
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.id, dayNames, data.workouts.length, data.exercises]);
+  const swapOptions = useMemo(() => (entry && catalogue ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : []), [entry, catalogue]);
 
   if (!day) {
     return (
@@ -287,17 +315,8 @@ export default function Workout() {
     if (!exRow || r < 1) return;
     if (D.missingWeight(exRow, w)) return;
     const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
-    const kind = D.setKind(data, active.id, set);
     update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w }));
     unlockAudio();
-    if (kind === 'best') {
-      feedback('pr');
-      setToast(t('workout.best', { name: ex.name, kg: w, reps: r }));
-      setTimeout(() => setToast(''), 2500);
-    } else if (kind === 'baseline') {
-      setToast(t('workout.baseline', { name: ex.name, kg: w, reps: r }));
-      setTimeout(() => setToast(''), 2500);
-    }
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
     const ni = nextIndex(day, after, data, current);
@@ -323,10 +342,24 @@ export default function Workout() {
         workout: day.label, done: done.reduce((n, k) => n + k, 0), planned: totalTarget,
       }));
     }
-    // The set tick (SA-03) never stacks: a best plays its own sound and the
-    // rest-start cue replaces the tick.
-    else if (kind !== 'best') feedback('set');
     if (ni !== current) setCurrent(ni);
+    // Is it a new best? That reads the exercise's whole history, so it runs
+    // after the set is on screen (FEEL-1). `data` is still the data from
+    // before this set.
+    afterPaint(() => {
+      const kind = D.setKind(data, active.id, set);
+      if (kind === 'best') {
+        feedback('pr');
+        setToast(t('workout.best', { name: ex.name, kg: w, reps: r }));
+        setTimeout(() => setToast(''), 2500);
+      } else if (kind === 'baseline') {
+        setToast(t('workout.baseline', { name: ex.name, kg: w, reps: r }));
+        setTimeout(() => setToast(''), 2500);
+      }
+      // The set tick (SA-03) never stacks: a best plays its own sound and
+      // the rest-start cue replaces the tick.
+      if (!resting && kind !== 'best') feedback('set');
+    });
   };
 
   const tweak = (fn) => update((d) => setTweaks(d, active.id, fn(active.tweaks, planDay.exercises.length)));
@@ -352,7 +385,6 @@ export default function Workout() {
     setSheet(null);
     return undefined;
   };
-  const swapOptions = entry && catalogue ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : [];
 
   const removeSet = (s) => {
     update((d) => D.deleteSet(d, active.id, s.id));
@@ -376,8 +408,7 @@ export default function Workout() {
 
   // One grey line on a folded exercise: "3 × 10-12 · last 22.5 kg" (UX-12).
   const upcoming = (x) => {
-    const row = D.exerciseByName(data, x.name);
-    const last = row ? D.lastTopKg(data, row.id, active.id) : null;
+    const last = lastTop[x.name];
     return last ? t('workout.upcomingLast', { sets: x.sets, reps: x.reps, kg: last }) : t('workout.upcoming', { sets: x.sets, reps: x.reps });
   };
 
