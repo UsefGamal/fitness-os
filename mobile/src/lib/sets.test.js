@@ -59,3 +59,23 @@ test('isSetDefault names the fields the data check code leaves out', () => {
   assert.equal(isSetDefault({ track: 'time' }, 'track'), false);
   assert.equal(isSetDefault({ reps: null }, 'reps'), false);
 });
+
+test('set kinds: picked on the workout screen, warm-ups drop out of work sets', async () => {
+  const { isWorkSet } = await import('./data.js');
+  const { typeChoices, withType, TYPE_LETTER } = await import('./sets.js');
+  const s = { id: 1, exercise_id: 1, set_number: 1, reps: 10, weight_kg: 40, is_warmup: false };
+  const warm = withType(s, 'warmup');
+  assert.equal(warm.is_warmup, true);
+  assert.equal(isWorkSet(warm), false);
+  assert.equal('set_type' in warm, false, 'a warm-up flagged is_warmup keeps set_type sparse');
+  const drop = withType(s, 'drop');
+  assert.equal(drop.set_type, 'drop');
+  assert.equal(isWorkSet(drop), true);
+  // Back to a work set: nothing left behind.
+  const back = withType(drop, 'work');
+  assert.deepEqual(back, s);
+  assert.equal(withType(s, 'bogus'), s);
+  assert.deepEqual(typeChoices(), ['work', 'warmup', 'drop', 'failure']);
+  assert.deepEqual(typeChoices({ gentle: true }), ['work', 'warmup', 'drop']);
+  assert.equal(TYPE_LETTER.work, undefined);
+});

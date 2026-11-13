@@ -1,6 +1,7 @@
 // The fields a set gained in data version 3 (V3): what kind of set it is,
 // its superset group, and what is tracked when it is not a plain load.
-// Fields only: no screen writes anything but the defaults yet.
+// The workout screen sets set_type (warm-up, drop set, to failure) on a
+// logged set; the other fields are still written as defaults only.
 //
 //   set_type    'work' | 'warmup' | 'drop' | 'failure'
 //   group       superset label within the workout ("A"), up to 8 chars
@@ -79,4 +80,20 @@ export function setWith(set, changes) {
 export function isSetDefault(set, key) {
   if (key === 'set_type') return set.set_type === typeDefault(set);
   return key in SET_DEFAULTS && set[key] === SET_DEFAULTS[key];
+}
+
+/** The letter a set shows in place of its number: W, D or F. */
+export const TYPE_LETTER = { warmup: 'W', drop: 'D', failure: 'F' };
+
+/** `set` as another kind of set. is_warmup follows, so isWorkSet, the
+ * records and older readers agree that a warm-up is not a work set. */
+export function withType(set, type) {
+  if (!SET_TYPES.includes(type)) return set;
+  return setWith({ ...set, is_warmup: type === 'warmup' }, { set_type: type });
+}
+
+/** The kinds someone may pick. "To failure" is left out while the safety
+ * check asks for beginner-only training or a doctor's clearance. */
+export function typeChoices({ gentle = false } = {}) {
+  return SET_TYPES.filter((k) => !(gentle && k === 'failure'));
 }

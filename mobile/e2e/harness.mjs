@@ -109,6 +109,19 @@ export const STATES = [
   { name: 'beginner: session 1 of 6', route: '/', data: (d) => ({ ...d, workouts: [], settings: { ...d.settings, training: { ...d.settings?.training, level: 'beginner' } } }) },
   { name: 'quests off: Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, modules: { ...d.settings?.modules, quests: false } } }) },
   { name: 'safety limits on: Home', route: '/', data: gated },
+  {
+    name: 'sheet: kind of set',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).fill('20');
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await p.getByRole('button', { name: new RegExp(`^1: set 1, ${en['setType.work']}`) }).click();
+      await p.getByRole('button', { name: new RegExp(en['setType.drop']) }).click();
+      await p.getByRole('button', { name: new RegExp(`^D: set 1, ${en['setType.drop']}`) }).click();
+      await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
+    },
+  },
   { name: 'ramadan: Home', route: '/', data: fasting, check: (p) => p.getByText(en['ramadan.chip']).first().waitFor() },
   { name: 'ramadan: Meals', route: '/meals', data: fasting, act: (p) => toFullMeals(p), check: (p) => p.getByText(en['ramadan.meal.breakfast']).first().waitFor() },
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },
