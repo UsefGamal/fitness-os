@@ -25,7 +25,7 @@ import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
 import { backupDue } from '../lib/durable.js';
-import { hardWeeksInARow, isRecoveryWeek, recoveryDue, setRecoveryWeek } from '../lib/recovery.js';
+import { hardWeeksInARow, isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { APP } from '../lib/version.js';
 import { markSeen, unseenNotes } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
@@ -35,7 +35,10 @@ import { content, useData } from '../store/useData.js';
 import { hasScreenLock } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
-import { markClearanceSeen, showClearance } from '../lib/safety.js';
+import { markClearanceSeen } from '../lib/safety.js';
+import { homeCard } from '../lib/homeCard.js';
+import { dismissWrap, weekStats, wrapWeek } from '../lib/weekStats.js';
+import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
@@ -80,6 +83,11 @@ export default function Today() {
   const [picking, setPicking] = useState(false);
   const [weighing, setWeighing] = useState(false);
   const clearanceSeen = () => update(markClearanceSeen);
+  // One card under the session at most: doctor note, welcome back, the
+  // Sunday wrap-up, the recovery suggestion (lib/homeCard.js).
+  const card = homeCard(data, content, today);
+  const wrapFor = card === 'wrapup' ? wrapWeek(today) : null;
+  const [wrapOpen, setWrapOpen] = useState(false);
   // What's new, once per version (E1-S6). A new install skips straight to "seen".
   const news = unseenNotes(data, APP.version, WHATS_NEW);
   const seenVersion = data.settings?.whats_new_seen;
@@ -114,7 +122,7 @@ export default function Today() {
         <div className="card small banner" role="note"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.homeNote', { time: times.session_time })}</span></div>
       ) : null}
 
-      {showClearance(data, today) ? (
+      {card === 'clearance' ? (
         <div className="backup-line" role="status">
           <Link className="grow backup-link" to="/settings/safety">
             <Icon name="heart" className="icon tone-accent" />
@@ -174,7 +182,9 @@ export default function Today() {
           <button type="button" className="btn ghost small" onClick={() => update((d) => setRecoveryWeek(d, today, false))}>{t('recovery.off')}</button>
         </div>
       ) : null}
-      {recoveryDue(data, today) ? (
+      {wrapFor ? <WrapCard stats={weekStats(data, content, wrapFor)} onOpen={() => setWrapOpen(true)} onDismiss={() => update((d) => dismissWrap(d, today))} /> : null}
+      {wrapOpen && wrapFor ? <WrapSheet data={data} content={content} week={wrapFor} onClose={() => setWrapOpen(false)} /> : null}
+      {card === 'recovery' ? (
         <button type="button" className="pill-row" onClick={() => update((d) => setRecoveryWeek(d, today, true))}>
           <Icon name="calendar" />
           <span className="grow">{t('recovery.due', { n: hardWeeksInARow(data, today) })}</span>
