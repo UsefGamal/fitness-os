@@ -22,7 +22,7 @@ import { useToday } from '../store/today.js';
 const MEASURES = [
   ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
 ];
-const VOLUME_FILL = [null, 'rgba(48,209,88,0.35)', 'rgba(48,209,88,0.65)', '#30d158'];
+const VOLUME_FILL = [null, 'color-mix(in srgb, var(--accent) 35%, transparent)', 'color-mix(in srgb, var(--accent) 65%, transparent)', 'var(--accent)'];
 const MODES = [['volume', 'Volume'], ['recovery', 'Recovery'], ['untrained', 'Untrained']];
 
 /** The shared header: two numbers, consistency with the calendar folded
@@ -58,7 +58,7 @@ function Summary({ data, today }) {
   );
 }
 
-const STATUS_FILL = { recovering: '#ff9f0a', ready: '#30d158', untrained: '#ff453a', none: null };
+const STATUS_FILL = { recovering: 'var(--orange)', ready: 'var(--accent)', untrained: 'var(--danger)', none: null };
 const LEGEND = {
   volume: [['v3', VOLUME_FILL[3], 'stats.lg.full'], ['v2', VOLUME_FILL[2], 'stats.lg.some'], ['v1', VOLUME_FILL[1], 'stats.lg.little'], ['v0', null, 'stats.lg.none']],
   recovery: [['ready', STATUS_FILL.ready, 'stats.st.ready'], ['recovering', STATUS_FILL.recovering, 'stats.st.recovering'], ['untrained', STATUS_FILL.untrained, 'stats.st.untrained'], ['none', null, 'stats.st.none']],

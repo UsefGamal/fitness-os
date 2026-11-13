@@ -50,6 +50,7 @@ const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof 
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
 const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
+const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const gated = (d) => ({ ...d, safety: { ...SCREENED, gates: { ...SCREENED.gates, no_deficit: true, protein_cap: true, beginner_only: true, needs_clearance: true } } });
 const trainedFriday = (d) => ({ ...d, workouts: [...d.workouts, { ...d.workouts[0], id: 9999, log_date: '2026-11-06', started_at: null, finished_at: '2026-11-06T08:00:00', sets: [] }] });
 const toFullMeals = async (page) => {
@@ -109,6 +110,14 @@ export const STATES = [
   { name: 'beginner: session 1 of 6', route: '/', data: (d) => ({ ...d, workouts: [], settings: { ...d.settings, training: { ...d.settings?.training, level: 'beginner' } } }) },
   { name: 'quests off: Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, modules: { ...d.settings?.modules, quests: false } } }) },
   { name: 'safety limits on: Home', route: '/', data: gated },
+  { name: 'light: Home', route: '/', data: lightTheme },
+  { name: 'light: Plan', route: '/plan', data: lightTheme },
+  { name: 'light: Workout', route: '/workout', data: lightTheme },
+  { name: 'light: Meals', route: '/meals', data: lightTheme },
+  { name: 'light: Stats', route: '/stats', data: lightTheme },
+  { name: 'light: Settings', route: '/settings/modules', data: lightTheme },
+  { name: 'light: History', route: '/history', data: lightTheme },
+  { name: 'light: Library', route: '/library', data: lightTheme },
   { name: 'ramadan: Home', route: '/', data: fasting, check: (p) => p.getByText(en['ramadan.chip']).first().waitFor() },
   { name: 'ramadan: Meals', route: '/meals', data: fasting, act: (p) => toFullMeals(p), check: (p) => p.getByText(en['ramadan.meal.breakfast']).first().waitFor() },
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },

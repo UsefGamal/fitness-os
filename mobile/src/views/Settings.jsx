@@ -36,6 +36,7 @@ import Screening from './Screening.jsx';
 import RamadanSettings from '../components/RamadanSettings.jsx';
 import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t, t as tr } from '../lib/i18n.js';
+import { setTheme, themeChoice, THEMES } from '../lib/theme.js';
 import { APP } from '../lib/version.js';
 import { notesUpTo } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
@@ -398,6 +399,10 @@ export default function Settings() {
       </>) : null}
 
       {show('modules') ? (<>
+      <div className="section-label">{tr('theme.title')}</div>
+      <div className="list">
+        <Choice label={tr('theme.label')} value={themeChoice(data)} onChange={(v) => update((d) => setTheme(d, v))} options={THEMES.map((k) => [k, tr(`theme.${k}`)])} />
+      </div>
       <div className="section-label">Modules</div>
       <div className="list">
         {MODULES.map((m) => {

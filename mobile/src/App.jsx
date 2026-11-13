@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Outlet, ScrollRestoration, createHashRouter, RouterProvider, useLocation, useNavigationType } from 'react-router';
 
 import ErrorBoundary from './components/CrashScreen.jsx';
@@ -39,6 +39,8 @@ import Plan from './views/Plan.jsx';
 import Settings from './views/Settings.jsx';
 import Today from './views/Today.jsx';
 import Workout from './views/Workout.jsx';
+import { themeChoice } from './lib/theme.js';
+import { applyTheme, followPhone } from './store/theme.js';
 
 // Screens you open now and then load on first use, so start-up stays quick.
 const CatalogueDetail = lazy(() => import('./views/CatalogueDetail.jsx'));
@@ -163,6 +165,9 @@ export default function App() {
   const loadError = useData((s) => s.loadError);
   const startError = useData((s) => s.startError);
   const screening = useData((s) => needsScreening(s.data));
+  // Light theme (THEME-1): before paint, so there is no dark flash.
+  const theme = useData((s) => themeChoice(s.data));
+  useLayoutEffect(() => { applyTheme(theme); return followPhone(theme); }, [theme]);
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
   const [perms, setPerms] = useState(false);
