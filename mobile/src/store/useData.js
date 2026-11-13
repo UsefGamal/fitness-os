@@ -11,13 +11,23 @@ import { create } from 'zustand';
 
 import content from '../content.json';
 import * as D from '../lib/data.js';
+import { startLine, stampVersion, versionChanged } from '../lib/dataCheck.js';
 import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { backfillEaten } from '../lib/meals.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { keepPhotoLock } from '../lib/photoLock.js';
-import { hasMirror, onMirrorResult, readMirror, writeMirror } from './mirror.js';
+import { hasMirror, lastSaveMs, onMirrorResult, readMirror, writeMirror } from './mirror.js';
+import { logStart } from './native.js';
+import { APP } from '../lib/version.js';
 import { SAVE_OK, recordSave } from '../lib/saveHealth.js';
 import { snapshot } from './snapshots.js';
+
+// Start-up and save timings for the bug report (PROOF-1). Kept here, never
+// in the data.
+const T0 = typeof performance !== 'undefined' ? performance.now() : 0;
+let startMs = null;
+export const perf = () => ({ startMs, saveMs: lastSaveMs() });
+const started = () => { if (startMs == null && typeof performance !== 'undefined') startMs = Math.round(performance.now() - T0); };
 
 const KEY = 'fitness-os-data-v1'; // the key name predates schema versions; it stays
 const SAVE_DELAY = 400;
@@ -141,14 +151,17 @@ export const useData = create((set, get) => ({
     if (unreadable({ localText, fileText: file?.text ?? null })) {
       blocked = true;
       set({ startError: 'unreadable', rawCopies, ready: true });
+      logStart(startLine({ version: APP.version, error: 'unreadable' }));
       return;
     }
     try {
       const start = loadNewest({ localText, fileText: file?.text ?? null }, content);
       if (start) {
         if (start.snapshotText) await snapshot(start.snapshotText, 'migrate');
+        // A new app version with no data upgrade still keeps one copy first.
+        else if (versionChanged(start.data, APP.version)) await snapshot(start.from === 'file' ? file.text : localText, 'update');
         // Ticked meals from older builds get their numbers copied in (DA-1).
-        start.data = backfillEaten(start.data, content.nutrition);
+        start.data = stampVersion(backfillEaten(start.data, content.nutrition), APP.version);
         set({ data: start.data });
         // Write the winner back to both stores, so the one that was behind
         // (cleared, full, or not yet upgraded) catches up.
@@ -159,11 +172,14 @@ export const useData = create((set, get) => ({
       blocked = true;
       if (err instanceof NewerSchemaError) set({ loadError: err.message, ready: true });
       else set({ startError: 'failed', rawCopies, ready: true });
+      logStart(startLine({ version: APP.version, error: err instanceof NewerSchemaError ? 'newer' : 'failed' }));
       return;
     }
     const data = get().data;
     const active = data.workouts.find((w) => w.started_at && !w.finished_at);
     set({ ready: true, activeWorkoutId: active ? active.id : null });
+    started();
+    logStart(startLine({ version: APP.version, data }));
   },
 
   /** Apply a pure change from lib/data.js and persist it. */

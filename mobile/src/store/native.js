@@ -22,6 +22,18 @@ export async function signingCode() {
   }
 }
 
+/** Write the start line (lib/dataCheck.js startLine) to the phone's own
+ * log, where the release update test reads it with adb. Counts and a hash
+ * only. A no-op in a browser or an older APK. PROOF-1. */
+export async function logStart(line) {
+  if (!isNative()) return;
+  try {
+    await AppInfo.dataCheck({ line: String(line).slice(0, 200) });
+  } catch {
+    // An older APK without the method: nothing to do.
+  }
+}
+
 export const Crash = registerPlugin('Crash');
 
 /** Native crash lines saved since the last start ([{ at, message }]), and

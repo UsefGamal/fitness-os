@@ -12,6 +12,7 @@ export const WHATS_NEW = [
       { icon: 'user', text: 'Setup asks if your day is mostly sitting, on your feet or physical work, so your calories start closer to right.' },
       { icon: 'meals', text: 'A meal you ticked keeps its numbers for good, even when the meal plan changes later.' },
       { icon: 'meals', text: 'Ate something else? You can add its carbs and fat too, if you know them.' },
+      { icon: 'check', text: 'Settings, About shows a Data check line. It reads the same before and after an update if your data is safe.' },
     ],
   },
   {

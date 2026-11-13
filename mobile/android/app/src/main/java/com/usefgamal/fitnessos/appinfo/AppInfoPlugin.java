@@ -4,6 +4,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.os.Build;
+import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -50,5 +51,20 @@ public class AppInfoPlugin extends Plugin {
         } catch (Exception e) {
             call.reject(e.getMessage());
         }
+    }
+
+    /**
+     * PROOF-1: writes the app's start line ("OK 0.9.8 W 12 · S 140 · M 61 ·
+     * B 3 · 3F9A-12CD") to logcat under one tag, so the release update test
+     * (scripts/update-over-install.sh) can compare the data before and after
+     * an update without touching the screen. Counts and a hash only; other
+     * apps can't read this app's log lines.
+     */
+    @PluginMethod
+    public void dataCheck(PluginCall call) {
+        String line = call.getString("line", "");
+        if (line.length() > 200) line = line.substring(0, 200);
+        Log.i("FitnessOSData", line.replaceAll("[\\r\\n]", " "));
+        call.resolve();
     }
 }

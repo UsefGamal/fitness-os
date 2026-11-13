@@ -14,6 +14,7 @@ import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { LEVELS } from '../lib/levels.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
+import { checkLine } from '../lib/dataCheck.js';
 import { widgetPrivate } from '../lib/widget.js';
 import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
@@ -398,6 +399,7 @@ export default function Settings() {
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
         <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
+        <div className="list-row"><div className="grow"><div>{t('about.check')}</div><div className="meta">{t('about.checkNote')}</div><div className="meta" data-testid="data-check" aria-label={t('about.checkAria', { line: checkLine(data) })} style={{ fontFamily: 'ui-monospace, monospace', marginTop: 4 }}>{checkLine(data)}</div></div></div>
         <p className="muted small" style={{ margin: '4px 16px 12px' }}>{t('about.notInstalled')}</p>
         {notesUpTo(APP.version, WHATS_NEW).length ? <button type="button" className="list-row" onClick={() => setNews(true)}><Icon name="star" /><div className="grow"><div>{t('whatsNew.title')}</div><div className="meta">{t('whatsNew.note')}</div></div><Icon name="chev" className="icon chev" /></button> : null}
         <button type="button" className="list-row" onClick={() => setReport(true)}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
