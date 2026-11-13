@@ -239,3 +239,11 @@ test('the status line: off, checked today with its time, stale, and each error w
   assert.equal(backupStatus({ on: true }, NOW).key, 'autoBackup.none');
   for (const key of ['autoBackup.off', 'autoBackup.none', 'autoBackup.checkedToday', 'autoBackup.checkedYesterday', 'autoBackup.checkedDays']) assert.ok(en[key], key);
 });
+
+test('a cloud-synced folder: a key that cannot encrypt writes nothing and says write_failed', async () => {
+  const folder = fakeFolder({}, { fault: 'synced' });
+  const keys = { key: new Uint8Array(5), kid: 'k', recovery: { kdf: 'PBKDF2-SHA256' } };
+  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true }, keys });
+  assert.equal(state.last_error, 'write_failed');
+  assert.deepEqual(folder.files, {});
+});
