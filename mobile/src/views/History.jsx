@@ -112,7 +112,7 @@ export default function History() {
             ) : (
               <div key={s.id} className="set-row">
                 <span className="set-n done">{s.set_number}</span>
-                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`Edit set ${s.set_number}`}>
+                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`${s.weight_kg} kg × ${s.reps}${s.rpe ? ` · RPE ${s.rpe}` : ''}, edit set ${s.set_number}`}>
                   {s.weight_kg} kg × {s.reps}{s.rpe ? <span className="muted"> · RPE {s.rpe}</span> : null}
                 </button>
                 <span />

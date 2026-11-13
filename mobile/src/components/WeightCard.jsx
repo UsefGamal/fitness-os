@@ -38,7 +38,8 @@ export default function WeightCard({ data, today, onLog }) {
       : t('home.strengthHold', { name: move.name, kg: move.now });
   return (
     <section className="card hero-card">
-      <Link to="/stats?tab=body" className="hero-link" aria-label={t('home.weightAria', { trend: p.trend })}>
+      <Link to="/stats?tab=body" className="hero-link">
+      <span className="sr-only">{t('home.weightOpen')}</span>
       <div className="hero-top">
         <div className="grow">
           <span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span>
