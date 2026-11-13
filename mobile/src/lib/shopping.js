@@ -41,21 +41,30 @@ export function picksFrom(mealLogs = []) {
   return (date, slot) => map.get(`${date}|${slot}`) || null;
 }
 
+/** [[key, units]] of an option: its scaled `portions` (FIT-1) when it has
+ * them, else its items counted. */
+function unitsOf(option) {
+  if (option.portions) return option.portions.map((p) => [p.key, p.units]);
+  return option.items.map((key) => [key, 1]);
+}
+
 /** [{ name, items: [{ key, name, qty }] }] in the plan's category order.
- * `pickOf(date, slot)` -> option key or null; leave it out for both options. */
-export function shoppingList(startIso, nutrition, days = 7, pickOf = null, planStart = nutrition.plan_start_date) {
+ * `pickOf(date, slot)` -> option key or null; leave it out for both options.
+ * `dayOf(date)` -> the meal day fitted to the person (FIT-1's planDayFor);
+ * left out, the plan's own day. */
+export function shoppingList(startIso, nutrition, days = 7, pickOf = null, planStart = nutrition.plan_start_date, dayOf = null) {
   const totals = new Map();
   const category = new Map();
   for (let i = 0; i < days; i += 1) {
     const date = addDays(startIso, i);
-    const day = mealDayFor(date, nutrition, planStart);
+    const day = dayOf ? dayOf(date) : mealDayFor(date, nutrition, planStart);
     for (const meal of day.meals) {
       const chosen = pickOf ? [meal.options.find((o) => o.key === pickOf(date, meal.slot)) || meal.options[0]].filter(Boolean) : meal.options;
       for (const option of chosen) {
-        for (const item of option.items) {
+        for (const [item, units] of unitsOf(option)) {
           const [base, qty, unit] = parseShoppingUnit(item);
           const k = `${base}|${unit}`;
-          totals.set(k, (totals.get(k) || 0) + qty);
+          totals.set(k, (totals.get(k) || 0) + qty * units);
           if (!category.has(base)) category.set(base, nutrition.food_categories[item] || FALLBACK_CATEGORY);
         }
       }
