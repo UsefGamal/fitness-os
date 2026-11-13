@@ -35,9 +35,15 @@ const GOLDEN = JSON.parse(fixture('golden-v1-numbers.json'));
 const GOLDEN_FILE = new URL('./fixtures/golden-phase12-numbers.json', import.meta.url);
 const NAMES = ['v1-empty', 'v1-yusuf-like', 'v1-oldsite-export'];
 
-/** The numbers with the targets taken out: what phase 12 must not change. */
+/** The numbers with the targets taken out: what phase 12 must not change.
+ * FIT-1 fits the meal portions to the target, so the widget's meal text
+ * is a target too (the old-site person, at 2,105 kcal, gets bigger
+ * portions; Yusuf, at 1,939, gets the plan as written). */
 function withoutTargets(days) {
-  return days.map(({ macros: _m, widget, ...rest }) => ({ ...rest, widget: widget && widget.map(({ stats: _s, ...w }) => w) }));
+  return days.map(({ macros: _m, widget, ...rest }) => ({
+    ...rest,
+    widget: widget && widget.map(({ stats: _s, meals, ...w }) => ({ ...w, meals: meals.map(({ what: _w, protein: _p, ...m }) => m) })),
+  }));
 }
 
 /** The same numbers golden-v1-numbers.json holds, from today's code. */

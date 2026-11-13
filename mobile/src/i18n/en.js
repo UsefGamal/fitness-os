@@ -151,6 +151,8 @@ export default {
   'settings.aboutNote': 'Version, bug report',
   'meals.kcalEaten': 'Calories eaten',
   'meals.proteinEaten': 'Protein eaten',
+  'meals.farPlan': 'This plan is built for about {plan} kcal. Use it as ideas and follow your own numbers.',
+  'meals.farPlanNoKcal': 'This plan is built for someone else\'s needs. Use it as ideas and follow your own targets.',
   'meals.summary': 'Carbs {carbs}/{tc} g · fat {fat}/{tf} g · {done}/{all} eaten. All picks: {kcal} kcal, {protein} g protein.',
   'meals.yourTargets': 'Your targets',
   'meals.setTargets': 'Set your targets',
