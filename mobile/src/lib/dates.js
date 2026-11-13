@@ -53,9 +53,17 @@ export function longWeekday(iso) {
   return n[0].toUpperCase() + n.slice(1);
 }
 
-/** The Sunday on or before `iso` (the week starts on Sunday). */
-export function weekStart(iso) {
-  return addDays(iso, -fromISO(iso).getDay());
+/** Does this person's week start on Monday? (Settings, WEEK-1; Sunday
+ * by default.) `data` may be left out, or be 'mon' / 'sun'. */
+export function startsMonday(data) {
+  return data === 'mon' || data?.profile?.week_start === 'mon';
+}
+
+/** The first day of the week holding `iso`: the Sunday on or before it,
+ * or the Monday when the person's week starts on Monday. */
+export function weekStart(iso, data) {
+  const dow = fromISO(iso).getDay();
+  return addDays(iso, -(startsMonday(data) ? (dow + 6) % 7 : dow));
 }
 
 /** The language dates and numbers are written in: the app's, not the

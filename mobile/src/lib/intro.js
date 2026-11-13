@@ -40,5 +40,5 @@ export function introLine({ next, time, doneToday = false, firstRun = false }) {
   if (!next) return '';
   if (next.isRestToday) return `Rest day · next: ${next.label}`;
   if (doneToday) return `${next.label} done today. Nice work`;
-  return `${next.label} today at ${time}`;
+  return time ? `${next.label} today at ${time}` : `${next.label} today`;
 }

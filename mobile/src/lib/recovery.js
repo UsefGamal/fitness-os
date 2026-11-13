@@ -5,14 +5,12 @@
 // out of the progression maths so an easy week never reads as a stall.
 // The weeks live on the active block: program.blocks[].deload_weeks holds
 // the week-start dates (the Sunday or Monday the week starts on).
-import { addDays, fromISO } from './dates.js';
+import { addDays, weekStart } from './dates.js';
 import { activeBlock } from './plan.js';
 
 /** The first day of the week holding `iso`, by the profile's week start. */
 export function weekOf(data, iso) {
-  const startsMonday = data?.profile?.week_start === 'mon';
-  const dow = fromISO(iso).getDay();
-  return addDays(iso, -(startsMonday ? (dow + 6) % 7 : dow));
+  return weekStart(iso, data);
 }
 
 export function isRecoveryWeek(data, iso) {
