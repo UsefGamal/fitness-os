@@ -38,11 +38,13 @@ const NAMES = ['v1-empty', 'v1-yusuf-like', 'v1-oldsite-export'];
 /** The numbers with the targets taken out: what phase 12 must not change.
  * FIT-1 fits the meal portions to the target, so the widget's meal text
  * is a target too (the old-site person, at 2,105 kcal, gets bigger
- * portions; Yusuf, at 1,939, gets the plan as written). */
+ * portions; Yusuf, at 1,939, gets the plan as written). The old app's
+ * orange "missed" day is plain since BACK-1. */
 function withoutTargets(days) {
   return days.map(({ macros: _m, widget, ...rest }) => ({
     ...rest,
-    widget: widget && widget.map(({ stats: _s, meals, ...w }) => ({ ...w, meals: meals.map(({ what: _w, protein: _p, ...m }) => m) })),
+    // BACK-1: a past day not trained shows plain, like rest, never "missed".
+    widget: widget && widget.map(({ stats: _s, meals, week, ...w }) => ({ ...w, week: week.map((d) => ({ ...d, s: d.s === 'missed' ? 'rest' : d.s })), meals: meals.map(({ what: _w, protein: _p, ...m }) => m) })),
   }));
 }
 

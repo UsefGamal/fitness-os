@@ -12,6 +12,7 @@ import * as D from '../lib/data.js';
 import { safeVideo } from '../lib/links.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js';
+import { comeback, comebackTarget } from '../lib/comeback.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
@@ -126,6 +127,8 @@ export default function Workout() {
   const scheduledKey = sessionKeyOn(today, T, data.session_moves || []);
   const sessionKey = active?.session_key || requested || (scheduledKey !== 'rest' ? scheduledKey : null);
   const recovery = active ? Boolean(active.is_deload) : isRecoveryWeek(data, today);
+  // Away for a while? (BACK-1) Until the first session back is finished.
+  const back = comeback(data, today);
   const baseDay = sessionKey ? effectiveDay(sessionKey, T, data) : null;
   // beginner_only (safety check): every set stops 3 reps short of failure.
   const planDay = gentleDay(data, recovery ? recoveryDay(baseDay) : baseDay, today);
@@ -173,7 +176,10 @@ export default function Workout() {
     if (!active || !ex || !exRow) return null;
     if (recovery) return null; // same loads as last time: no progression in a recovery week
     const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets.filter(D.isWorkSet)).filter((s) => s.length);
-    return progressionTarget(ex.reps, ex.sets, sessions, { step: stepFor(entry, { barbell }), bodyweight: entry ? isBodyweight(entry) : null });
+    const step = stepFor(entry, { barbell });
+    const plain = progressionTarget(ex.reps, ex.sets, sessions, { step, bodyweight: entry ? isBodyweight(entry) : null });
+    // The first session back after a gap is lighter (BACK-1).
+    return active.easy ? comebackTarget(plain, back?.level, { planReps: ex.reps, sessions, step }) : plain;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, ex?.name, exRow?.id, catalogue]);
 
@@ -183,7 +189,11 @@ export default function Workout() {
     if (!active || !ex || !exRow) return;
     const doneToday = active.sets.some((s) => s.exercise_id === exRow.id);
     const s = D.suggestSet(data, active.id, exRow.id, targetReps(ex.reps));
-    if (!doneToday && target?.weightKg != null) {
+    if (!doneToday && target?.kind === 'fresh') {
+      // Back after 8+ weeks: no weight from last time; the person picks it.
+      setWeight(0);
+      setReps(target.reps ?? s.reps);
+    } else if (!doneToday && target?.weightKg != null) {
       setWeight(target.weightKg);
       setReps(target.reps ?? s.reps);
     } else {
@@ -261,6 +271,9 @@ export default function Workout() {
       }
       const r = D.startWorkout(next, { date: today, sessionKey: day.key, label: day.label, isDeload: recovery });
       id = r.workoutId;
+      // Back after a gap: this session is the easy one (BACK-1), kept out
+      // of the progression that follows it.
+      if (back) r.data = { ...r.data, workouts: r.data.workouts.map((w) => (w.id === id ? { ...w, easy: true } : w)) };
       return Object.keys(swaps).length ? setTweaks(r.data, id, { ...emptyTweaks(day.exercises.length), swaps }) : r.data;
     });
     setActiveWorkout(id);

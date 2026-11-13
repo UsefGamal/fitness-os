@@ -72,6 +72,7 @@ export function recoveryDay(day) {
 
 /** Workouts' history without recovery-week sessions, for progression. */
 export function withoutRecovery(history, workouts) {
-  const easy = new Set(workouts.filter((w) => w.is_deload).map((w) => w.id));
+  // Recovery-week sessions and the first easy session after a gap (BACK-1).
+  const easy = new Set(workouts.filter((w) => w.is_deload || w.easy).map((w) => w.id));
   return history.filter((h) => !easy.has(h.workoutId));
 }

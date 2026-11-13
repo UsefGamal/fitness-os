@@ -37,6 +37,7 @@ const KEY = 'fitness-os-data-v1';
 // 09:00 in Cairo: the day the baselines were recorded.
 const NOW = new Date('2026-11-06T07:00:00Z');
 const SUNDAY = new Date('2026-11-08T07:00:00Z');
+const AFTERNOON = new Date('2026-11-06T12:00:00Z');
 const PORT = 4179;
 
 export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
@@ -48,6 +49,7 @@ export const STATE_WIDTHS = [360, 412];
 const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof name === 'string' });
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
 const gated = (d) => ({ ...d, safety: { ...SCREENED, gates: { ...SCREENED.gates, no_deficit: true, protein_cap: true, beginner_only: true, needs_clearance: true } } });
+const trainedFriday = (d) => ({ ...d, workouts: [...d.workouts, { ...d.workouts[0], id: 9999, log_date: '2026-11-06', started_at: null, finished_at: '2026-11-06T08:00:00', sets: [] }] });
 const toFullMeals = async (page) => {
   const full = btnNamed(page, en['mealsSimple.toPlan']);
   if (await full.count()) await full.click();
@@ -94,9 +96,14 @@ export const STATES = [
     },
   },
   { name: 'empty week on Plan', route: '/plan', data: restWeek },
-  // WRAP-1: Sunday, the week that ended on Saturday.
-  { name: 'wrap-up card on Home', route: '/', now: SUNDAY, check: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).waitFor() },
-  { name: 'sheet: your week', route: '/', now: SUNDAY, act: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).click() },
+  // BACK-1: the last workout 11 days ago; and the session time long gone
+  // (the friends plan rests on Fridays, so a session is put on it).
+  { name: 'welcome back on Home', route: '/', data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date <= '2026-10-26') }), check: (p) => p.getByText(en['back.title']).waitFor() },
+  { name: 'still time today on Home', route: '/', now: AFTERNOON, data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-06'), session_moves: FLAVOR === 'friends' ? [{ from: null, to: '2026-11-06', key: 'full_a' }] : [] }), check: (p) => p.getByText(en['still.title']).first().waitFor() },
+  // WRAP-1: Sunday, the week that ended on Saturday (trained Friday, so
+  // it isn't a welcome back).
+  { name: 'wrap-up card on Home', route: '/', now: SUNDAY, data: trainedFriday, check: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).waitFor() },
+  { name: 'sheet: your week', route: '/', now: SUNDAY, data: trainedFriday, act: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).click() },
   { name: 'beginner: session 1 of 6', route: '/', data: (d) => ({ ...d, workouts: [], settings: { ...d.settings, training: { ...d.settings?.training, level: 'beginner' } } }) },
   { name: 'quests off: Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, modules: { ...d.settings?.modules, quests: false } } }) },
   { name: 'safety limits on: Home', route: '/', data: gated },

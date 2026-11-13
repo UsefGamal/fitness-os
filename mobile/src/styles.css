@@ -450,6 +450,9 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .banner { margin-bottom: 12px; }
 /* Backup reminder as one thin line (UX-02). */
 .backup-line { display: flex; align-items: center; gap: 4px; margin: 0 0 12px; padding-inline-start: 14px; border-radius: var(--radius); background: var(--surface); font-size: 14px; }
+/* BACK-1: "Still time today?" under the session card. */
+.still-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 12px; padding: 8px 12px; border-radius: var(--radius); background: var(--surface); }
+.still-row .grow { flex: 1 1 100%; }
 /* The Sunday wrap-up card is a button, styled like the backup line (WRAP-1). */
 .wrap-open { background: none; border: 0; text-align: start; font: inherit; cursor: pointer; }
 .wrap-see { display: block; color: var(--accent); font-weight: 600; margin-top: 2px; }
