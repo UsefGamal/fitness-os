@@ -7,6 +7,7 @@
 //              a newer file copy wins, a broken localStorage copy recovers
 //              from the file, and starting writes the file
 //   auto-backup  turn on, one checked file, restore preview, turn off (BAK-1)
+//   encrypted    cloud folder: passphrase, test restore, new-phone unlock
 //
 //   npm run e2e:device     builds with VITE_FAKE_FS=1 into dist-device/,
 //                          then runs every check; exits 1 on a failure
@@ -184,6 +185,58 @@ async function autoBackup(browser) {
   await ctx.close();
 }
 
+// BAK-1 part 2: a cloud folder gets an encrypted file, set up with a
+// recovery passphrase that is tested straight away; on a "new phone" (no
+// key) the backup opens with that passphrase only.
+async function encryptedBackup(browser) {
+  const FOLDER = 'fitness-os-fake-backup-folder';
+  const PASS = 'blue kettle seven hills';
+  const { ctx, page, errors } = await context(browser, { store: { [KEY]: fixture(), [FOLDER]: '{}', 'fitness-os-fake-backup-synced': '1' } });
+  await page.goto(`${URL0}#/settings/data`);
+  const box = page.getByTestId('auto-backup');
+  await box.waitFor({ timeout: 10000 });
+  await box.getByRole('button', { name: /Turn on automatic backup/ }).click();
+  const sheet = page.getByRole('dialog');
+  await sheet.getByText(/Recovery passphrase/).first().waitFor({ timeout: 10000 });
+  const none = await page.evaluate((k) => Object.keys(JSON.parse(localStorage.getItem(k) || '{}')), FOLDER);
+  check('encrypted: a cloud folder asks for a passphrase before writing anything', none.length === 0, none.join(', '));
+  await sheet.getByLabel(/Passphrase \(at least/).fill('short');
+  await sheet.getByLabel(/Type it again/).fill('short');
+  await sheet.getByRole('button', { name: /Save and test/ }).click();
+  const short = await sheet.getByText(/Use at least 10 characters/).isVisible().catch(() => false);
+  check('encrypted: a short passphrase is refused', short);
+  await sheet.getByLabel(/Passphrase \(at least/).fill(PASS);
+  await sheet.getByLabel(/Type it again/).fill(PASS);
+  await sheet.getByRole('button', { name: /Save and test/ }).click();
+  await box.getByText(/Last backup checked: today/).waitFor({ timeout: 30000 });
+  const file = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}'), FOLDER);
+  const names = Object.keys(file);
+  const text = file['fitness-os-backup-2026-11-06.json.enc'] || '';
+  check('encrypted: one .json.enc, nothing readable, no plain copy', names.length === 1 && text.includes('"format":"fitness-os-backup-enc"') && !text.includes('log_date') && !errors.length, names.join(', '));
+  const done = await page.getByText(/opened again with your passphrase/).waitFor({ timeout: 30000 }).then(() => true, () => false);
+  check('encrypted: the test restore with the passphrase passed', done);
+  await box.getByRole('button', { name: /Restore from this folder/ }).click();
+  const preview = await page.getByText(/Replace what's on this phone/).isVisible().catch(() => false);
+  check('encrypted: on this phone restore opens without asking', preview);
+  await page.getByRole('button', { name: /^Cancel$/ }).first().click();
+  // A new phone: the Keystore key is gone.
+  await page.evaluate(() => localStorage.removeItem('fitness-os-fake-backup-key'));
+  await box.getByRole('button', { name: /Restore from this folder/ }).click();
+  const unlock = page.getByRole('dialog');
+  await unlock.getByText(/Open encrypted backup/).waitFor({ timeout: 10000 });
+  await unlock.getByLabel(/Recovery passphrase/).fill('blue kettle seven hill');
+  await unlock.getByRole('button', { name: /^Open$/ }).click();
+  await unlock.getByText(/does not open this backup/).waitFor({ timeout: 30000 });
+  check('encrypted: a wrong passphrase is refused in plain words', true);
+  await unlock.getByLabel(/Recovery passphrase/).fill(PASS);
+  await unlock.getByRole('button', { name: /^Open$/ }).click();
+  await page.getByText(/Replace what's on this phone/).waitFor({ timeout: 30000 });
+  check('encrypted: on a new phone the passphrase opens it to the usual preview', !errors.length, errors.join(' | '));
+  const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  check('encrypted: the Data page fits 360 px', !wide);
+  await ctx.close();
+}
+
 const server = await serve();
 const browser = await chromium.launch();
 try {
@@ -192,6 +245,7 @@ try {
   await midnight(browser);
   await fakeFs(browser);
   await autoBackup(browser);
+  await encryptedBackup(browser);
 } finally {
   await browser.close();
   stop(server);
