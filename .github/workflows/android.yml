@@ -87,7 +87,7 @@ jobs:
       - name: Friends debug APK has no trace of Yusuf's plan
         run: python scripts/check_friends_build.py --apk dist/fitness-os-debug-friends.apk
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fitness-os-apk-${{ github.run_number }}
           path: dist/*.apk
@@ -196,7 +196,7 @@ jobs:
           fi
           gh release upload "$GITHUB_REF_NAME" dist/*.apk --clobber
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fitness-os-apk-${{ github.run_number }}
           path: dist/*.apk
