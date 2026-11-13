@@ -366,7 +366,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 /* A warning chip stays chip-sized: the block rule above must not resize it. */
 .chip.warn { padding: 3px 9px; border-radius: 10px; font-size: 13px; margin-bottom: 0; }
 .fill-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.list-row input[type=time] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 40px; color-scheme: dark; }
+.list-row input[type=time], .list-row input[type=date] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 44px; color-scheme: dark; }
 
 /* Intro on open (components/Intro.jsx, 1.8 s). The bolt sits where the
    Android splash draws it, so the hand-over is seamless. */

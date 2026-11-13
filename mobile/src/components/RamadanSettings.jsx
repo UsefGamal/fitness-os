@@ -2,15 +2,19 @@
 // it suggests this year's dates, which the person checks and changes; the
 // app never works the dates out itself.
 import { formatDate } from '../lib/dates.js';
+import { macroTargets } from '../lib/macros.js';
 import { isTime } from '../lib/times.js';
 import { t } from '../lib/i18n.js';
-import { ramadanOf, ramadanSet, setRamadan, switchRamadan } from '../lib/ramadan.js';
+import { goalSlipDays, ramadanOf, ramadanSet, setRamadan, switchRamadan } from '../lib/ramadan.js';
+import { content } from '../store/useData.js';
 import Icon from './Icon.jsx';
 
 export default function RamadanSettings({ data, update }) {
   const on = ramadanSet(data);
   const r = ramadanOf(data);
   const set = (changes) => { update((d) => setRamadan(d, changes)); };
+  // The smaller deficit while fasting moves the goal date a little.
+  const slip = on ? goalSlipDays(data, (iso) => macroTargets(data, content.nutrition, iso)) : null;
   return (
     <>
       <div className="section-label">{t('ramadan.title')}</div>
@@ -42,6 +46,7 @@ export default function RamadanSettings({ data, update }) {
         ) : null}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{t('ramadan.explain')}</p>
+      {slip ? <p className="muted small" role="note" style={{ margin: '-4px 16px 12px' }}>{t(slip === 1 ? 'ramadan.slipOne' : 'ramadan.slip', { n: slip })}</p> : null}
     </>
   );
 }

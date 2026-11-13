@@ -13,7 +13,7 @@ import WorkoutCard from '../components/WorkoutCard.jsx';
 import { addDays, formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups, weekStreaks } from '../lib/insights.js';
-import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
+import { afterRamadan, effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { firstName, partOfDay, watchTiles } from '../lib/home.js';
@@ -126,6 +126,9 @@ export default function Today() {
       ) : null}
       {ramadanActive(data, today) ? (
         <div className="card small banner" role="note"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.homeNote', { time: times.session_time })}</span></div>
+      ) : null}
+      {afterRamadan(data, today) ? (
+        <div className="card small banner" role="note"><span className="chip accent">{t('ramadan.afterChip')}</span> <span className="muted">{t('ramadan.afterEid')}</span></div>
       ) : null}
 
       {card === 'clearance' ? (

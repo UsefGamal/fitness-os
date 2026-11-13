@@ -8,6 +8,7 @@
 // - the deficit is at most 15% of TDEE, and none at all when the safety
 //   gate no_fasting_deficit is on.
 // Pure; tested in ramadan.test.js.
+import { addDays, daysBetween } from './dates.js';
 import { isTime, shiftTime, timesOf } from './times.js';
 
 export const RAMADAN_DEFICIT_SHARE = 0.15;
@@ -54,6 +55,13 @@ export function switchRamadan(data, on) {
   return setRamadan(data, { from: r.last_from || SUGGESTED_DATES.from, to: r.last_to || SUGGESTED_DATES.to });
 }
 
+/** The latest a moved time can be, so it stays on its own day. */
+export const LAST_TIME = '23:30';
+/** After midnight, Meals stays on last night until this long before suhoor. */
+export const NIGHT_BEFORE_SUHOOR = 90;
+/** Days after the last fast that the water-weight note shows. */
+export const AFTER_EID_DAYS = 14;
+
 const mins = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
 
 /** Fasting hours: from suhoor to iftar. */
@@ -70,7 +78,12 @@ export function effectiveTimes(data, content, iso) {
   const t = timesOf(data, content);
   if (!ramadanActive(data, iso)) return t;
   const r = ramadanOf(data);
-  const at = (base, m) => shiftTime(base, m).time;
+  // Nothing moves past midnight: with a late summer iftar the late meals
+  // and the session stay on the same day, at LAST_TIME at the latest.
+  const at = (base, m) => {
+    const s = shiftTime(base, m);
+    return s.dayShift > 0 ? LAST_TIME : s.time;
+  };
   const evening = isFasting(r, t.evening_time) ? at(r.iftar, TRAIN_AFTER_IFTAR + 120) : t.evening_time;
   return {
     ...t,
@@ -99,4 +112,38 @@ export function dropFastingReminders(list, data) {
     const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     return !(ramadanActive(data, iso) && isFasting(r, `${pad(d.getHours())}:${pad(d.getMinutes())}`));
   });
+}
+
+/** The day Meals opens on. A late meal eaten after midnight in Ramadan
+ * still belongs to last night: until NIGHT_BEFORE_SUHOOR minutes before
+ * suhoor, Meals opens on yesterday when yesterday was a fasting day. */
+export function mealDay(data, today, hhmm) {
+  const yesterday = addDays(today, -1);
+  if (!ramadanActive(data, yesterday)) return today;
+  const r = ramadanOf(data);
+  return mins(hhmm) < mins(r.suhoor) - NIGHT_BEFORE_SUHOOR ? yesterday : today;
+}
+
+/** Days since the last fast, 1 to AFTER_EID_DAYS, else null. The note
+ * about water weight after Ramadan shows on those days, unless weight
+ * is hidden. */
+export function afterRamadan(data, iso) {
+  if (!ramadanSet(data) || data?.safety?.hide_weight === true) return null;
+  const days = daysBetween(ramadanOf(data).to, iso);
+  return days >= 1 && days <= AFTER_EID_DAYS ? days : null;
+}
+
+/** About how many days later the goal is reached because the deficit is
+ * smaller while fasting: the Ramadan days times the share of the deficit
+ * given up. `targetsOn(iso)` is macroTargets for that day (passed in, so
+ * this file doesn't import the macro maths). null when it doesn't move. */
+export function goalSlipDays(data, targetsOn) {
+  if (!ramadanSet(data)) return null;
+  const r = ramadanOf(data);
+  const before = targetsOn(addDays(r.from, -1));
+  const during = targetsOn(r.from);
+  if (before?.mode !== 'lose' || !(before.deficit > 0)) return null;
+  const given = Math.max(0, before.deficit - (during?.deficit || 0)) / before.deficit;
+  const days = Math.round((daysBetween(r.from, r.to) + 1) * given);
+  return days > 0 ? days : null;
 }
