@@ -6,6 +6,7 @@
 //   fake-fs    the file mirror, in a build with a fake file system:
 //              a newer file copy wins, a broken localStorage copy recovers
 //              from the file, and starting writes the file
+//   auto-backup  turn on, one checked file, restore preview, turn off (BAK-1)
 //
 //   npm run e2e:device     builds with VITE_FAKE_FS=1 into dist-device/,
 //                          then runs every check; exits 1 on a failure
@@ -149,6 +150,40 @@ async function fakeFs(browser) {
   }
 }
 
+// BAK-1: automatic backup, with the pretend folder the fake-fs build has.
+async function autoBackup(browser) {
+  const FOLDER = 'fitness-os-fake-backup-folder';
+  const files = (page) => page.evaluate((k) => Object.keys(JSON.parse(localStorage.getItem(k) || '{}')).sort(), FOLDER);
+  const { ctx, page, errors } = await context(browser, { store: { [KEY]: fixture(), [FOLDER]: JSON.stringify({ 'holiday.jpg': 'JPEG' }) } });
+  await page.goto(`${URL0}#/settings/data`);
+  const box = page.getByTestId('auto-backup');
+  await box.waitFor({ timeout: 10000 });
+  await box.getByRole('button', { name: /Turn on automatic backup/ }).click();
+  await box.getByText(/Last backup checked: today/).waitFor({ timeout: 10000 });
+  const first = await files(page);
+  check('auto-backup: turning it on writes one checked file and leaves other files alone', first.length === 2 && first[0] === 'fitness-os-backup-2026-11-06.json' && first[1] === 'holiday.jpg' && !errors.length, first.join(', '));
+  const saved = await page.evaluate(([k, f]) => {
+    const text = JSON.parse(localStorage.getItem(f))['fitness-os-backup-2026-11-06.json'];
+    const state = JSON.parse(localStorage.getItem(k)).settings.auto_backup;
+    return { workouts: JSON.parse(text).workouts.length, compact: !text.includes('\n'), state, leak: /content:|uri/i.test(JSON.stringify(state)) };
+  }, [KEY, FOLDER]).catch(() => null);
+  // The store saves a moment after the change.
+  await page.waitForTimeout(1500);
+  const state = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)).settings.auto_backup, KEY);
+  check('auto-backup: the state is saved, with no folder address in the data', state?.on === true && state.last_error == null && state.last_name === 'fitness-os-backup-2026-11-06.json' && saved && saved.compact && saved.workouts === JSON.parse(fixture()).workouts.length && !/content:/.test(JSON.stringify(state)), JSON.stringify(state));
+  const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  check('auto-backup: the Data page fits 360 px with it on', !wide);
+  await box.getByRole('button', { name: /Restore from this folder/ }).click();
+  const preview = await page.getByText(/Replace what's on this phone/).isVisible().catch(() => false);
+  check('auto-backup: restore opens the usual preview first', preview && !errors.length);
+  await box.getByRole('button', { name: /^Turn off/ }).click();
+  await page.getByRole('button', { name: /Turn off and delete the backups/ }).click();
+  await box.getByRole('button', { name: /Turn on automatic backup/ }).waitFor({ timeout: 10000 });
+  const after = await files(page);
+  check('auto-backup: turning it off with delete removes only the app\'s files', after.length === 1 && after[0] === 'holiday.jpg' && !errors.length, after.join(', '));
+  await ctx.close();
+}
+
 const server = await serve();
 const browser = await chromium.launch();
 try {
@@ -156,6 +191,7 @@ try {
   await speed(browser);
   await midnight(browser);
   await fakeFs(browser);
+  await autoBackup(browser);
 } finally {
   await browser.close();
   stop(server);

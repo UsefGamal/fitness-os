@@ -63,3 +63,6 @@ export async function hasScreenLock() {
     return null;
   }
 }
+
+/** The automatic backup's folder (BAK-1): store/autoBackup.js. */
+export const BackupFolder = registerPlugin('BackupFolder');

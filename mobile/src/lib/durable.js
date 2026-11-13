@@ -93,6 +93,17 @@ const DAY = 24 * 60 * 60 * 1000;
  * nagged. screenLock false (the phone has none) means 7 days instead, and
  * noLock tells the card to say why. */
 export function backupDue(data, now = Date.now(), { screenLock = null } = {}) {
+  // BAK-1: quiet while automatic backup is healthy (a checked backup in
+  // the last 3 days); it comes back when that goes stale or fails.
+  const auto = data.settings?.auto_backup;
+  if (auto?.on === true) {
+    const checked = Number.isFinite(auto.last_checked_at) ? auto.last_checked_at : null;
+    if (!auto.last_error && checked && now - checked < 3 * DAY) return null;
+    const snoozedAt = data.settings?.backup_snoozed_at;
+    if (snoozedAt && now - snoozedAt < 3 * DAY) return null;
+    const lastGood = Math.max(checked || 0, data.settings?.last_backup_at || 0);
+    return { days: lastGood ? Math.floor((now - lastGood) / DAY) : null, noLock: screenLock === false, auto: true };
+  }
   const noLock = screenLock === false;
   const every = noLock ? BACKUP_EVERY_DAYS_NO_LOCK : BACKUP_EVERY_DAYS;
   const dates = [...data.workouts, ...data.body_logs, ...data.meal_logs].map((r) => r.log_date).filter(Boolean);
