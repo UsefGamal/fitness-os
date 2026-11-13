@@ -33,7 +33,7 @@ const KEY = 'fitness-os-data-v1';
 const NOW = new Date('2026-11-06T07:00:00Z');
 const PORT = 4179;
 
-export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
+export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/about', '/settings/install', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
 export const WIDTHS = [360, 390, 412];
 export const DIRS = ['ltr', 'rtl'];
 export const MIN_TAP = 44;

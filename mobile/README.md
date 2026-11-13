@@ -58,6 +58,12 @@ There are two kinds of build, and they are separate apps on the phone.
   the friends APK carries any exercise or link from Yusuf's plan, and About and
   the bug report say which build is installed.
 
+Before each release: set `version` in `mobile/package.json` (and
+`package-lock.json`) to the tag's number and add that version's notes to
+`mobile/src/lib/whatsNewNotes.js`. A test fails when the notes are older than
+`package.json`, and the APK's fallback version name reads the same file, so
+there is one number to change.
+
 ### Releases: one-time setup
 
 **From a phone:** add the secret `FITNESS_OS_KEYSTORE_PASSWORD`, then run

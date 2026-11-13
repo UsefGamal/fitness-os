@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import Icon from '../components/Icon.jsx';
+import InstallGuide from '../components/InstallGuide.jsx';
+import Sheet from '../components/Sheet.jsx';
 import SafetyQuestions from '../components/SafetyQuestions.jsx';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
@@ -21,6 +23,7 @@ export default function Setup({ onDone }) {
   const data = useData((s) => s.data);
   const today = todayISO();
   const [step, setStep] = useState(0);
+  const [help, setHelp] = useState(false);
   const [a, setA] = useState({ where: 'gym', days: 3, experience: 'new' });
   const set = (k, v) => setA((x) => ({ ...x, [k]: v }));
   const num = (k) => (e) => set(k, e.target.value === '' ? null : Number(e.target.value));
@@ -67,6 +70,8 @@ export default function Setup({ onDone }) {
             <button type="button" className="btn ghost" onClick={skipAll}>{t('setup.skipAll')}</button>
           </div>
           <p className="muted small" style={{ marginTop: 14 }}>{t('setup.private')}</p>
+          <button type="button" className="btn ghost small" style={{ marginTop: 4 }} onClick={() => setHelp(true)}>{t('setup.installHelp')}</button>
+          {help ? <Sheet title={t('settings.install')} onClose={() => setHelp(false)}><InstallGuide /></Sheet> : null}
         </>
       ) : null}
 

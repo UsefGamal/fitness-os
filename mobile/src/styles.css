@@ -678,3 +678,18 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 @media (prefers-reduced-motion: reduce) {
   button.chip:active, a.chip:active, .pick:active, .pill-btn:active, .pill-open:active, .tpre:active, .timer-open:active, .check:active, button.week-day:active, .tab:active svg, a.banner:active { transform: none; }
 }
+
+/* Install and update help (UPD-1): numbered steps with a small drawn phone. */
+.guide-steps { list-style: none; margin: 12px 0 0; padding: 0; background: var(--surface); border-radius: 12px; }
+.guide-steps li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; font-size: 16px; line-height: 1.35; }
+.guide-steps li + li { border-top: var(--hair); }
+.guide-n { flex: none; width: 26px; height: 26px; border-radius: 13px; background: var(--accent-dim); color: var(--accent); font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+.guide-card { flex: none; width: 84px; }
+.guide-phone { display: flex; flex-direction: column; justify-content: center; gap: 5px; height: 96px; padding: 8px 6px; border: 2px solid var(--surface3); border-radius: 12px; background: var(--bg); overflow: hidden; }
+.guide-line { height: 5px; border-radius: 3px; background: var(--surface3); }
+.guide-line.short { width: 60%; }
+.guide-pick { display: block; padding: 4px 5px; border-radius: 6px; background: var(--accent-dim); color: var(--accent); font-size: 10px; font-weight: 700; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.guide-switch { display: flex; align-items: center; gap: 4px; text-align: start; }
+.guide-switch span { flex: 1; min-width: 0; }
+.guide-switch i { flex: none; width: 16px; height: 10px; border-radius: 5px; background: var(--accent); }
+.guide-old { height: 22px; border-radius: 6px; border: 2px dashed var(--surface3); }
