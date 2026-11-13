@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
+import { dateTime } from '../lib/dates.js';
 import { ImportError, parseSnapshot, summarize } from '../lib/dataFile.js';
 import { t } from '../lib/i18n.js';
 import { listSnapshots, readSnapshot } from '../store/snapshots.js';
@@ -14,7 +15,7 @@ import { content, useData } from '../store/useData.js';
 const n = (count, key) => t(count === 1 ? `count.${key}` : `count.${key}s`, { n: count });
 
 function when(at) {
-  return new Date(at).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return dateTime(at);
 }
 
 export default function Snapshots() {

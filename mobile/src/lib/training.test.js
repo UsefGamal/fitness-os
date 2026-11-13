@@ -80,3 +80,30 @@ test('stepAt finds the running step and time left', () => {
   assert.deepEqual(stepAt(steps, 30), { index: 2, left: 20 });
   assert.deepEqual(stepAt(steps, 50), { done: true });
 });
+
+test('a finished workout saves active minutes, capped at three hours (TEST-1)', async () => {
+  const { finishedMinutes, MAX_WORKOUT_MIN, ranLong } = await import('./training.js');
+  const MIN = 60000;
+  const t0 = 1_800_000_000_000;
+  assert.equal(finishedMinutes({ started_at: t0 }, t0 + 55 * MIN), 55);
+  assert.equal(finishedMinutes({ started_at: t0, paused_ms: 20 * MIN }, t0 + 55 * MIN), 35);
+  assert.equal(finishedMinutes({ started_at: t0, paused_ms: 5 * MIN, paused_at: t0 + 40 * MIN }, t0 + 55 * MIN), 35, 'an open pause ends at the finish');
+  assert.equal(finishedMinutes({ started_at: t0 }, t0 + 10000), 1);
+  assert.equal(finishedMinutes({ started_at: t0 }, t0 + 9 * 60 * MIN), MAX_WORKOUT_MIN);
+  assert.equal(ranLong({ started_at: t0, finished_at: t0 + 9 * 60 * MIN }), true);
+  assert.equal(ranLong({ started_at: t0, finished_at: t0 + 9 * 60 * MIN, paused_ms: 7 * 60 * MIN }), false);
+  assert.equal(ranLong({ started_at: t0, finished_at: t0 + 170 * MIN }), false);
+  assert.equal(ranLong({ started_at: t0 }), false);
+  assert.equal(ranLong({ finished_at: t0 }), false);
+});
+
+test('the screen stays on for 20 minutes after the last tap, and while a rest timer runs (TEST-1)', async () => {
+  const { AWAKE_IDLE_MS, shouldStayAwake } = await import('./training.js');
+  const now = 1_800_000_000_000;
+  assert.equal(shouldStayAwake(now - 60000, false, now), true);
+  assert.equal(shouldStayAwake(now - AWAKE_IDLE_MS + 1, false, now), true);
+  assert.equal(shouldStayAwake(now - AWAKE_IDLE_MS, false, now), false);
+  assert.equal(shouldStayAwake(now - 3 * AWAKE_IDLE_MS, true, now), true);
+  assert.equal(shouldStayAwake(null, false, now), false);
+  assert.equal(shouldStayAwake(null, true, now), true);
+});

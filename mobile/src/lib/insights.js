@@ -2,7 +2,7 @@
 // groups are still recovering or have gone untrained, a year of training
 // days, week streaks and estimated-1RM history. Pure helpers, tested in
 // insights.test.js.
-import { addDays, daysBetween, fromISO, weekStart } from './dates.js';
+import { addDays, daysBetween, fromISO, LOCALE, weekStart } from './dates.js';
 import { e1rm, isWorkSet } from './data.js';
 
 export const GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
@@ -215,7 +215,7 @@ export function monthLabels(grid) {
   grid.forEach((col, i) => {
     const m = fromISO(col[0].date).getMonth();
     if (m !== last) {
-      out.push({ col: i, label: fromISO(col[0].date).toLocaleString('en', { month: 'short' }) });
+      out.push({ col: i, label: fromISO(col[0].date).toLocaleString(LOCALE, { month: 'short' }) });
       last = m;
     }
   });

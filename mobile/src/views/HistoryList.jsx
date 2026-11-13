@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { formatDate } from '../lib/dates.js';
+import { formatDate, monthLabel } from '../lib/dates.js';
 import { useData } from '../store/useData.js';
 
 const TYPE = { gym: 'Gym', home: 'Home session', recovery: 'Recovery', cardio: 'Cardio', padel: 'Padel' };
@@ -13,7 +13,7 @@ export default function HistoryList() {
   for (const w of workouts) {
     const key = w.log_date.slice(0, 7);
     let m = months.find((x) => x.key === key);
-    if (!m) months.push((m = { key, label: new Date(`${key}-15T12:00`).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }), items: [] }));
+    if (!m) months.push((m = { key, label: monthLabel(key), items: [] }));
     m.items.push(w);
   }
   return (

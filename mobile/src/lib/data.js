@@ -6,6 +6,7 @@
 // ("fitness-os-export" v1, snake_case fields). lib/migrate.js upgrades any
 // older copy to the current schema; this is what a new install starts with.
 import { blockFromContent, CURRENT_SCHEMA, defaultDiet, defaultSafety } from './migrate.js';
+import { finishedMinutes } from './training.js';
 
 /** @returns {import('../types').Data} */
 export function emptyData(content) {
@@ -146,7 +147,11 @@ export function finishWorkout(data, workoutId, { sessionRpe = null, painNote = n
     session_rpe: sessionRpe,
     pain_note: painNote || null,
     finished_at: now,
-    duration_min: w.started_at ? Math.max(1, Math.round((now - w.started_at) / 60000)) : w.duration_min,
+    // Active time only: a pause is not training (TEST-1). A pause still
+    // open when the workout is finished ends now.
+    paused_ms: w.paused_at ? (w.paused_ms || 0) + (now - w.paused_at) : w.paused_ms,
+    paused_at: w.paused_at ? null : w.paused_at,
+    duration_min: w.started_at ? finishedMinutes(w, now) : w.duration_min,
   }));
 }
 

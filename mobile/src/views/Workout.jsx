@@ -138,7 +138,7 @@ export default function Workout() {
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
   const [useBuild, setUseBuild] = useState(true);
-  useKeepAwake(Boolean(active));
+  useKeepAwake(Boolean(active), { idle: true, restRunning: Boolean(timer.endsAt) });
 
   useEffect(() => {
     if (!undo) return undefined;

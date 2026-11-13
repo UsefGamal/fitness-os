@@ -58,6 +58,31 @@ export function weekStart(iso) {
   return addDays(iso, -fromISO(iso).getDay());
 }
 
-export function formatDate(iso) {
-  return fromISO(iso).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+/** The language dates and numbers are written in: the app's, not the
+ * phone's, so a phone set to Arabic doesn't show Arabic dates and digits
+ * above English text. One constant, for the day the app speaks Arabic. */
+export const LOCALE = 'en-GB';
+
+export function formatDate(iso, locale = LOCALE) {
+  return fromISO(iso).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+/** "12 Nov 2026". */
+export function longDate(iso, locale = LOCALE) {
+  return fromISO(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** "November 2026" for a "YYYY-MM" key. */
+export function monthLabel(key, locale = LOCALE) {
+  return new Date(`${key}-15T12:00`).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+}
+
+/** "Thu 12 Nov, 08:14" for a time in ms. */
+export function dateTime(at, locale = LOCALE) {
+  return new Date(at).toLocaleString(locale, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+/** 12345 as "12,345". */
+export function formatNumber(n, locale = LOCALE) {
+  return Number(n).toLocaleString(locale);
 }
