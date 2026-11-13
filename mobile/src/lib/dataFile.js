@@ -146,9 +146,11 @@ export function summarize(data) {
   };
 }
 
-export function toDataFile(data, now = new Date()) {
+/** compact: one line, for the automatic backup (BAK-1). The export a
+ * person saves by hand stays indented. */
+export function toDataFile(data, now = new Date(), { compact = false } = {}) {
   const { version: _v1, saved_at: _saved, ...rest } = data;
-  return JSON.stringify({ format: FILE_FORMAT, schemaVersion: schemaOf(data), exported_at: now.toISOString().slice(0, 19) + 'Z', ...rest }, null, 2);
+  return JSON.stringify({ format: FILE_FORMAT, schemaVersion: schemaOf(data), exported_at: now.toISOString().slice(0, 19) + 'Z', ...rest }, null, compact ? 0 : 2);
 }
 
 /** A copy to share (P14-14): the plan, workouts and meals without the

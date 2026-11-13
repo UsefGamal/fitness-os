@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import com.getcapacitor.BridgeActivity;
 import com.usefgamal.fitnessos.appinfo.AppInfoPlugin;
+import com.usefgamal.fitnessos.backup.BackupFolderPlugin;
 import com.usefgamal.fitnessos.crash.CrashPlugin;
 import com.usefgamal.fitnessos.device.DevicePlugin;
 import com.usefgamal.fitnessos.health.HealthPlugin;
@@ -22,6 +23,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DevicePlugin.class);
         registerPlugin(PhotoLockPlugin.class);
         registerPlugin(CrashPlugin.class);
+        registerPlugin(BackupFolderPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

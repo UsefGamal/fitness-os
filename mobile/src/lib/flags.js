@@ -10,6 +10,9 @@
 export const FLAGS = {
   // Example kept so the mechanism stays tested; remove when a real flag lands.
   example_lab: { release: false, note: 'A test screen that only debug builds show' },
+  // BAK-1: off in release builds until it has passed on a Samsung, a
+  // Xiaomi and an Infinix (the committee's ship rule).
+  auto_backup: { release: false, note: 'Automatic backup to a folder the person picks' },
 };
 
 /** Whether `name` is on for a build. `release` is true for signed release

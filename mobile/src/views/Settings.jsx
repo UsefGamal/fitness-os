@@ -5,7 +5,9 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, ROOT_PAGES } from '../lib/settingsPages.js';
 import { RELEASES_URL, safeOutside, SHARE_APP_TEXT } from '../lib/links.js';
 import InstallGuide from '../components/InstallGuide.jsx';
-import { todayISO } from '../lib/dates.js';
+import AutoBackup from '../components/AutoBackup.jsx';
+import { dateRange } from '../lib/autoBackup.js';
+import { fromISO, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { MODULES } from '../lib/data.js';
 import Stepper from '../components/Stepper.jsx';
@@ -45,6 +47,8 @@ function extrasText(list) {
   const names = list.map((k) => EXTRA_NAMES[k] || k);
   return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
 }
+
+const longDate = (iso) => fromISO(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
 function lastBackupText(data) {
   const at = data.settings?.last_backup_at;
@@ -131,6 +135,17 @@ export default function Settings() {
     try {
       const parsed = parseDataFile(await file.text(), content);
       setPendingImport(parsed);
+      setMsg('');
+    } catch (err) {
+      setMsg(err instanceof ImportError ? err.message : 'Could not read that file.');
+    }
+  };
+
+  // BAK-1: the newest automatic backup goes through the same checks and
+  // the same preview as a file the person picked.
+  const restoreText = (text) => {
+    try {
+      setPendingImport(parseDataFile(text, content));
       setMsg('');
     } catch (err) {
       setMsg(err instanceof ImportError ? err.message : 'Could not read that file.');
@@ -263,11 +278,13 @@ export default function Settings() {
       <input ref={csvRef} type="file" accept="text/csv,.csv,text/plain" hidden onChange={pickCsv} />
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your data stays on this phone, with no server and no account. Export a backup now and then; uninstalling the app deletes its data.</p>
 
+      <AutoBackup onRestore={restoreText} onMsg={setMsg} />
+
       {pendingImport ? (
         <section className="card stack">
           <strong>Replace what's on this phone?</strong>
           <div className="muted small">
-            The file has {n(summarize(pendingImport).workouts, 'workout')}, {n(summarize(pendingImport).sets, 'set')}, {n(summarize(pendingImport).weighIns, 'weigh-in')} and {n(summarize(pendingImport).meals, 'meal')}. What's in the app now ({n(s.workouts, 'workout')}) will be replaced.
+            The file has {n(summarize(pendingImport).workouts, 'workout')}, {n(summarize(pendingImport).sets, 'set')}, {n(summarize(pendingImport).weighIns, 'weigh-in')} and {n(summarize(pendingImport).meals, 'meal')}. What's in the app now ({n(s.workouts, 'workout')}) will be replaced.{dateRange(pendingImport) ? ` ${t('import.range', { first: longDate(dateRange(pendingImport).first), last: longDate(dateRange(pendingImport).last) })}` : ''}
           </div>
           {loosened.length ? (
             <div className="stack" style={{ gap: 6 }} role="group" aria-labelledby="still-true">

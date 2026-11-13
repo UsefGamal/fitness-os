@@ -159,7 +159,7 @@ export default function Today() {
         <div className="backup-line" role="status">
           <Link className="grow backup-link" to="/settings/data">
             <Icon name="download" className="icon tone-accent" />
-            <span><strong>{t('home.backupTitle')}</strong> <span className="muted">{backup.days == null ? t('home.backupNeverShort') : t('home.backupDaysShort', { days: backup.days })}{backup.noLock ? ` ${t('home.backupNoLockShort')}` : ''}</span></span>
+            <span><strong>{t(backup.auto ? 'home.backupAutoTitle' : 'home.backupTitle')}</strong> <span className="muted">{backup.days == null ? t('home.backupNeverShort') : t('home.backupDaysShort', { days: backup.days })}{backup.noLock ? ` ${t('home.backupNoLockShort')}` : ''}</span></span>
           </Link>
           <button type="button" className="icon-btn" aria-label={t('home.later')} onClick={() => update((d) => ({ ...d, settings: { ...d.settings, backup_snoozed_at: Date.now() } }))}><Icon name="x" /></button>
         </div>

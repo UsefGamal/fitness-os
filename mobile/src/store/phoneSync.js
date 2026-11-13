@@ -1,5 +1,6 @@
 // Keeps the phone extras in step with the data: the home-screen widget, the
 // rest timer in the shade, and Health Connect (when switched on in Settings).
+import { maybeBackup } from './autoBackup.js';
 import { App } from '@capacitor/app';
 
 import { todayISO } from '../lib/dates.js';
@@ -87,6 +88,7 @@ export function startPhoneSync() {
   App.addListener('appStateChange', ({ isActive }) => {
     if (!isActive) {
       flushSave(true); // the app may be killed in the background: write now, file too
+      maybeBackup(); // BAK-1: today's backup, if one is due
       return;
     }
     pushWidget();
@@ -97,4 +99,5 @@ export function startPhoneSync() {
   App.getLaunchUrl().then((r) => openDeepLink(r?.url)).catch(() => {});
   useTimer.getState().sync();
   syncHealth().catch(() => {});
+  maybeBackup();
 }

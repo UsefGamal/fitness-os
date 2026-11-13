@@ -149,3 +149,18 @@ test('saved data that cannot be read is told apart from a new phone (QA-08)', ()
   assert.equal(unreadable({ localText: '{"version":1,"work', fileText: null }), true, 'truncated');
   assert.equal(unreadable({ localText: '{"version":1,"work', fileText: 'garbage' }), true);
 });
+
+test('the reminder is quiet while automatic backup is healthy, and back when it is stale or failing (BAK-1)', () => {
+  const DAY = 86400000;
+  const now = new Date(2026, 10, 20, 12).getTime();
+  const base = { ...emptyData(content), workouts: [{ id: 1, log_date: '2026-09-01', sets: [] }] };
+  const withAuto = (auto, more = {}) => ({ ...base, settings: { ...base.settings, auto_backup: auto, ...more } });
+  assert.deepEqual(backupDue(base, now), { days: null, noLock: false });
+  assert.equal(backupDue(withAuto({ on: true, last_checked_at: now - 2 * DAY, last_error: null }), now), null);
+  assert.deepEqual(backupDue(withAuto({ on: true, last_checked_at: now - 4 * DAY, last_error: null }), now), { days: 4, noLock: false, auto: true });
+  assert.deepEqual(backupDue(withAuto({ on: true, last_checked_at: now - DAY, last_error: 'folder_gone' }), now), { days: 1, noLock: false, auto: true });
+  assert.deepEqual(backupDue(withAuto({ on: true }), now), { days: null, noLock: false, auto: true });
+  assert.equal(backupDue(withAuto({ on: true, last_error: 'no_space' }, { backup_snoozed_at: now - DAY }), now), null, '"Later" still hides it for three days');
+  // Switched off: the ordinary 14-day rule, as before.
+  assert.equal(backupDue(withAuto({ on: false, last_checked_at: now - DAY }, { last_backup_at: now - 2 * DAY }), now), null);
+});

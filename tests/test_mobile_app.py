@@ -138,6 +138,22 @@ def test_crash_lines_stay_on_the_phone():
     assert crash in [(e.get("domain"), e.get("path")) for e in legacy.findall("exclude")]
 
 
+def test_backup_folder_grant_stays_on_the_phone():
+    """BAK-1: the folder grant lives in native prefs, outside Android's backup,
+    and the plugin asks for no storage permission."""
+    grant = ("sharedpref", "fitness-os-backup-folder.xml")
+    rules = ET.parse(RES_XML / "data_extraction_rules.xml").getroot()
+    for section in ("cloud-backup", "device-transfer"):
+        assert grant in [(e.get("domain"), e.get("path")) for e in rules.find(section).findall("exclude")], section
+    legacy = ET.parse(RES_XML_28 / "backup_rules.xml").getroot()
+    assert grant in [(e.get("domain"), e.get("path")) for e in legacy.findall("exclude")]
+    plugin = (ANDROID / "java" / "com" / "usefgamal" / "fitnessos" / "backup" / "BackupFolderPlugin.java").read_text()
+    assert 'PREFS = "fitness-os-backup-folder"' in plugin
+    manifest = (ANDROID / "AndroidManifest.xml").read_text()
+    for permission in ("MANAGE_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "REQUEST_INSTALL_PACKAGES"):
+        assert permission not in manifest, permission
+
+
 def test_launcher_activity_and_file_provider_are_narrow():
     """Pentest AND-05 (task hijacking on Android 8-10) and SEC-10."""
     assert 'android:taskAffinity=""' in MANIFEST
