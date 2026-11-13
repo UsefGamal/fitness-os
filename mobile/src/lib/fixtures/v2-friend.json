@@ -1,0 +1,1598 @@
+{
+ "schemaVersion": 2,
+ "profile": {
+  "gender": "female",
+  "height_cm": 165,
+  "date_of_birth": "1998-05-05",
+  "activity_level": "light",
+  "week_start": "sun",
+  "experience": "new",
+  "locale": "en",
+  "units": "kg"
+ },
+ "goals": [],
+ "safety": {
+  "screen_version": 1,
+  "screened_on": "2026-11-08",
+  "gates": {
+   "no_deficit": true,
+   "no_fasting_deficit": true,
+   "needs_clearance": true,
+   "protein_cap": true,
+   "beginner_only": true
+  },
+  "hide_kcal": true,
+  "hide_weight": false,
+  "skipped": true
+ },
+ "diet": {
+  "mode": "plan",
+  "plan_start_date": "2026-09-01",
+  "ramadan": {
+   "from": null,
+   "to": null
+  }
+ },
+ "program": {
+  "schedule_mode": "weekdays",
+  "active_block": "b1",
+  "blocks": [
+   {
+    "id": "b1",
+    "template_id": "ul-ppl",
+    "template_version": 1,
+    "started_on": "2026-09-01",
+    "ended_on": null,
+    "schedule": [
+     {
+      "day": "sunday",
+      "plan_day": 1,
+      "session": "upper",
+      "cardio_after": null
+     },
+     {
+      "day": "monday",
+      "plan_day": 2,
+      "session": "lower",
+      "cardio_after": "cycling_10"
+     },
+     {
+      "day": "tuesday",
+      "plan_day": 3,
+      "session": "rest",
+      "cardio_after": null
+     },
+     {
+      "day": "wednesday",
+      "plan_day": 4,
+      "session": "push",
+      "cardio_after": "cycling_10"
+     },
+     {
+      "day": "thursday",
+      "plan_day": 5,
+      "session": "pull",
+      "cardio_after": "cycling_10"
+     },
+     {
+      "day": "friday",
+      "plan_day": 6,
+      "session": "leg",
+      "cardio_after": "cycling_10"
+     },
+     {
+      "day": "saturday",
+      "plan_day": 7,
+      "session": "rest",
+      "cardio_after": null
+     }
+    ],
+    "sessions": [
+     {
+      "key": "upper",
+      "day_letter": "U",
+      "label": "Upper",
+      "focus": "Incline press, lat pulldown, lateral raises, arms",
+      "warmup": [
+       "5 min easy walk on the treadmill",
+       "Wall Slide 1x10",
+       "Forward Wall 1x10",
+       "Y-Bench 1x10-12",
+       "Scapula Push Plus 2x10-12",
+       "SA Pullover 2x10-12 at 20-50%"
+      ],
+      "warmup_items": [
+       {
+        "name": "Wall Slide",
+        "sets": 1,
+        "reps": "10",
+        "rest": "10s",
+        "video": "https://www.youtube.com/watch?v=eW_gVkQXxLg"
+       },
+       {
+        "name": "Forward Wall",
+        "sets": 1,
+        "reps": "10",
+        "rest": "10s",
+        "video": "https://www.youtube.com/watch?v=elNxjr3Kp0s"
+       },
+       {
+        "name": "Y-Bench",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "30s",
+        "note": "No weight, hold 2 s at the top.",
+        "video": "https://youtu.be/T0XJLQBQ1Zg"
+       },
+       {
+        "name": "Scapula Push Plus",
+        "sets": 2,
+        "reps": "10-12",
+        "rest": "30s",
+        "video": "https://youtu.be/p2p--WvzsS0"
+       },
+       {
+        "name": "SA Pullover",
+        "sets": 2,
+        "reps": "10-12",
+        "rest": "1m",
+        "warm_up_pct": "20-50",
+        "note": "Light weight.",
+        "video": "https://www.instagram.com/reel/ClOAyH9MDM6/"
+       }
+      ],
+      "pre_cardio": "5 min easy walk on the treadmill",
+      "cooldown": [],
+      "cardio_after": null,
+      "exercises": [
+       {
+        "name": "15° Incline DB Press",
+        "warm_up_sets": "2-3",
+        "warm_up_reps": "8-10",
+        "warm_up_rest": "1m",
+        "warm_up_pct": "50-90",
+        "sets": 4,
+        "reps": "8-10",
+        "rest": "2m",
+        "rir": "2-3",
+        "type": "normal",
+        "video": "https://youtu.be/3FgtaNKZI8c",
+        "rest_sec": 120
+       },
+       {
+        "name": "NG Lat Pulldown",
+        "warm_up_sets": "2-3",
+        "warm_up_reps": "8-10",
+        "warm_up_rest": "1m",
+        "warm_up_pct": "50-90",
+        "sets": 4,
+        "reps": "8-10",
+        "rest": "2m",
+        "rir": "2-3",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=u7VOdgvjuxY",
+        "video_alt_angle": "https://www.youtube.com/watch?v=hJPO9__Uz0U",
+        "rest_sec": 120
+       },
+       {
+        "name": "Y Cable Lateral Raise",
+        "warm_up_sets": "1",
+        "warm_up_reps": "8-10",
+        "warm_up_rest": "1.5m",
+        "sets": 3,
+        "reps": "8-10",
+        "rest": "1.5-2m",
+        "rir": "2-3",
+        "type": "normal",
+        "note": "Copy the form from the video only.",
+        "film_form": true,
+        "video": "https://youtube.com/shorts/9nOg-Gmybjs",
+        "rest_sec": 90
+       },
+       {
+        "name": "Incline Cable Curl",
+        "sets": 4,
+        "reps": "8-10",
+        "rest": "1m",
+        "rir": "2-3",
+        "type": "paired",
+        "pair": "A",
+        "video": "https://www.youtube.com/watch?v=lxZnJ-FTiGo",
+        "rest_sec": 60
+       },
+       {
+        "name": "1-Arm Overhead Cable Extension",
+        "sets": 4,
+        "reps": "8-10",
+        "rest": "1m",
+        "rir": "2-3",
+        "type": "paired",
+        "pair": "A",
+        "video": "https://www.youtube.com/watch?v=Guey778EiTs",
+        "rest_sec": 60
+       }
+      ]
+     },
+     {
+      "key": "lower",
+      "day_letter": "L",
+      "label": "Lower",
+      "focus": "Leg press, quads and hamstrings, glutes, calves, core",
+      "warmup": [
+       "5 min easy on the bike",
+       "Glute Bridge 2x10",
+       "Dead Bug 2x10",
+       "Air Squat 1x10",
+       "Leg Extension 2x12-15 at 20-90%",
+       "Seated Leg Curl 2x12-15 at 20-90%",
+       "Leg Press 3x10-12"
+      ],
+      "warmup_items": [
+       {
+        "name": "Glute Bridge",
+        "sets": 2,
+        "reps": "10",
+        "rest": "30s",
+        "video": "https://www.youtube.com/watch?v=YRqoIM0u0PY"
+       },
+       {
+        "name": "Dead Bug",
+        "sets": 2,
+        "reps": "10",
+        "rest": "30s",
+        "video": "https://www.youtube.com/watch?v=rbemelnkHag"
+       },
+       {
+        "name": "Air Squat",
+        "sets": 1,
+        "reps": "10",
+        "rest": "1m",
+        "video": "https://www.youtube.com/watch?v=hOzIP_sDfU0"
+       },
+       {
+        "name": "Leg Extension",
+        "sets": 2,
+        "reps": "12-15",
+        "rest": "1m",
+        "warm_up_pct": "20-90",
+        "video": "https://youtube.com/shorts/xsDz4wPoNRk"
+       },
+       {
+        "name": "Seated Leg Curl",
+        "sets": 2,
+        "reps": "12-15",
+        "rest": "1m",
+        "warm_up_pct": "20-90",
+        "note": "Light to medium weight. No seated machine: use the lying one.",
+        "alternative": "Lying Leg Curl",
+        "video": "https://youtu.be/rsTCfz_8VP8"
+       },
+       {
+        "name": "Leg Press",
+        "sets": 3,
+        "reps": "10-12",
+        "rest": "1m",
+        "video": "https://www.youtube.com/watch?v=IZxyjW7MPJQ&t=55s"
+       }
+      ],
+      "pre_cardio": "5 min easy on the bike",
+      "cooldown": [
+       "10 min cycling. Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      ],
+      "cardio_after": {
+       "minutes": 10,
+       "note": "Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      },
+      "exercises": [
+       {
+        "name": "Leg Press",
+        "sets": 3,
+        "reps": "8-10",
+        "rest": "2m",
+        "rir": "3-4",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=IZxyjW7MPJQ&t=55s",
+        "rest_sec": 120
+       },
+       {
+        "name": "Leg Extension",
+        "sets": 3,
+        "reps": "10-12",
+        "rest": "1m",
+        "rir": "2",
+        "type": "paired",
+        "pair": "A",
+        "video": "https://youtube.com/shorts/xsDz4wPoNRk",
+        "rest_sec": 60
+       },
+       {
+        "name": "Seated Leg Curl",
+        "sets": 3,
+        "reps": "10-12",
+        "rest": "1m",
+        "rir": "2",
+        "type": "paired",
+        "pair": "A",
+        "alternative": "Lying Leg Curl",
+        "video": "https://youtu.be/rsTCfz_8VP8",
+        "rest_sec": 60
+       },
+       {
+        "name": "Glute Bridge",
+        "sets": 3,
+        "reps": "5-20",
+        "rest": "1.5-2m",
+        "rir": "3-4",
+        "type": "normal",
+        "note": "Squeeze the glutes and lower back.",
+        "video": "https://www.youtube.com/watch?v=YRqoIM0u0PY",
+        "rest_sec": 90
+       },
+       {
+        "name": "1-Leg Standing Calf Raise",
+        "sets": 4,
+        "reps": "10-12",
+        "rest": "1m",
+        "rir": "3",
+        "type": "paired",
+        "pair": "B",
+        "note": "3 s down, focus on the calf stretch.",
+        "video": "https://www.youtube.com/watch?v=XWSgxIlhvY4",
+        "rest_sec": 60
+       },
+       {
+        "name": "Dead Bug",
+        "sets": 3,
+        "reps": "5-20",
+        "rest": "1m",
+        "rir": "3",
+        "type": "paired",
+        "pair": "B",
+        "note": "Brace the abs and core.",
+        "video": "https://www.youtube.com/watch?v=rbemelnkHag",
+        "rest_sec": 60
+       },
+       {
+        "name": "TVA",
+        "sets": 3,
+        "reps": "5-20",
+        "rest": "1m",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=ey0urqhqw7U",
+        "rest_sec": 60
+       },
+       {
+        "name": "Pallof Press",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "1m",
+        "rir": "3",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=XZkN5MljJY4",
+        "rest_sec": 60
+       },
+       {
+        "name": "Tibia Wall",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "1m",
+        "rir": "3-4",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=y2p4fTtJ4zo",
+        "rest_sec": 60
+       }
+      ]
+     },
+     {
+      "key": "push",
+      "day_letter": "P",
+      "label": "Push",
+      "focus": "Shoulders, incline press, chest, triceps",
+      "warmup": [
+       "5 min easy walk on the treadmill",
+       "Wall Slide 1x10-12",
+       "Forward Wall 1x10-12",
+       "Rotator Cuff 1x10-12",
+       "Y-Bench 1x10-12",
+       "1-Arm Triceps Pushdown 1x12-15",
+       "Scapula Push Plus 2x5-10",
+       "Kneeling Cable Lateral Raise 1x12-15",
+       "30° Incline DB Press 1x4-6 at 20-90%",
+       "30° Incline DB Press 2x2 at 20-90%"
+      ],
+      "warmup_items": [
+       {
+        "name": "Wall Slide",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "10s",
+        "video": "https://www.youtube.com/watch?v=eW_gVkQXxLg"
+       },
+       {
+        "name": "Forward Wall",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "10s",
+        "video": "https://www.youtube.com/watch?v=elNxjr3Kp0s"
+       },
+       {
+        "name": "Rotator Cuff",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "30s",
+        "video": "https://www.youtube.com/watch?v=qmYnoC0G9EQ"
+       },
+       {
+        "name": "Y-Bench",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "30s",
+        "video": "https://youtu.be/T0XJLQBQ1Zg"
+       },
+       {
+        "name": "1-Arm Triceps Pushdown",
+        "sets": 1,
+        "reps": "12-15",
+        "rest": "30s",
+        "note": "Light weight.",
+        "video": "https://www.youtube.com/watch?v=wXqTMX_4HvE"
+       },
+       {
+        "name": "Scapula Push Plus",
+        "sets": 2,
+        "reps": "5-10",
+        "rest": "30s",
+        "video": "https://youtu.be/p2p--WvzsS0"
+       },
+       {
+        "name": "Kneeling Cable Lateral Raise",
+        "sets": 1,
+        "reps": "12-15",
+        "rest": "1m",
+        "video": "https://youtube.com/shorts/C_3CvsW4Hvk"
+       },
+       {
+        "name": "30° Incline DB Press",
+        "sets": 1,
+        "reps": "4-6",
+        "rest": "1.5m",
+        "warm_up_pct": "20-90"
+       },
+       {
+        "name": "30° Incline DB Press",
+        "sets": 2,
+        "reps": "2",
+        "rest": "2m",
+        "warm_up_pct": "20-90"
+       }
+      ],
+      "pre_cardio": "5 min easy walk on the treadmill",
+      "cooldown": [
+       "10 min cycling. Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      ],
+      "cardio_after": {
+       "minutes": 10,
+       "note": "Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      },
+      "exercises": [
+       {
+        "name": "Kneeling Cable Lateral Raise",
+        "sets": 4,
+        "reps": "10-12",
+        "rest": "1.5-2m",
+        "rir": "2",
+        "type": "normal",
+        "note": "Cable lateral raise, exactly as in the video.",
+        "video": "https://youtube.com/shorts/C_3CvsW4Hvk",
+        "rest_sec": 90
+       },
+       {
+        "name": "30° Incline DB Press",
+        "sets": 2,
+        "reps": "6-8",
+        "rest": "3m",
+        "rir": "2",
+        "type": "normal",
+        "note": "Bench at 30 degrees.",
+        "film_form": true,
+        "rest_sec": 180
+       },
+       {
+        "name": "DB Chest Press",
+        "sets": 3,
+        "reps": "10-12",
+        "rest": "2m",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=Y_7aHqXeCfQ&t=241s",
+        "rest_sec": 120
+       },
+       {
+        "name": "Fly Machine",
+        "sets": 2,
+        "reps": "10-12",
+        "rest": "2m",
+        "rir": "3-4",
+        "type": "normal",
+        "film_form": true,
+        "video": "https://www.youtube.com/watch?v=eGjt4lk6g34",
+        "rest_sec": 120
+       },
+       {
+        "name": "Cable Cross Triceps Extension",
+        "sets": 3,
+        "reps": "8-10",
+        "rest": "1.5m",
+        "rir": "2",
+        "type": "normal",
+        "note": "Machine not free: do it single-arm on one cable.",
+        "alternative": "Single-arm cable triceps extension",
+        "video": "https://youtu.be/vgRvDiBW4TU",
+        "rest_sec": 90
+       },
+       {
+        "name": "1-Arm Overhead Cable Extension",
+        "sets": 4,
+        "reps": "8-10",
+        "rest": "1.5m",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=Guey778EiTs",
+        "rest_sec": 90
+       }
+      ]
+     },
+     {
+      "key": "pull",
+      "day_letter": "P",
+      "label": "Pull",
+      "focus": "Lats, rows, upper back, biceps",
+      "warmup": [
+       "5 min easy walk on the treadmill",
+       "Wall Slide 1x10-12",
+       "Forward Wall 1x10-12",
+       "Rotator Cuff 1x10-12",
+       "Y-Bench 2x10-12",
+       "Hammer DB Curl 1x12-15 at 20-50%",
+       "Lateral Raise in Scapula Plane 1x12-15 at 20-50%",
+       "SA Pullover 2x10-12",
+       "1-Arm Lat Pulldown 2x10-12 at 60-90%"
+      ],
+      "warmup_items": [
+       {
+        "name": "Wall Slide",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "10s",
+        "video": "https://www.youtube.com/watch?v=eW_gVkQXxLg"
+       },
+       {
+        "name": "Forward Wall",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "10s",
+        "video": "https://www.youtube.com/watch?v=elNxjr3Kp0s"
+       },
+       {
+        "name": "Rotator Cuff",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "30s",
+        "video": "https://www.youtube.com/watch?v=qmYnoC0G9EQ"
+       },
+       {
+        "name": "Y-Bench",
+        "sets": 2,
+        "reps": "10-12",
+        "rest": "30s",
+        "video": "https://youtu.be/T0XJLQBQ1Zg"
+       },
+       {
+        "name": "Hammer DB Curl",
+        "sets": 1,
+        "reps": "12-15",
+        "rest": "30s",
+        "warm_up_pct": "20-50",
+        "note": "Light weight.",
+        "video": "https://www.youtube.com/watch?v=zC3nLlEvin4"
+       },
+       {
+        "name": "Lateral Raise in Scapula Plane",
+        "sets": 1,
+        "reps": "12-15",
+        "rest": "1m",
+        "warm_up_pct": "20-50",
+        "note": "Light weight.",
+        "video": "https://youtu.be/HSumd2JMs3s"
+       },
+       {
+        "name": "SA Pullover",
+        "sets": 2,
+        "reps": "10-12",
+        "rest": "1m",
+        "video": "https://www.instagram.com/reel/ClOAyH9MDM6/"
+       },
+       {
+        "name": "1-Arm Lat Pulldown",
+        "sets": 2,
+        "reps": "10-12",
+        "rest": "1m",
+        "warm_up_pct": "60-90",
+        "video": "https://youtube.com/shorts/Ur_hDBWCqOU"
+       }
+      ],
+      "pre_cardio": "5 min easy walk on the treadmill",
+      "cooldown": [
+       "10 min cycling. Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      ],
+      "cardio_after": {
+       "minutes": 10,
+       "note": "Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      },
+      "exercises": [
+       {
+        "name": "1-Arm Lat Pulldown",
+        "sets": 4,
+        "reps": "6-8",
+        "rest": "1.5m per arm",
+        "rir": "1-2",
+        "type": "normal",
+        "video": "https://youtube.com/shorts/Ur_hDBWCqOU",
+        "rest_sec": 90
+       },
+       {
+        "name": "1-Arm Row Machine",
+        "sets": 3,
+        "reps": "8-10",
+        "rest": "2m",
+        "rir": "3",
+        "type": "normal",
+        "video": "https://youtu.be/uNGfMeo6iuY",
+        "rest_sec": 120
+       },
+       {
+        "name": "Upper Back Pulldown",
+        "sets": 4,
+        "reps": "10-12",
+        "rest": "2m",
+        "rir": "3",
+        "type": "normal",
+        "video": "https://youtu.be/lD5NJu6VNVc",
+        "rest_sec": 120
+       },
+       {
+        "name": "Preacher Curl Machine",
+        "sets": 3,
+        "reps": "8-10",
+        "rest": "45s per arm",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://youtube.com/shorts/YvZhfH9KovA",
+        "rest_sec": 45
+       },
+       {
+        "name": "HG Incline Curl",
+        "sets": 4,
+        "reps": "8-10",
+        "rest": "1.5m",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://youtu.be/6SIRJhUhliY",
+        "rest_sec": 90
+       }
+      ]
+     },
+     {
+      "key": "leg",
+      "day_letter": "L",
+      "label": "Leg",
+      "focus": "Quads and hamstrings, calves, glutes, core",
+      "warmup": [
+       "5 min easy walk on the treadmill",
+       "Lower Body Warm-up 1x1 round",
+       "World's Greatest Stretch 2x1 round",
+       "Glute Bridge 2x5-20",
+       "Leg Extension 2x12-15 at 20-80%",
+       "Seated Leg Curl 2x12-15 at 20-80%",
+       "Floor Slides 1x10-12"
+      ],
+      "warmup_items": [
+       {
+        "name": "Lower Body Warm-up",
+        "sets": 1,
+        "reps": "1 round",
+        "video": "https://www.youtube.com/watch?v=vgXH5VGPFVg"
+       },
+       {
+        "name": "World's Greatest Stretch",
+        "sets": 2,
+        "reps": "1 round",
+        "video": "https://www.youtube.com/watch?v=nG38sH8fwSM"
+       },
+       {
+        "name": "Glute Bridge",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "30s",
+        "video": "https://www.youtube.com/watch?v=YRqoIM0u0PY"
+       },
+       {
+        "name": "Leg Extension",
+        "sets": 2,
+        "reps": "12-15",
+        "rest": "1m",
+        "warm_up_pct": "20-80",
+        "video": "https://www.youtube.com/watch?v=YyvSfVjQeL0"
+       },
+       {
+        "name": "Seated Leg Curl",
+        "sets": 2,
+        "reps": "12-15",
+        "rest": "1m",
+        "warm_up_pct": "20-80",
+        "note": "Light to medium weight.",
+        "video": "https://youtu.be/rsTCfz_8VP8"
+       },
+       {
+        "name": "Floor Slides",
+        "sets": 1,
+        "reps": "10-12",
+        "rest": "30s",
+        "video": "https://www.youtube.com/watch?v=ZPoGDKoTj2w"
+       }
+      ],
+      "pre_cardio": "5 min easy walk on the treadmill",
+      "cooldown": [
+       "10 min cycling. Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      ],
+      "cardio_after": {
+       "minutes": 10,
+       "note": "Bike after the workout at medium speed and medium resistance, both constant the whole time. You should be moderately out of breath."
+      },
+      "exercises": [
+       {
+        "name": "Leg Extension",
+        "sets": 4,
+        "reps": "10-12",
+        "rest": "1m",
+        "rir": "2",
+        "type": "paired",
+        "pair": "A",
+        "video": "https://www.youtube.com/watch?v=YyvSfVjQeL0",
+        "rest_sec": 60
+       },
+       {
+        "name": "Seated Leg Curl",
+        "sets": 4,
+        "reps": "10-12",
+        "rest": "1m",
+        "rir": "2",
+        "type": "paired",
+        "pair": "A",
+        "video": "https://youtu.be/rsTCfz_8VP8",
+        "rest_sec": 60
+       },
+       {
+        "name": "1-Leg Standing Calf Raise",
+        "sets": 2,
+        "reps": "8-10",
+        "rest": "1.5m",
+        "rir": "3",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=XWSgxIlhvY4",
+        "rest_sec": 90
+       },
+       {
+        "name": "Seated Calf Raise",
+        "sets": 2,
+        "reps": "8-10",
+        "rest": "1.5m",
+        "rir": "3",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=vWuPAgSSmiA",
+        "rest_sec": 90
+       },
+       {
+        "name": "Tibia Wall",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "30s",
+        "rir": "3-4",
+        "type": "paired",
+        "pair": "B",
+        "video": "https://www.youtube.com/watch?v=y2p4fTtJ4zo",
+        "rest_sec": 30
+       },
+       {
+        "name": "Glute Bridge",
+        "sets": 1,
+        "reps": "5-20",
+        "rest": "1.5m",
+        "rir": "3-4",
+        "type": "paired",
+        "pair": "B",
+        "note": "Squeeze the glutes and lower back.",
+        "video": "https://www.youtube.com/watch?v=YRqoIM0u0PY",
+        "rest_sec": 90
+       },
+       {
+        "name": "45° Hip Extension",
+        "sets": 2,
+        "reps": "8-10",
+        "rest": "1.5m",
+        "type": "normal",
+        "note": "Bodyweight only, squeeze the glutes.",
+        "film_form": true,
+        "video": "https://youtu.be/dRd-qH2ASrE",
+        "rest_sec": 90
+       },
+       {
+        "name": "Hip Abduction",
+        "sets": 2,
+        "reps": "12-15",
+        "rest": "30s",
+        "rir": "3",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=2b97cvyH9sE",
+        "rest_sec": 30
+       },
+       {
+        "name": "Bear Plank",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "30s",
+        "rir": "2",
+        "type": "normal",
+        "note": "Brace the abs and core.",
+        "video": "https://www.instagram.com/reel/ClLsev8sGwr/",
+        "rest_sec": 30
+       },
+       {
+        "name": "Pallof Press",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "1m",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=XZkN5MljJY4",
+        "rest_sec": 60
+       },
+       {
+        "name": "TVA",
+        "sets": 2,
+        "reps": "5-20",
+        "rest": "1m",
+        "rir": "2",
+        "type": "normal",
+        "video": "https://www.youtube.com/watch?v=ey0urqhqw7U",
+        "rest_sec": 60
+       }
+      ]
+     }
+    ],
+    "overrides": {},
+    "deload_weeks": []
+   }
+  ]
+ },
+ "checkins": [],
+ "rewards": {
+  "ledger": []
+ },
+ "exercises": [
+  {
+   "id": 1,
+   "name": "15° Incline DB Press",
+   "muscle_group": "Chest",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 2,
+   "name": "30° Incline DB Press",
+   "muscle_group": "Chest",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 3,
+   "name": "DB Chest Press",
+   "muscle_group": "Chest",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 4,
+   "name": "Fly Machine",
+   "muscle_group": "Chest",
+   "equipment": "Machine"
+  },
+  {
+   "id": 5,
+   "name": "NG Lat Pulldown",
+   "muscle_group": "Back",
+   "equipment": "Cable"
+  },
+  {
+   "id": 6,
+   "name": "1-Arm Lat Pulldown",
+   "muscle_group": "Back",
+   "equipment": "Cable"
+  },
+  {
+   "id": 7,
+   "name": "1-Arm Row Machine",
+   "muscle_group": "Back",
+   "equipment": "Machine"
+  },
+  {
+   "id": 8,
+   "name": "Upper Back Pulldown",
+   "muscle_group": "Back",
+   "equipment": "Cable"
+  },
+  {
+   "id": 9,
+   "name": "Y Cable Lateral Raise",
+   "muscle_group": "Shoulders",
+   "equipment": "Cable"
+  },
+  {
+   "id": 10,
+   "name": "Kneeling Cable Lateral Raise",
+   "muscle_group": "Shoulders",
+   "equipment": "Cable"
+  },
+  {
+   "id": 11,
+   "name": "Incline Cable Curl",
+   "muscle_group": "Arms",
+   "equipment": "Cable"
+  },
+  {
+   "id": 12,
+   "name": "Preacher Curl Machine",
+   "muscle_group": "Arms",
+   "equipment": "Machine"
+  },
+  {
+   "id": 13,
+   "name": "HG Incline Curl",
+   "muscle_group": "Arms",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 14,
+   "name": "1-Arm Overhead Cable Extension",
+   "muscle_group": "Arms",
+   "equipment": "Cable"
+  },
+  {
+   "id": 15,
+   "name": "Cable Cross Triceps Extension",
+   "muscle_group": "Arms",
+   "equipment": "Cable"
+  },
+  {
+   "id": 16,
+   "name": "Leg Extension",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 17,
+   "name": "Seated Leg Curl",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 18,
+   "name": "Lying Leg Curl",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 19,
+   "name": "1-Leg Standing Calf Raise",
+   "muscle_group": "Legs",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 20,
+   "name": "Seated Calf Raise",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 21,
+   "name": "Tibia Wall",
+   "muscle_group": "Legs",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 22,
+   "name": "Hip Abduction",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 23,
+   "name": "Glute Bridge",
+   "muscle_group": "Legs",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 24,
+   "name": "45° Hip Extension",
+   "muscle_group": "Legs",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 25,
+   "name": "Dead Bug",
+   "muscle_group": "Core",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 26,
+   "name": "TVA",
+   "muscle_group": "Core",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 27,
+   "name": "Bear Plank",
+   "muscle_group": "Core",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 28,
+   "name": "Back Squat",
+   "muscle_group": "Legs",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 29,
+   "name": "Leg Press",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 30,
+   "name": "Romanian Deadlift",
+   "muscle_group": "Legs",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 31,
+   "name": "Deadlift",
+   "muscle_group": "Legs",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 32,
+   "name": "Hip Thrust",
+   "muscle_group": "Legs",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 33,
+   "name": "Standing Calf Raise",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 34,
+   "name": "Leg Curl",
+   "muscle_group": "Legs",
+   "equipment": "Machine"
+  },
+  {
+   "id": 35,
+   "name": "Bench Press",
+   "muscle_group": "Chest",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 36,
+   "name": "Incline Dumbbell Press",
+   "muscle_group": "Chest",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 37,
+   "name": "Push-up",
+   "muscle_group": "Chest",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 38,
+   "name": "Lat Pulldown",
+   "muscle_group": "Back",
+   "equipment": "Machine"
+  },
+  {
+   "id": 39,
+   "name": "Seated Cable Row",
+   "muscle_group": "Back",
+   "equipment": "Machine"
+  },
+  {
+   "id": 40,
+   "name": "Bent-over Row",
+   "muscle_group": "Back",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 41,
+   "name": "Pull-up",
+   "muscle_group": "Back",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 42,
+   "name": "Overhead Press",
+   "muscle_group": "Shoulders",
+   "equipment": "Barbell"
+  },
+  {
+   "id": 43,
+   "name": "Lateral Raise",
+   "muscle_group": "Shoulders",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 44,
+   "name": "Face Pull",
+   "muscle_group": "Shoulders",
+   "equipment": "Cable"
+  },
+  {
+   "id": 45,
+   "name": "Dumbbell Curl",
+   "muscle_group": "Arms",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 46,
+   "name": "Hammer Curl",
+   "muscle_group": "Arms",
+   "equipment": "Dumbbell"
+  },
+  {
+   "id": 47,
+   "name": "Triceps Pushdown",
+   "muscle_group": "Arms",
+   "equipment": "Cable"
+  },
+  {
+   "id": 48,
+   "name": "Plank",
+   "muscle_group": "Core",
+   "equipment": "Bodyweight"
+  },
+  {
+   "id": 49,
+   "name": "Cable Crunch",
+   "muscle_group": "Core",
+   "equipment": "Cable"
+  },
+  {
+   "id": 50,
+   "name": "Pallof Press",
+   "muscle_group": "Core",
+   "equipment": "Cable"
+  }
+ ],
+ "body_logs": [
+  {
+   "waist_cm": null,
+   "notes": null,
+   "sleep_hours": null,
+   "chest_cm": null,
+   "arm_cm": null,
+   "hips_cm": null,
+   "thigh_cm": null,
+   "log_date": "2026-11-08",
+   "weight_kg": 68.4,
+   "id": 1
+  }
+ ],
+ "hydration_logs": [],
+ "workouts": [
+  {
+   "id": 1,
+   "log_date": "2026-11-08",
+   "workout_type": "gym",
+   "duration_min": 1,
+   "notes": "Day 1",
+   "session_rpe": 7,
+   "is_deload": false,
+   "pain_note": null,
+   "result": null,
+   "session_key": null,
+   "block_id": "b1",
+   "started_at": 1794539638829,
+   "finished_at": 1794124800000,
+   "sets": [
+    {
+     "id": 1,
+     "exercise_id": 1,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 10,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": true
+    },
+    {
+     "id": 2,
+     "exercise_id": 1,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 11,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 3,
+     "exercise_id": 1,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 12,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 4,
+     "exercise_id": 2,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 10,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 5,
+     "exercise_id": 2,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 11,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 6,
+     "exercise_id": 2,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 12,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 7,
+     "exercise_id": 3,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 10,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 8,
+     "exercise_id": 3,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 11,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 9,
+     "exercise_id": 3,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 12,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    }
+   ],
+   "checklist_items": []
+  },
+  {
+   "id": 2,
+   "log_date": "2026-11-10",
+   "workout_type": "gym",
+   "duration_min": 1,
+   "notes": "Day 2",
+   "session_rpe": 7,
+   "is_deload": false,
+   "pain_note": null,
+   "result": null,
+   "session_key": null,
+   "block_id": "b1",
+   "started_at": 1794539638829,
+   "finished_at": 1794297600000,
+   "sets": [
+    {
+     "id": 10,
+     "exercise_id": 1,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 12.5,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 11,
+     "exercise_id": 1,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 13.5,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 12,
+     "exercise_id": 1,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 14.5,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 13,
+     "exercise_id": 2,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 12.5,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 14,
+     "exercise_id": 2,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 13.5,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 15,
+     "exercise_id": 2,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 14.5,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 16,
+     "exercise_id": 3,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 12.5,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 17,
+     "exercise_id": 3,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 13.5,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 18,
+     "exercise_id": 3,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 14.5,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    }
+   ],
+   "checklist_items": []
+  },
+  {
+   "id": 3,
+   "log_date": "2026-11-12",
+   "workout_type": "gym",
+   "duration_min": 1,
+   "notes": "Day 3",
+   "session_rpe": 7,
+   "is_deload": false,
+   "pain_note": null,
+   "result": null,
+   "session_key": null,
+   "block_id": "b1",
+   "started_at": 1794539638829,
+   "finished_at": 1794470400000,
+   "sets": [
+    {
+     "id": 19,
+     "exercise_id": 1,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 15,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 20,
+     "exercise_id": 1,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 16,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 21,
+     "exercise_id": 1,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 17,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 22,
+     "exercise_id": 2,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 15,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 23,
+     "exercise_id": 2,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 16,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 24,
+     "exercise_id": 2,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 17,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 25,
+     "exercise_id": 3,
+     "set_number": 1,
+     "reps": 10,
+     "weight_kg": 15,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 26,
+     "exercise_id": 3,
+     "set_number": 2,
+     "reps": 9,
+     "weight_kg": 16,
+     "rpe": null,
+     "rir": null,
+     "is_warmup": false
+    },
+    {
+     "id": 27,
+     "exercise_id": 3,
+     "set_number": 3,
+     "reps": 8,
+     "weight_kg": 17,
+     "rpe": 8,
+     "rir": null,
+     "is_warmup": false
+    }
+   ],
+   "checklist_items": []
+  },
+  {
+   "id": 4,
+   "log_date": "2026-11-05",
+   "workout_type": "gym",
+   "duration_min": 45,
+   "notes": "Imported",
+   "session_rpe": null,
+   "is_deload": false,
+   "pain_note": null,
+   "result": null,
+   "session_key": null,
+   "started_at": null,
+   "finished_at": null,
+   "imported": true,
+   "block_id": null,
+   "checklist_items": [],
+   "sets": [
+    {
+     "id": 28,
+     "exercise_id": 4,
+     "set_number": 1,
+     "reps": 8,
+     "weight_kg": 20,
+     "rpe": null
+    },
+    {
+     "id": 29,
+     "exercise_id": 4,
+     "set_number": 2,
+     "reps": 8,
+     "weight_kg": 20,
+     "rpe": 9
+    }
+   ]
+  }
+ ],
+ "meal_logs": [
+  {
+   "id": 1,
+   "log_date": "2026-11-08",
+   "meal_slot": "breakfast",
+   "completed": true,
+   "option_key": null,
+   "drink_key": null
+  },
+  {
+   "id": 2,
+   "log_date": "2026-11-08",
+   "meal_slot": "lunch",
+   "completed": true,
+   "option_key": null,
+   "drink_key": null
+  }
+ ],
+ "bonus_logs": [],
+ "shopping": {
+  "week": null,
+  "checked": []
+ },
+ "settings": {
+  "notifications": false,
+  "modules": {
+   "meals": true,
+   "water": true,
+   "weight": true
+  }
+ },
+ "setup": {
+  "done_on": "2026-11-08",
+  "routine": null,
+  "needs_body": true,
+  "skipped": true
+ }
+}

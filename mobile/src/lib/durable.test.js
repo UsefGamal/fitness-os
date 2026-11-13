@@ -62,7 +62,7 @@ test('a failed localStorage save no longer brings back stale data', () => {
 test('start-up upgrades old data and hands back the exact text to snapshot', () => {
   const text = fixture('v1-yusuf-like.json');
   const start = loadNewest({ localText: text, fileText: null }, content);
-  assert.equal(start.data.schemaVersion, 2);
+  assert.equal(start.data.schemaVersion, 3);
   assert.equal(start.snapshotText, text);
   const fromFile = loadNewest({ localText: null, fileText: text }, content);
   assert.equal(fromFile.snapshotText, text);

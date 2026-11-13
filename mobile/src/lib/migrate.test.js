@@ -7,12 +7,15 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { emptyData } from './data.js';
-import { ImportError, parseDataFile, parseSnapshot, toDataFile } from './dataFile.js';
+import { bigFixture } from '../../e2e/bigFixture.mjs';
+import { emptyData, isWorkSet, personalBests } from './data.js';
+import { dataHash } from './dataCheck.js';
+import { ImportError, parseDataFile, parseSnapshot, summarize, toDataFile } from './dataFile.js';
 import * as D from './data.js';
 import { macroTargets, profileOf, saveProfile } from './macros.js';
 import { mealDayNumber } from './meals.js';
-import { CURRENT_SCHEMA, migrate, needsMigration, NewerSchemaError, schemaOf, V1_PROFILE_DEFAULTS } from './migrate.js';
+import { CURRENT_SCHEMA, migrate, needsMigration, NewerSchemaError, schemaOf, v2ToV3, V1_PROFILE_DEFAULTS } from './migrate.js';
+import { SET_DEFAULTS, SET_FIELDS, setFields, setWith } from './sets.js';
 import { activePlan } from './plan.js';
 import { effectiveDay } from './planEdit.js';
 import { plannedReminders } from './reminders.js';
@@ -91,7 +94,7 @@ test('the golden really covers real numbers, not just fallbacks', () => {
 
 test('v1 to v2 adds every new field in one bump', () => {
   const d = migrate(v1('v1-yusuf-like'), content);
-  assert.equal(d.schemaVersion, 2);
+  assert.equal(d.schemaVersion, CURRENT_SCHEMA);
   assert.equal('version' in d, false);
   assert.equal('plan_overrides' in d, false);
   // Profile: body facts, with the old defaults it was using, plus new fields.
@@ -158,12 +161,12 @@ test('the schema version is read from either field', () => {
   assert.equal(schemaOf({ schemaVersion: 2 }), 2);
   assert.equal(schemaOf({}), 1);
   assert.equal(schemaOf(null), 1);
-  assert.equal(CURRENT_SCHEMA, 2);
+  assert.equal(CURRENT_SCHEMA, 3);
 });
 
 test('a newer schema is refused, never guessed at', () => {
-  assert.throws(() => migrate({ schemaVersion: 3 }, content), NewerSchemaError);
-  assert.throws(() => parseDataFile(fixture('v3-future.json'), content), (e) => e instanceof ImportError && /Update the app first/.test(e.message));
+  assert.throws(() => migrate({ schemaVersion: 4 }, content), NewerSchemaError);
+  assert.throws(() => parseDataFile(fixture('v4-future.json'), content), (e) => e instanceof ImportError && /Update the app first/.test(e.message));
 });
 
 test('a truncated or broken file is refused with nothing returned', () => {
@@ -173,7 +176,7 @@ test('a truncated or broken file is refused with nothing returned', () => {
   assert.throws(() => parseSnapshot('7', content), ImportError);
 });
 
-test('a v1 snapshot is upgraded when restored, a v2 one is kept as is', () => {
+test('a v1 snapshot is upgraded when restored, a current one is kept as is', () => {
   const fromV1 = parseSnapshot(fixture('v1-yusuf-like.json'), content);
   assert.deepEqual(fromV1, migrate(parseDataFile(JSON.stringify({ ...v1('v1-yusuf-like'), format: 'fitness-os-export' }), content, { trusted: true }), content));
   const current = migrate(v1('v1-yusuf-like'), content);
@@ -195,4 +198,123 @@ test('the Profile form saves body facts and the goal separately', () => {
   // An ended goal isn't the current one.
   const ended = { ...fresh, goals: [{ ...fresh.goals[0], ended_on: '2026-12-01' }] };
   assert.equal(profileOf(ended).goal_date, undefined);
+});
+
+// ── Data version 3 (V3): six optional set fields ─────────────────────
+
+const v2 = (name) => JSON.parse(fixture(`${name}.json`));
+const V2 = ['v2-yusuf-like', 'v2-friend'];
+
+test('one fixture per released data shape, and each really is that version', () => {
+  for (const name of V2) assert.equal(schemaOf(v2(name)), 2, name);
+  // The v2 Yusuf fixture is exactly what the v1 one became under version 2.
+  // (The plan block is left out: it is a copy of the plan content of the
+  // day the fixture was made, and the content is free to change.)
+  const { schemaVersion: _a, program: _p, ...fromV1 } = migrate(v1('v1-yusuf-like'), content);
+  const { schemaVersion: _b, program: _q, ...saved } = v2('v2-yusuf-like');
+  assert.deepEqual(saved, fromV1);
+  // The friend fixture holds the shapes that matter: a warm-up, and sets
+  // as the CSV import wrote them (no rir, no is_warmup).
+  const sets = v2('v2-friend').workouts.flatMap((w) => w.sets);
+  assert.ok(sets.some((s) => s.is_warmup === true));
+  assert.ok(sets.some((s) => !('rir' in s) && !('is_warmup' in s)));
+});
+
+test('zero diff: v2 to v3 changes the version number and nothing else', () => {
+  for (const name of V2) {
+    const before = v2(name);
+    const after = migrate(structuredClone(before), content);
+    assert.equal(after.schemaVersion, 3);
+    assert.deepEqual({ ...after, schemaVersion: 2 }, before, name);
+    assert.deepEqual(v2ToV3(before), { ...before, schemaVersion: 3 });
+    // With the six fields taken off every set, too (there are none to take).
+    const bare = { ...after, schemaVersion: 2, workouts: after.workouts.map((w) => ({ ...w, sets: w.sets.map((s) => Object.fromEntries(Object.entries(s).filter(([k]) => !SET_FIELDS.includes(k)))) })) };
+    assert.deepEqual(bare, before, name);
+    assert.equal(migrate(after, content), after, 'twice is once');
+    assert.equal(needsMigration(after), false);
+  }
+});
+
+test('the data check code is the same before and after the upgrade', () => {
+  for (const name of V2) {
+    const before = v2(name);
+    const after = migrate(structuredClone(before), content);
+    assert.equal(dataHash(after), dataHash(before), name);
+    // Writing every default out in full is still the same data.
+    const full = { ...after, workouts: after.workouts.map((w) => ({ ...w, sets: w.sets.map((s) => ({ ...s, ...setFields(s) })) })) };
+    assert.equal(dataHash(full), dataHash(before), name);
+    // A real drop set is a change.
+    const changed = { ...after, workouts: after.workouts.map((w, i) => (i ? w : { ...w, sets: w.sets.map((s, j) => (j ? s : setWith(s, { set_type: 'drop' }))) })) };
+    assert.notEqual(dataHash(changed), dataHash(before), name);
+  }
+});
+
+test('the numbers do not move: records, weekly sets, volume and work sets are the same in v2 and v3', () => {
+  for (const name of V2) {
+    const before = v2(name);
+    const after = migrate(structuredClone(before), content);
+    assert.deepEqual(personalBests(after), personalBests(before), name);
+    assert.deepEqual(after.workouts.map((w) => w.sets.map(isWorkSet)), before.workouts.map((w) => w.sets.map(isWorkSet)), name);
+    assert.deepEqual(summarize(after), summarize(before), name);
+  }
+  // The warm-up in the friend fixture is still not a work set, and reads as one.
+  const friend = migrate(v2('v2-friend'), content);
+  const warm = friend.workouts.flatMap((w) => w.sets).find((s) => s.is_warmup);
+  assert.equal(isWorkSet(warm), false);
+  assert.equal(setFields(warm).set_type, 'warmup');
+});
+
+test('round trip: a v3 export with real set fields imports back the same', () => {
+  for (const name of V2) {
+    let d = migrate(v2(name), content);
+    d = { ...d, workouts: d.workouts.map((w, i) => (i ? w : { ...w, sets: w.sets.map((s, j) => (j === 0 ? setWith(s, { set_type: 'drop', group: 'A' }) : j === 1 ? setWith(s, { track: 'bodyweight', added_kg: -20 }) : j === 2 ? setWith(s, { track: 'time', duration_s: 90, distance_m: 400 }) : s)) })) };
+    const back = parseDataFile(toDataFile(d), content);
+    assert.equal(back.schemaVersion, 3);
+    assert.deepEqual(back.workouts, d.workouts, name);
+    assert.equal(dataHash(back), dataHash(d), name);
+  }
+});
+
+test('a v2 backup still imports, and comes out as version 3', () => {
+  for (const name of V2) {
+    const file = JSON.stringify({ format: 'fitness-os-export', ...v2(name) });
+    const back = parseDataFile(file, content);
+    assert.equal(back.schemaVersion, 3);
+    assert.deepEqual(summarize(back), summarize(v2(name)), name);
+    assert.equal(dataHash(back), dataHash(v2(name)), name);
+  }
+});
+
+test('import fuzz: a bad set field is dropped to its default, never trusted', () => {
+  const base = migrate(v2('v2-friend'), content);
+  const bad = [
+    { set_type: 'mega', group: 'A'.repeat(9), track: 'vibes', added_kg: 1e9, distance_m: -5, duration_s: 86401 },
+    { set_type: 7, group: 42, track: null, added_kg: '20', distance_m: 12.5, duration_s: '90' },
+    { set_type: ['drop'], group: { a: 1 }, track: {}, added_kg: Number.NaN, distance_m: 1e12, duration_s: -1 },
+    { set_type: 'x'.repeat(5000), group: '', track: 'LOAD', added_kg: -201, distance_m: 100001, duration_s: 1.5 },
+    { set_type: '__proto__', group: '<script>alert(1)</script>', track: 'constructor', added_kg: Infinity, distance_m: null, duration_s: true },
+  ];
+  for (const fields of bad) {
+    const d = { ...base, workouts: base.workouts.map((w) => ({ ...w, sets: w.sets.map((s) => ({ ...s, ...fields })) })) };
+    // JSON has no NaN or Infinity; they arrive as null, which is the default.
+    const back = parseDataFile(toDataFile(d), content);
+    for (const s of back.workouts.flatMap((w) => w.sets)) {
+      for (const k of SET_FIELDS) assert.equal(k in s, false, `${k}: ${JSON.stringify(fields[k])}`);
+      assert.deepEqual(setFields(s), { ...SET_DEFAULTS, set_type: s.is_warmup ? 'warmup' : 'work' });
+    }
+    assert.equal(dataHash(back), dataHash(base));
+  }
+  // Good values at the edges are kept.
+  const edge = { set_type: 'failure', group: 'ABCDEFGH', track: 'distance', added_kg: -200, distance_m: 100000, duration_s: 86400 };
+  const d = { ...base, workouts: base.workouts.map((w) => ({ ...w, sets: w.sets.map((s) => ({ ...s, ...edge })) })) };
+  for (const s of parseDataFile(toDataFile(d), content).workouts.flatMap((w) => w.sets)) assert.deepEqual(setFields(s), edge);
+  // A set that is not a record at all is dropped, as before.
+  const junk = { ...base, workouts: base.workouts.map((w, i) => (i ? w : { ...w, sets: [...w.sets, null, 'set', 7] })) };
+  assert.equal(summarize(parseDataFile(toDataFile(junk), content)).sets, summarize(base).sets);
+});
+
+test('the three-year file is no bigger in version 3', () => {
+  const big = migrate(bigFixture('2026-11-06', 3), content);
+  assert.equal(big.schemaVersion, 3);
+  assert.equal(big.workouts.flatMap((w) => w.sets).some((s) => SET_FIELDS.some((k) => k in s)), false);
 });

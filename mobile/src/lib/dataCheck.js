@@ -16,6 +16,7 @@
 // update-over-install.sh) will rightly fail.
 //
 // Pure; dataCheck.test.js.
+import { isSetDefault, SET_FIELDS } from './sets.js';
 import { summarize } from './dataFile.js';
 
 /** Top-level keys left out of the hash. */
@@ -52,6 +53,25 @@ export function fnv1a(text) {
   return h >>> 0;
 }
 
+/** Sets without any version 3 field (lib/sets.js) that is at its
+ * default: set_type 'work' (or 'warmup' on a warm-up), track 'load', the
+ * rest null. Rule: a set field at its documented default does not count.
+ * So the code is the same before and after the upgrade from version 2,
+ * the same whether a default is written out or left off, and it changes
+ * as soon as someone logs a real drop set, a superset or a timed set. */
+export function withoutSetDefaults(workouts) {
+  if (!Array.isArray(workouts)) return workouts;
+  return workouts.map((w) => (!w || !Array.isArray(w.sets) ? w : {
+    ...w,
+    sets: w.sets.map((s) => {
+      if (!s || typeof s !== 'object') return s;
+      const out = { ...s };
+      for (const k of SET_FIELDS) if (k in out && isSetDefault(s, k)) delete out[k];
+      return out;
+    }),
+  }));
+}
+
 /** The data's hash as "3F9A-12CD". */
 export function dataHash(data) {
   // Keys from a newer build ride in `_unknown` after an import (lib/
@@ -60,7 +80,7 @@ export function dataHash(data) {
   const kept = {};
   for (const k of Object.keys(flat).sort()) {
     if (SKIP.includes(k)) continue;
-    const v = canonical(flat[k], DERIVED[k] || []);
+    const v = canonical(k === 'workouts' ? withoutSetDefaults(flat[k]) : flat[k], DERIVED[k] || []);
     if (!isEmpty(v)) kept[k] = v;
   }
   const hex = fnv1a(JSON.stringify(kept)).toString(16).toUpperCase().padStart(8, '0');
