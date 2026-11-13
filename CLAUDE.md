@@ -53,7 +53,7 @@ fitness-os/
 
 ## Look and feel
 
-The look and usability follow [openGym](https://github.com/DuarteSantos8/openGym); where the two apps differ, openGym's way wins. Black page, `#1c1c1e` cards, green accent, one system font, inset grouped lists and hairlines instead of outlined boxes, a solid bottom tab bar (no blur: it costs too much on cheap phones, FEEL-1), press-scale feedback, 44px touch targets, 16px+ inputs. The tokens are in `mobile/src/styles.css`'s `:root`. Pages follow openGym's shape (Home / Plan / Start / Meals / Stats, Library, History, Settings, Modules); fitness-os-only features (meals, shopping, quests, sessions) stay, restyled to match.
+The look and usability follow [openGym](https://github.com/DuarteSantos8/openGym); where the two apps differ, openGym's way wins. Black page, `#1c1c1e` cards, green accent, one system font, inset grouped lists and hairlines instead of outlined boxes, a solid bottom tab bar (no blur: it costs too much on cheap phones, FEEL-1), press-scale feedback, 44px touch targets, 16px+ inputs. The tokens are in `mobile/src/styles.css`'s `:root`; the light theme (Settings > Look, dark by default) overrides them in `:root[data-theme="light"]`, so new colours go in both blocks as tokens, never as literals. Pages follow openGym's shape (Home / Plan / Start / Meals / Stats, Library, History, Settings, Modules); fitness-os-only features (meals, shopping, quests, sessions) stay, restyled to match.
 
 ### Rules for the mobile work
 

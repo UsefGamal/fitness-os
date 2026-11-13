@@ -50,6 +50,7 @@ const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof 
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
 const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
+const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
   const blocks = (d.program?.blocks || []).map((b) => (b.id === id ? { ...b, started_on: '2026-09-01', template_id: b.template_id || 'starter-3' } : b));
@@ -115,6 +116,14 @@ export const STATES = [
   { name: 'beginner: session 1 of 6', route: '/', data: (d) => ({ ...d, workouts: [], settings: { ...d.settings, training: { ...d.settings?.training, level: 'beginner' } } }) },
   { name: 'quests off: Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, modules: { ...d.settings?.modules, quests: false } } }) },
   { name: 'safety limits on: Home', route: '/', data: gated },
+  { name: 'light: Home', route: '/', data: lightTheme },
+  { name: 'light: Plan', route: '/plan', data: lightTheme },
+  { name: 'light: Workout', route: '/workout', data: lightTheme },
+  { name: 'light: Meals', route: '/meals', data: lightTheme },
+  { name: 'light: Stats', route: '/stats', data: lightTheme },
+  { name: 'light: Settings', route: '/settings/modules', data: lightTheme },
+  { name: 'light: History', route: '/history', data: lightTheme },
+  { name: 'light: Library', route: '/library', data: lightTheme },
   { name: 'check-in card on Plan', route: '/plan', data: eightWeeks, check: (p) => p.getByText(en['checkin.cardTitle']).first().waitFor() },
   { name: 'plan check-in', route: '/plan/checkin', data: eightWeeks, check: (p) => p.getByRole('heading', { name: en['checkin.title'] }).waitFor() },
   { name: 'monday week on Plan', route: '/plan', data: (d) => ({ ...d, profile: { ...d.profile, week_start: 'mon' } }) },

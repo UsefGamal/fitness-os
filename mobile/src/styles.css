@@ -21,10 +21,57 @@
   --blue: #64d2ff;
   --orange: #ff9f0a;
   --purple: #bf5af2;
+  /* Colours that differ between the dark and light themes (THEME-1). */
+  --sheet-bg: rgb(44, 44, 46);
+  --tabbar-bg: rgb(22, 22, 24);
+  --warn-dim: rgba(255, 214, 10, 0.15);
+  --caution: #ffb340;
+  --caution-dim: rgba(255, 159, 10, 0.14);
+  --save-bar-bg: var(--save-bar-bg);
+  --deep-shadow: rgba(0, 0, 0, 0.7);
+  --glow-top: #3ee06a;
+  --chart-label: #8e8e93;
+  --body: #3a3a3c;
+  --body-head: #2c2c2e;
+  --body-line: #000;
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --tabbar: 58px;
   color-scheme: dark;
+}
+/* Light theme (THEME-1): Settings > Look, Dark / Light / Match phone; dark
+   is the default. Same layout, only colours change. Accent is a darker
+   green so text on white passes 4.5:1. */
+:root[data-theme="light"] {
+  --bg: #f2f2f7;
+  --surface: #fff;
+  --surface2: #e9e9ee;
+  --surface3: #c7c7cc;
+  --text: #000;
+  --muted: #636366;
+  --faint: #646468;
+  --accent: #1a7431;
+  --accent-dim: rgba(26, 116, 49, 0.1);
+  --on-accent: #fff;
+  --warn: #9a6700;
+  --danger: #d70015;
+  --hair: 0.5px solid rgba(60, 60, 67, 0.29);
+  --blue: #0071a4;
+  --orange: #c45d00;
+  --purple: #8944ab;
+  --sheet-bg: #fff;
+  --tabbar-bg: #f9f9f9;
+  --warn-dim: rgba(255, 204, 0, 0.18);
+  --caution: #a35200;
+  --caution-dim: rgba(255, 149, 0, 0.14);
+  --save-bar-bg: #fff4cc;
+  --deep-shadow: rgba(0, 0, 0, 0.18);
+  --glow-top: #22903f;
+  --chart-label: #636366;
+  --body: #d1d1d6;
+  --body-head: #c7c7cc;
+  --body-line: #fff;
+  color-scheme: light;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
@@ -70,7 +117,7 @@ button.list-row:active, a.list-row:active { background: var(--surface2); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 10px; background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 600; }
 .chip.accent { background: var(--accent-dim); color: var(--accent); }
-.chip.warn { background: rgba(255, 214, 10, 0.15); color: var(--warn); }
+.chip.warn { background: var(--warn-dim); color: var(--warn); }
 button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit; cursor: pointer; }
 
 .week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-inline: -12px; }
@@ -134,7 +181,7 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .pair { color: var(--accent); font-weight: 700; margin-inline-end: 6px; }
 
 .timer { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30; max-width: 540px; margin: 0 auto;
-  background: rgb(44, 44, 46); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+  background: var(--sheet-bg); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
 /* Away from the workout: a solid pill, no blur, at most 56 px (P14-16). */
 .timer-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30;
   height: 52px; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 26px;
@@ -195,7 +242,7 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .interval-phase.rest, .interval-phase.setrest { color: var(--warn); }
 
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr);
-  padding-bottom: var(--sab); background: rgb(22, 22, 24); border-top: var(--hair); }
+  padding-bottom: var(--sab); background: var(--tabbar-bg); border-top: var(--hair); }
 .tab { height: var(--tabbar); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 11px; font-weight: 500; }
 .tab svg { width: 26px; height: 26px; }
 .tab.active { color: var(--accent); }
@@ -362,11 +409,11 @@ details.more > summary::-webkit-details-marker { display: none; }
 .photo-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .photo-cell { aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--surface2); display: grid; place-items: center; color: var(--muted); font-size: 12px; position: relative; border: 0; padding: 0; }
 .photo-cell img { width: 100%; height: 100%; object-fit: cover; }
-.warn { background: rgba(255, 159, 10, 0.14); color: #ffb340; border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+.warn { background: var(--caution-dim); color: var(--caution); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
 /* A warning chip stays chip-sized: the block rule above must not resize it. */
 .chip.warn { padding: 3px 9px; border-radius: 10px; font-size: 13px; margin-bottom: 0; }
 .fill-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.list-row input[type=time], .list-row input[type=date] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 44px; color-scheme: dark; }
+.list-row input[type=time], .list-row input[type=date] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: 17px; min-height: 44px; color-scheme: inherit; }
 
 /* Intro on open (components/Intro.jsx, 1.8 s). The bolt sits where the
    Android splash draws it, so the hand-over is seamless. */
@@ -412,12 +459,12 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .wset-row { display: grid; grid-template-columns: 96px 1fr 64px; align-items: center; gap: 10px; min-height: 28px; font-size: 15px; }
 .wset-bar { position: relative; height: 12px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
 .wset-bar > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 6px; }
-.wset-bar > .wset-guide { background: rgba(48, 209, 88, 0.14); border-radius: 0; }
+.wset-bar > .wset-guide { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 0; }
 .wset-bar > .wset-plan { border: 1.5px solid var(--faint); background: none; }
 .wset-bar > .wset-done { background: var(--accent); }
 
 /* "Couldn't save" (QA-07): amber, above the tab bar, never blocks a tap behind it except its own area. */
-.save-bar { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 70; max-width: 540px; margin: 0 auto; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: #3a2f00; color: var(--warn); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+.save-bar { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 70; max-width: 540px; margin: 0 auto; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--save-bar-bg); color: var(--warn); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
 .save-bar .small { color: var(--text); opacity: 0.85; }
 
 /* Records (F-03): the rep-max table. */
@@ -468,7 +515,7 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .other-sessions[open] > summary { margin-bottom: 12px; }
 
 .hero-card { display: block; color: inherit; border-radius: var(--radius-lg); padding: 16px 16px 16px 20px;
-  background: linear-gradient(135deg, rgba(48, 209, 88, 0.14), rgba(48, 209, 88, 0.02) 55%), var(--surface); }
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), color-mix(in srgb, var(--accent) 2%, transparent) 55%), var(--surface); }
 .hero-link { display: block; color: inherit; }
 .hero-link:active { opacity: 0.85; }
 .mini-btn.hero-log { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -508,7 +555,7 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
   background: var(--accent-dim); color: var(--accent); }
 .pill-row:active { transform: scale(0.99); }
 .pill-row .chev { color: var(--accent); }
-.pill-row.warn { background: rgba(255, 214, 10, 0.12); color: var(--warn); font-weight: 400; }
+.pill-row.warn { background: var(--warn-dim); color: var(--warn); font-weight: 400; }
 .pill-row.warn strong { color: var(--warn); }
 
 .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
@@ -548,11 +595,11 @@ a.ex-row:active { transform: scale(0.99); background: var(--surface2); }
 .tip-card { display: flex; gap: 12px; align-items: flex-start; }
 .tip-card .icon { color: var(--muted); }
 .btn.outline { background: none; color: var(--text); box-shadow: inset 0 0 0 1.5px var(--surface3); }
-.btn.glow { background: linear-gradient(180deg, #3ee06a, var(--accent)); box-shadow: 0 6px 20px rgba(48, 209, 88, 0.25); }
+.btn.glow { background: linear-gradient(180deg, var(--glow-top), var(--accent)); box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 25%, transparent); }
 .action-stack { display: grid; gap: 8px; margin: 16px 0 12px; }
 .action-stack:empty { display: none; }
 .start-bar { position: sticky; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 10; margin: 16px 0 8px; }
-.start-bar .btn { box-shadow: 0 0 0 6px var(--bg), 0 10px 28px rgba(0, 0, 0, 0.7); }
+.start-bar .btn { box-shadow: 0 0 0 6px var(--bg), 0 10px 28px var(--deep-shadow); }
 
 /* Workout (Nov 2026): the active exercise first, one row of tools. */
 .workout-head { border-radius: var(--radius-lg); }
@@ -584,7 +631,7 @@ details.macro-more > summary { color: var(--muted); font-size: 14px; }
 details.macro-more > summary::-webkit-details-marker, details.meal-more > summary::-webkit-details-marker { display: none; }
 details[open].macro-more > summary .chev, details[open].meal-more > summary .chev { transform: rotate(90deg); }
 .meal-card { border-radius: var(--radius-lg); }
-.meal-card.eaten { box-shadow: inset 0 0 0 1.5px rgba(48, 209, 88, 0.45); }
+.meal-card.eaten { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 45%, transparent); }
 .pick-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 4px; }
 .pick { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; border-radius: 12px; background: var(--surface2); color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; }
 .pick.on { background: var(--accent-dim); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
@@ -618,9 +665,9 @@ details.consistency .chev { transform: rotate(90deg); width: 14px; height: 14px;
 .list.inset .list-row.on { background: var(--surface3); }
 .status-dot { width: 28px; height: 28px; border-radius: 14px; display: grid; place-items: center; flex: none; background: var(--surface3); color: var(--muted); }
 .status-dot .icon { width: 16px; height: 16px; }
-.status-dot.st-ready { background: rgba(48, 209, 88, 0.18); color: var(--accent); }
-.status-dot.st-recovering { background: rgba(255, 159, 10, 0.18); color: var(--orange); }
-.status-dot.st-untrained { background: rgba(255, 69, 58, 0.18); color: var(--danger); }
+.status-dot.st-ready { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.status-dot.st-recovering { background: color-mix(in srgb, var(--orange) 18%, transparent); color: var(--orange); }
+.status-dot.st-untrained { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
 details.vol-group { border-top: var(--hair); }
 details.vol-group > summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; min-height: 44px; }
 details.vol-group > summary::-webkit-details-marker { display: none; }
