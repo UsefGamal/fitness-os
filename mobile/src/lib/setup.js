@@ -89,7 +89,7 @@ export function bodyComplete(a, today = new Date().toISOString().slice(0, 10)) {
 }
 
 /** Apply the answers. `a`: { gender, birth_year, height_cm, weight_kg,
- * goal, goal_kg, where, days, experience, job, name, session_time, screening };
+ * goal, goal_kg, where, days, experience, job, name, session_time, session_varies, screening };
  * any may be missing (skipped). `screening` is the safety check's answers
  * ({ key: true | false }); without it every limit is on (lib/safety.js). The weight is also the first weigh-in (UX-30), the name
  * feeds the greeting and the time sets when reminders come (UX-31).
@@ -123,6 +123,7 @@ export function finishSetup(data, content, a, today) {
   const name = typeof a.name === 'string' ? a.name.trim().slice(0, 30) : '';
   if (name) d = { ...d, profile: { ...(d.profile || {}), name } };
   if (isTime(a.session_time)) d = setTimes(d, { session_time: a.session_time });
+  if (a.session_varies === true) d = setTimes(d, { session_varies: true });
   if (a.weight_kg > 0 && !bodyErrors({ weight_kg: a.weight_kg }, today).weight_kg) d = logBody(d, { log_date: today, weight_kg: Number(a.weight_kg) });
   const routine = pickRoutine(a);
   d = startRoutine(d, content, routine, today);

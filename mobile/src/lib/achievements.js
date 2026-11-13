@@ -61,7 +61,7 @@ function bestWeekGroups(data) {
   const groupOf = new Map(data.exercises.map((e) => [e.id, e.muscle_group]));
   const weeks = new Map();
   for (const w of data.workouts) {
-    const k = weekStart(w.log_date);
+    const k = weekStart(w.log_date, data);
     if (!weeks.has(k)) weeks.set(k, new Set());
     for (const s of w.sets) {
       if (!isWorkSet(s)) continue;
@@ -103,12 +103,12 @@ function drop(logs, field) {
   return Math.max(0, Math.round((rows[0][field] - rows[rows.length - 1][field]) * 10) / 10);
 }
 
-/** Sunday-start weeks in which every meal slot was ticked on all 7 days. */
+/** Weeks (by the person's week start) in which every meal slot was ticked on all 7 days. */
 export function fullMealWeeks(data, slots = 5) {
   const perDay = new Map();
   for (const m of data.meal_logs || []) if (m.completed) perDay.set(m.log_date, (perDay.get(m.log_date) || 0) + 1);
   const perWeek = new Map();
-  for (const [d, n] of perDay) if (n >= slots) perWeek.set(weekStart(d), (perWeek.get(weekStart(d)) || 0) + 1);
+  for (const [d, n] of perDay) if (n >= slots) perWeek.set(weekStart(d, data), (perWeek.get(weekStart(d, data)) || 0) + 1);
   return [...perWeek.values()].filter((n) => n >= 7).length;
 }
 

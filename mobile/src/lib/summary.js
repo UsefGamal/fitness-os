@@ -26,7 +26,7 @@ export function workoutSummary(data, workoutId) {
     if (!cur || score > cur.score) top.set(s.exercise_id, { score, kg: s.weight_kg, reps: s.reps });
   }
   const bests = [...top].map(([id, b]) => ({ name: data.exercises.find((e) => e.id === id)?.name || '', kg: b.kg, reps: b.reps }));
-  const from = weekStart(w.log_date);
+  const from = weekStart(w.log_date, data);
   const to = addDays(from, 6);
   const days = new Set(data.workouts.filter((x) => x.finished_at && x.log_date >= from && x.log_date <= to).map((x) => x.log_date));
   return {
