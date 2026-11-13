@@ -48,6 +48,8 @@ export const STATE_WIDTHS = [360, 412];
 
 const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof name === 'string' });
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
+const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
+const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
 const gated = (d) => ({ ...d, safety: { ...SCREENED, gates: { ...SCREENED.gates, no_deficit: true, protein_cap: true, beginner_only: true, needs_clearance: true } } });
 const trainedFriday = (d) => ({ ...d, workouts: [...d.workouts, { ...d.workouts[0], id: 9999, log_date: '2026-11-06', started_at: null, finished_at: '2026-11-06T08:00:00', sets: [] }] });
 const toFullMeals = async (page) => {
@@ -110,6 +112,10 @@ export const STATES = [
   { name: 'monday week on Plan', route: '/plan', data: (d) => ({ ...d, profile: { ...d.profile, week_start: 'mon' } }) },
   { name: 'time varies on Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, times: { ...d.settings?.times, session_varies: true } } }) },
   { name: 'time varies: settings', route: '/settings/times', data: (d) => ({ ...d, settings: { ...d.settings, times: { ...d.settings?.times, session_varies: true } } }), check: (p) => p.getByText(en['times.varies']).first().waitFor() },
+  { name: 'ramadan: Home', route: '/', data: fasting, check: (p) => p.getByText(en['ramadan.chip']).first().waitFor() },
+  { name: 'ramadan: Meals', route: '/meals', data: fasting, act: (p) => toFullMeals(p), check: (p) => p.getByText(en['ramadan.meal.breakfast']).first().waitFor() },
+  { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },
+  { name: 'after Eid on Home', route: '/', data: afterEid, check: (p) => p.getByText(en['ramadan.afterChip']).first().waitFor() },
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
   { name: 'text 130%: Home', route: '/', font: '130%' },
   { name: 'text 130%: Workout', route: '/workout', font: '130%' },
