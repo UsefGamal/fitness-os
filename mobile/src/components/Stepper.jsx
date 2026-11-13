@@ -58,7 +58,7 @@ export default function Stepper({ value, onChange, step = 1, min = 0, max = 1000
         <button type="button" aria-label={`Less ${label}`} onPointerDown={lessDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={lessClick}>
           <Icon name="minus" />
         </button>
-        <input type="number" inputMode="decimal" value={value} onChange={(e) => set(parseFloat(e.target.value))} onFocus={(e) => e.target.select()} />
+        <input type="number" inputMode="decimal" aria-label={label} value={value} onChange={(e) => set(parseFloat(e.target.value))} onFocus={(e) => e.target.select()} />
         <button type="button" aria-label={`More ${label}`} onPointerDown={moreDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={moreClick}>
           <Icon name="plus" />
         </button>
