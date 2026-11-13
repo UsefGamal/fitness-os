@@ -44,9 +44,9 @@ function average(values) {
   return values.length >= MIN_WORN_DAYS ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
 }
 
-/** The week that starts on `weekIso` (a Sunday), in effort only. */
+/** The week holding `weekIso` (from its first day), in effort only. */
 export function weekStats(data, content, weekIso) {
-  const start = weekStart(weekIso);
+  const start = weekStart(weekIso, data);
   const dates = days(start);
   const inWeek = new Set(dates);
   const end = dates[6];
@@ -111,9 +111,10 @@ export function summaryLine(stats, t = tr) {
   return `${sessions} · ${t('wrap.setsN', { n: stats.workSets })}`;
 }
 
-/** The week a Sunday or Monday wrap-up is about, or null on other days. */
-export function wrapWeek(today) {
-  const thisWeek = weekStart(today);
+/** The week a wrap-up on the first two days of a week (Sunday and Monday,
+ * or Monday and Tuesday for a Monday week) is about, or null on other days. */
+export function wrapWeek(today, data) {
+  const thisWeek = weekStart(today, data);
   const day = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${thisWeek}T00:00:00Z`)) / 86400000);
   return day <= 1 ? addDays(thisWeek, -7) : null;
 }
@@ -122,7 +123,7 @@ export function wrapWeek(today) {
  * that just ended, until dismissed; never in the first week after setup,
  * and never for a quiet week. */
 export function wrapDue(data, content, today) {
-  const week = wrapWeek(today);
+  const week = wrapWeek(today, data);
   if (!week) return false;
   if (data?.settings?.wrapup_seen === week) return false;
   if (data?.setup?.done_on && data.setup.done_on > week) return false;
@@ -131,7 +132,7 @@ export function wrapDue(data, content, today) {
 
 /** Dismiss this week's wrap-up. */
 export function dismissWrap(data, today) {
-  const week = wrapWeek(today);
+  const week = wrapWeek(today, data);
   return week ? { ...data, settings: { ...data.settings, wrapup_seen: week } } : data;
 }
 

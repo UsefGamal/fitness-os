@@ -16,6 +16,7 @@ import { EVENING_OPTIONS, eveningOn, setEvening } from '../lib/evening.js';
 import { weekHtml, weekText } from '../lib/planShare.js';
 import { dayGroups } from '../lib/insights.js';
 import { effectiveTimes } from '../lib/ramadan.js';
+import { sessionAt } from '../lib/times.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activeBlock, activePlan } from '../lib/plan.js';
@@ -110,7 +111,7 @@ export default function Plan() {
   const today = useToday();
   const T = activePlan(data, content);
   const times = effectiveTimes(data, content, todayISO());
-  const week = weekView(today, T, data.session_moves || []);
+  const week = weekView(today, T, data.session_moves || [], data);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest') || week.find((d) => d.isToday);
   const [params] = useSearchParams();
   const [pickedRaw, setPicked] = useState(() => week.find((d) => d.date === params.get('day')) || firstTraining);
@@ -124,7 +125,7 @@ export default function Plan() {
   const dayHits = dayMuscles(day?.exercises, T);
   const moves = data.session_moves || [];
   const movedHere = moves.find((m) => m.to === picked.date && m.from);
-  const pick = (date) => setPicked(weekView(today, T, data.session_moves || []).find((d) => d.date === date) || picked);
+  const pick = (date) => setPicked(weekView(today, T, data.session_moves || [], data).find((d) => d.date === date) || picked);
   const move = (to) => {
     if (!to) return;
     update((d) => moveSession(d, T, picked.date, to));
@@ -138,7 +139,7 @@ export default function Plan() {
   const typical = sessionMinutes(day || P.effectiveDay(firstTraining.key, T, data));
   const weekDays = () => week.map((w) => ({ date: w.date, day: w.key === 'rest' ? null : P.effectiveDay(w.key, T, data), evening: eveningOn(data, w.date) }));
   const shareWeek = async () => {
-    const r = await shareText('My training week', weekText(weekDays(), { time: times.session_time, eveningTime: times.evening_time }));
+    const r = await shareText('My training week', weekText(weekDays(), { time: sessionAt(times) || '', eveningTime: times.evening_time }));
     setShareMsg(r === 'copied' ? 'Copied the week; paste it into a message.' : '');
   };
   const printWeek = async () => {
@@ -152,7 +153,7 @@ export default function Plan() {
         if (src) photos.set(name, await dataUrlOf(photoSrc(src)));
       }
     }
-    const html = weekHtml(days, { time: times.session_time, eveningTime: times.evening_time, tempo: T.trainer_plan.tempo, photoOf: (n) => photos.get(n) || null });
+    const html = weekHtml(days, { time: sessionAt(times) || '', eveningTime: times.evening_time, tempo: T.trainer_plan.tempo, photoOf: (n) => photos.get(n) || null });
     try {
       const uri = await saveExport(`training-week-${week[0].date}.html`, html, 'text/html');
       if (uri) await shareFile('My training week', uri);
@@ -202,7 +203,7 @@ export default function Plan() {
         {T.trainer_plan.tempo ? <span className="chip"><Icon name="timer" className="icon inline" /> {t('plan.tempo', { tempo: T.trainer_plan.tempo })}</span> : null}
         <MoreMenu title={t('plan.options')} actions={options} />
       </div>
-      <p className="plan-sub">{t('plan.overview', { name: T.trainer_plan.name, days: trainingDays, min: typical })} · {times.session_time}</p>
+      <p className="plan-sub">{t('plan.overview', { name: T.trainer_plan.name, days: trainingDays, min: typical })}{sessionAt(times) ? ` · ${times.session_time}` : ''}</p>
 
       {checkInDue(data, today) ? (
         <div className="backup-line" role="status">

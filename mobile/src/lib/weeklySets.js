@@ -27,7 +27,7 @@ function add(out, target, sets) {
  * @param {string} today
  * @param {(name: string) => any} [entryOf] */
 export function doneThisWeek(data, training, today, entryOf = () => null) {
-  const from = weekStart(today);
+  const from = weekStart(today, data);
   const byId = new Map(data.exercises.map((e) => [e.id, e.name]));
   const muscles = {};
   let unknown = 0;
@@ -52,7 +52,7 @@ export function doneThisWeek(data, training, today, entryOf = () => null) {
 export function plannedThisWeek(data, training, today, entryOf = () => null) {
   const muscles = {};
   let unknown = 0;
-  for (const day of weekView(today, training, data.session_moves || [])) {
+  for (const day of weekView(today, training, data.session_moves || [], data)) {
     if (day.key === 'rest') continue;
     const session = effectiveDay(day.key, training, data);
     for (const ex of session?.exercises || []) {

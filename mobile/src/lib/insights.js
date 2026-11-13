@@ -74,7 +74,7 @@ export function countsByDate(data) {
  * week: [[{ date, count, future }] x 7] x weeks. */
 export function yearGrid(data, today, weeks = 53) {
   const counts = countsByDate(data);
-  const first = addDays(weekStart(today), -7 * (weeks - 1));
+  const first = addDays(weekStart(today, data), -7 * (weeks - 1));
   const grid = [];
   for (let w = 0; w < weeks; w += 1) {
     const col = [];
@@ -121,12 +121,12 @@ export function weekStreaks(data, today, min) {
   const days = new Map(); // week -> Set of training days
   for (const w of data.workouts) {
     if (w.log_date > today) continue;
-    const k = weekStart(w.log_date);
+    const k = weekStart(w.log_date, data);
     if (!days.has(k)) days.set(k, new Set());
     days.get(k).add(w.log_date);
   }
   const done = (k) => days.get(k)?.size || 0;
-  const thisWeek = weekStart(today);
+  const thisWeek = weekStart(today, data);
   const week = { done: done(thisWeek), need: need(thisWeek) };
   if (!days.size) return { current: 0, longest: 0, week };
   const hit = (k) => done(k) >= need(k);

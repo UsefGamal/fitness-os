@@ -30,8 +30,15 @@ export function timesOf(data, content) {
     session_time: ok(t.session_time, d.session_time),
     evening_time: ok(t.evening_time, d.evening_time),
     remind_before: REMIND_CHOICES.includes(t.remind_before) ? t.remind_before : d.remind_before,
+    // "It varies" (WEEK-1): no set time, so no timed session reminder.
+    session_varies: t.session_varies === true,
     meal_times: Object.fromEntries(Object.entries(d.meal_times).map(([s, v]) => [s, ok(t.meal_times?.[s], v)])),
   };
+}
+
+/** The session time to show, or null when it varies. */
+export function sessionAt(times) {
+  return times?.session_varies ? null : times?.session_time ?? null;
 }
 
 export function setTimes(data, changes) {

@@ -144,7 +144,11 @@ export default function Setup({ onDone }) {
             {JOBS.map((j) => <button key={j} type="button" className={a.job === j ? 'on' : ''} aria-pressed={a.job === j} onClick={() => set('job', j)}>{t(`job.${j}`)}</button>)}
           </div>
           <p className="muted small" style={{ margin: '0 4px 12px' }}>{t('setup.jobNote')}</p>
-          <label className="field"><span>{t('setup.time')}</span><input type="time" step="300" value={a.session_time ?? content.training.session_time} onChange={(e) => isTime(e.target.value) && set('session_time', e.target.value)} /><span className="muted small">{t('setup.timeNote')}</span></label>
+          <label className="field"><span>{t('setup.time')}</span>{a.session_varies ? null : <input type="time" step="300" value={a.session_time ?? content.training.session_time} onChange={(e) => isTime(e.target.value) && set('session_time', e.target.value)} />}<span className="muted small">{t('setup.timeNote')}</span></label>
+          <label className="row" style={{ gap: 10, minHeight: 44, marginBottom: 12 }}>
+            <input type="checkbox" checked={Boolean(a.session_varies)} onChange={(e) => set('session_varies', e.target.checked)} style={{ width: 22, height: 22 }} />
+            <span>{t('setup.varies')}</span>
+          </label>
           <div className="section-label">{t('setup.experience')}</div>
           <div className="list">
             {choice('experience', 'new', t('setup.expNew'), t('setup.expNewNote'))}
