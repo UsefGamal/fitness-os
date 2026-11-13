@@ -9,8 +9,8 @@ SEEDED = {name for _group, name, _kit in gym_exercises.SEED_EXERCISES}
 BY_ID = {r["id"]: r for r in routines.ROUTINES}
 
 
-def test_the_five_templates():
-    assert list(BY_ID) == ["starter-3", "upper-lower-4", "ppl-3", "body-part-5", "home-3"]
+def test_the_templates():
+    assert list(BY_ID) == ["starter-3", "starter-2", "full-body-3", "full-body-2", "upper-lower-4", "ppl-3", "ul-ppl-5", "body-part-5", "home-3"]
 
 
 @pytest.mark.parametrize("routine", routines.ROUTINES, ids=lambda r: r["id"])

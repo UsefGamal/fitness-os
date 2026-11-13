@@ -50,6 +50,13 @@ const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof 
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
 const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
+const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
+const eightWeeks = (d) => {
+  const id = d.program?.active_block;
+  const blocks = (d.program?.blocks || []).map((b) => (b.id === id ? { ...b, started_on: '2026-09-01', template_id: b.template_id || 'starter-3' } : b));
+  const extra = Array.from({ length: 8 }, (_, i) => ({ id: 9000 + i, log_date: `2026-09-${String(2 + i * 3).padStart(2, '0')}`, workout_type: 'gym', started_at: null, finished_at: `2026-09-${String(2 + i * 3).padStart(2, '0')}T08:00:00`, sets: [], block_id: id }));
+  return { ...d, program: { ...d.program, blocks }, workouts: [...extra, ...d.workouts.map((w) => ({ ...w, block_id: id }))] };
+};
 const gated = (d) => ({ ...d, safety: { ...SCREENED, gates: { ...SCREENED.gates, no_deficit: true, protein_cap: true, beginner_only: true, needs_clearance: true } } });
 const trainedFriday = (d) => ({ ...d, workouts: [...d.workouts, { ...d.workouts[0], id: 9999, log_date: '2026-11-06', started_at: null, finished_at: '2026-11-06T08:00:00', sets: [] }] });
 const toFullMeals = async (page) => {
@@ -122,6 +129,16 @@ export const STATES = [
       await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
     },
   },
+  { name: 'light: Home', route: '/', data: lightTheme },
+  { name: 'light: Plan', route: '/plan', data: lightTheme },
+  { name: 'light: Workout', route: '/workout', data: lightTheme },
+  { name: 'light: Meals', route: '/meals', data: lightTheme },
+  { name: 'light: Stats', route: '/stats', data: lightTheme },
+  { name: 'light: Settings', route: '/settings/modules', data: lightTheme },
+  { name: 'light: History', route: '/history', data: lightTheme },
+  { name: 'light: Library', route: '/library', data: lightTheme },
+  { name: 'check-in card on Plan', route: '/plan', data: eightWeeks, check: (p) => p.getByText(en['checkin.cardTitle']).first().waitFor() },
+  { name: 'plan check-in', route: '/plan/checkin', data: eightWeeks, check: (p) => p.getByRole('heading', { name: en['checkin.title'] }).waitFor() },
   { name: 'monday week on Plan', route: '/plan', data: (d) => ({ ...d, profile: { ...d.profile, week_start: 'mon' } }) },
   { name: 'time varies on Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, times: { ...d.settings?.times, session_varies: true } } }) },
   { name: 'time varies: settings', route: '/settings/times', data: (d) => ({ ...d, settings: { ...d.settings, times: { ...d.settings?.times, session_varies: true } } }), check: (p) => p.getByText(en['times.varies']).first().waitFor() },
