@@ -5,7 +5,10 @@ import { Component, useState } from 'react';
 import { toDataFile } from '../lib/dataFile.js';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
+import { startLine } from '../lib/dataCheck.js';
+import { APP } from '../lib/version.js';
 import { recordError } from '../store/errors.js';
+import { logStart } from '../store/native.js';
 import { saveExport } from '../store/mirror.js';
 import { useData } from '../store/useData.js';
 import ReportSheet from './ReportSheet.jsx';
@@ -49,6 +52,8 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     recordError(Object.assign(error instanceof Error ? error : new Error(String(error)), { stack: `${error?.stack || ''}\n${info?.componentStack || ''}` }));
+    // The release update test reads this: a crash screen is never a pass (PROOF-1).
+    logStart(startLine({ version: APP.version, error: 'crash' }));
   }
 
   render() {

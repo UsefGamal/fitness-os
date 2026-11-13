@@ -48,7 +48,7 @@ export async function atomicWrite(fs, path, text) {
 
 // ── Snapshots ─────────────────────────────────────────────────────────
 
-const REASONS = { migrate: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand', unreadable: 'Data that could not be read' };
+const REASONS = { migrate: 'Before an app update', update: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand', unreadable: 'Data that could not be read' };
 
 export function snapshotName(reason, now = Date.now()) {
   return `${SNAPSHOT_DIR}/${now}-${reason}.json`;

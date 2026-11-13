@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 
-import { safeVideo } from './links.js';
+import { RELEASES_URL, safeOutside, safeVideo, SHARE_APP_TEXT } from './links.js';
 
 test('safeVideo keeps https links to the video sites', () => {
   assert.equal(safeVideo('https://www.youtube.com/watch?v=abc'), 'https://www.youtube.com/watch?v=abc');
@@ -28,4 +28,24 @@ test('every video link in the plan content passes', () => {
   });
   assert.ok(urls.length > 0);
   for (const u of urls) assert.notEqual(safeVideo(u), null, u);
+});
+
+test('the update page and the share text are exactly the fixed strings (UPD-1)', () => {
+  assert.equal(RELEASES_URL, 'https://github.com/UsefGamal/fitness-os/releases/latest');
+  assert.equal(SHARE_APP_TEXT, 'Fitness OS: a free training and meal plan app that keeps your data on your phone. Download: https://github.com/UsefGamal/fitness-os/releases/latest');
+  assert.equal(safeOutside(RELEASES_URL), RELEASES_URL);
+  for (const bad of [`${RELEASES_URL}/`, 'https://github.com/UsefGamal/fitness-os', 'https://github.com.evil.example/UsefGamal/fitness-os/releases/latest', 'http://github.com/UsefGamal/fitness-os/releases/latest', 'javascript:alert(1)', '', null, 42]) {
+    assert.equal(safeOutside(bad), null, String(bad));
+  }
+});
+
+test('no new network code: only the two fetches of files inside the app (UPD-1)', () => {
+  const root = new URL('../', import.meta.url);
+  const hits = [];
+  for (const name of readdirSync(root, { recursive: true })) {
+    const file = String(name);
+    if (!/\.(js|jsx)$/.test(file) || /\.test\.js$/.test(file)) continue;
+    if (/\bfetch\(|XMLHttpRequest|sendBeacon|new WebSocket|EventSource\(/.test(readFileSync(new URL(file, root), 'utf8'))) hits.push(file.replaceAll('\\', '/'));
+  }
+  assert.deepEqual(hits.sort(), ['store/catalogue.js', 'store/share.js']);
 });

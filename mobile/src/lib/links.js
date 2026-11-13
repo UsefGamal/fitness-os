@@ -18,3 +18,19 @@ export function safeVideo(url) {
   if (u.protocol !== 'https:' || u.username || u.password || u.port) return null;
   return VIDEO_HOSTS.has(u.hostname) ? u.href : null;
 }
+
+/** Where every release is published. The app never fetches this itself
+ * (UPD-1: no network call); the phone's browser opens it on a tap. */
+export const RELEASES_URL = 'https://github.com/UsefGamal/fitness-os/releases/latest';
+
+// The only pages outside the app a fixed button may open.
+const OUTSIDE = new Set([RELEASES_URL]);
+
+/** The URL when it is exactly one of the app's own outside pages, else null. */
+export function safeOutside(url) {
+  return typeof url === 'string' && OUTSIDE.has(url) ? url : null;
+}
+
+/** What "Share Fitness OS" hands to the share sheet: one fixed sentence
+ * and the download page. Nothing about the person. */
+export const SHARE_APP_TEXT = `Fitness OS: a free training and meal plan app that keeps your data on your phone. Download: ${RELEASES_URL}`;

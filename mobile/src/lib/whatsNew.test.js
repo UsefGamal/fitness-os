@@ -68,3 +68,14 @@ test('the real notes: valid versions, newest first, short, with icons that exist
     }
   }
 });
+
+test('the newest notes are not older than the version in package.json (UPD-1)', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+  const gradle = readFileSync(new URL('../../android/app/build.gradle', import.meta.url), 'utf8');
+  assert.ok(parseVersion(pkg.version), pkg.version);
+  const newest = WHATS_NEW.map((n) => n.version).sort(compareVersions).at(-1);
+  assert.ok(compareVersions(newest, pkg.version) >= 0, `notes ${newest} vs package.json ${pkg.version}`);
+  // The APK's fallback name reads the same file; no second number to forget.
+  assert.match(gradle, /JsonSlurper\(\)\.parse\(file\("\.\.\/\.\.\/package\.json"\)\)\.version/);
+  assert.doesNotMatch(gradle, /versionName[^\n]*"\d+\.\d+\.\d+"/);
+});

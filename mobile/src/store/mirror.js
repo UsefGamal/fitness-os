@@ -12,6 +12,10 @@ const PATH = 'fitness-os-data.json';
 let pending = null;
 let timer = null;
 let onResult = () => {};
+let lastMs = null;
+
+/** How long the last mirror write took, in ms (null before the first). PROOF-1. */
+export const lastSaveMs = () => lastMs;
 
 /** Told after every mirror write: true when it landed, false when it failed. */
 export function onMirrorResult(fn) {
@@ -47,7 +51,9 @@ async function flush() {
   pending = null;
   if (!data) return;
   try {
+    const t0 = performance.now();
     await atomicWrite(privateFs, PATH, JSON.stringify(data));
+    lastMs = Math.round(performance.now() - t0);
     onResult(true);
   } catch (err) {
     console.error('Could not write the data mirror', err);

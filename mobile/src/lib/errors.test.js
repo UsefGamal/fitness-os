@@ -88,3 +88,11 @@ test('P14-15: the report is capped on a line break, and says so', () => {
   assert.equal(capReport('x'.repeat(50), 20).length, 20);
   assert.equal(capReport(undefined), '');
 });
+
+test('the report carries the data check line, timings and size (PROOF-1)', () => {
+  const r = bugReport({ app: { version: '0.9.8', build: '9008' }, data: yusuf, errors: [], perf: { startMs: 412, saveMs: 18 } });
+  assert.match(r, /Data check: W 5 · S \d+ · M \d+ · B \d+ · [0-9A-F]{4}-[0-9A-F]{4}/);
+  assert.match(r, /Start-up: 412 ms · Last save: 18 ms · Data size: \d+ KB/);
+  // Not measured yet, or no data: question marks, never a crash.
+  assert.match(bugReport({ app: { version: 'dev', build: 'local' }, data: null, errors: [] }), /Data check: \?\nStart-up: \? · Last save: \? · Data size: \?/);
+});

@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { bugReport, capReport, deviceFromUA, errorEntry, nativeEntry, pushError } from '../lib/errors.js';
 import { takeNativeCrashes } from './native.js';
 import { APP } from '../lib/version.js';
-import { useData } from './useData.js';
+import { perf, useData } from './useData.js';
 
 const KEY = 'fitness-os-errors';
 
@@ -57,5 +57,5 @@ export function currentReport() {
     ...deviceFromUA(ua),
     screen: typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight} @${window.devicePixelRatio}x` : null,
   };
-  return capReport(bugReport({ app: APP, data: useData.getState().data, errors: readErrors(), device }));
+  return capReport(bugReport({ app: APP, data: useData.getState().data, errors: readErrors(), device, perf: perf() }));
 }

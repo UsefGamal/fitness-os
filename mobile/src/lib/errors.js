@@ -4,6 +4,8 @@
 // report holds versions, counts and errors only: no weights, notes,
 // names, photos, health or screening data.
 
+import { checkLine } from './dataCheck.js';
+
 export const RING_SIZE = 20;
 const MAX_STACK = 600;
 /** Longest report the share sheet gets (P14-15): enough for every error,
@@ -37,8 +39,11 @@ export function dataCounts(data) {
   };
 }
 
-/** @param {{ app: any, data: any, errors: any[], device?: { platform?: string, model?: string, osVersion?: string, screen?: string, webview?: string }, now?: Date }} report */
-export function bugReport({ app, data, errors, device = {}, now = new Date() }) {
+/** `perf`: { startMs, saveMs } from the store (null when not measured).
+ * @param {{ app: any, data: any, errors: any[], perf?: { startMs?: number | null, saveMs?: number | null }, device?: { platform?: string, model?: string, osVersion?: string, screen?: string, webview?: string }, now?: Date }} report */
+export function bugReport({ app, data, errors, device = {}, perf = {}, now = new Date() }) {
+  const ms = (v) => (Number.isFinite(v) ? `${v} ms` : '?');
+  const kb = data ? Math.round(JSON.stringify(data).length / 1024) : null;
   const lines = [
     'Fitness OS bug report',
     `Time: ${now.toISOString().slice(0, 16).replace('T', ' ')} UTC`,
@@ -49,6 +54,9 @@ export function bugReport({ app, data, errors, device = {}, now = new Date() }) 
     '',
     'Counts:',
     ...Object.entries(dataCounts(data)).map(([k, v]) => `  ${k}: ${v}`),
+    '',
+    `Data check: ${data ? checkLine(data) : '?'}`,
+    `Start-up: ${ms(perf.startMs)} · Last save: ${ms(perf.saveMs)} · Data size: ${kb == null ? '?' : `${kb} KB`}`,
     '',
     `Last errors (${errors.length}):`,
     ...(errors.length ? errors.slice().reverse().flatMap((e) => [

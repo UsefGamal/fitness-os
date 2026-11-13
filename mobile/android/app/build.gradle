@@ -11,7 +11,9 @@ android {
         // Release tags set these from the tag (v0.4.1 -> 4001, see
         // scripts/version-from-tag.sh); debug builds from the run number.
         versionCode((System.getenv("APK_VERSION_CODE") ?: "1") as Integer)
-        versionName System.getenv("APK_VERSION_NAME") ?: "0.3.0"
+        // Without a tag the name is the one in mobile/package.json, so there
+        // is a single fallback version to keep (UPD-1).
+        versionName System.getenv("APK_VERSION_NAME") ?: new groovy.json.JsonSlurper().parse(file("../../package.json")).version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

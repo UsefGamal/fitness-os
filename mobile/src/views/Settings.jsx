@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { pageOf, SETTINGS_PAGES } from '../lib/settingsPages.js';
+import { pageOf, ROOT_PAGES } from '../lib/settingsPages.js';
+import { RELEASES_URL, safeOutside, SHARE_APP_TEXT } from '../lib/links.js';
+import InstallGuide from '../components/InstallGuide.jsx';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { MODULES } from '../lib/data.js';
@@ -14,6 +16,7 @@ import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { LEVELS } from '../lib/levels.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
+import { checkLine } from '../lib/dataCheck.js';
 import { widgetPrivate } from '../lib/widget.js';
 import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
@@ -32,7 +35,7 @@ import { APP } from '../lib/version.js';
 import { notesUpTo } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
 import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
-import { shareTextFile } from '../store/share.js';
+import { shareText, shareTextFile } from '../store/share.js';
 import ReportSheet from '../components/ReportSheet.jsx';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -184,6 +187,12 @@ export default function Settings() {
     }
   };
 
+  // UPD-1: one fixed sentence and the download link; nothing about the person.
+  const shareApp = async () => {
+    const r = await shareText(t('settings.share'), SHARE_APP_TEXT);
+    if (r === 'copied') setMsg(t('settings.shareCopied'));
+  };
+
   const exportNow = async () => {
     try {
       const where = await saveExport(`fitness-os-backup-${todayISO()}.json`, toDataFile(data));
@@ -228,13 +237,16 @@ export default function Settings() {
         <div className="list">
           <button type="button" className="list-row" onClick={() => navigate('/profile')}><Icon name="user" /><div className="grow">{t('settings.profile')}</div><Icon name="chev" className="icon chev" /></button>
           {D.moduleOn(data, 'quests') ? <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">{t('settings.quests')}</div><Icon name="chev" className="icon chev" /></button> : null}
-          {SETTINGS_PAGES.map((p) => (
+          {ROOT_PAGES.map((p) => (
             <button key={p.key} type="button" className="list-row" onClick={() => navigate(`/settings/${p.key}`)}>
               <Icon name={p.icon} /><div className="grow"><div>{t(p.title)}</div><div className="meta">{t(p.note)}</div></div><Icon name="chev" className="icon chev" />
             </button>
           ))}
+          <button type="button" className="list-row" onClick={shareApp}><Icon name="upload" /><div className="grow"><div>{t('settings.share')}</div><div className="meta">{t('settings.shareNote')}</div></div><Icon name="chev" className="icon chev" /></button>
         </div>
       ) : null}
+
+      {show('install') ? <InstallGuide /> : null}
 
       {show('data') ? (<>
       <div className="section-label">Your data</div>
@@ -397,7 +409,11 @@ export default function Settings() {
       <div className="list">
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
-        <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
+        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>{t('about.backup')}</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <a className="list-row" href={safeOutside(RELEASES_URL)} target="_blank" rel="noreferrer"><Icon name="upload" /><div className="grow"><div>{t('about.update')}</div><div className="meta">{t('about.updateNote')} {t('about.updateHave', { version: APP.version })}</div></div><Icon name="chev" className="icon chev" /></a>
+        <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')} {t('about.signingSame')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
+        <button type="button" className="list-row" onClick={() => navigate('/settings/install')}><Icon name="info" /><div className="grow"><div>{t('about.help')}</div><div className="meta">{t('about.helpNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+        <div className="list-row"><div className="grow"><div>{t('about.check')}</div><div className="meta">{t('about.checkNote')}</div><div className="meta" data-testid="data-check" aria-label={t('about.checkAria', { line: checkLine(data) })} style={{ fontFamily: 'ui-monospace, monospace', marginTop: 4 }}>{checkLine(data).split(' · ').map((part, i) => <span key={i}>{i ? ' · ' : ''}<span style={{ whiteSpace: 'nowrap' }}>{part}</span></span>)}</div></div></div>
         <p className="muted small" style={{ margin: '4px 16px 12px' }}>{t('about.notInstalled')}</p>
         {notesUpTo(APP.version, WHATS_NEW).length ? <button type="button" className="list-row" onClick={() => setNews(true)}><Icon name="star" /><div className="grow"><div>{t('whatsNew.title')}</div><div className="meta">{t('whatsNew.note')}</div></div><Icon name="chev" className="icon chev" /></button> : null}
         <button type="button" className="list-row" onClick={() => setReport(true)}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
