@@ -8,7 +8,7 @@ import LineChart from '../components/LineChart.jsx';
 import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
-import { formatDate } from '../lib/dates.js';
+import { formatDate, formatNumber } from '../lib/dates.js';
 import { profileOf } from '../lib/macros.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
@@ -271,8 +271,8 @@ const ROMAN = ['', 'I', 'II', 'III', 'IV'];
 
 /** "3 / 10", "0.8 / 1 × BW", "2.5 / 5 kg" */
 function progressText(b) {
-  const round = (v) => (b.goal >= 1000 ? Math.round(v).toLocaleString() : Math.round(v * 10) / 10);
-  const goal = b.goal >= 1000 ? b.goal.toLocaleString() : b.goal;
+  const round = (v) => (b.goal >= 1000 ? formatNumber(Math.round(v)) : Math.round(v * 10) / 10);
+  const goal = b.goal >= 1000 ? formatNumber(b.goal) : b.goal;
   return `${round(Math.max(0, b.value || 0))} / ${goal}${b.unit ? ` ${b.unit}` : b.goal >= 1000 ? ' kg' : ''}`;
 }
 

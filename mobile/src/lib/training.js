@@ -55,6 +55,22 @@ export function activeMs(workout, now) {
   return Math.max(0, now - workout.started_at - (workout.paused_ms || 0) - pausedNow);
 }
 
+/** A workout never saves more than this many active minutes. Past it
+ * the timer was almost certainly left running. */
+export const MAX_WORKOUT_MIN = 180;
+
+/** Minutes to save when a workout is finished: active time (pauses left
+ * out), at least 1, at most MAX_WORKOUT_MIN. */
+export function finishedMinutes(workout, now) {
+  return Math.min(MAX_WORKOUT_MIN, Math.max(1, Math.round(activeMs(workout, now) / 60000)));
+}
+
+/** Did this finished workout hit the cap? The summary then says so. */
+export function ranLong(workout) {
+  if (!workout?.finished_at || workout.started_at == null) return false;
+  return activeMs({ ...workout, paused_at: null }, workout.finished_at) > MAX_WORKOUT_MIN * 60000;
+}
+
 export function pauseWorkout(data, id, now = Date.now()) {
   return mapWorkout(data, id, (w) => (w.paused_at ? w : { ...w, paused_at: now }));
 }
@@ -142,3 +158,14 @@ export function stepAt(steps, elapsed) {
 
 /** Whole seconds left at which a countdown beep plays. */
 export const COUNTDOWN_BEEPS = [3, 2, 1];
+
+/** After this long with no tap and no set logged, an open workout lets
+ * the screen sleep again (TEST-1). */
+export const AWAKE_IDLE_MS = 20 * 60000;
+
+/** Should the screen be kept on? Yes while a rest timer runs, and for
+ * AWAKE_IDLE_MS after the last tap or logged set. */
+export function shouldStayAwake(lastActivityAt, restRunning, now) {
+  if (restRunning) return true;
+  return lastActivityAt != null && now - lastActivityAt < AWAKE_IDLE_MS;
+}

@@ -6,6 +6,8 @@ import Sheet from '../components/Sheet.jsx';
 import SafetyQuestions from '../components/SafetyQuestions.jsx';
 import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
+import { APP } from '../lib/version.js';
+import { markSeen } from '../lib/whatsNew.js';
 import { isTime } from '../lib/times.js';
 import { macroTargets } from '../lib/macros.js';
 import { routineById } from '../lib/routines.js';
@@ -41,8 +43,10 @@ export default function Setup({ onDone }) {
     if (!errors[k]) return null;
     return <span className="field-error" role="alert">{t(errors[k])}</span>;
   }
-  const finish = () => { update((d) => finishSetup(d, content, a, today)); onDone(); };
-  const skipAll = () => { update((d) => skipSetup(d, today)); onDone(); };
+  // A new person has seen nothing older, so there is no "What's new" to
+  // show them (the weight given here would otherwise count as history).
+  const finish = () => { update((d) => markSeen(finishSetup(d, content, a, today), APP.version)); onDone(); };
+  const skipAll = () => { update((d) => markSeen(skipSetup(d, today), APP.version)); onDone(); };
   const restore = () => { update((d) => skipSetup(d, today)); window.location.hash = '#/settings/data'; onDone(); };
   const choice = (k, v, label, note) => (
     <button key={String(v)} type="button" className={`list-row${a[k] === v ? ' on' : ''}`} aria-pressed={a[k] === v} onClick={() => set(k, v)}>

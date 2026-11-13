@@ -101,6 +101,19 @@ jobs:
         timeout-minutes: 10
         run: npm run e2e:device
 
+      # TEST-1: the app tapped through like a person would (setup, a
+      # workout, a reload mid-workout, weigh-in, another food, export and
+      # restore, the safety check), on both builds.
+      - name: Journeys
+        timeout-minutes: 10
+        run: npm run e2e:journeys
+
+      - name: Journeys, friends build
+        timeout-minutes: 10
+        env:
+          FITNESS_OS_FLAVOR: friends
+        run: npm run e2e:journeys
+
       # P14-02: and the build the friends install (its own baseline).
       - name: Phone harness, friends build
         timeout-minutes: 15

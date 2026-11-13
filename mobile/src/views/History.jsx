@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
-import { formatDate, todayISO } from '../lib/dates.js';
+import { formatDate, LOCALE, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { starterJustDone, starterProgress, STARTER_SESSIONS } from '../lib/starter.js';
@@ -72,8 +72,9 @@ export default function History() {
           <div className="finish-stats">
             {sum.durationMin ? <div><strong>{sum.durationMin}</strong><span>{t('finish.min')}</span></div> : null}
             <div><strong>{sum.sets}</strong><span>{t('finish.sets')}</span></div>
-            <div><strong>{sum.volumeKg.toLocaleString('en')}</strong><span>{t('finish.lifted')}</span></div>
+            <div><strong>{sum.volumeKg.toLocaleString(LOCALE)}</strong><span>{t('finish.lifted')}</span></div>
           </div>
+          {sum.ranLong ? <p className="muted small" style={{ margin: '10px 0 0' }}>{t('finish.ranLong')}</p> : null}
           {sum.bests.length ? (
             <div className="finish-bests">
               <div className="muted small">{t(sum.bests.length === 1 ? 'finish.bestOne' : 'finish.bests', { n: sum.bests.length })}</div>

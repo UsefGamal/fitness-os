@@ -675,6 +675,7 @@ export default {
   'finish.bestOne': 'New best',
   'finish.bests': '{n} new bests',
   'finish.done': 'Done',
+  'finish.ranLong': 'This one ran long. Fix the time in History if needed.',
   'workout.rir': 'RIR {rir}',
   'workout.yourNote': 'Note: {note}',
   'workout.setLine': '{kg} kg × {reps}',

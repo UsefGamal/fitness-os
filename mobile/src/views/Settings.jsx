@@ -7,7 +7,7 @@ import { RELEASES_URL, safeOutside, SHARE_APP_TEXT } from '../lib/links.js';
 import InstallGuide from '../components/InstallGuide.jsx';
 import AutoBackup from '../components/AutoBackup.jsx';
 import { dateRange } from '../lib/autoBackup.js';
-import { fromISO, todayISO } from '../lib/dates.js';
+import { longDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { MODULES } from '../lib/data.js';
 import Stepper from '../components/Stepper.jsx';
@@ -47,8 +47,6 @@ function extrasText(list) {
   const names = list.map((k) => EXTRA_NAMES[k] || k);
   return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
 }
-
-const longDate = (iso) => fromISO(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
 function lastBackupText(data) {
   const at = data.settings?.last_backup_at;

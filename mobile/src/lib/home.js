@@ -1,5 +1,5 @@
 // Home page helpers (the Nov 2026 redesign). Pure, tested in home.test.js.
-import { daysBetween } from './dates.js';
+import { daysBetween, formatNumber } from './dates.js';
 
 /** 'morning' 5-11, 'afternoon' 12-16, 'evening' otherwise. */
 export function partOfDay(hour) {
@@ -45,7 +45,7 @@ export function sparkPath(series = [], { n = 30, w = 120, h = 48, pad = 4 } = {}
  * the watch sent today (it is worn only sometimes). Empty = no strip. */
 export function watchTiles({ steps = null, kcal = null, sleepMin = null } = {}) {
   const out = [];
-  if (steps != null) out.push({ key: 'steps', value: Number(steps).toLocaleString('en-US') });
+  if (steps != null) out.push({ key: 'steps', value: formatNumber(steps) });
   if (kcal != null) out.push({ key: 'kcal', value: String(kcal) });
   if (sleepMin != null && sleepMin > 0) out.push({ key: 'sleep', value: `${Math.floor(sleepMin / 60)}h ${String(sleepMin % 60).padStart(2, '0')}m` });
   return out;

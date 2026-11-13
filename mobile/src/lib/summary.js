@@ -2,13 +2,14 @@
 // session is short enough to say so before saving (UX-15).
 import { addDays, weekStart } from './dates.js';
 import { e1rm, isWorkSet, personalBests } from './data.js';
+import { ranLong } from './training.js';
 
 /** Under half the planned sets done: the Finish sheet names it a short session. */
 export function isShortSession(done, planned) {
   return planned > 0 && done < planned / 2;
 }
 
-/** { durationMin, sets, volumeKg, bests: [{ name, kg, reps }], weekSessions }
+/** { durationMin, ranLong, sets, volumeKg, bests: [{ name, kg, reps }], weekSessions }
  * for one saved workout, or null when it isn't there. A best is the top set
  * of an exercise that beats every earlier workout; a first-ever set is not. */
 export function workoutSummary(data, workoutId) {
@@ -30,6 +31,7 @@ export function workoutSummary(data, workoutId) {
   const days = new Set(data.workouts.filter((x) => x.finished_at && x.log_date >= from && x.log_date <= to).map((x) => x.log_date));
   return {
     durationMin: w.duration_min || null,
+    ranLong: ranLong(w),
     sets: work.length,
     volumeKg: Math.round(work.reduce((v, s) => v + s.weight_kg * s.reps, 0)),
     bests,

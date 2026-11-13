@@ -18,6 +18,7 @@
     "check": "npm run lint && npm run lint:i18n && npm run typecheck && npm test",
     "e2e": "npm run build && node e2e/harness.mjs",
     "e2e:device": "npm run content && VITE_FAKE_FS=1 vite build --outDir dist-device && node e2e/device.mjs",
+    "e2e:journeys": "npm run content && VITE_FAKE_FS=1 vite build --outDir dist-device && node e2e/journeys.mjs",
     "build:mobile": "npm run photos && npm run build && cap sync android",
     "photos": "python3 ../scripts/fetch_exercise_photos.py public/exercise-db"
   },

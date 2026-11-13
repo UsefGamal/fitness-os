@@ -178,3 +178,16 @@ test('water goal: 3 litres by default, a personal one within sane limits', () =>
   assert.deepEqual(d.settings, { notifications: true, water_goal_ml: 3750 });
   assert.equal(D.setWaterGoal({}, 0).settings.water_goal_ml, 3000);
 });
+
+test('finishing a workout leaves paused time out of its minutes (TEST-1)', () => {
+  const MIN = 60000;
+  let { data, workoutId } = D.startWorkout(D.emptyData(content), { date: '2026-11-12', sessionKey: null, label: 'Test' });
+  const t0 = data.workouts.find((w) => w.id === workoutId).started_at;
+  data = { ...data, workouts: data.workouts.map((w) => ({ ...w, paused_ms: 10 * MIN, paused_at: t0 + 50 * MIN })) };
+  const done = D.finishWorkout(data, workoutId, { now: t0 + 60 * MIN }).workouts[0];
+  assert.equal(done.duration_min, 40);
+  assert.equal(done.paused_at, null);
+  assert.equal(done.paused_ms, 20 * MIN);
+  const long = D.finishWorkout({ ...data, workouts: data.workouts.map((w) => ({ ...w, paused_ms: 0, paused_at: null })) }, workoutId, { now: t0 + 10 * 60 * MIN }).workouts[0];
+  assert.equal(long.duration_min, 180);
+});
