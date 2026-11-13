@@ -54,7 +54,7 @@ jobs:
 
       # The photos only change when content/exercise_photos.py pins a new
       # dataset commit, so keep the converted set between runs.
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: mobile/public/exercise-db
           key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
@@ -126,7 +126,7 @@ jobs:
 
       # The photos only change when content/exercise_photos.py pins a new
       # dataset commit, so keep the converted set between runs.
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: mobile/public/exercise-db
           key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
