@@ -59,3 +59,10 @@ export function plannedReminders(today, content, now = new Date(), moves = [], e
   }
   return out.filter((r) => r.at > now);
 }
+
+/** Planned reminders as Android local notifications on `channel`: the
+ * route rides along so a tap opens that screen (lib/routes.js checks it
+ * again on the way back in). TEST-1 part C: was inline in store/notify.js. */
+export function toNotifications(planned, channel) {
+  return planned.map((r) => ({ id: r.id, title: r.title, body: r.body, channelId: channel, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
+}

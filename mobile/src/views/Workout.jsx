@@ -264,7 +264,7 @@ export default function Workout() {
         ) : null}
         <button type="button" className="btn" onClick={start}><Icon name="play" /> Start {day.label}</button>
         <div className="card" style={{ marginTop: 12 }}>
-          <div className="row between"><strong>Warm up first</strong><Link to={`/follow?src=warmup:${day.key}`} className="small"><Icon name="play" /> Follow along</Link></div>
+          <div className="row between"><strong>Warm up first</strong><Link to={`/follow?src=warmup:${day.key}`} className="small" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 44 }}><Icon name="play" /> Follow along</Link></div>
           <div className="stack small muted" style={{ marginTop: 8 }}>{day.warmup.map((l) => <div key={l}>{l}</div>)}</div>
         </div>
         <div className="list">

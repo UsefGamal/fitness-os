@@ -20,20 +20,27 @@ const STRICT_MIN = 95;
 const update = process.argv.includes('--update');
 const dir = mkdtempSync(join(tmpdir(), 'cov-'));
 const lcov = join(dir, 'lcov.info');
-const tests = readdirSync('src/lib', { recursive: true })
+const testsIn = (dir) => readdirSync(dir, { recursive: true })
   .filter((f) => f.endsWith('.test.js'))
-  .map((f) => join('src/lib', f));
+  .map((f) => join(dir, f));
+// TEST-1 part C: store/ tests run with node stand-ins for Capacitor and
+// Vite (scripts/node-stubs) and the device-test build's fake folder.
+const tests = [...testsIn('src/lib'), ...testsIn('src/store')];
+// The store files that have tests, and the thin ones they load.
+const STORE_COVERED = ['autoBackup', 'errors', 'fs', 'mirror', 'snapshots', 'useData'];
 
 const run = spawnSync(process.execPath, [
+  '--import', './scripts/node-stubs/register.mjs',
   '--test',
   '--experimental-test-coverage',
   '--test-coverage-include=src/lib/**',
+  ...STORE_COVERED.map((f) => `--test-coverage-include=src/store/${f}.js`),
   '--test-coverage-exclude=src/**/*.test.js',
   '--test-coverage-exclude=src/lib/testContent.js',
   '--test-reporter=dot', '--test-reporter-destination=stdout',
   '--test-reporter=lcov', `--test-reporter-destination=${lcov}`,
   ...tests,
-], { stdio: 'inherit' });
+], { stdio: 'inherit', env: { ...process.env, VITE_FAKE_FS: '1' } });
 if (run.status !== 0) process.exit(run.status ?? 1);
 
 const files = {};

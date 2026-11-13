@@ -1,12 +1,12 @@
 {
  "/ 360 ltr": {
-  "axe": 4,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 360 ltr": {
-  "axe": 5,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -49,11 +49,29 @@
  },
  "/library 360 ltr": {
   "axe": 0,
-  "taps": 7,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/settings 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/data 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/about 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/install 360 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -108,13 +126,13 @@
   "errors": 0
  },
  "/ 390 ltr": {
-  "axe": 4,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 390 ltr": {
-  "axe": 5,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -157,11 +175,29 @@
  },
  "/library 390 ltr": {
   "axe": 0,
-  "taps": 7,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/settings 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/data 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/about 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/install 390 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -216,13 +252,13 @@
   "errors": 0
  },
  "/ 412 ltr": {
-  "axe": 4,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 412 ltr": {
-  "axe": 5,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -265,11 +301,29 @@
  },
  "/library 412 ltr": {
   "axe": 0,
-  "taps": 7,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/settings 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/data 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/about 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/install 412 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -324,13 +378,13 @@
   "errors": 0
  },
  "/ 360 rtl": {
-  "axe": 4,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 360 rtl": {
-  "axe": 5,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -373,11 +427,29 @@
  },
  "/library 360 rtl": {
   "axe": 0,
-  "taps": 7,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/settings 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/data 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/about 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/install 360 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -432,13 +504,13 @@
   "errors": 0
  },
  "/ 390 rtl": {
-  "axe": 4,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 390 rtl": {
-  "axe": 5,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -481,11 +553,29 @@
  },
  "/library 390 rtl": {
   "axe": 0,
-  "taps": 7,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/settings 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/data 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/about 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/install 390 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -540,13 +630,13 @@
   "errors": 0
  },
  "/ 412 rtl": {
-  "axe": 4,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/plan 412 rtl": {
-  "axe": 5,
+  "axe": 0,
   "taps": 0,
   "overflow": 0,
   "errors": 0
@@ -589,11 +679,29 @@
  },
  "/library 412 rtl": {
   "axe": 0,
-  "taps": 7,
+  "taps": 0,
   "overflow": 0,
   "errors": 0
  },
  "/settings 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/data 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/about 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/install 412 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -642,6 +750,174 @@
   "errors": 0
  },
  "/session/recovery 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: weigh-in 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: weigh-in 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: ate something else 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: ate something else 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: what's new 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: what's new 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: more menu 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: more menu 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: swap similar 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: swap similar 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: finish summary 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: finish summary 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: empty week on Plan 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: empty week on Plan 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: beginner: session 1 of 6 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: beginner: session 1 of 6 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: quests off: Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: quests off: Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: safety limits on: Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: safety limits on: Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: safety limits on: Meals 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: safety limits on: Meals 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Workout 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Workout 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Meals 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Meals 412": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,

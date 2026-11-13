@@ -95,7 +95,7 @@ export default function History() {
       ) : (
         <p className="page-sub">
           {formatDate(w.log_date)}{w.duration_min ? ` · ${w.duration_min} min` : ''}{w.session_rpe ? ` · RPE ${w.session_rpe}` : ''}{' '}
-          <button type="button" className="btn ghost small" style={{ display: 'inline-flex', minHeight: 28, padding: '0 6px' }} onClick={() => setEditDate(true)}>Change date</button>
+          <button type="button" className="btn ghost small" style={{ display: 'inline-flex', minHeight: 44, padding: '0 6px' }} onClick={() => setEditDate(true)}>Change date</button>
         </p>
       )}
       <div className="stat-grid">
