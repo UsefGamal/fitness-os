@@ -25,15 +25,15 @@ test('the plan picked for me: a 12-row table', () => {
   const rows = [
     [{ where: 'home', days: 3, experience: 'new' }, 'home-3'],
     [{ where: 'home', days: 5, experience: 'some' }, 'home-3'],
-    [{ where: 'gym', days: 2, experience: 'new' }, 'starter-3'],
+    [{ where: 'gym', days: 2, experience: 'new' }, 'starter-2'],
     [{ where: 'gym', days: 3, experience: 'new' }, 'starter-3'],
-    [{ where: 'gym', days: 4, experience: 'new' }, 'starter-3'], // 4 days + new: full body
+    [{ where: 'gym', days: 4, experience: 'new' }, 'starter-3'], // 4 days + new: full body, walk the rest
     [{ where: 'gym', days: 5, experience: 'new' }, 'starter-3'],
-    [{ where: 'gym', days: 2, experience: 'some' }, 'ppl-3'],
-    [{ where: 'gym', days: 3, experience: 'some' }, 'ppl-3'],
+    [{ where: 'gym', days: 2, experience: 'some' }, 'full-body-2'],
+    [{ where: 'gym', days: 3, experience: 'some' }, 'full-body-3'],
     [{ where: 'gym', days: 4, experience: 'some' }, 'upper-lower-4'],
-    [{ where: 'gym', days: 5, experience: 'some' }, 'body-part-5'],
-    [{ where: 'gym', days: 6, experience: 'some' }, 'body-part-5'],
+    [{ where: 'gym', days: 5, experience: 'some' }, 'ul-ppl-5'],
+    [{ where: 'gym', days: 6, experience: 'some' }, 'ul-ppl-5'],
     [{}, 'starter-3'],
   ];
   for (const [answers, id] of rows) assert.equal(pickRoutine(answers), id, JSON.stringify(answers));
@@ -57,7 +57,7 @@ test('full answers: profile, goal, routine from today, kcal shown', () => {
   assert.equal(activeBlock(d).template_id, 'upper-lower-4');
   assert.equal(activeBlock(d).started_on, TODAY);
   assert.equal(d.safety.hide_kcal, false);
-  assert.deepEqual(d.setup, { done_on: TODAY, routine: 'upper-lower-4', needs_body: false, skipped: false });
+  assert.deepEqual(d.setup, { done_on: TODAY, routine: 'upper-lower-4', days: 4, needs_body: false, skipped: false });
   const m = macroTargets(d, content.nutrition, TODAY);
   assert.equal(m.source, 'profile');
   assert.equal(m.mode, 'recomp');

@@ -203,6 +203,72 @@ BODY_PART = routine(
     "RIR 1-3 means stop with 1-3 left.",
 )
 
+FULL_BODY_3 = routine(
+    "full-body-3", "Full body, 3 days",
+    "Your whole body three times a week, with heavier main lifts. Each muscle gets work 3 times a week. For people who have trained before.",
+    "intermediate", "gym",
+    {"fb_a": "Full body A", "fb_b": "Full body B", "fb_c": "Full body C"},
+    {"fb_a": "Squat, bench press, rows, hamstrings", "fb_b": "Romanian deadlift, overhead press, pulldown, arms",
+     "fb_c": "Deadlift, incline press, pull-ups, calves"},
+    {"sunday": "fb_a", "tuesday": "fb_b", "thursday": "fb_c"},
+    {
+        "fb_a": session([
+            ex("Back Squat", 3, "6-8", "2-3m", "Legs", "1-3", warm_up=True),
+            ex("Bench Press", 3, "6-8", "2-3m", "Chest", "1-3"),
+            ex("Seated Cable Row", 3, "8-10", "2m", "Back", "1-3"),
+            ex("Lateral Raise", 2, "12-15", "1m", "Shoulders", "1-2"),
+            ex("Leg Curl", 2, "10-12", "1m", "Legs", "1-2"),
+            ex("Plank", 2, "30-45s", "45s", "Core"),
+        ]),
+        "fb_b": session([
+            ex("Romanian Deadlift", 3, "8-10", "2m", "Legs", "1-3", warm_up=True),
+            ex("Overhead Press", 3, "8-10", "2m", "Shoulders", "1-3"),
+            ex("Lat Pulldown", 3, "8-10", "2m", "Back", "1-3"),
+            ex("Leg Press", 2, "10-12", "2m", "Legs", "1-3"),
+            ex("Dumbbell Curl", 2, "10-12", "1m", "Arms", "1-2"),
+            ex("Triceps Pushdown", 2, "10-12", "1m", "Arms", "1-2"),
+        ]),
+        "fb_c": session([
+            ex("Deadlift", 3, "5", "3m", "Legs", "2-3", warm_up=True),
+            ex("Incline Dumbbell Press", 3, "8-10", "2m", "Chest", "1-3"),
+            ex("Pull-up", 3, "6-10", "2m", "Back", "1-3", note="Use the assisted machine or a band if you need to."),
+            ex("Leg Extension", 2, "12-15", "1m", "Legs", "1-2"),
+            ex("Face Pull", 2, "12-15", "1m", "Shoulders", "1-2"),
+            ex("Standing Calf Raise", 3, "12-15", "1m", "Legs", "1-2"),
+        ]),
+    },
+    "RIR 1-3 means stop with 1-3 left.",
+)
+
+FULL_BODY_2 = {
+    **FULL_BODY_3,
+    "id": "full-body-2", "name": "Full body, 2 days",
+    "about": "Your whole body twice a week: the best use of 2 days. For people who have trained before.",
+    "labels": {k: v for k, v in FULL_BODY_3["labels"].items() if k != "fb_c"},
+    "focus": {k: v for k, v in FULL_BODY_3["focus"].items() if k != "fb_c"},
+    "schedule": week({"sunday": "fb_a", "wednesday": "fb_b"}),
+    "sessions": {k: v for k, v in FULL_BODY_3["sessions"].items() if k != "fb_c"},
+    "days": 2,
+}
+
+UL_PPL = routine(
+    "ul-ppl-5", "Upper / lower / push / pull / legs, 5 days",
+    "Upper and lower body early in the week, then push, pull and legs. Each muscle about twice a week. For people who have trained for a few months.",
+    "intermediate", "gym",
+    {"upper": "Upper", "lower": "Lower", "push": "Push", "pull": "Pull", "legs": "Legs"},
+    {"upper": UPPER_LOWER["focus"]["upper_a"], "lower": UPPER_LOWER["focus"]["lower_a"],
+     "push": PPL["focus"]["push"], "pull": PPL["focus"]["pull"], "legs": PPL["focus"]["legs"]},
+    {"sunday": "upper", "monday": "lower", "wednesday": "push", "thursday": "pull", "friday": "legs"},
+    {
+        "upper": UPPER_LOWER["sessions"]["upper_a"],
+        "lower": UPPER_LOWER["sessions"]["lower_a"],
+        "push": PPL["sessions"]["push"],
+        "pull": PPL["sessions"]["pull"],
+        "legs": PPL["sessions"]["legs"],
+    },
+    "RIR 1-3 means stop with 1-3 left.",
+)
+
 HOME = routine(
     "home-3", "Home, no equipment, 3 days",
     "Full body with your own body weight. No gym and no weights needed.",
@@ -244,8 +310,21 @@ FULL_BODY = {
     "place": "gym",
     "days": sum(1 for d in _STARTER["schedule"] if d["session"] != "rest"),
 }
+# Two days: full body A and B, three days apart.
+_TWO = {"sunday": "full_a", "wednesday": "full_b"}
+STARTER_2 = {
+    **FULL_BODY,
+    "id": "starter-2",
+    "name": "Full body, 2 days (starter)",
+    "about": "Your whole body twice a week. The best start if you are new to the gym and have 2 days.",
+    "schedule": [{**d, "session": _TWO.get(d["day"], "rest"), "cardio_after": None} for d in _STARTER["schedule"]],
+    "labels": {k: v for k, v in _STARTER["labels"].items() if k in _TWO.values()},
+    "focus": {k: v for k, v in _STARTER["focus"].items() if k in _TWO.values()},
+    "sessions": {k: v for k, v in _STARTER["sessions"].items() if k in _TWO.values()},
+    "days": 2,
+}
 
-TEMPLATES = [FULL_BODY, UPPER_LOWER, PPL, BODY_PART, HOME]
+TEMPLATES = [FULL_BODY, STARTER_2, FULL_BODY_3, FULL_BODY_2, UPPER_LOWER, PPL, UL_PPL, BODY_PART, HOME]
 
 
 def _built(plan: dict) -> dict:
