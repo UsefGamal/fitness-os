@@ -38,15 +38,28 @@ export function needsSetup(data) {
   return !data.profile && !(data.workouts || []).length && !(data.body_logs || []).length;
 }
 
-/** Which routine fits (E4-S7). `where` 'gym' | 'home', `days` 2-5+,
- * `experience` 'new' | 'some'. Beginners get full body whatever the
- * days; the ids are content/routines.py's. */
+/** Which routine fits (E4-S7, updated after the split review of
+ * 13 Nov 2026). `where` 'gym' | 'home', `days` 2-5+, `experience` 'new' |
+ * 'some'. Every muscle at least twice a week: beginners get full body (2 or
+ * 3 days, extra days are for walking), people who have trained get full
+ * body on 2-3 days, upper / lower on 4 and upper / lower / push / pull /
+ * legs on 5 or more. The ids are content/routines.py's. */
 export function pickRoutine({ where = 'gym', days = 3, experience = 'new' } = {}) {
   if (where === 'home') return 'home-3';
-  if (experience !== 'some') return 'starter-3';
-  if (days <= 3) return 'ppl-3';
+  if (experience !== 'some') return days <= 2 ? 'starter-2' : 'starter-3';
+  if (days <= 2) return 'full-body-2';
+  if (days === 3) return 'full-body-3';
   if (days === 4) return 'upper-lower-4';
-  return 'body-part-5';
+  return 'ul-ppl-5';
+}
+
+/** Build (gain): one more set on each session's first lift, the main one. */
+export function withMainSet(data) {
+  const program = data.program;
+  const block = program?.blocks?.find((b) => b.id === program.active_block);
+  if (!block) return data;
+  const sessions = block.sessions.map((s) => (s.exercises?.length ? { ...s, exercises: s.exercises.map((e, i) => (i === 0 ? { ...e, sets: (Number(e.sets) || 0) + 1 } : e)) } : s));
+  return { ...data, program: { ...program, blocks: program.blocks.map((b) => (b === block ? { ...block, sessions } : b)) } };
 }
 
 /** The date a goal weight is reached at the setup pace, or null. */
@@ -126,12 +139,13 @@ export function finishSetup(data, content, a, today) {
   if (a.weight_kg > 0 && !bodyErrors({ weight_kg: a.weight_kg }, today).weight_kg) d = logBody(d, { log_date: today, weight_kg: Number(a.weight_kg) });
   const routine = pickRoutine(a);
   d = startRoutine(d, content, routine, today);
+  if (goal === 'gain') d = withMainSet(d);
   d = setTraining(d, { level: levelFromSetup(a.experience) });
   d = a.screening ? applyScreening(d, a.screening, today) : skipScreening(d, today);
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },
-    setup: { done_on: today, routine, needs_body: !body, skipped: false, ...(minor ? { minor: true } : {}) },
+    setup: { done_on: today, routine, ...(DAY_CHOICES.includes(a.days) ? { days: a.days } : {}), needs_body: !body, skipped: false, ...(minor ? { minor: true } : {}) },
   };
 }
 

@@ -51,6 +51,7 @@ const Photos = lazy(() => import('./views/Photos.jsx'));
 const Library = lazy(() => import('./views/Library.jsx'));
 const Profile = lazy(() => import('./views/Profile.jsx'));
 const MyRoutine = lazy(() => import('./views/MyRoutine.jsx'));
+const CheckIn = lazy(() => import('./views/CheckIn.jsx'));
 const Routines = lazy(() => import('./views/Routines.jsx'));
 const Snapshots = lazy(() => import('./views/Snapshots.jsx'));
 const Lab = lazy(() => import('./views/Lab.jsx'));
@@ -106,6 +107,7 @@ const router = createHashRouter([
       { path: '/plan/mine', element: <MyRoutine /> },
       { path: '/plan/mine/:key', element: <MyRoutine /> },
       { path: '/plan/routines', element: <Routines /> },
+      { path: '/plan/checkin', element: <CheckIn /> },
       { path: '/workout', element: <Workout /> },
       { path: '/intervals', element: <Intervals /> },
       { path: '/follow', element: <FollowAlong /> },

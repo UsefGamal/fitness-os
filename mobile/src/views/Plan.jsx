@@ -19,6 +19,7 @@ import { effectiveTimes } from '../lib/ramadan.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { activeBlock, activePlan } from '../lib/plan.js';
+import { checkInDue, snoozeCheckIn } from '../lib/checkIn.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { sessionIcs, sessionMinutes } from '../lib/calendar.js';
 import { MUSCLE, dayMuscles, targetFor } from '../lib/muscles.js';
@@ -203,6 +204,15 @@ export default function Plan() {
       </div>
       <p className="plan-sub">{t('plan.overview', { name: T.trainer_plan.name, days: trainingDays, min: typical })} · {times.session_time}</p>
 
+      {checkInDue(data, today) ? (
+        <div className="backup-line" role="status">
+          <Link className="grow backup-link" to="/plan/checkin">
+            <Icon name="trend" className="icon tone-accent" />
+            <span><strong>{t('checkin.cardTitle')}</strong> <span className="muted">{t('checkin.cardNote')}</span></span>
+          </Link>
+          <button type="button" className="mini-btn" onClick={() => update((d) => snoozeCheckIn(d, today))}>{t('checkin.later')}</button>
+        </div>
+      ) : null}
       {block ? null : (
         <Link to="/plan/routines" className="card route-card">
           <div className="session-icon"><Icon name="dumbbell" /></div>

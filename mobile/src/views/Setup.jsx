@@ -153,7 +153,7 @@ export default function Setup({ onDone }) {
           <section className="card">
             <div className="muted small">{t('setup.yourPlan')}</div>
             <strong>{routine?.name}</strong>
-            {routine?.about ? <div className="small" style={{ marginTop: 4 }}>{routine.about}</div> : null}
+            {routine ? <div className="small" style={{ marginTop: 4 }}>{t(`why.${routine.id}`)}</div> : null}
             <div className="muted small" style={{ marginTop: 6 }}>{t('setup.planNote')}</div>
           </section>
           <button type="button" className="btn" onClick={next}>{t('setup.next')}</button>

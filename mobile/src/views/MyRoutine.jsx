@@ -172,7 +172,7 @@ function Editor({ sessionKey }) {
 
 /** Same-muscle replacements for one exercise of the session: what the
  * person's equipment allows first, then their level, then the best match. */
-function SwapSheet({ data, name, others, onPick, onClose }) {
+export function SwapSheet({ data, name, others, onPick, onClose }) {
   const { catalogue } = useCatalogue();
   const settings = trainingSettings(data);
   const entry = catalogue ? entryFor(name, activePlan(data, content), catalogue.byId) : null;
