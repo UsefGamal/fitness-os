@@ -16,7 +16,7 @@ export default function Shopping() {
   const update = useData((s) => s.update);
   const navigate = useNavigate();
   const today = useToday();
-  const week = weekStart(today);
+  const week = weekStart(today, data);
   // Only the option picked for each meal, A when nothing is picked (UX-18).
   const planStart = mealStart(data, content.nutrition);
   // Portions fitted to the person's target (FIT-1), so the list buys what the Meals page shows.

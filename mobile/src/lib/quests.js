@@ -33,7 +33,7 @@ export function totalPoints(data) {
 
 export function doneKeys(data, today, quests) {
   const tasks = byKey(quests);
-  const start = weekStart(today);
+  const start = weekStart(today, data);
   const done = new Set();
   for (const b of data.bonus_logs) {
     const t = tasks[b.task_key];
@@ -69,7 +69,7 @@ export function longestStreak(dates) {
  * "every day this week" quests only on the week's last day, so nothing is
  * awarded on day 1 for one tick. */
 export function weeklyConditions(data, today) {
-  const start = weekStart(today);
+  const start = weekStart(today, data);
   const elapsed = daysBetween(start, today) + 1;
   const weekDone = elapsed >= 7;
   const inWeek = (d) => d >= start && d <= today;

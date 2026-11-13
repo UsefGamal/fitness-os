@@ -35,8 +35,9 @@ export function programDayFor(iso, training, moves = []) {
   return null;
 }
 
-export function weekView(iso, training, moves = []) {
-  const start = weekStart(iso);
+/** The 7 days of the week holding `iso`; `data` sets the week start. */
+export function weekView(iso, training, moves = [], data = null) {
+  const start = weekStart(iso, data);
   return Array.from({ length: 7 }, (_, i) => {
     const date = addDays(start, i);
     const key = sessionKeyOn(date, training, moves);

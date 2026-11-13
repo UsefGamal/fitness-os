@@ -588,7 +588,9 @@ function TimesSettings({ data, update, toggleReminders }) {
     <>
       <div className="section-label">Training times</div>
       <div className="list">
-        <TimeRow label="Morning session" note="Every training day in the plan" value={t.session_time} onChange={(v) => set({ session_time: v })} />
+        <Choice label={tr('week.startsOn')} value={data.profile?.week_start === 'mon' ? 'mon' : 'sun'} onChange={(v) => update((d) => ({ ...d, profile: { ...d.profile, week_start: v } }))} options={[['sun', tr('week.sunday')], ['mon', tr('week.monday')]]} />
+        <Toggle on={t.session_varies} onClick={() => set({ session_varies: !t.session_varies })} title={tr('times.varies')} note={tr(t.session_varies ? 'times.variesOn' : 'times.variesOff')} />
+        {t.session_varies ? null : <TimeRow label="Morning session" note="Every training day in the plan" value={t.session_time} onChange={(v) => set({ session_time: v })} />}
         <TimeRow label="Evening session" note="The optional slot you fill on Plan" value={t.evening_time} onChange={(v) => set({ evening_time: v })} />
       </div>
 
@@ -598,7 +600,7 @@ function TimesSettings({ data, update, toggleReminders }) {
         {on ? (
           <>
             <Choice label="Before a session" value={t.remind_before} onChange={(v) => set({ remind_before: Number(v) })} options={REMIND_CHOICES.map((m) => [m, m ? `${m} min` : 'At start time'])} />
-            <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />
+            {t.session_varies ? null : <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />}
             <Toggle on={t.remind_evening !== false} onClick={() => set({ remind_evening: t.remind_evening === false })} title="Evening session" note={`${leadText(t.remind_before)} ${t.evening_time} when one is planned`} />
             <Toggle on={t.remind_meals === true} onClick={() => set({ remind_meals: t.remind_meals !== true })} title="Meals" note="At each meal time below" />
             <ReminderCheck />

@@ -14,6 +14,7 @@ import { addDays, formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups, weekStreaks } from '../lib/insights.js';
 import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
+import { sessionAt } from '../lib/times.js';
 import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { firstName, partOfDay, watchTiles } from '../lib/home.js';
@@ -91,8 +92,8 @@ export default function Today() {
   // "Still time today?" two hours after the session time (BACK-1 part D).
   const nowMin = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
   const moveTo = moveTargets(today, T, moves)[0] || null;
-  const still = stillTime({ data, today, nowMinutes: nowMin, sessionTime: times.session_time, scheduled: sessionKeyOn(today, T, moves), recovery: isRecoveryWeek(data, today), moveTo });
-  const wrapFor = card === 'wrapup' ? wrapWeek(today) : null;
+  const still = stillTime({ data, today, nowMinutes: nowMin, sessionTime: sessionAt(times), scheduled: sessionKeyOn(today, T, moves), recovery: isRecoveryWeek(data, today), moveTo });
+  const wrapFor = card === 'wrapup' ? wrapWeek(today, data) : null;
   const [wrapOpen, setWrapOpen] = useState(false);
   // What's new, once per version (E1-S6). A new install skips straight to "seen".
   const news = unseenNotes(data, APP.version, WHATS_NEW);
@@ -142,7 +143,7 @@ export default function Today() {
         day={nextDay}
         hits={nextHits}
         groups={nextGroups}
-        time={times.session_time}
+        time={sessionAt(times)}
         todays={todays}
         changed={isChangedOn(today, moves)}
         ready={readyLevel}
