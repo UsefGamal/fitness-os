@@ -101,3 +101,15 @@ test('the streak is weeks in a row, the same as Home (REW-1)', () => {
   assert.equal(days[0].streak, '2 wk');
   assert.equal(days[1].streak, '');
 });
+
+test('back after a gap: no streak, and past days are plain, never "missed" (BACK-1)', () => {
+  const d = D.emptyData(content);
+  let id = 1;
+  // Kept weeks long ago, then nothing for three weeks.
+  for (const start of ['2026-09-27', '2026-10-04']) for (let i = 0; i < 6; i += 1) d.workouts.push({ id: id++, log_date: addDays(start, i), workout_type: 'gym', finished_at: 'x', sets: [] });
+  const wed = addDays(today, 3);
+  const days = widgetDays(d, content, wed);
+  assert.equal(days[0].streak, '');
+  assert.ok(days.every((x) => x.week.every((w) => w.s !== 'missed')));
+  assert.ok(days[0].week.slice(0, 3).every((w) => w.s === 'rest'));
+});

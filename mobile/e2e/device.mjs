@@ -7,6 +7,8 @@
 //              buzzes (FEEL-1)
 //   wrap-up    Sunday: the week card opens the sheet, and the picture is a
 //              1080 x 1350 PNG (WRAP-1)
+//   back       last workout 20 days ago: Welcome back, no streak chip,
+//              lighter first session, then normal again (BACK-1)
 //   midnight   Home moves to the new day at midnight, with the app open
 //   fake-fs    the file mirror, in a build with a fake file system:
 //              a newer file copy wins, a broken localStorage copy recovers
@@ -196,6 +198,47 @@ async function wrapUp(browser) {
   await ctx.close();
 }
 
+async function comebackDay(browser) {
+  const base = bigFixture('2026-11-06', 0.3);
+  // Today's first exercise, so the last session (20 days ago) has its loads.
+  const peek = await context(browser, { store: { [KEY]: JSON.stringify(base) } });
+  await peek.page.goto(`${URL0}#/workout`);
+  // The name without a superset letter (".pair").
+  const first = (await peek.page.locator('.list .list-row .grow > div').first().evaluate((el) => [...el.childNodes].filter((n) => !n.classList?.contains('pair')).map((n) => n.textContent).join(''), null, { timeout: 20000 })).trim();
+  await peek.ctx.close();
+  const known = base.exercises.find((e) => e.name === first);
+  const exId = known ? known.id : 9001;
+  const last = { id: 9001, log_date: '2026-10-17', workout_type: 'gym', started_at: '2026-10-17T07:00:00', finished_at: '2026-10-17T08:00:00', sets: [1, 2, 3].map((n) => ({ id: 90010 + n, exercise_id: exId, set_number: n, reps: 12, weight_kg: 60, rpe: null, rir: null, is_warmup: false })) };
+  const workouts = [...base.workouts.filter((w) => w.log_date < '2026-10-17'), last];
+  const exercises = known ? base.exercises : [...base.exercises, { id: exId, name: first, muscle_group: 'Chest', is_custom: false }];
+  const { ctx, page, errors } = await context(browser, { store: { [KEY]: JSON.stringify({ ...base, exercises, workouts }) } });
+  await page.goto(`${URL0}#/`);
+  await page.addStyleTag({ content: '.fanfare,.intro,.toast{display:none!important}' });
+  const news = page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true });
+  if (await news.isVisible({ timeout: 3000 }).catch(() => false)) { await news.click(); await page.waitForTimeout(600); }
+  const welcome = await page.getByText('Welcome back', { exact: true }).isVisible({ timeout: 8000 }).catch(() => false);
+  const chip = await page.getByText(/-week streak/).count();
+  check('back: 20 days away opens to Welcome back, with no streak chip', welcome && chip === 0, `${welcome ? '' : 'no card '}${chip ? 'streak chip shown' : ''}`.trim());
+
+  await page.goto(`${URL0}#/workout`);
+  await page.getByRole('button', { name: /^Start / }).first().click({ timeout: 20000 });
+  await page.waitForTimeout(1500);
+  const reason = (await page.locator('.ex-card.current .reason').first().textContent().catch(() => '')) || '';
+  const kg = Number(await page.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).inputValue());
+  // 90% of 60 kg (all sets at the top of the range would otherwise add).
+  check('back: the first session back is 90% of last time, never "add"', /^Welcome back: [\d.]+ kg today, a little lighter/.test(reason) && kg > 50 && kg < 60, `${kg} kg, "${reason}"`);
+  await page.getByRole('button', { name: /^Log set 1/ }).click();
+  await page.getByRole('button', { name: 'Finish workout', exact: true }).click();
+  await page.getByRole('button', { name: /^(Save workout|Save as a short session)$/ }).click();
+  await page.waitForTimeout(800);
+  const saved = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)).workouts.at(-1), KEY);
+  await page.goto(`${URL0}#/`);
+  await page.waitForTimeout(1000);
+  const after = await page.getByText('Welcome back', { exact: true }).count();
+  check('back: that session is saved as easy, and Home is back to normal', saved?.easy === true && Boolean(saved.finished_at) && after === 0 && !errors.length, `easy ${saved?.easy}, card ${after}${errors.length ? `; ${errors.join('; ')}` : ''}`);
+  await ctx.close();
+}
+
 async function midnight(browser) {
   // 23:59:30 on Friday in Cairo, with the app open on Home.
   const { ctx, page, errors } = await context(browser, { store: { [KEY]: fixture() }, time: new Date('2026-11-06T21:59:30Z'), fake: true });
@@ -341,6 +384,7 @@ try {
   await speed(browser);
   await setLog(browser);
   await wrapUp(browser);
+  await comebackDay(browser);
   await midnight(browser);
   await fakeFs(browser);
   await autoBackup(browser);

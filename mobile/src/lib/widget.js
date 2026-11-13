@@ -9,8 +9,11 @@
 //   meals                  [{ time, name, what, done }] in time order; the
 //                          widget shows the first one not eaten and not past
 //   stats                  "Protein 62/170 g · Water 1.5/3 L"
-//   week                   [{ d: 'S', s: 'done'|'train'|'rest'|'missed', today }]
+//   week                   [{ d: 'S', s: 'done'|'train'|'rest', today }]
+//                          (a past day not trained shows as plain as a rest
+//                          day: no orange 'missed', BACK-1)
 //   route                  where tapping the session opens: 'workout' or 'plan'
+import { comeback } from './comeback.js';
 import { addDays, longWeekday, shortWeekday } from './dates.js';
 import * as D from './data.js';
 import { eveningDone, eveningOn } from './evening.js';
@@ -48,7 +51,8 @@ export function widgetDays(data, content, today) {
   const moves = data.session_moves || [];
   const times = effectiveTimes(data, content, today);
   // Weeks in a row, the same streak as Home and Stats (REW-1).
-  const streak = weekStreaks(data, today).current;
+  // Back after a gap: no streak at all, so nothing says one ended (BACK-1).
+  const streak = comeback(data, today) ? 0 : weekStreaks(data, today).current;
   // SEC-11: the widget is on the home screen for anyone to see; this hides
   // protein, water and what the next meal is.
   const hide = widgetPrivate(data);
@@ -83,7 +87,7 @@ export function widgetDays(data, content, today) {
 
     const week = weekView(date, T, moves).map((w) => ({
       d: shortWeekday(w.date)[0],
-      s: trained.has(w.date) ? 'done' : w.key === 'rest' ? 'rest' : w.date < date ? 'missed' : 'train',
+      s: trained.has(w.date) ? 'done' : w.key === 'rest' || w.date < date ? 'rest' : 'train',
       today: w.date === date,
     }));
 

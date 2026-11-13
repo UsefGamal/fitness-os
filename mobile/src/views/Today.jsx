@@ -10,7 +10,7 @@ import WeighInSheet from '../components/WeighInSheet.jsx';
 import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
 import WeightCard from '../components/WeightCard.jsx';
 import WorkoutCard from '../components/WorkoutCard.jsx';
-import { formatDate, longWeekday } from '../lib/dates.js';
+import { addDays, formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { dayGroups, weekStreaks } from '../lib/insights.js';
 import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
@@ -20,7 +20,7 @@ import { firstName, partOfDay, watchTiles } from '../lib/home.js';
 import { mealDayFor, mealStart } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, questsOn } from '../lib/quests.js';
-import { isChangedOn, programDayFor } from '../lib/schedule.js';
+import { isChangedOn, moveSession, moveTargets, programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
@@ -37,6 +37,7 @@ import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
 import { markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
+import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
 import { dismissWrap, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 
@@ -85,7 +86,12 @@ export default function Today() {
   const clearanceSeen = () => update(markClearanceSeen);
   // One card under the session at most: doctor note, welcome back, the
   // Sunday wrap-up, the recovery suggestion (lib/homeCard.js).
-  const card = homeCard(data, content, today);
+  const back = comeback(data, today);
+  const card = homeCard(data, content, today, { back: showBack(data, today) });
+  // "Still time today?" two hours after the session time (BACK-1 part D).
+  const nowMin = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
+  const moveTo = moveTargets(today, T, moves)[0] || null;
+  const still = stillTime({ data, today, nowMinutes: nowMin, sessionTime: times.session_time, scheduled: sessionKeyOn(today, T, moves), recovery: isRecoveryWeek(data, today), moveTo });
   const wrapFor = card === 'wrapup' ? wrapWeek(today) : null;
   const [wrapOpen, setWrapOpen] = useState(false);
   // What's new, once per version (E1-S6). A new install skips straight to "seen".
@@ -145,6 +151,24 @@ export default function Today() {
         onChange={() => setPicking(true)}
         onStart={() => navigate('/workout')}
       />
+      {still ? (
+        <div className="still-row" role="group" aria-label={t('still.title')}>
+          <span className="grow small"><strong>{t('still.title')}</strong></span>
+          <button type="button" className="btn small" style={{ width: 'auto' }} onClick={() => navigate('/workout')}>{t('still.start')}</button>
+          {still.moveTo ? <button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => update((d) => moveSession(d, T, today, still.moveTo))}>{still.moveTo === addDays(today, 1) ? t('still.tomorrow') : t('still.moveTo', { day: longWeekday(still.moveTo) })}</button> : null}
+          <button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => update((d) => skipToday(d, today))}>{t('still.skip')}</button>
+        </div>
+      ) : null}
+      {card === 'back' ? (
+        <section className="card back-card" role="status">
+          <div className="row between">
+            <strong>{t('back.title')}</strong>
+            <button type="button" className="icon-btn" aria-label={t('back.hide')} onClick={() => update((d) => hideBack(d, today))}><Icon name="x" /></button>
+          </div>
+          <p className="muted small" style={{ margin: '0 0 4px' }}>{t(back.level === 'short' ? 'back.short' : back.level === 'fresh' ? 'back.fresh' : 'back.easy')}</p>
+          {next && sessionKeyOn(today, T, moves) !== 'rest' ? <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> {t('back.start')}</button> : null}
+        </section>
+      ) : null}
       {picking ? <DayPicker date={today} dayName={longWeekday(today)} training={T} data={data} update={update} onClose={() => setPicking(false)} /> : null}
 
       {tonight ? (
@@ -194,7 +218,7 @@ export default function Today() {
 
       <div className="section-head">
         <h2 className="section-title">{t('home.quickStats')}</h2>
-        {streak > 0 ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
+        {streak > 0 && !back ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
       </div>
       <div className="tile-grid">
         {D.moduleOn(data, 'water') ? (
