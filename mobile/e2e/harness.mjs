@@ -36,6 +36,7 @@ const KEY = 'fitness-os-data-v1';
 // calendar (a Saturday meal day vs a Friday rest day). Friday 6 Nov 2026,
 // 09:00 in Cairo: the day the baselines were recorded.
 const NOW = new Date('2026-11-06T07:00:00Z');
+const SUNDAY = new Date('2026-11-08T07:00:00Z');
 const PORT = 4179;
 
 export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
@@ -93,6 +94,9 @@ export const STATES = [
     },
   },
   { name: 'empty week on Plan', route: '/plan', data: restWeek },
+  // WRAP-1: Sunday, the week that ended on Saturday.
+  { name: 'wrap-up card on Home', route: '/', now: SUNDAY, check: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).waitFor() },
+  { name: 'sheet: your week', route: '/', now: SUNDAY, act: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).click() },
   { name: 'beginner: session 1 of 6', route: '/', data: (d) => ({ ...d, workouts: [], settings: { ...d.settings, training: { ...d.settings?.training, level: 'beginner' } } }) },
   { name: 'quests off: Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, modules: { ...d.settings?.modules, quests: false } } }) },
   { name: 'safety limits on: Home', route: '/', data: gated },
@@ -213,7 +217,7 @@ export async function run({ shots = false } = {}) {
         const raw = structuredClone(FIXTURE);
         const data = state.data ? state.data(raw) : raw;
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
-        await ctx.clock.setFixedTime(NOW);
+        await ctx.clock.setFixedTime(state.now || NOW);
         await ctx.addInitScript(([k, d]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, d); } catch { /* fresh */ } }, [KEY, JSON.stringify(data)]);
         const page = await ctx.newPage();
         const errors = [];
@@ -234,6 +238,7 @@ export async function run({ shots = false } = {}) {
             await page.waitForTimeout(600);
           }
           if (state.act) await state.act(page);
+          if (state.check) await state.check(page);
           await page.waitForTimeout(500);
         } catch (err) {
           // A state that can't be reached counts as an error, not a crash of the run.

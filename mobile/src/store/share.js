@@ -33,7 +33,7 @@ export async function shareFile(title, uri) {
 }
 
 // Files this app handed to the share sheet before (backups, copies, CSVs).
-const SHARED = /^fitness-os-[\w.-]+\.(json|csv|txt|ics)$/;
+const SHARED = /^fitness-os-[\w.-]+\.(json|csv|txt|ics|png)$/;
 
 /** Delete earlier shared files from the cache (pentest JS-03). The newest
  * is kept until the next share, because the app it went to may still be
@@ -85,4 +85,39 @@ export async function dataUrlOf(src) {
   } catch {
     return null;
   }
+}
+
+/** Hand a picture (a PNG data: URL) to the share sheet. The file goes to
+ * the app's cache, like shareTextFile. In a browser: Web Share with the
+ * file where it can, else a download. */
+export async function shareImage(title, filename, dataUrl) {
+  const base64 = dataUrl.split(',')[1] || '';
+  if (Capacitor.isNativePlatform()) {
+    const { Directory, Filesystem } = await import('@capacitor/filesystem');
+    await clearSharedCopies(Filesystem, Directory, filename);
+    const { uri } = await Filesystem.writeFile({ path: filename, directory: Directory.Cache, data: base64 });
+    try {
+      await Share.share({ title, url: uri, dialogTitle: title });
+      return 'shared';
+    } catch {
+      return 'cancelled';
+    }
+  }
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const file = typeof File === 'function' ? new File([bytes], filename, { type: 'image/png' }) : null;
+  if (file && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ title, files: [file] });
+      return 'shared';
+    } catch {
+      return 'cancelled';
+    }
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return 'downloaded';
 }

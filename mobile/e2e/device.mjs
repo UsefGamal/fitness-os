@@ -5,6 +5,8 @@
 //   set-log    the same file: a logged set shows in under 100 ms at 6x
 //              slower CPU with no task over 50 ms, and Strong vibration
 //              buzzes (FEEL-1)
+//   wrap-up    Sunday: the week card opens the sheet, and the picture is a
+//              1080 x 1350 PNG (WRAP-1)
 //   midnight   Home moves to the new day at midnight, with the app open
 //   fake-fs    the file mirror, in a build with a fake file system:
 //              a newer file copy wins, a broken localStorage copy recovers
@@ -167,6 +169,33 @@ async function setLog(browser) {
   await ctx.close();
 }
 
+async function wrapUp(browser) {
+  const sunday = new Date('2026-11-08T07:00:00Z');
+  const { ctx, page, errors } = await context(browser, { time: sunday, store: { [KEY]: fixture() } });
+  await page.goto(`${URL0}#/`);
+  await page.addStyleTag({ content: '.fanfare,.intro,.toast{display:none!important}' });
+  // What's new opens first on a new version: close it.
+  const news = page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true });
+  if (await news.isVisible({ timeout: 3000 }).catch(() => false)) { await news.click(); await page.waitForTimeout(600); }
+  const open = page.getByRole('button', { name: /See your week/ });
+  const shown = await open.isVisible({ timeout: 8000 }).catch(() => false);
+  check('wrap-up: on Sunday Home offers last week', shown, shown ? '' : 'no card');
+  if (shown) {
+    await open.click();
+    const sheet = page.getByRole('dialog');
+    const rows = await sheet.locator('.list-row').count();
+    const [download] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), sheet.getByRole('button', { name: /Share as a picture/ }).click()]);
+    let size = '';
+    if (download) {
+      const buf = await (await import('node:fs')).promises.readFile(await download.path());
+      // PNG header: width and height at bytes 16-23.
+      size = `${buf.readUInt32BE(16)}x${buf.readUInt32BE(20)}`;
+    }
+    check('wrap-up: the sheet shows the week and shares a 1080 x 1350 picture', rows >= 3 && size === '1080x1350' && /^fitness-os-week-2026-11-01\.png$/.test(download?.suggestedFilename() || '') && !errors.length, `${rows} rows, ${size || 'no picture'} ${download?.suggestedFilename() || ''} ${errors.join('; ')}`.trim());
+  }
+  await ctx.close();
+}
+
 async function midnight(browser) {
   // 23:59:30 on Friday in Cairo, with the app open on Home.
   const { ctx, page, errors } = await context(browser, { store: { [KEY]: fixture() }, time: new Date('2026-11-06T21:59:30Z'), fake: true });
@@ -311,6 +340,7 @@ try {
   await setupStates(browser);
   await speed(browser);
   await setLog(browser);
+  await wrapUp(browser);
   await midnight(browser);
   await fakeFs(browser);
   await autoBackup(browser);
