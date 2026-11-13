@@ -20,6 +20,9 @@ import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
 import { checkLine } from '../lib/dataCheck.js';
 import { widgetPrivate } from '../lib/widget.js';
+import { isEncrypted } from '../lib/backupCrypto.js';
+import { unlockBackup } from '../store/autoBackup.js';
+import { UnlockSheet } from '../components/PassphraseSheets.jsx';
 import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
@@ -122,6 +125,27 @@ export default function Settings() {
     }
   };
 
+  // BAK-1: an encrypted backup opens with this phone's key, or asks for
+  // the recovery passphrase; then the same checks and preview as any file.
+  const [locked, setLocked] = useState(null);
+  const openText = async (text) => {
+    if (isEncrypted(text)) {
+      try {
+        const plain = await unlockBackup(text);
+        if (plain == null) {
+          setLocked(text);
+          setMsg('');
+          return;
+        }
+        text = plain;
+      } catch {
+        setMsg(t('unlock.damaged'));
+        return;
+      }
+    }
+    restoreText(text);
+  };
+
   const pick = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -130,13 +154,14 @@ export default function Settings() {
       setMsg('That file is too big to be a Fitness OS backup (over 10 MB), so nothing was changed.');
       return;
     }
+    let text;
     try {
-      const parsed = parseDataFile(await file.text(), content);
-      setPendingImport(parsed);
-      setMsg('');
-    } catch (err) {
-      setMsg(err instanceof ImportError ? err.message : 'Could not read that file.');
+      text = await file.text();
+    } catch {
+      setMsg('Could not read that file.');
+      return;
     }
+    await openText(text);
   };
 
   // BAK-1: the newest automatic backup goes through the same checks and
@@ -272,11 +297,12 @@ export default function Settings() {
         <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
-      <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={pick} />
+      <input ref={fileRef} type="file" accept="application/json,.json,.enc,application/octet-stream" hidden onChange={pick} />
       <input ref={csvRef} type="file" accept="text/csv,.csv,text/plain" hidden onChange={pickCsv} />
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your data stays on this phone, with no server and no account. Export a backup now and then; uninstalling the app deletes its data.</p>
 
-      <AutoBackup onRestore={restoreText} onMsg={setMsg} />
+      <AutoBackup onRestore={openText} onMsg={setMsg} />
+      {locked ? <UnlockSheet text={locked} onClose={() => setLocked(null)} onOpen={(plain) => { setLocked(null); restoreText(plain); }} /> : null}
 
       {pendingImport ? (
         <section className="card stack">

@@ -8,7 +8,8 @@ import { t } from '../lib/i18n.js';
 import { macroTargets } from '../lib/macros.js';
 import { mealsView, proteinPerMeal, servingsFor, setMealsView } from '../lib/mealsView.js';
 import { dayDrift } from '../lib/macroCheck.js';
-import { dayTotals, eatenMeals, mealDayFor, mealStart, pickOption, slotLabel, tickMeal } from '../lib/meals.js';
+import { dayTotals, eatenMeals, pickOption, slotLabel, tickMeal } from '../lib/meals.js';
+import { planDayFor, portionsOf } from '../lib/portions.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
@@ -104,7 +105,9 @@ function MealPlan() {
     setDate((d) => (d === shownToday.current ? today : d));
     shownToday.current = today;
   }, [today]);
-  const day = mealDayFor(date, N, mealStart(data, N));
+  // Portions fitted to the person's kcal target (FIT-1); 'far' when the
+  // plan can't be fitted, so it shows as written with a calm line.
+  const { day, fit } = planDayFor(date, data, N, today);
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   // Meals where something else was eaten count with their own numbers (UX-20).
   const custom = customMeals(data, date);
@@ -166,7 +169,8 @@ function MealPlan() {
           {t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
         </div>
       </details>
-      {dayDrift(totals, target).map((r) => (
+      {fit.state === 'far' ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
+      {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
         <div key={r.key} className="warn" role="note">
           {r.label} with these picks: {r.total} {r.unit}, {Math.round(Math.abs(r.diff) * 100)}% {r.over ? 'over' : 'under'} your {r.target} {r.unit} target.
           {day.is_refeed && r.key === 'kcal' && r.over ? ' It is a refeed day, so a little over is planned.' : r.key === 'protein' && !r.over ? ' Try the other option on a meal, or add a protein snack.' : ''}
@@ -222,12 +226,12 @@ function MealPlan() {
                   <Icon name="chev" className="icon chev" />
                 </summary>
                 <div className="meal-items">
-                  {[...(opt.items || []).reduce((acc, key) => acc.set(key, (acc.get(key) || 0) + 1), new Map())].map(([key, n]) => {
+                  {portionsOf(opt).map(([key, n]) => {
                     const m = itemMacros(key);
                     const nm = itemName(key);
                     return (
                       <div key={key} className="row between small">
-                        <span className="grow">{nm.charAt(0).toUpperCase() + nm.slice(1)}{n > 1 ? ` ×${n}` : ''}</span>
+                        <span className="grow">{nm.charAt(0).toUpperCase() + nm.slice(1)}{n !== 1 ? ` ×${n}` : ''}</span>
                         {m ? <span className="muted">{t('meals.itemMacros', { kcal: Math.round(m[0] * n), protein: Math.round(m[1] * n * 10) / 10 })}</span> : null}
                       </div>
                     );

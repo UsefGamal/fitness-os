@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import { bigFixture } from '../../e2e/bigFixture.mjs';
 import { autoState, backupDueNow, backupHealthy, backupName, backupStatus, backupText, dateRange, ERRORS, fakeFolder, isOurs, KEEP_DAILY, newestBackup, OURS, provesBackup, runBackup, toPrune, withAutoState } from './autoBackup.js';
+import { decryptWithPassphrase, isEncrypted, makeRecovery, newDataKey } from './backupCrypto.js';
 import { dataHash } from './dataCheck.js';
 import { parseDataFile, summarize, toDataFile } from './dataFile.js';
 import { addDays } from './dates.js';
@@ -74,10 +75,39 @@ test('folder revoked: an error to show, nothing written', async () => {
   assert.equal((await runBackup(thrown, yusuf(), content, { now: NOW })).last_error, 'folder_gone');
 });
 
-test('a cloud-synced folder is refused: no plain file leaves the phone', async () => {
+test('a cloud-synced folder without a key waits for the passphrase: no plain file leaves the phone', async () => {
   const folder = fakeFolder({}, { fault: 'synced' });
   const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true } });
-  assert.equal(state.last_error, 'synced_not_yet');
+  assert.equal(state.last_error, 'needs_passphrase');
+  assert.deepEqual(folder.files, {});
+  assert.equal(backupStatus(state, NOW).fix, 'passphrase');
+});
+
+test('a cloud-synced folder with the key: an encrypted, proven .json.enc and nothing readable', async () => {
+  const folder = fakeFolder({ 'holiday.jpg': 'x', 'fitness-os-backup-notes.txt': 'y' }, { fault: 'synced' });
+  const data = yusuf();
+  const { key, kid } = newDataKey();
+  const recovery = await makeRecovery(key, 'correct horse battery', { rounds: 1000 });
+  const state = await runBackup(folder, data, content, { now: NOW, state: { on: true }, keys: { key, kid, recovery } });
+  assert.equal(state.last_error, null);
+  assert.equal(state.last_name, 'fitness-os-backup-2026-11-13.json.enc');
+  const text = folder.files['fitness-os-backup-2026-11-13.json.enc'];
+  assert.ok(isEncrypted(text));
+  assert.ok(!text.includes('weight_kg') && !text.includes('log_date'), 'nothing readable');
+  assert.ok(!('fitness-os-backup-2026-11-13.json' in folder.files), 'no plain copy');
+  assert.equal(folder.files['holiday.jpg'], 'x');
+  // The recovery passphrase alone restores it (a new phone).
+  assert.ok(provesBackup(await decryptWithPassphrase(text, 'correct horse battery'), data, content));
+});
+
+test('a cloud-synced folder: a read-back that does not decrypt is thrown away', async () => {
+  const folder = fakeFolder({}, { fault: 'synced' });
+  const { key, kid } = newDataKey();
+  const recovery = await makeRecovery(key, 'correct horse battery', { rounds: 1000 });
+  const write = folder.write;
+  folder.write = (n, text) => write(n, text.replace(/"data":"(.)/, (m, c) => `"data":"${c === 'A' ? 'B' : 'A'}`));
+  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true }, keys: { key, kid, recovery } });
+  assert.equal(state.last_error, 'check_failed');
   assert.deepEqual(folder.files, {});
 });
 

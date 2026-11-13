@@ -10,6 +10,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsContract.Document;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
+import android.util.Base64;
 
 import androidx.activity.result.ActivityResult;
 
@@ -25,7 +28,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
 import java.util.regex.Pattern;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 /**
  * The automatic backup's folder (BAK-1). The person picks a folder once
@@ -38,6 +47,10 @@ import java.util.regex.Pattern;
  * - The grant (a content:// address) lives in this plugin's own
  *   SharedPreferences, never in the data file, and is left out of Android's
  *   backup (res/xml rules): a grant means nothing on another phone.
+ * - For a folder that syncs off the phone the backups are encrypted in JS
+ *   (lib/backupCrypto.js). Its data key is kept here, wrapped by an AES key
+ *   in the Android Keystore that never leaves the phone's secure hardware.
+ *   The same prefs file holds the wrapped key and the recovery header.
  */
 @CapacitorPlugin(name = "BackupFolder")
 public class BackupFolderPlugin extends Plugin {
@@ -48,6 +61,26 @@ public class BackupFolderPlugin extends Plugin {
     private static final int RW = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
     /** A backup is a few MB at most; refuse to read anything far bigger. */
     private static final int MAX_READ = 12 * 1024 * 1024;
+
+    private static final String KEY_WRAPPED = "data_key";
+    private static final String KEY_META = "data_key_meta";
+    private static final String ALIAS = "fitness-os-backup-key";
+
+    private static SecretKey keystoreKey(boolean create) throws Exception {
+        KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+        ks.load(null);
+        if (!ks.containsAlias(ALIAS)) {
+            if (!create) return null;
+            KeyGenerator kg = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+            kg.init(new KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .build());
+            kg.generateKey();
+        }
+        return (SecretKey) ks.getKey(ALIAS, null);
+    }
 
     private SharedPreferences prefs() {
         return getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -340,6 +373,75 @@ public class BackupFolderPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("write_failed", "write_failed");
         }
+    }
+
+    /** Keep the backup data key: { key (base64, 32 bytes), meta (the key id
+     * and recovery header, as JSON text) }. The key is stored only wrapped
+     * by the Keystore. */
+    @PluginMethod
+    public void storeKey(PluginCall call) {
+        String key = call.getString("key");
+        String meta = call.getString("meta");
+        if (key == null || meta == null) {
+            call.reject("no_key", "no_key");
+            return;
+        }
+        try {
+            byte[] raw = Base64.decode(key, Base64.NO_WRAP);
+            if (raw.length != 32) throw new IllegalArgumentException("size");
+            Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+            c.init(Cipher.ENCRYPT_MODE, keystoreKey(true));
+            byte[] iv = c.getIV();
+            byte[] ct = c.doFinal(raw);
+            String wrapped = Base64.encodeToString(iv, Base64.NO_WRAP) + ":" + Base64.encodeToString(ct, Base64.NO_WRAP);
+            // commit, not apply: the key must be on disk before the first encrypted backup.
+            if (!prefs().edit().putString(KEY_WRAPPED, wrapped).putString(KEY_META, meta).commit()) throw new java.io.IOException("prefs");
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("no_key", "no_key");
+        }
+    }
+
+    /** { key, meta }: the data key unwrapped by the Keystore, or both null
+     * when there is none or the Keystore key is gone (a reset or new phone). */
+    @PluginMethod
+    public void loadKey(PluginCall call) {
+        JSObject out = new JSObject();
+        out.put("key", null);
+        out.put("meta", null);
+        String wrapped = prefs().getString(KEY_WRAPPED, null);
+        String meta = prefs().getString(KEY_META, null);
+        if (wrapped == null || meta == null) {
+            call.resolve(out);
+            return;
+        }
+        try {
+            String[] parts = wrapped.split(":", 2);
+            SecretKey k = keystoreKey(false);
+            if (k == null || parts.length != 2) throw new IllegalStateException("gone");
+            Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+            c.init(Cipher.DECRYPT_MODE, k, new GCMParameterSpec(128, Base64.decode(parts[0], Base64.NO_WRAP)));
+            byte[] raw = c.doFinal(Base64.decode(parts[1], Base64.NO_WRAP));
+            out.put("key", Base64.encodeToString(raw, Base64.NO_WRAP));
+            out.put("meta", meta);
+        } catch (Exception e) {
+            // The wrapped key can't be opened here: the passphrase is needed.
+        }
+        call.resolve(out);
+    }
+
+    /** Forget the data key (turning backup off). The Keystore key goes too. */
+    @PluginMethod
+    public void forgetKey(PluginCall call) {
+        prefs().edit().remove(KEY_WRAPPED).remove(KEY_META).apply();
+        try {
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
+            ks.load(null);
+            if (ks.containsAlias(ALIAS)) ks.deleteEntry(ALIAS);
+        } catch (Exception ignored) {
+            // Nothing more to do.
+        }
+        call.resolve();
     }
 
     /** Give the grant back and forget the folder. Files stay where they are. */

@@ -12,6 +12,12 @@
 // store/autoBackup.js gives it the phone's folder; the tests give it
 // fakeFolder(). No file that is not the app's own is ever read, replaced
 // or deleted, and the folder grant itself never enters the data file.
+//
+// A folder that syncs off the phone gets an encrypted file (.json.enc,
+// lib/backupCrypto.js) and never a plain one. Its data key comes in as
+// `keys` ({ key, kid, recovery }) from the phone's Keystore; without it
+// the backup waits for the person to set a recovery passphrase.
+import { decryptWithKey, encryptBackup } from './backupCrypto.js';
 import { dataHash } from './dataCheck.js';
 import { parseDataFile, summarize, toDataFile } from './dataFile.js';
 import { todayISO, weekStart } from './dates.js';
@@ -27,10 +33,15 @@ export const KEEP_WEEKLY = 4;
 export const STALE_DAYS = 3;
 
 /** What can go wrong, in the order Settings explains them. */
-export const ERRORS = ['folder_gone', 'synced_not_yet', 'no_space', 'write_failed', 'check_failed'];
+export const ERRORS = ['folder_gone', 'needs_passphrase', 'synced_not_yet', 'no_space', 'write_failed', 'check_failed'];
 
 export function backupName(iso) {
   return `fitness-os-backup-${iso}.json`;
+}
+
+/** Today's file name: .json.enc in a folder that syncs off the phone. */
+export function backupFileName(iso, encrypted) {
+  return encrypted ? `${backupName(iso)}.enc` : backupName(iso);
 }
 
 export function isOurs(name) {
@@ -123,7 +134,7 @@ function codeOf(err, fallback) {
  * Order: write a .tmp, read it back, check it restores to the same data,
  * only then give it its real name, then prune. A failure at any step
  * leaves every earlier good backup in place. */
-export async function runBackup(folder, data, content, { now = new Date(), state = autoState(data) } = {}) {
+export async function runBackup(folder, data, content, { now = new Date(), state = autoState(data), keys = null } = {}) {
   const fail = (last_error, extra = {}) => ({ ...state, on: true, ...extra, last_error });
   let status;
   try {
@@ -133,21 +144,29 @@ export async function runBackup(folder, data, content, { now = new Date(), state
   }
   if (!status?.granted) return fail('folder_gone');
   const named = { folder: status.name || state.folder || null };
-  // A folder that syncs to a cloud gets no plain file: health data would
-  // leave the phone unencrypted. Encrypted backup comes later.
-  if (status.synced) return fail('synced_not_yet', named);
+  // A folder that syncs to a cloud never gets a plain file: health data
+  // would leave the phone readable. Without the data key, nothing is written.
+  const encrypted = Boolean(status.synced);
+  if (encrypted && !(keys?.key && keys.kid && keys.recovery)) return fail('needs_passphrase', named);
 
   const today = todayISO(now);
-  const name = backupName(today);
+  const name = backupFileName(today, encrypted);
   const tmp = `${name}.tmp`;
-  const text = backupText(data, now);
+  let text;
+  try {
+    text = encrypted ? await encryptBackup(backupText(data, now), keys.key, keys) : backupText(data, now);
+  } catch {
+    return fail('write_failed', named);
+  }
   try {
     await folder.write(tmp, text);
   } catch (err) {
     await folder.remove(tmp).catch(() => {});
     return fail(codeOf(err, 'write_failed'), named);
   }
-  const back = await folder.read(tmp).catch(() => null);
+  const read = await folder.read(tmp).catch(() => null);
+  // The encrypted file is proven by decrypting what was read back.
+  const back = encrypted && typeof read === 'string' ? await decryptWithKey(read, keys.key).catch(() => null) : read;
   if (typeof back !== 'string' || !provesBackup(back, data, content)) {
     await folder.remove(tmp).catch(() => {});
     return fail('check_failed', named);
@@ -191,7 +210,8 @@ export function fakeFolder(files = {}, { fault = null, name = 'Fitness OS', stor
   const self = {
     files,
     fault,
-    async status() { return { granted: self.fault !== 'revoked', name, synced: self.fault === 'synced' }; },
+    synced: false,
+    async status() { return { granted: self.fault !== 'revoked', name, synced: self.synced || self.fault === 'synced' }; },
     async list() { return Object.entries(load()).map(([n, text]) => ({ name: n, size: String(text).length, modified: 0 })); },
     async read(n) {
       const m = load();
@@ -217,11 +237,11 @@ export function fakeFolder(files = {}, { fault = null, name = 'Fitness OS', stor
 }
 
 /** What Settings says about the state: { tone, key, vars, fix }.
- * tone 'ok' | 'warn' | 'off'; fix is 'pick', 'retry' or null. */
+ * tone 'ok' | 'warn' | 'off'; fix is 'pick', 'passphrase', 'retry' or null. */
 export function backupStatus(state, now = new Date()) {
   if (!state?.on) return { tone: 'off', key: 'autoBackup.off', vars: {}, fix: null };
   if (state.last_error) {
-    const fix = state.last_error === 'folder_gone' || state.last_error === 'synced_not_yet' ? 'pick' : 'retry';
+    const fix = state.last_error === 'needs_passphrase' ? 'passphrase' : state.last_error === 'folder_gone' || state.last_error === 'synced_not_yet' ? 'pick' : 'retry';
     return { tone: 'warn', key: `autoBackup.error.${state.last_error}`, vars: {}, fix };
   }
   if (!state.last_checked_at) return { tone: 'warn', key: 'autoBackup.none', vars: {}, fix: 'retry' };

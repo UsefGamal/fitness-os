@@ -17,7 +17,8 @@ import { eveningDone, eveningOn } from './evening.js';
 import { weekStreaks } from './insights.js';
 import { macroTargets } from './macros.js';
 import { activePlan } from './plan.js';
-import { mealDayFor, mealStart, slotLabel } from './meals.js';
+import { slotLabel } from './meals.js';
+import { planDayFor, planFit } from './portions.js';
 import { programDayFor, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
 
@@ -55,6 +56,7 @@ export function widgetDays(data, content, today) {
   const showMeals = D.moduleOn(data, 'meals');
   const showWater = D.moduleOn(data, 'water');
   const protein = macroTargets(data, N, today).protein;
+  const fit = planFit(data, N, today);
 
   const out = [];
   for (let i = 0; i < WIDGET_DAYS; i += 1) {
@@ -63,7 +65,7 @@ export function widgetDays(data, content, today) {
     const done = D.workoutOn(data, date);
     const evening = eveningOn(data, date);
 
-    const day = mealDayFor(date, N, mealStart(data, N));
+    const { day } = planDayFor(date, data, N, today, fit);
     const meals = showMeals
       ? day.meals
         .map((m) => {
