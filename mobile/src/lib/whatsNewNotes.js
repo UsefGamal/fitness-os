@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '0.9.8',
+    items: [
+      { icon: 'barbell', text: 'Weight jumps fit the move: 1 kg for small moves, 2 kg for dumbbells, and never much more than a tenth of the load.' },
+      { icon: 'person', text: 'Push-ups, planks and other bodyweight moves grow by reps, then point you to a harder version.' },
+      { icon: 'user', text: 'Setup asks if your day is mostly sitting, on your feet or physical work, so your calories start closer to right.' },
+    ],
+  },
+  {
     version: '0.9.7',
     items: [
       { icon: 'bolt', text: 'Your streak now counts weeks, not days. A week is kept with all your sessions but one, so one missed day never breaks it.' },

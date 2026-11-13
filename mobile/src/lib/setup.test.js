@@ -5,7 +5,7 @@ import test from 'node:test';
 import { emptyData } from './data.js';
 import { macroTargets } from './macros.js';
 import { activeBlock } from './plan.js';
-import { bodyComplete, bodyErrors, finishSetup, needsSetup, pickRoutine, settleSetup, setupGoalDate, skipSetup } from './setup.js';
+import { activityFor, bodyComplete, bodyErrors, finishSetup, needsSetup, pickRoutine, settleSetup, setupGoalDate, skipSetup } from './setup.js';
 import { QUESTIONS, gateOn, kcalHidden } from './safety.js';
 import { content } from './testContent.js';
 
@@ -151,4 +151,26 @@ test('setup without the safety check is gated: maintenance calories, kcal hidden
   const s2 = skipSetup(emptyData(content), TODAY);
   assert.equal(gateOn(s2, 'protein_cap', TODAY), true);
   assert.equal(s2.safety.skipped, true);
+});
+
+// TRAIN-1: the job question picks the activity level.
+test('the job and training days pick the activity level', () => {
+  assert.deepEqual(['desk', 'feet', 'manual', undefined].map((j) => activityFor(j, 3)), ['light', 'light', 'moderate', 'light']);
+  assert.deepEqual(['desk', 'feet', 'manual', undefined].map((j) => activityFor(j, 4)), ['light', 'moderate', 'active', 'light']);
+  assert.equal(activityFor('manual', 5), 'active');
+  assert.equal(activityFor('nonsense', 5), 'light');
+});
+
+test('setup saves the job and its activity level; a desk job eats less than a manual one', () => {
+  const run = (job) => finishSetup(emptyData(content), content, { ...BODY, goal: 'maintain', where: 'gym', days: 4, experience: 'some', job, screening: ALL_NO }, TODAY);
+  const desk = run('desk');
+  assert.equal(desk.profile.activity_level, 'light');
+  assert.equal(desk.profile.job, 'desk');
+  const manual = run('manual');
+  assert.equal(manual.profile.activity_level, 'active');
+  assert.ok(macroTargets(desk, content.nutrition, TODAY).kcal < macroTargets(manual, content.nutrition, TODAY).kcal);
+  // Skipped: the careful guess, and no job is stored.
+  const skipped = run(undefined);
+  assert.equal(skipped.profile.activity_level, 'light');
+  assert.equal('job' in skipped.profile, false);
 });
