@@ -502,7 +502,7 @@ export default {
   'home.greet.evening': 'Good evening',
   'home.greetName': '{greet},',
   'home.settings': 'Settings',
-  'home.weightAria': 'Weight trend {trend} kg. Open your weigh-ins',
+  'home.weightOpen': 'Open your weigh-ins.',
   'home.changeKg': '{kg} kg',
   'home.changeNote': 'in the last {days} days',
   'home.weightTitle': 'Weight trend',

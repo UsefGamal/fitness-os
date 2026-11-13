@@ -19,7 +19,7 @@ function Img({ path, className, alt = '' }) {
     photoUrl(path).then((u) => live && setSrc(u), () => live && setSrc(''));
     return () => { live = false; };
   }, [path]);
-  if (src === '') return <span className="muted small">Missing</span>;
+  if (src === '') return <span className="muted small">Missing{alt ? <span className="sr-only">: {alt}</span> : null}</span>;
   return src ? <img src={src} className={className} alt={alt} /> : null;
 }
 
@@ -161,7 +161,7 @@ function PhotosBody({ hasLock }) {
           <div className="muted small" style={{ marginBottom: 8 }}>{formatDate(d.date)}</div>
           <div className="photo-row">
             {POSES.map(([k, l]) => (d.photos[k] ? (
-              <button key={k} type="button" className="photo-cell" aria-label={`${l} photo, ${d.date}`} onClick={() => setViewing(d.photos[k])}><Img path={d.photos[k].file} /></button>
+              <button key={k} type="button" className="photo-cell" onClick={() => setViewing(d.photos[k])}><Img path={d.photos[k].file} alt={`${l} photo, ${d.date}`} /></button>
             ) : <div key={k} className="photo-cell">{l}</div>))}
           </div>
         </section>
