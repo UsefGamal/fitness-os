@@ -19,7 +19,7 @@ export function HowTo({ entry, target = null }) {
   const main = target ? target.main : musclesOf(entry);
   const helpers = target ? target.helpers : helpersOf(entry);
   const angle = target ? target.angle : angleOf(entry);
-  const { data } = useData();
+  const data = useData((s) => s.data);
   const advanced = isAdvanced(entry.level, trainingSettings(data).level);
   return (
     <>
@@ -48,7 +48,8 @@ export function HowTo({ entry, target = null }) {
 export default function CatalogueDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const { catalogue, error } = useCatalogue();
   const back = <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>;
   if (error) return <div className="page">{back}<div className="card empty">The exercise photos aren't in this build.</div></div>;

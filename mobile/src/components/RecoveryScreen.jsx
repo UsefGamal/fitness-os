@@ -11,7 +11,8 @@ import { listSnapshots, readSnapshot } from '../store/snapshots.js';
 import { useData } from '../store/useData.js';
 
 export default function RecoveryScreen({ kind }) {
-  const { rawCopies, recoverFrom } = useData();
+  const rawCopies = useData((s) => s.rawCopies);
+  const recoverFrom = useData((s) => s.recoverFrom);
   const [snaps, setSnaps] = useState([]);
   const [msg, setMsg] = useState('');
   useEffect(() => { listSnapshots().then((s) => setSnaps(s.slice(0, 3))).catch(() => {}); }, []);

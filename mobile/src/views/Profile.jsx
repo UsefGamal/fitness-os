@@ -22,7 +22,8 @@ const ACTIVITY_LABELS = {
 const num = (v) => (v === '' || v == null ? null : Number(v));
 
 export default function Profile() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const navigate = useNavigate();
   const today = useToday();
   const [p, setP] = useState(() => ({ gender: '', activity_level: 'moderate', ...profileOf(data) }));

@@ -135,6 +135,8 @@ export default {
   'records.note': 'Done is the heaviest you lifted for at least that many reps. Estimated comes from your best set of 12 reps or fewer. Warm-ups never count.',
   'settings.touchSounds': 'Touch sounds',
   'settings.touchSoundsNote': "A soft tick for each set, meal and water, a chime for a saved workout or a full day of meals, and a bigger one only for a real new best. Your phone's silent mode always wins.",
+  'settings.vibration': 'Vibration',
+  'settings.vibrationNote': 'Buzz at rest done, new records and saved workouts. Strong makes each logged set and meal easy to feel on any phone.',
   'settings.profile': 'Profile and macro targets',
   'settings.quests': 'Quests',
   'settings.data': 'Your data',

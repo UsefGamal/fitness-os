@@ -41,7 +41,7 @@ function Compare({ pair }) {
  * away from Photos, locks it again; the app's own camera and file picker
  * don't count. A forgotten lock never deletes anything. */
 export default function Photos() {
-  const { data } = useData();
+  const data = useData((s) => s.data);
   const lockOn = photoLockOn(data);
   const [hasLock, setHasLock] = useState(undefined);
   const [open, setOpen] = useState(() => isPhotosOpen());
@@ -95,7 +95,8 @@ function PhotosLocked({ onUnlock, asking }) {
 /** Progress photos: front, side and back, kept only on this phone. */
 function PhotosBody({ hasLock }) {
   const navigate = useNavigate();
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const fileRef = useRef(null);
   const [pose, setPose] = useState('front');
   const [confirming, setConfirming] = useState(null);

@@ -39,7 +39,8 @@ function source(src, data) {
 export default function FollowAlong() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const { catalogue } = useCatalogue();
   const src = source(params.get('src'), data);
   const steps = useMemo(() => (src ? followSteps(src.lines) : []), [src?.title]); // eslint-disable-line react-hooks/exhaustive-deps

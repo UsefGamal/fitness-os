@@ -11,7 +11,7 @@ import { longDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { MODULES } from '../lib/data.js';
 import Stepper from '../components/Stepper.jsx';
-import { REWARD_LEVELS } from '../lib/rewards.js';
+import { HAPTIC_LEVELS, hapticLevel, REWARD_LEVELS } from '../lib/rewards.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
 import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
@@ -59,7 +59,9 @@ function lastBackupText(data) {
 }
 
 export default function Settings() {
-  const { data, update, replaceAll } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
+  const replaceAll = useData((s) => s.replaceAll);
   const navigate = useNavigate();
   const { section } = useParams();
   // P14-08: the code the release notes list, read from Android itself.
@@ -559,7 +561,9 @@ function TrainingSettings({ data, update }) {
         ) : null}
         <Choice label={tr('settings.touchSounds')} value={t.reward_sounds} onChange={(v) => set({ reward_sounds: v })} options={Object.entries(REWARD_LEVELS)} />
         <p className="muted small" style={{ margin: '0 16px 8px' }}>{tr('settings.touchSoundsNote')}</p>
-        <Toggle on={t.vibrate} onClick={() => set({ vibrate: !t.vibrate })} title="Vibrate" note="Buzz at rest done, new records and saved workouts" />
+        {/* The old Vibrate switch stays in step, for an older app reading this backup. */}
+        <Choice label={tr('settings.vibration')} value={hapticLevel(t)} onChange={(v) => set({ haptics: v, vibrate: v !== 'off' })} options={Object.entries(HAPTIC_LEVELS)} />
+        <p className="muted small" style={{ margin: '0 16px 8px' }}>{tr('settings.vibrationNote')}</p>
       </div>
     </>
   );

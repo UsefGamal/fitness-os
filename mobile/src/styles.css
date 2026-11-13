@@ -1,5 +1,5 @@
 /* openGym-style look, our own CSS: black page, grey cards, green accent,
-   system font, inset grouped lists, hairlines, blurred bottom bar,
+   system font, inset grouped lists, hairlines, solid bottom bar,
    44px targets, 16px+ inputs. Phone first (360-412px). */
 :root {
   --bg: #000;
@@ -104,10 +104,14 @@ label.field > span { display: block; color: var(--muted); font-size: 14px; margi
 label.field > span.field-error { color: var(--danger); font-size: 13px; margin: 6px 0 0 4px; }
 label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--danger); }
 
-.stepper { display: flex; align-items: stretch; gap: 6px; }
-.stepper button { width: 52px; min-width: 44px; flex: 0 0 auto; min-height: 52px; border: 0; border-radius: 12px; background: var(--surface2); color: var(--text); font-size: 24px; font-weight: 500; }
+.stepper { display: flex; align-items: stretch; gap: 4px; }
+.stepper button { width: 48px; min-width: 48px; flex: none; min-height: 52px; border: 0; border-radius: 12px; background: var(--surface2); color: var(--text); font-size: 24px; font-weight: 500; }
+/* Weight and reps side by side while both fit with 48 px buttons and room
+   for "102.5"; otherwise one under the other, never squeezed (FEEL-1). */
+.stepper-pair { flex-wrap: wrap; }
+.stepper-pair > .grow { flex: 1 1 calc(104px + 3.5rem); }
 .stepper button:active { transform: scale(0.92); color: var(--accent); }
-.stepper input { min-width: 0; flex: 1 1 auto; text-align: center; font-size: 22px; font-weight: 600; min-height: 52px; }
+.stepper input { min-width: 0; width: 0; flex: 1 1 auto; text-align: center; font-size: 22px; font-weight: 600; min-height: 52px; }
 
 .set-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 10px; align-items: center; min-height: 44px; }
 .set-row + .set-row { border-top: var(--hair); }
@@ -130,7 +134,7 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .pair { color: var(--accent); font-weight: 700; margin-inline-end: 6px; }
 
 .timer { position: fixed; left: 10px; right: 10px; bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30; max-width: 540px; margin: 0 auto;
-  background: rgba(44, 44, 46, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+  background: rgb(44, 44, 46); border-radius: 20px; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
 /* Away from the workout: a solid pill, no blur, at most 56 px (P14-16). */
 .timer-pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar) + var(--sab) + 8px); z-index: 30;
   height: 52px; max-width: calc(100vw - 32px); display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 26px;
@@ -191,7 +195,7 @@ label.field input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--dan
 .interval-phase.rest, .interval-phase.setrest { color: var(--warn); }
 
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr);
-  padding-bottom: var(--sab); background: rgba(22, 22, 24, 0.9); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: var(--hair); }
+  padding-bottom: var(--sab); background: rgb(22, 22, 24); border-top: var(--hair); }
 .tab { height: var(--tabbar); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 11px; font-weight: 500; }
 .tab svg { width: 26px; height: 26px; }
 .tab.active { color: var(--accent); }

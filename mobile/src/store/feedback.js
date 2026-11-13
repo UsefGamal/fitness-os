@@ -12,7 +12,7 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
 import { restQuiet } from '../lib/motion.js';
 import { todayISO } from '../lib/dates.js';
-import { daysTickingMeals, isReward, rewardScale } from '../lib/rewards.js';
+import { daysTickingMeals, hapticFor, hapticLevel, isReward, rewardScale } from '../lib/rewards.js';
 import { trainingSettings, VOLUMES } from '../lib/training.js';
 import { isNative, RestTimer } from './native.js';
 import { useData } from './useData.js';
@@ -71,11 +71,19 @@ const HAPTIC = {
   },
 };
 
-function buzz(event) {
+/** Buzz for an event at a vibration level (Settings > Training: Off,
+ * Light, Strong; lib/rewards.js hapticFor). */
+function buzz(event, level = 'light') {
+  const how = hapticFor(event, level);
+  if (!how) return;
   if (isNative()) {
-    if (HAPTIC[event]) Promise.resolve(HAPTIC[event]()).catch(() => {});
-  } else if (VIBRATION[event] && globalThis.navigator?.vibrate) {
-    navigator.vibrate(VIBRATION[event]);
+    if (how !== 'default') {
+      Haptics.impact({ style: ImpactStyle[how.impact] }).catch(() => {});
+      if (how.vibrateMs) Haptics.vibrate({ duration: how.vibrateMs }).catch(() => {});
+    } else if (HAPTIC[event]) Promise.resolve(HAPTIC[event]()).catch(() => {});
+  } else if (globalThis.navigator?.vibrate) {
+    const pattern = how !== 'default' ? [how.vibrateMs || 20] : VIBRATION[event];
+    if (pattern) navigator.vibrate(pattern);
   }
 }
 
@@ -144,22 +152,23 @@ export function feedback(event, { force = false, inShade = false } = {}) {
     if (scale > 0 && SOUNDS[event] && !quiet) {
       sound(SOUNDS[event], { volume: (VOLUMES[s.volume] ?? VOLUMES.medium) * scale, soft: s.sound_set === 'soft' });
     }
-    if (s.vibrate) buzz(event);
+    buzz(event, hapticLevel(s));
     return;
   }
   const shadeDone = event === 'restDone' && isNative() && inShade;
   // On a silenced phone the sound is skipped (SA-01), so it buzzes instead,
   // even with vibration off in Settings: a cue never goes missing.
-  const silenced = () => { if (!s.vibrate) buzz(event); };
+  const level = hapticLevel(s);
+  const silenced = () => { if (level === 'off') buzz(event); };
   if ((s.sounds || force) && SOUNDS[event] && !shadeDone && !quiet) {
     sound(SOUNDS[event], { volume: VOLUMES[s.volume] ?? VOLUMES.medium, soft: s.sound_set === 'soft' }, silenced);
   }
-  if (s.vibrate && !shadeDone) buzz(event);
+  if (!shadeDone) buzz(event, level);
 }
 
 /** A light tap for steppers and chips (haptics only, no sound). */
 export function tap() {
-  if (trainingSettings(useData.getState().data).vibrate) buzz('tap');
+  buzz('tap', hapticLevel(trainingSettings(useData.getState().data)));
 }
 
 /** Browsers only allow sound after a tap: call this from the first one. */

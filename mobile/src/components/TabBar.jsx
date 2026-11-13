@@ -16,10 +16,12 @@ const TABS = [
 ];
 
 export default function TabBar() {
-  const data = useData((s) => s.data);
+  // Only the one switch it shows, so a save elsewhere doesn't redraw it.
+  const mealsOn = useData((s) => moduleOn(s.data, 'meals'));
   // Meals is this app's extra tab; with the Meals module off, openGym's
   // Library takes its place so there are always five.
-  const tabs = TABS.filter((tab) => (tab.module ? moduleOn(data, tab.module) : tab.onlyWhenOff ? !moduleOn(data, tab.onlyWhenOff) : true));
+  const on = (m) => (m === 'meals' ? mealsOn : true);
+  const tabs = TABS.filter((tab) => (tab.module ? on(tab.module) : tab.onlyWhenOff ? !on(tab.onlyWhenOff) : true));
   return (
     <nav className="tabbar" aria-label={t('nav.main')}>
       {tabs.map((tab) => (

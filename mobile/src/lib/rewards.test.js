@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { daysTickingMeals, isReward, mealTickEvent, rewardScale, tierFor, TIERS } from './rewards.js';
+import { daysTickingMeals, hapticFor, hapticLevel, isReward, mealTickEvent, rewardScale, tierFor, TIERS } from './rewards.js';
 
 test('every reward event has exactly one tier', () => {
   for (const tier of Object.values(TIERS)) assert.ok(['tick', 'done', 'rare'].includes(tier));
@@ -38,4 +38,21 @@ test('days ticking meals counts from the first ticked meal only', () => {
   ] };
   assert.equal(daysTickingMeals(data, '2026-11-10'), 7);
   assert.equal(daysTickingMeals({ meal_logs: [] }, '2026-11-10'), 0);
+});
+
+test('vibration level: set, else follows the old Vibrate switch', () => {
+  assert.equal(hapticLevel({ haptics: 'strong', vibrate: false }), 'strong');
+  assert.equal(hapticLevel({ vibrate: true }), 'light');
+  assert.equal(hapticLevel({ vibrate: false }), 'off');
+  assert.equal(hapticLevel({}), 'light');
+  assert.equal(hapticLevel(undefined), 'light');
+  assert.equal(hapticLevel({ haptics: 'loud' }), 'light');
+});
+
+test('Strong makes set and meal ticks heavy; only a set adds a buzz; Off sends nothing', () => {
+  assert.deepEqual(hapticFor('set', 'strong'), { impact: 'Heavy', vibrateMs: 30 });
+  assert.deepEqual(hapticFor('meal', 'strong'), { impact: 'Heavy', vibrateMs: 0 });
+  assert.equal(hapticFor('restDone', 'strong'), 'default');
+  assert.equal(hapticFor('set', 'light'), 'default');
+  for (const e of ['set', 'meal', 'pr', 'tap', 'restDone']) assert.equal(hapticFor(e, 'off'), null);
 });

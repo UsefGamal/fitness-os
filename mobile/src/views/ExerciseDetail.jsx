@@ -22,7 +22,7 @@ import { HowTo, labels } from './CatalogueDetail.jsx';
 export default function ExerciseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data } = useData();
+  const data = useData((s) => s.data);
   const { catalogue } = useCatalogue();
   const ex = data.exercises.find((e) => e.id === Number(id));
   if (!ex) return <div className="page"><div className="card empty">Exercise not found.</div></div>;

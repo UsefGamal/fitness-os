@@ -27,12 +27,12 @@ const N = content.nutrition;
 
 /** Meals opens on the simple targets view or the full plan (E3-S9). */
 export default function Meals() {
-  const { data } = useData();
+  const data = useData((s) => s.data);
   return mealsView(data, N) === 'targets' ? <Targets /> : <MealPlan />;
 }
 
 function SwitchView({ to }) {
-  const { update } = useData();
+  const update = useData((s) => s.update);
   return (
     <button type="button" className="btn ghost" style={{ marginTop: 14 }} onClick={() => update((d) => setMealsView(d, to))}>
       {t(to === 'plan' ? 'mealsSimple.toPlan' : 'mealsSimple.toTargets')}
@@ -42,7 +42,8 @@ function SwitchView({ to }) {
 
 /** Targets only: protein (and kcal unless hidden), water, everyday foods. */
 function Targets() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const today = useToday();
   const target = macroTargets(data, N, today);
   const S = N.simple;
@@ -95,7 +96,8 @@ function Targets() {
 }
 
 function MealPlan() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const today = useToday();
   const [date, setDate] = useState(today);
   // Looking at today when midnight passes: follow the new day.

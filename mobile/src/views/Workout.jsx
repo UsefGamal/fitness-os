@@ -84,7 +84,7 @@ function IntervalsLink() {
 }
 
 function Picker({ onPick }) {
-  const { data } = useData();
+  const data = useData((s) => s.data);
   return (
     <>
       <IntervalsLink />
@@ -102,7 +102,10 @@ function Picker({ onPick }) {
 }
 
 export default function Workout() {
-  const { data, update, activeWorkoutId, setActiveWorkout } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
+  const activeWorkoutId = useData((s) => s.activeWorkoutId);
+  const setActiveWorkout = useData((s) => s.setActiveWorkout);
   const timer = useTimer();
   const { catalogue } = useCatalogue();
   const navigate = useNavigate();
@@ -495,7 +498,7 @@ export default function Workout() {
               ) : null}
               {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
               {target?.kind === 'harder' && sets.length === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
-              <div className="row" style={{ alignItems: 'flex-end' }}>
+              <div className="row stepper-pair" style={{ alignItems: 'flex-end' }}>
                 <div className="grow"><Stepper label={t('workout.kgLabel')} value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
                 <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
               </div>

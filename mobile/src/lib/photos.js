@@ -40,3 +40,24 @@ export function fitSize(w, h, max = 1280) {
   const s = Math.min(1, max / Math.max(w, h));
   return { width: Math.round(w * s), height: Math.round(h * s) };
 }
+
+/** Photos kept decoded in memory at once (FEEL-1: 3 GB phones). */
+export const PHOTO_CACHE_MAX = 6;
+
+/** Read from a small most-recently-used cache: a hit moves to the newest
+ * end. Returns undefined on a miss. */
+export function cacheGet(cache, key) {
+  if (!cache.has(key)) return undefined;
+  const value = cache.get(key);
+  cache.delete(key);
+  cache.set(key, value);
+  return value;
+}
+
+/** Add to the cache, dropping the oldest entries past `max`. */
+export function cachePut(cache, key, value, max = PHOTO_CACHE_MAX) {
+  cache.delete(key);
+  cache.set(key, value);
+  while (cache.size > max) cache.delete(cache.keys().next().value);
+  return cache;
+}

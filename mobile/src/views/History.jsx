@@ -31,7 +31,10 @@ function SetEditor({ set, onSave, onCancel, onDelete }) {
 
 export default function History() {
   const { id } = useParams();
-  const { data, update, activeWorkoutId, setActiveWorkout } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
+  const activeWorkoutId = useData((s) => s.activeWorkoutId);
+  const setActiveWorkout = useData((s) => s.setActiveWorkout);
   const navigate = useNavigate();
   const justFinished = Boolean(useLocation().state?.finished);
   const [editing, setEditing] = useState(null);

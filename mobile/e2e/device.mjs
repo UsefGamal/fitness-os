@@ -2,6 +2,9 @@
 //   setup      a new phone opens on first-time setup, in both directions,
 //              with no sideways scroll and no page errors
 //   speed      a 3-year data file: Home shows in under 2 s at 6x slower CPU
+//   set-log    the same file: a logged set shows in under 100 ms at 6x
+//              slower CPU with no task over 50 ms, and Strong vibration
+//              buzzes (FEEL-1)
 //   midnight   Home moves to the new day at midnight, with the app open
 //   fake-fs    the file mirror, in a build with a fake file system:
 //              a newer file copy wins, a broken localStorage copy recovers
@@ -23,6 +26,9 @@ const KEY = 'fitness-os-data-v1';
 const FS_KEY = 'fitness-os-fake-fs';
 const TZ = 'Africa/Cairo';
 const HOME_BUDGET_MS = 2000;
+// FEEL-1: tap to the new set row, and the longest main-thread task, at 6x.
+const SET_BUDGET_MS = 100;
+const TASK_BUDGET_MS = 50;
 // Friday 6 Nov 2026, 09:00 in Cairo, like the screen harness.
 const NOW = new Date('2026-11-06T07:00:00Z');
 
@@ -96,6 +102,68 @@ async function speed(browser) {
   await page.locator(HOME_READY).first().waitFor({ timeout: 20000 });
   const ms = Date.now() - t0;
   check('speed: Home with 3 years of data, 6x slower CPU', ms < HOME_BUDGET_MS && !errors.length, `${ms} ms, budget ${HOME_BUDGET_MS}${errors.length ? `; ${errors.join('; ')}` : ''}`);
+  await ctx.close();
+}
+
+async function setLog(browser) {
+  const base = bigFixture('2026-11-06', 3);
+  const data = JSON.stringify({ ...base, settings: { ...base.settings, training: { ...base.settings?.training, haptics: 'strong' } } });
+  const { ctx, page, errors } = await context(browser, { store: { [KEY]: data } });
+  // The browser build buzzes through navigator.vibrate: record the calls.
+  await ctx.addInitScript(() => {
+    window.__buzz = [];
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: (p) => { window.__buzz.push(p); return true; } });
+  });
+  await page.goto(`${URL0}#/workout`);
+  await page.addStyleTag({ content: '.fanfare,.intro,.toast{display:none!important}' });
+  await page.getByRole('button', { name: /^Start / }).first().click({ timeout: 20000 });
+  const weight = page.getByRole('spinbutton', { name: 'Weight (kg)', exact: true });
+  // Let the prefill settle first, or it can overwrite the typed weight.
+  await page.waitForTimeout(1500);
+  await weight.fill('20');
+  await page.waitForTimeout(500);
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+  // Measured in the page: the tap, then the frame after the new row lands.
+  const r = await page.evaluate(() => new Promise((resolve) => {
+    const button = document.querySelector('.ex-card.current .log-btn');
+    // The session's "n/N sets" line: after a set in a superset, the card
+    // moves on to the partner, so its own rows aren't a reliable signal.
+    const rows = () => {
+      const line = [...document.querySelectorAll('.muted.small')].find((e) => /\d+\/\d+ sets/.test(e.textContent));
+      return line ? Number(line.textContent.match(/(\d+)\/\d+ sets/)[1]) : -1;
+    };
+    const before = rows();
+    const tasks = [];
+    const obs = new PerformanceObserver((list) => { tasks.push(...list.getEntries()); });
+    obs.observe({ type: 'longtask' });
+    window.__buzz.length = 0;
+    const t0 = performance.now();
+    // Long tasks from the tap to the frame after the row: the batched disk
+    // write comes 400 ms later on purpose (store/useData.js) and is not
+    // part of the tap.
+    const done = () => requestAnimationFrame(() => {
+      const ms = performance.now() - t0;
+      // Long tasks are reported late: wait a little, then keep only those
+      // that started before the row showed.
+      setTimeout(() => {
+        tasks.push(...obs.takeRecords());
+        obs.disconnect();
+        const inTap = tasks.filter((e) => e.startTime <= t0 + ms).reduce((m, e) => Math.max(m, e.duration), 0);
+        resolve({ ms: Math.round(ms), longest: Math.round(inTap), buzz: window.__buzz.slice() });
+      }, 150);
+    });
+    const mo = new MutationObserver(() => { if (rows() > before) { mo.disconnect(); done(); } });
+    mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+    // Never hang the run: a set that doesn't show in 5 s is a failure.
+    setTimeout(() => { mo.disconnect(); obs.disconnect(); resolve({ ms: 99999, longest: Math.round(tasks.reduce((m, e) => Math.max(m, e.duration), 0)), buzz: window.__buzz.slice(), stuck: `${before} rows, button ${button.disabled ? 'disabled' : 'enabled'}` }); }, 5000);
+    button.click();
+  }));
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  console.log(`     set log at 6x: ${r.ms} ms to the row, longest task ${r.longest} ms${r.stuck ? ` (${r.stuck})` : ''}`);
+  check('set-log: a logged set shows in under 100 ms at 6x slower CPU', r.ms < SET_BUDGET_MS && !errors.length, `${r.ms} ms, budget ${SET_BUDGET_MS}${errors.length ? `; ${errors.join('; ')}` : ''}`);
+  check('set-log: no main-thread task over 50 ms while logging', r.longest < TASK_BUDGET_MS, `${r.longest} ms`);
+  check('set-log: Strong vibration buzzes 30 ms for a set', r.buzz.some((p) => JSON.stringify(p) === '[30]'), JSON.stringify(r.buzz));
   await ctx.close();
 }
 
@@ -242,6 +310,7 @@ const browser = await chromium.launch();
 try {
   await setupStates(browser);
   await speed(browser);
+  await setLog(browser);
   await midnight(browser);
   await fakeFs(browser);
   await autoBackup(browser);

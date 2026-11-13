@@ -13,7 +13,8 @@ import Catalogue from './Catalogue.jsx';
 export const MUSCLES = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 
 export default function Library() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const [q, setQ] = useState('');
   const [muscle, setMuscle] = useState(null);
   const query = useDeferredValue(q); // typing stays instant while the list catches up

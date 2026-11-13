@@ -7,7 +7,7 @@ import { useData } from '../store/useData.js';
 const TYPE = { gym: 'Gym', home: 'Home session', recovery: 'Recovery', cardio: 'Cardio', padel: 'Padel' };
 
 export default function HistoryList() {
-  const { data } = useData();
+  const data = useData((s) => s.data);
   const workouts = [...data.workouts].sort((a, b) => (a.log_date === b.log_date ? b.id - a.id : a.log_date < b.log_date ? 1 : -1));
   const months = [];
   for (const w of workouts) {
