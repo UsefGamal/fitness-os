@@ -122,6 +122,9 @@ export const STATES = [
       await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
     },
   },
+  { name: 'monday week on Plan', route: '/plan', data: (d) => ({ ...d, profile: { ...d.profile, week_start: 'mon' } }) },
+  { name: 'time varies on Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, times: { ...d.settings?.times, session_varies: true } } }) },
+  { name: 'time varies: settings', route: '/settings/times', data: (d) => ({ ...d, settings: { ...d.settings, times: { ...d.settings?.times, session_varies: true } } }), check: (p) => p.getByText(en['times.varies']).first().waitFor() },
   { name: 'ramadan: Home', route: '/', data: fasting, check: (p) => p.getByText(en['ramadan.chip']).first().waitFor() },
   { name: 'ramadan: Meals', route: '/meals', data: fasting, act: (p) => toFullMeals(p), check: (p) => p.getByText(en['ramadan.meal.breakfast']).first().waitFor() },
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },

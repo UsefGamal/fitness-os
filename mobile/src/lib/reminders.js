@@ -37,7 +37,7 @@ export function plannedReminders(today, content, now = new Date(), moves = [], e
   const when = (time) => (lead ? t('remind.inMin', { time, min: lead }) : t('remind.now', { time }));
   for (let i = 0; i < DAYS_AHEAD; i += 1) {
     const day = addDays(today, i);
-    if (times.remind_workouts !== false && sessionKeyOn(day, training, moves) !== 'rest' && !done.workouts?.has(day)) {
+    if (times.remind_workouts !== false && !times.session_varies && sessionKeyOn(day, training, moves) !== 'rest' && !done.workouts?.has(day)) {
       const session = programDayFor(day, training, moves);
       if (session) out.push({
         id: 1000 + i,

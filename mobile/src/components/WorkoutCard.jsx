@@ -41,7 +41,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
           <div className="session-icon rest"><Icon name="moon" /></div>
           <div className="grow">
             <div className="session-name">{t('home.restToday')}</div>
-            <div className="session-sub">{t('home.restNext', { label: next.label })} · {t('home.nextOn', { day: longWeekday(next.onDate), time })}</div>
+            <div className="session-sub">{t('home.restNext', { label: next.label })} · {(time ? t('home.nextOn', { day: longWeekday(next.onDate), time }) : longWeekday(next.onDate))}</div>
           </div>
           {readyChip}
         </div>
@@ -58,7 +58,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
         <div className="session-icon"><Icon name="dumbbell" /></div>
         <div className="grow">
           <div className="session-name">{next.label}</div>
-          <div className="session-sub">{t('home.todayAt', { time })}{changed ? ` · ${t('week.changed')}` : ''}</div>
+          <div className="session-sub">{time ? t('home.todayAt', { time }) : t('home.today')}{changed ? ` · ${t('week.changed')}` : ''}</div>
           {starter && !todays?.finished_at ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
         </div>
         {!todays ? <button type="button" className="btn ghost small" onClick={onChange}>{t('home.change')}</button> : null}

@@ -24,6 +24,7 @@ import { slotLabel } from './meals.js';
 import { planDayFor, planFit } from './portions.js';
 import { programDayFor, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
+import { sessionAt } from './times.js';
 
 export const WIDGET_DAYS = 7;
 
@@ -85,7 +86,7 @@ export function widgetDays(data, content, today) {
     if (showMeals) stats.push(`Protein ${eaten}/${protein} g`);
     if (showWater) stats.push(`Water ${(D.waterOn(data, date) / 1000).toFixed(1)}/${D.waterGoal(data) / 1000} L`);
 
-    const week = weekView(date, T, moves).map((w) => ({
+    const week = weekView(date, T, moves, data).map((w) => ({
       d: shortWeekday(w.date)[0],
       s: trained.has(w.date) ? 'done' : w.key === 'rest' || w.date < date ? 'rest' : 'train',
       today: w.date === date,
@@ -103,10 +104,10 @@ export function widgetDays(data, content, today) {
       !next
         ? { ...base, kicker: 'Rest day', title: 'No session this week', subtitle: 'Rest and recover', route: 'plan' }
         : next.isRestToday
-        ? { ...base, kicker: 'Rest day', title: `Next: ${next.label}`, subtitle: `${longWeekday(next.onDate)} at ${times.session_time}`, route: 'plan' }
+        ? { ...base, kicker: 'Rest day', title: `Next: ${next.label}`, subtitle: sessionAt(times) ? `${longWeekday(next.onDate)} at ${times.session_time}` : longWeekday(next.onDate), route: 'plan' }
         : {
             ...base,
-            kicker: done?.finished_at ? 'Done today ✓' : `Today · ${times.session_time}`,
+            kicker: done?.finished_at ? 'Done today ✓' : sessionAt(times) ? `Today · ${times.session_time}` : 'Today',
             title: next.label,
             subtitle: next.focus,
             route: done?.finished_at ? 'plan' : 'workout',

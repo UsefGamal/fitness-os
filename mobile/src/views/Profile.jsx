@@ -31,7 +31,7 @@ export default function Profile() {
   const set = (k) => (e) => { setP({ ...p, [k]: e.target.value }); setSaved(false); };
   // Picking the job sets the activity level from it and this week's
   // training days (TRAIN-1); Activity can still be changed by hand after.
-  const trainingDays = weekView(today, activePlan(data, content), data.session_moves || []).filter((w) => w.key !== 'rest').length;
+  const trainingDays = weekView(today, activePlan(data, content), data.session_moves || [], data).filter((w) => w.key !== 'rest').length;
   const setJob = (e) => {
     const job = JOBS.includes(e.target.value) ? e.target.value : null;
     setP({ ...p, job, ...(job ? { activity_level: activityFor(job, trainingDays) } : {}) });

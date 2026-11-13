@@ -13,7 +13,7 @@ export function weekText(days, { title = 'My training week', time = '07:00', eve
       lines.push(`${longWeekday(date)}: rest${evening ? ` · ${evening.label} at ${eveningTime}` : ''}`, '');
       continue;
     }
-    lines.push(`${longWeekday(date)}: ${day.label} at ${time}${evening ? ` · ${evening.label} at ${eveningTime}` : ''}`);
+    lines.push(`${longWeekday(date)}: ${day.label}${time ? ` at ${time}` : ''}${evening ? ` · ${evening.label} at ${eveningTime}` : ''}`);
     for (const ex of day.exercises) lines.push(`  • ${ex.name}: ${ex.sets} × ${ex.reps}${ex.rest ? `, rest ${ex.rest}` : ''}${ex.rir ? `, RIR ${ex.rir}` : ''}`);
     lines.push('');
   }
@@ -32,7 +32,7 @@ export function weekHtml(days, { title = 'My training week', time = '07:00', eve
       const img = photoOf(ex.name);
       return `<tr><td class="ph">${img ? `<img src="${esc(img)}" alt="">` : ''}</td><td>${esc(ex.name)}</td><td>${esc(ex.sets)} × ${esc(ex.reps)}</td><td>${esc(ex.rest || '')}</td><td>${esc(ex.rir || '')}</td></tr>`;
     }).join('');
-    return `<section><h2>${esc(longWeekday(date))} <small>${esc(day.label)} · ${esc(time)}</small>${night}</h2><table><thead><tr><th></th><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th>RIR</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    return `<section><h2>${esc(longWeekday(date))} <small>${esc(day.label)}${time ? ` · ${esc(time)}` : ''}</small>${night}</h2><table><thead><tr><th></th><th>Exercise</th><th>Sets × reps</th><th>Rest</th><th>RIR</th></tr></thead><tbody>${rows}</tbody></table></section>`;
   }).join('');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
 <style>
