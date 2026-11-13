@@ -42,4 +42,6 @@ test('the literal lint counts visible text, not code or comments', () => {
   assert.equal(countLiterals('// <b>Comment only</b>\n/* <i>Also</i> */'), 0);
   assert.equal(countLiterals('const a = b > c && d < e;'), 0);
   assert.equal(countLiterals('<p>{a}</p><p>Two words</p>'), 1);
+  // An arrow's > before JSX is code, not text (FEEL-1's store selectors).
+  assert.equal(countLiterals('const a = useData((s) => s.a);\n  return (<div>{a}</div>);'), 0);
 });

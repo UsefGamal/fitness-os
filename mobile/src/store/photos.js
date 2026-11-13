@@ -6,7 +6,7 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 
 import { isPhotoFile } from '../lib/dataFile.js';
 
-import { fitSize } from '../lib/photos.js';
+import { cacheGet, cachePut, fitSize } from '../lib/photos.js';
 
 const DIR = 'progress-photos';
 
@@ -26,14 +26,28 @@ function loadImage(file) {
   });
 }
 
+// Decode straight to about 1080 px wide where the WebView can (FEEL-1), so
+// a 12-megapixel photo is never held full size in memory; else the old way.
+async function decode(file) {
+  if (typeof globalThis.createImageBitmap === 'function') {
+    try {
+      const bmp = await createImageBitmap(file, { resizeWidth: 1080, resizeQuality: 'high' });
+      return { src: bmp, w: bmp.width, h: bmp.height, done: () => bmp.close() };
+    } catch { /* fall through to the image element */ }
+  }
+  const img = await loadImage(file);
+  return { src: img, w: img.naturalWidth, h: img.naturalHeight, done: () => {} };
+}
+
 /** Clean and store a picked image; returns its file name. */
 export async function storePhoto(file, name) {
-  const img = await loadImage(file);
-  const { width, height } = fitSize(img.naturalWidth, img.naturalHeight);
+  const img = await decode(file);
+  const { width, height } = fitSize(img.w, img.h);
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+  canvas.getContext('2d').drawImage(img.src, 0, 0, width, height);
+  img.done();
   const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
   const path = `${DIR}/${name}.jpg`;
   await Filesystem.writeFile({ path, directory: Directory.Data, data: dataUrl.split(',')[1], recursive: true });
@@ -42,17 +56,18 @@ export async function storePhoto(file, name) {
 
 const cache = new Map();
 
-/** A data: URL for a stored photo (cached while the app runs). */
+/** A data: URL for a stored photo (the last few are kept in memory). */
 export async function photoUrl(path) {
   if (!isPhotoFile(path)) throw new Error('Not a photo file');
-  if (cache.has(path)) return cache.get(path);
+  const hit = cacheGet(cache, path);
+  if (hit) return hit;
   const { data } = await Filesystem.readFile({ path, directory: Directory.Data });
   const url = typeof data === 'string' ? `data:image/jpeg;base64,${data}` : await new Promise((resolve) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result);
     r.readAsDataURL(data);
   });
-  cache.set(path, url);
+  cachePut(cache, path, url);
   return url;
 }
 

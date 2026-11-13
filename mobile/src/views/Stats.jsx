@@ -398,7 +398,8 @@ function Body({ data, update, today }) {
 }
 
 export default function Stats() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const today = useToday();
   const weightOn = D.moduleOn(data, 'weight') && data.safety?.hide_weight !== true;
   // The tabs come first and stay pinned, so picking one changes what is on

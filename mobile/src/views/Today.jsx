@@ -40,7 +40,8 @@ import { markClearanceSeen, showClearance } from '../lib/safety.js';
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
 export default function Today() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const navigate = useNavigate();
   const today = useToday();
   const T = activePlan(data, content);

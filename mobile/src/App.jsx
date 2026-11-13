@@ -158,7 +158,11 @@ function listenBackButton() {
 }
 
 export default function App() {
-  const { ready, hydrate, loadError, startError, data } = useData();
+  const ready = useData((s) => s.ready);
+  const hydrate = useData((s) => s.hydrate);
+  const loadError = useData((s) => s.loadError);
+  const startError = useData((s) => s.startError);
+  const screening = useData((s) => needsScreening(s.data));
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
   const [perms, setPerms] = useState(false);
@@ -217,7 +221,7 @@ export default function App() {
   }
   // A phone set up before the safety check existed (or an older backup
   // just restored) answers it before anything else (SAFE-1).
-  if (needsScreening(data)) return <><Screening /><SaveBar /></>;
+  if (screening) return <><Screening /><SaveBar /></>;
   return (
     <>
       <RouterProvider router={router} />

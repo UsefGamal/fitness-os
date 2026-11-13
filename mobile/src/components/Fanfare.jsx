@@ -6,23 +6,34 @@ import { feedback } from '../store/feedback.js';
 import { useData } from '../store/useData.js';
 import Icon from './Icon.jsx';
 
+const BADGE_CHECK_DELAY_MS = 600;
+
 /** Watches for newly earned badges, records them, and shows a card with a
  * fanfare. The very first check (data from before badges existed) records
  * what's already earned quietly. During a workout the card waits until it
  * is finished or discarded, so it never covers the rest timer (E6-S1). */
 export default function Fanfare() {
-  const { data, update, activeWorkoutId } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
+  const activeWorkoutId = useData((s) => s.activeWorkoutId);
   const [queued, setQueued] = useState([]);
   const [shown, setShown] = useState(null);
 
+  // Checking every badge reads the whole history, so it waits until saves
+  // pause (FEEL-1): logging a set stays one short task, and a run of quick
+  // saves is checked once.
   useEffect(() => {
-    const today = todayISO();
-    const fresh = newBadges(data, today);
-    const first = !data.achievements;
-    if (!fresh.length && !first) return;
-    update((d) => recordBadges({ ...d, achievements: d.achievements || {} }, fresh.map((b) => b.id), today));
-    if (first || !fresh.length) return;
-    setQueued((q) => [...q, ...fresh]);
+    const id = setTimeout(() => {
+      const now = useData.getState().data;
+      const today = todayISO();
+      const fresh = newBadges(now, today);
+      const first = !now.achievements;
+      if (!fresh.length && !first) return;
+      update((d) => recordBadges({ ...d, achievements: d.achievements || {} }, fresh.map((b) => b.id), today));
+      if (first || !fresh.length) return;
+      setQueued((q) => [...q, ...fresh]);
+    }, BADGE_CHECK_DELAY_MS);
+    return () => clearTimeout(id);
   }, [data, update]);
 
   useEffect(() => {

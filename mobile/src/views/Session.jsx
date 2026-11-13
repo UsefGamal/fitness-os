@@ -43,7 +43,7 @@ export default function Session() {
   const { type } = useParams();
   const meta = SESSIONS[type];
   const navigate = useNavigate();
-  const { update } = useData();
+  const update = useData((s) => s.update);
   const today = useToday();
   const [date, setDate] = useState(today);
   const [homeDay, setHomeDay] = useState(0);

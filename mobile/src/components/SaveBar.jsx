@@ -5,7 +5,8 @@ import { useData } from '../store/useData.js';
  * data is only in memory and a kill would lose it (QA-07). Amber, at the
  * bottom, never blocks logging; it goes away on the next good write. */
 export default function SaveBar() {
-  const { saveFailing: failing, retrySave: retry } = useData();
+  const failing = useData((s) => s.saveFailing);
+  const retry = useData((s) => s.retrySave);
   if (!failing) return null;
   return (
     <div className="save-bar" role="alert">

@@ -52,6 +52,16 @@ const toFullMeals = async (page) => {
   if (await full.count()) await full.click();
 };
 
+/** Start today's session on /workout (or the first one on a rest day). */
+const startSession = async (p) => {
+  // A rest day (the friends plan on this Friday) asks for a session first.
+  if (!(await p.getByRole('button', { name: /^Start / }).count())) await p.locator('.list').last().locator('a, button').first().click();
+  await p.waitForTimeout(500);
+  const start = p.getByRole('button', { name: /^Start / }).first();
+  if (await start.count()) await start.click();
+  await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).waitFor();
+};
+
 /** TEST-1 part B: sheets and states a route alone never shows. Each runs
  * at 360 and 412 px, left to right, with the same checks as the routes.
  * Not here: the permissions sheet (only on a phone) and DaySheet (no
@@ -74,11 +84,7 @@ export const STATES = [
     name: 'sheet: finish summary',
     route: '/workout',
     act: async (p) => {
-      // A rest day (the friends plan on this Friday) asks for a session first.
-      if (!(await p.getByRole('button', { name: /^Start / }).count())) await p.locator('.list').last().locator('a, button').first().click();
-      await p.waitForTimeout(500);
-      const start = p.getByRole('button', { name: /^Start / }).first();
-      if (await start.count()) await start.click();
+      await startSession(p);
       await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).fill('20');
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await btnNamed(p, en['workout.finishWorkout']).click();
@@ -93,6 +99,8 @@ export const STATES = [
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
   { name: 'text 130%: Home', route: '/', font: '130%' },
   { name: 'text 130%: Workout', route: '/workout', font: '130%' },
+  // FEEL-1: the steppers keep 48 px buttons at 360 px and 130% text.
+  { name: 'text 130%: logging a set', route: '/workout', font: '130%', act: startSession, floor: { sel: '.stepper button', min: 48 } },
   { name: 'text 130%: Meals', route: '/meals', font: '130%', act: toFullMeals },
 ];
 
@@ -137,13 +145,15 @@ async function serve() {
 }
 
 /** axe, small taps, sideways overflow and page errors for what is showing. */
-async function measure(page, errors, key, shot) {
+async function measure(page, errors, key, shot, floor) {
   await page.addScriptTag({ content: AXE });
   const axe = await page.evaluate(async () => {
     const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } });
     return r.violations.map((v) => ({ id: v.id, nodes: v.nodes.length }));
   });
-  const taps = await page.evaluate(smallTaps, MIN_TAP);
+  let taps = await page.evaluate(smallTaps, MIN_TAP);
+  // A stricter floor for some controls (a state's `floor`), counted as taps.
+  if (floor) taps += await page.evaluate(({ sel, min }) => [...document.querySelectorAll(sel)].filter((el) => { const r = el.getBoundingClientRect(); return r.width && (r.width < min || r.height < min); }).length, floor);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
   const errs = errors.splice(0);
   if (process.env.E2E_VERBOSE) {
@@ -229,7 +239,7 @@ export async function run({ shots = false } = {}) {
           // A state that can't be reached counts as an error, not a crash of the run.
           errors.push(`could not open: ${err.message.split('\n')[0]}`);
         }
-        report[key] = await measure(page, errors, key, shots && `state-${state.name.replace(/\W+/g, '_')}-${width}`);
+        report[key] = await measure(page, errors, key, shots && `state-${state.name.replace(/\W+/g, '_')}-${width}`, state.floor);
         await ctx.close();
       }
     }

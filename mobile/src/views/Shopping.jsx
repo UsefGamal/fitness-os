@@ -12,7 +12,8 @@ import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
 export default function Shopping() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const navigate = useNavigate();
   const today = useToday();
   const week = weekStart(today);

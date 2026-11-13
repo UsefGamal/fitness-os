@@ -19,7 +19,7 @@ function when(at) {
 }
 
 export default function Snapshots() {
-  const { replaceAll } = useData();
+  const replaceAll = useData((s) => s.replaceAll);
   const navigate = useNavigate();
   const [list, setList] = useState(null);
   const [picked, setPicked] = useState(null); // { snap, data }

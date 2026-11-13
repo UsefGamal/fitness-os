@@ -17,8 +17,8 @@ export function countLiterals(source) {
   // Drop comments so prose in them doesn't count.
   const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
   let n = 0;
-  // JSX text between tags: >Some words<
-  for (const m of code.matchAll(/>([^<>{}]*[A-Za-z][^<>{}]*)</g)) {
+  // JSX text between tags: >Some words< (never the > of an arrow, =>)
+  for (const m of code.matchAll(/(?<!=)>([^<>{}]*[A-Za-z][^<>{}]*)</g)) {
     if (/[A-Za-z]{2,}/.test(m[1]) && !/^\s*[)\]};,]/.test(m[1]) && !/=>|&&|\|\|/.test(m[1])) n += 1;
   }
   for (const a of ATTRS) {

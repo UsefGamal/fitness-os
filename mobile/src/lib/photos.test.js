@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { addPhoto, beforeAfter, fitSize, removePhoto, timeline } from './photos.js';
+import { addPhoto, beforeAfter, cacheGet, cachePut, fitSize, PHOTO_CACHE_MAX, removePhoto, timeline } from './photos.js';
 
 test('photos group by date and give a before/after per pose', () => {
   let d = {};
@@ -19,4 +19,19 @@ test('photos group by date and give a before/after per pose', () => {
 test('photos are scaled down, never up', () => {
   assert.deepEqual(fitSize(4000, 3000), { width: 1280, height: 960 });
   assert.deepEqual(fitSize(800, 600), { width: 800, height: 600 });
+});
+
+test('the photo cache keeps the 6 most recently used and drops the oldest', () => {
+  const c = new Map();
+  for (let i = 1; i <= PHOTO_CACHE_MAX; i += 1) cachePut(c, `p${i}`, i);
+  assert.equal(cacheGet(c, 'p1'), 1); // p1 is now the newest
+  cachePut(c, 'p7', 7);
+  assert.equal(c.size, PHOTO_CACHE_MAX);
+  assert.equal(c.has('p2'), false);
+  assert.equal(c.has('p1'), true);
+  assert.equal(cacheGet(c, 'p2'), undefined);
+  cachePut(c, 'p7', 70); // a second put replaces, never grows
+  assert.equal(c.size, PHOTO_CACHE_MAX);
+  assert.equal(cacheGet(c, 'p7'), 70);
+  assert.equal(cachePut(new Map(), 'a', 1, 0).size, 0);
 });

@@ -32,7 +32,8 @@ import { gentleDay } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
 
 function EditList({ day, sessionKey }) {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const T = activePlan(data, content);
   const [adding, setAdding] = useState('');
   const { catalogue } = useCatalogue();
@@ -103,7 +104,8 @@ function EditList({ day, sessionKey }) {
 }
 
 export default function Plan() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const today = useToday();
   const T = activePlan(data, content);
   const times = effectiveTimes(data, content, todayISO());

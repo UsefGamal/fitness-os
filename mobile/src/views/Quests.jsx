@@ -14,7 +14,8 @@ const GROUPS = [
 ];
 
 export default function Quests() {
-  const { data, update } = useData();
+  const data = useData((s) => s.data);
+  const update = useData((s) => s.update);
   const navigate = useNavigate();
   const today = useToday();
   useEffect(() => {

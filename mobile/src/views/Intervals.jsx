@@ -25,7 +25,7 @@ function Num({ label, value, onChange, unit }) {
 export default function Intervals() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { update } = useData();
+  const update = useData((s) => s.update);
   // ?preset=tabata opens with that preset picked (the 8 PM session links here).
   const [config, setConfig] = useState(() => INTERVAL_PRESETS.find((p) => p.key === params.get('preset')) || INTERVAL_PRESETS[0]);
   const [run, setRun] = useState(null); // { startedAt, pausedAt, pausedMs }
