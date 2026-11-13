@@ -116,6 +116,19 @@ export const STATES = [
   { name: 'beginner: session 1 of 6', route: '/', data: (d) => ({ ...d, workouts: [], settings: { ...d.settings, training: { ...d.settings?.training, level: 'beginner' } } }) },
   { name: 'quests off: Home', route: '/', data: (d) => ({ ...d, settings: { ...d.settings, modules: { ...d.settings?.modules, quests: false } } }) },
   { name: 'safety limits on: Home', route: '/', data: gated },
+  {
+    name: 'sheet: kind of set',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).fill('20');
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await p.getByRole('button', { name: new RegExp(`^1: set 1, ${en['setType.work']}`) }).click();
+      await p.getByRole('button', { name: new RegExp(en['setType.drop']) }).click();
+      await p.getByRole('button', { name: new RegExp(`^D: set 1, ${en['setType.drop']}`) }).click();
+      await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
+    },
+  },
   { name: 'light: Home', route: '/', data: lightTheme },
   { name: 'light: Plan', route: '/plan', data: lightTheme },
   { name: 'light: Workout', route: '/workout', data: lightTheme },

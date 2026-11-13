@@ -33,7 +33,8 @@ import { howToSteps, showHowTo, starterProgress } from '../lib/starter.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
 import { isShortSession } from '../lib/summary.js';
-import { gentleDay } from '../lib/safety.js';
+import { gateOn, gentleDay } from '../lib/safety.js';
+import { setFields, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
@@ -148,6 +149,7 @@ export default function Workout() {
   const [restOverride, setRestOverride] = useState({}); // exercise name -> seconds for this session
   const [undo, setUndo] = useState(null); // { set, label } after a delete
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
+  const [typing, setTyping] = useState(null); // the logged set whose kind is being picked
   const openSwap = () => setSheet('swap');
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
@@ -531,7 +533,14 @@ export default function Workout() {
                   {sets.map((s) => (
                     <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
                       <div className="set-row">
-                        <span className="set-n done">{s.set_number}</span>
+                        {(() => {
+                          const type = setFields(s).set_type;
+                          return (
+                            <button type="button" className={`set-n done${type === 'work' ? '' : ` t-${type}`}`} aria-label={t('setType.aria', { shown: TYPE_LETTER[type] || s.set_number, n: s.set_number, type: t(`setType.${type}`) })} onClick={() => setTyping(s)}>
+                              {TYPE_LETTER[type] || s.set_number}
+                            </button>
+                          );
+                        })()}
                         <span>{t('workout.setLine', { kg: s.weight_kg, reps: s.reps })}</span>
                         <span />
                         <button type="button" className="icon-btn" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="trash" /></button>
@@ -564,6 +573,21 @@ export default function Workout() {
           <Icon name="check" /> {t('workout.finishWorkout')}
         </button>
       )}
+      {typing ? (
+        <Sheet title={t('setType.title', { n: typing.set_number })} onClose={() => setTyping(null)}>
+          <div className="list">
+            {typeChoices({ gentle: gateOn(data, 'beginner_only', today) || gateOn(data, 'needs_clearance', today) }).map((k) => {
+              const on = setFields(typing).set_type === k;
+              return (
+                <button key={k} type="button" className="list-row" aria-pressed={on} onClick={() => { update((d) => D.replaceSet(d, active.id, withType(typing, k))); setTyping(null); }}>
+                  <div className="grow"><div>{t(`setType.${k}`)}</div><div className="meta">{t(`setType.${k}Note`)}</div></div>
+                  <span className={`check${on ? ' on' : ''}`}>{on ? <Icon name="check" /> : null}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Sheet>
+      ) : null}
       {sheet === 'exmore' && ex ? (
         <Sheet title={ex.name} onClose={() => setSheet(null)}>
           <div className="list">

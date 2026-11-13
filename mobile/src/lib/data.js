@@ -130,6 +130,11 @@ export function updateSet(data, workoutId, setId, changes) {
   }));
 }
 
+/** Put `set` in place of the set with its id (fields it dropped stay dropped). */
+export function replaceSet(data, workoutId, set) {
+  return updateWorkout(data, workoutId, (w) => ({ ...w, sets: w.sets.map((s) => (s.id === set.id ? set : s)) }));
+}
+
 export function deleteSet(data, workoutId, setId) {
   return updateWorkout(data, workoutId, (w) => {
     const removed = w.sets.find((s) => s.id === setId);

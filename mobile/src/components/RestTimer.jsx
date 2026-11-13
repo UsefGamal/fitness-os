@@ -86,8 +86,8 @@ export default function RestTimer({ compact = false }) {
     </div>
   ) : (
     <div className="timer-ctl">
-      <button type="button" className="tbtn" onClick={() => add(-15)} aria-label="15 seconds less"><b>−15</b><span>sec</span></button>
-      <button type="button" className="tbtn" onClick={() => add(15)} aria-label="15 seconds more"><b>+15</b><span>sec</span></button>
+      <button type="button" className="tbtn" onClick={() => add(-15)}><b>−15</b><span>sec</span></button>
+      <button type="button" className="tbtn" onClick={() => add(15)}><b>+15</b><span>sec</span></button>
       <button type="button" className="tbtn" onClick={paused ? resume : pause} aria-label={paused ? 'Start the rest again' : 'Pause the rest'}>
         <Icon name={paused ? 'play' : 'pause'} /><span>{paused ? 'Start' : 'Pause'}</span>
       </button>
@@ -138,7 +138,7 @@ export default function RestTimer({ compact = false }) {
   return (
     <div className={`timer${done ? ' done' : ''}`} role="timer" aria-live="off">
       <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
-      <button type="button" className="timer-open" onClick={() => setFull(true)} aria-label="Open the full screen timer">
+      <button type="button" className="timer-open" onClick={() => setFull(true)}>
         <div className="t">{done ? 'Go' : clock(left)}</div>
         <div className="grow">
           <div className="timer-what">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
