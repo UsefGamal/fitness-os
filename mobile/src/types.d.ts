@@ -18,6 +18,16 @@ export interface WorkoutSet {
   /** 'warmup' sets never count as work sets (lib/data.js isWorkSet). */
   kind?: string;
   rir?: number | null;
+  is_warmup?: boolean;
+  /** Data version 3 (lib/sets.js). */
+  set_type?: 'work' | 'warmup' | 'drop' | 'failure';
+  /** Superset label within the workout, up to 8 characters. */
+  group?: string | null;
+  track?: 'load' | 'bodyweight' | 'time' | 'distance';
+  /** Signed load on a bodyweight move; negative means assisted. */
+  added_kg?: number | null;
+  distance_m?: number | null;
+  duration_s?: number | null;
   [key: string]: unknown;
 }
 

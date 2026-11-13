@@ -321,7 +321,7 @@
    "weight": true
   }
  },
- "schemaVersion": 3,
+ "schemaVersion": 4,
  "format": "fitness-os-export",
  "rewards": {
   "ledger": [

@@ -22,7 +22,7 @@ test('the ring keeps the newest twenty errors', () => {
 test('a bug report has no health or personal data', () => {
   const errors = [errorEntry(new Error('Boom'), { route: '#/workout', now: Date.UTC(2026, 10, 5, 7) })];
   const report = bugReport({ app: { version: '0.4.1', build: '42' }, data: yusuf, errors, device: { platform: 'android', model: 'Redmi Note 12', osVersion: '14', screen: '393x873 @2.75x' }, now: new Date(Date.UTC(2026, 10, 5, 8)) });
-  assert.match(report, /App: 0\.4\.1 \(42\), data schema 2/);
+  assert.match(report, /App: 0\.4\.1 \(42\), data schema 3/);
   assert.match(report, /Redmi Note 12, Android 14/);
   // P14-02: the report names which APK it came from.
   const friends = bugReport({ app: { version: '0.6.0', build: '60', flavor: 'friends' }, data: yusuf, errors: [] });

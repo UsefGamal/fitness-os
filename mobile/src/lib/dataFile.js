@@ -15,6 +15,7 @@
 //   folder, so "Delete photo" can never remove the data file.
 import { seedExercises, defaultSettings } from './data.js';
 import { CURRENT_SCHEMA, migrate, NewerSchemaError, schemaOf } from './migrate.js';
+import { cleanSet } from './sets.js';
 
 export const FILE_FORMAT = 'fitness-os-export';
 /** "Share a copy" (P14-14): a file to show someone, never to restore. */
@@ -134,7 +135,10 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
     cleaned.progress_photos = raw.progress_photos.filter((ph) => isObject(ph) && isPhotoFile(ph.file));
   }
   if (version < 2) cleaned.plan_overrides = isObject(raw.plan_overrides) ? raw.plan_overrides : {};
-  return migrate(cleaned, content);
+  const current = migrate(cleaned, content);
+  // V3: the six set fields are checked on every import. A wrong type, a
+  // huge number or a long string is dropped, which means the default.
+  return { ...current, workouts: current.workouts.map((w) => ({ ...w, sets: w.sets.filter(isObject).map(cleanSet) })) };
 }
 
 export function summarize(data) {

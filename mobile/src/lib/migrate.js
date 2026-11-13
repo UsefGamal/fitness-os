@@ -12,9 +12,11 @@
 // v1 is the original shape (the old site's "fitness-os-export" v1 and this
 // app's own data until phase 11). v2 is the one planned schema bump: it
 // adds every field the next phases need, so later phases don't change the
-// shape again until the rewards ledger (v3, phase 17).
+// shape again. v3 (V3, Nov 2026) lets a set hold six more fields and
+// nothing else: set_type, group, track, added_kg, distance_m, duration_s
+// (lib/sets.js). The rewards ledger once planned for v3 was dropped.
 
-export const CURRENT_SCHEMA = 2;
+export const CURRENT_SCHEMA = 3;
 
 export class NewerSchemaError extends Error {
   constructor(version) {
@@ -144,7 +146,14 @@ function v1ToV2(raw, content) {
   return out;
 }
 
-const STEPS = { 1: v1ToV2 };
+/** v2 to v3: sets may now hold the six fields of lib/sets.js. They are
+ * stored only when they differ from their default, and no v2 set has one,
+ * so the step changes the version number and nothing else. */
+export function v2ToV3(raw) {
+  return { ...raw, schemaVersion: 3 };
+}
+
+const STEPS = { 1: v1ToV2, 2: v2ToV3 };
 
 /** Upgrade any copy to CURRENT_SCHEMA. Pure and idempotent. */
 export function migrate(raw, content) {
