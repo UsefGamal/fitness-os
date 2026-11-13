@@ -43,12 +43,12 @@ export function picksFrom(mealLogs = []) {
 
 /** [{ name, items: [{ key, name, qty }] }] in the plan's category order.
  * `pickOf(date, slot)` -> option key or null; leave it out for both options. */
-export function shoppingList(startIso, nutrition, days = 7, pickOf = null) {
+export function shoppingList(startIso, nutrition, days = 7, pickOf = null, planStart = nutrition.plan_start_date) {
   const totals = new Map();
   const category = new Map();
   for (let i = 0; i < days; i += 1) {
     const date = addDays(startIso, i);
-    const day = mealDayFor(date, nutrition);
+    const day = mealDayFor(date, nutrition, planStart);
     for (const meal of day.meals) {
       const chosen = pickOf ? [meal.options.find((o) => o.key === pickOf(date, meal.slot)) || meal.options[0]].filter(Boolean) : meal.options;
       for (const option of chosen) {

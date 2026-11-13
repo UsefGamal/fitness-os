@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import content from '../content.json';
 import * as D from '../lib/data.js';
 import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
+import { backfillEaten } from '../lib/meals.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { keepPhotoLock } from '../lib/photoLock.js';
 import { hasMirror, onMirrorResult, readMirror, writeMirror } from './mirror.js';
@@ -76,13 +77,17 @@ function saveLocal(data) {
   }
 }
 
+/** Any saved copy, brought up to date: the schema (lib/migrate.js) and the
+ * numbers on ticked meals (DA-1). */
+const upgrade = (raw) => backfillEaten(migrate(raw, content), content.nutrition);
+
 /** First paint uses localStorage straight away; hydrate() then checks the
  * file too and settles which copy wins. */
 function initialData() {
   const local = parseCopy(readLocalText());
   if (!local) return D.emptyData(content);
   try {
-    return migrate(local, content);
+    return upgrade(local);
   } catch {
     return D.emptyData(content);
   }
@@ -104,7 +109,7 @@ export const useData = create((set, get) => ({
 
   /** Use a snapshot's data after a failed start (recovery screen). */
   async recoverFrom(text) {
-    const data = migrate(parseCopy(text), content);
+    const data = upgrade(parseCopy(text));
     // Keep what couldn't be read, so this restore can be undone too.
     const raw = get().rawCopies.reduce((a, b) => (b.length > a.length ? b : a), '');
     if (raw) await snapshot(raw, 'unreadable');
@@ -142,6 +147,8 @@ export const useData = create((set, get) => ({
       const start = loadNewest({ localText, fileText: file?.text ?? null }, content);
       if (start) {
         if (start.snapshotText) await snapshot(start.snapshotText, 'migrate');
+        // Ticked meals from older builds get their numbers copied in (DA-1).
+        start.data = backfillEaten(start.data, content.nutrition);
         set({ data: start.data });
         // Write the winner back to both stores, so the one that was behind
         // (cleared, full, or not yet upgraded) catches up.
@@ -172,7 +179,7 @@ export const useData = create((set, get) => ({
   async replaceAll(data, reason = 'import') {
     if (blocked) return;
     await snapshot(JSON.stringify(stamp(get().data)), reason);
-    data = keepPhotoLock(get().data, data);
+    data = backfillEaten(keepPhotoLock(get().data, data), content.nutrition);
     set({ data, activeWorkoutId: null });
     pending = data;
     flushSave();

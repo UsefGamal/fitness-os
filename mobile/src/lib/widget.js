@@ -17,7 +17,7 @@ import { eveningDone, eveningOn } from './evening.js';
 import { weekStreaks } from './insights.js';
 import { macroTargets } from './macros.js';
 import { activePlan } from './plan.js';
-import { mealDayFor, slotLabel } from './meals.js';
+import { mealDayFor, mealStart, slotLabel } from './meals.js';
 import { programDayFor, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
 
@@ -63,14 +63,14 @@ export function widgetDays(data, content, today) {
     const done = D.workoutOn(data, date);
     const evening = eveningOn(data, date);
 
-    const day = mealDayFor(date, N);
+    const day = mealDayFor(date, N, mealStart(data, N));
     const meals = showMeals
       ? day.meals
         .map((m) => {
           const log = D.mealLog(data, date, m.slot);
           // Something else was eaten here (UX-20): show and count that.
           if (log?.custom) return { time: times.meal_times[m.slot] || '', name: slotLabel(m.slot), what: log.custom.name || 'Something else', done: Boolean(log.completed), protein: log.custom.protein || 0 };
-          return { time: times.meal_times[m.slot] || '', name: slotLabel(m.slot), what: mealWhat(optionFor(m, log)), done: Boolean(log?.completed), protein: optionFor(m, log).protein || 0 };
+          return { time: times.meal_times[m.slot] || '', name: slotLabel(m.slot), what: mealWhat(optionFor(m, log)), done: Boolean(log?.completed), protein: (log?.completed && log.eaten ? log.eaten.protein : optionFor(m, log).protein) || 0 };
         })
         .sort((a, b) => (a.time < b.time ? -1 : 1))
       : [];

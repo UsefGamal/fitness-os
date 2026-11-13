@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { t } from '../lib/i18n.js';
-import { cleanFood, forgetFood, logCustomMeal, MAX_FOOD_NAME, MAX_KCAL, MAX_PROTEIN, myFoods } from '../lib/myFoods.js';
+import { cleanFood, forgetFood, logCustomMeal, MAX_CARBS_FAT, MAX_FOOD_NAME, MAX_KCAL, MAX_PROTEIN, myFoods } from '../lib/myFoods.js';
 import { feedback } from '../store/feedback.js';
 import Icon from './Icon.jsx';
 import Sheet, { useCloseSheet } from './Sheet.jsx';
@@ -12,7 +12,11 @@ function Form({ data, update, date, slot, entry }) {
   const [name, setName] = useState(entry?.name ?? '');
   const [kcal, setKcal] = useState(entry?.kcal ?? 400);
   const [protein, setProtein] = useState(entry?.protein ?? 20);
-  const food = cleanFood({ name, kcal, protein });
+  const [carbs, setCarbs] = useState(entry?.carbs ?? '');
+  const [fat, setFat] = useState(entry?.fat ?? '');
+  const onCarbs = (e) => setCarbs(e.target.value);
+  const onFat = (e) => setFat(e.target.value);
+  const food = cleanFood({ name, kcal, protein, carbs, fat });
   const saved = myFoods(data);
   const log = (f) => {
     update((d) => logCustomMeal(d, date, slot, f));
@@ -43,6 +47,10 @@ function Form({ data, update, date, slot, entry }) {
       </label>
       <Stepper label={t('other.kcal')} value={kcal} onChange={setKcal} step={50} min={0} max={MAX_KCAL} />
       <Stepper label={t('other.protein')} value={protein} onChange={setProtein} step={5} min={0} max={MAX_PROTEIN} />
+      <div className="row">
+        <label className="field grow"><span>{t('other.carbs')}</span><input type="number" inputMode="numeric" min="0" max={MAX_CARBS_FAT} value={carbs} placeholder={t('other.optional')} onChange={onCarbs} /></label>
+        <label className="field grow"><span>{t('other.fat')}</span><input type="number" inputMode="numeric" min="0" max={MAX_CARBS_FAT} value={fat} placeholder={t('other.optional')} onChange={onFat} /></label>
+      </div>
       {food ? null : <div className="muted small" role="alert">{t('other.check')}</div>}
       <button type="button" className="btn" disabled={!food} onClick={() => log(food)}><Icon name="check" /> {t('other.save')}</button>
       <div className="muted small">{t('other.note')}</div>

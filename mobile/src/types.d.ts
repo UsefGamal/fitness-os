@@ -83,6 +83,8 @@ export interface Settings {
 
 export interface MealLog {
   log_date: ISODate;
+  /** The meal's numbers, copied when it was ticked (DA-1). */
+  eaten?: { kcal: number; protein: number; carbs: number; fat: number; fiber: number } | null;
   [key: string]: any;
 }
 

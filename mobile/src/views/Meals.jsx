@@ -8,7 +8,7 @@ import { t } from '../lib/i18n.js';
 import { macroTargets } from '../lib/macros.js';
 import { mealsView, proteinPerMeal, servingsFor, setMealsView } from '../lib/mealsView.js';
 import { dayDrift } from '../lib/macroCheck.js';
-import { dayTotals, mealDayFor, slotLabel } from '../lib/meals.js';
+import { dayTotals, eatenMeals, mealDayFor, mealStart, pickOption, slotLabel, tickMeal } from '../lib/meals.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
@@ -104,19 +104,21 @@ function MealPlan() {
     setDate((d) => (d === shownToday.current ? today : d));
     shownToday.current = today;
   }, [today]);
-  const day = mealDayFor(date, N);
+  const day = mealDayFor(date, N, mealStart(data, N));
   const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
   // Meals where something else was eaten count with their own numbers (UX-20).
   const custom = customMeals(data, date);
   const [otherFor, setOtherFor] = useState(null);
-  const totals = dayTotals(day, picks, null, custom);
+  // Ticked meals keep the numbers they had when ticked (DA-1).
+  const frozen = eatenMeals(data, date);
+  const totals = dayTotals(day, picks, null, custom, frozen);
   const training = sessionKeyOn(date, activePlan(data, content), data.session_moves || []) !== 'rest';
   // The note is for before the session: gone once that day's workout is saved (UX-19).
   const trained = Boolean(D.workoutOn(data, date)?.finished_at);
   const target = macroTargets(data, N, today);
   const eatenSlots = new Set(N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed));
   const done = eatenSlots.size;
-  const eaten = dayTotals(day, picks, eatenSlots, custom);
+  const eaten = dayTotals(day, picks, eatenSlots, custom, frozen);
   // Ramadan: the same meals, at suhoor, iftar and after taraweeh.
   const fasting = ramadanActive(data, date);
   const rTimes = fasting ? effectiveTimes(data, content, date).meal_times : null;
@@ -188,7 +190,7 @@ function MealPlan() {
               <button type="button" className={`check${log?.completed ? ' on' : ''}`} aria-pressed={!!log?.completed} aria-label={t('meals.eatenAria', { meal: label(meal.slot) })}
                 onClick={() => {
                   const ev = mealTickEvent({ nowDone: !log?.completed, doneBefore: done, slots: N.meal_slots.length });
-                  update((d) => (log?.custom ? clearCustomMeal(d, date, meal.slot) : D.setMeal(d, date, meal.slot, { completed: !log?.completed, option_key: pick })));
+                  update((d) => (log?.custom ? clearCustomMeal(d, date, meal.slot) : tickMeal(d, date, meal.slot, opt, !log?.completed)));
                   if (ev) feedback(ev);
                 }}>
                 {log?.completed ? <Icon name="check" /> : null}
@@ -206,7 +208,7 @@ function MealPlan() {
               <>
               <div className="pick-row" role="radiogroup" aria-label={t('meals.pickAria', { meal: label(meal.slot) })}>
                 {meal.options.map((o, i) => (
-                  <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => D.setMeal(d, date, meal.slot, { option_key: o.key }))}>
+                  <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => pickOption(d, date, meal.slot, o))}>
                     {String.fromCharCode(65 + i)} · {o.cuisine}
                   </button>
                 ))}
