@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { autoState, backupStatus } from '../lib/autoBackup.js';
 import { t } from '../lib/i18n.js';
 import { backupNow, canAutoBackup, pickBackupFolder, readNewestBackup, turnOffBackup } from '../store/autoBackup.js';
+import { SetPassphraseSheet } from './PassphraseSheets.jsx';
 import { useData } from '../store/useData.js';
 import Icon from './Icon.jsx';
 import Sheet from './Sheet.jsx';
@@ -14,6 +15,7 @@ export default function AutoBackup({ onRestore, onMsg }) {
   const data = useData((s) => s.data);
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState(false);
+  const [passFor, setPassFor] = useState(false);
   if (!canAutoBackup()) return null;
   const state = autoState(data);
   const status = backupStatus(state, new Date());
@@ -29,7 +31,12 @@ export default function AutoBackup({ onRestore, onMsg }) {
       setBusy(false);
     }
   };
-  const pick = () => run(pickBackupFolder, t('autoBackup.done'));
+  const pick = () => run(async () => {
+    const out = await pickBackupFolder();
+    // A cloud folder: straight on to the recovery passphrase.
+    if (out?.last_error === 'needs_passphrase') setPassFor(true);
+    return out;
+  }, t('autoBackup.done'));
   const now = () => run(backupNow, t('autoBackup.done'));
   const restore = async () => {
     try {
@@ -58,8 +65,10 @@ export default function AutoBackup({ onRestore, onMsg }) {
               <div className="grow">
                 <div className={status.tone === 'ok' ? 'tone-accent' : ''}>{busy ? t('autoBackup.working') : t(status.key, status.vars)}</div>
                 {state.folder ? <div className="meta">{t('autoBackup.folder', { name: state.folder })}</div> : null}
+                {state.last_name?.endsWith('.enc') ? <div className="meta">{t('autoBackup.encrypted')}</div> : null}
               </div>
             </div>
+            {status.fix === 'passphrase' ? <button type="button" className="list-row" onClick={() => setPassFor(true)} disabled={busy}><Icon name="check" /><div className="grow tone-accent">{t('autoBackup.setPass')}</div><Icon name="chev" className="icon chev" /></button> : null}
             {status.fix === 'pick' ? <button type="button" className="list-row" onClick={pick} disabled={busy}><Icon name="undo" /><div className="grow tone-accent">{t('autoBackup.pickAgain')}</div><Icon name="chev" className="icon chev" /></button> : null}
             {status.fix === 'retry' ? <button type="button" className="list-row" onClick={now} disabled={busy}><Icon name="undo" /><div className="grow tone-accent">{t('autoBackup.retry')}</div><Icon name="chev" className="icon chev" /></button> : null}
             {status.fix == null ? <button type="button" className="list-row" onClick={now} disabled={busy}><Icon name="download" /><div className="grow"><div>{t('autoBackup.now')}</div><div className="meta">{t('autoBackup.nowNote')}</div></div><Icon name="chev" className="icon chev" /></button> : null}
@@ -70,6 +79,7 @@ export default function AutoBackup({ onRestore, onMsg }) {
         )}
       </div>
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{t('autoBackup.note')}</p>
+      {passFor ? <SetPassphraseSheet onClose={() => setPassFor(false)} onMsg={onMsg} /> : null}
       {asking ? (
         <Sheet title={t('autoBackup.offTitle')} onClose={() => setAsking(false)}>
           <p className="muted" style={{ marginTop: 0 }}>{t('autoBackup.offBody')}</p>
