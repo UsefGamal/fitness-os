@@ -11,7 +11,7 @@ import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, eatenMeals, pickOption, slotLabel, tickMeal } from '../lib/meals.js';
 import { planDayFor, portionsOf } from '../lib/portions.js';
 import { sessionKeyOn } from '../lib/schedule.js';
-import { effectiveTimes, ramadanActive } from '../lib/ramadan.js';
+import { effectiveTimes, mealDay, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
 import { mealWhat } from '../lib/widget.js';
 import CountUp from '../components/CountUp.jsx';
@@ -22,6 +22,9 @@ import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { kcalHidden } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
+
+const pad2 = (n) => String(n).padStart(2, '0');
+const clock = () => { const n = new Date(); return `${pad2(n.getHours())}:${pad2(n.getMinutes())}`; };
 
 const N = content.nutrition;
 
@@ -99,14 +102,16 @@ function MealPlan() {
   const data = useData((s) => s.data);
   const update = useData((s) => s.update);
   const today = useToday();
-  const [date, setDate] = useState(today);
+  // In Ramadan a late meal after midnight still belongs to last night.
+  const opensOn = mealDay(data, today, clock());
+  const [date, setDate] = useState(opensOn);
   // Looking at today when midnight passes: follow the new day.
-  const shownToday = useRef(today);
+  const shownToday = useRef(opensOn);
   useEffect(() => {
-    if (shownToday.current === today) return;
-    setDate((d) => (d === shownToday.current ? today : d));
-    shownToday.current = today;
-  }, [today]);
+    if (shownToday.current === opensOn) return;
+    setDate((d) => (d === shownToday.current ? opensOn : d));
+    shownToday.current = opensOn;
+  }, [opensOn]);
   // Portions fitted to the person's kcal target (FIT-1); 'far' when the
   // plan can't be fitted, so it shows as written with a calm line.
   const { day, fit } = planDayFor(date, data, N, today);
