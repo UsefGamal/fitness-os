@@ -2,7 +2,7 @@
 // back: so a returning person gets a welcome, no lapsed streak, and a
 // lighter first session instead of last month's loads. Pure; comeback.test.js.
 import { daysBetween } from './dates.js';
-import { repRange } from './progression.js';
+import { holdRange, repRange } from './progression.js';
 
 /** The gap (days since the last workout) where each level starts.
  * @type {[number, string][]} */
@@ -56,6 +56,8 @@ const kgOf = (s) => s.weight_kg || 0;
  * @param {{ planReps?: string, sessions?: any[][], step?: number }} [opts] */
 export function comebackTarget(target, level, { planReps, sessions = [], step = 2.5 } = {}) {
   if (!level || !target) return target;
+  // A hold back after a gap: the bottom of its range, any weight kept.
+  if (target.timed) return { ...target, reps: holdRange(planReps)?.[0] ?? target.reps, kind: 'easy', reason: 'Welcome back: an easy hold today, the bottom of the range.' };
   const range = repRange(planReps);
   const lo = range ? range[0] : target.reps;
   const last = sessions[0];

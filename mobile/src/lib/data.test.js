@@ -191,3 +191,13 @@ test('finishing a workout leaves paused time out of its minutes (TEST-1)', () =>
   const long = D.finishWorkout({ ...data, workouts: data.workouts.map((w) => ({ ...w, paused_ms: 0, paused_at: null })) }, workoutId, { now: t0 + 10 * 60 * MIN }).workouts[0];
   assert.equal(long.duration_min, 180);
 });
+
+test('a timed hold keeps its seconds in reps and duration_s, also after an edit', () => {
+  const ex = D.exerciseByName(fresh(), 'Leg Press');
+  let { data, workoutId } = D.startWorkout(fresh(), { date: '2026-11-02', sessionKey: 'lower', label: 'Lower' });
+  data = D.addSet(data, workoutId, { exerciseId: ex.id, reps: 40, weightKg: 0, seconds: 40 });
+  const s = data.workouts[0].sets[0];
+  assert.deepEqual([s.reps, s.track, s.duration_s], [40, 'time', 40]);
+  data = D.updateSet(data, workoutId, s.id, { reps: 45 });
+  assert.equal(data.workouts[0].sets[0].duration_s, 45);
+});

@@ -97,3 +97,11 @@ export function withType(set, type) {
 export function typeChoices({ gentle = false } = {}) {
   return SET_TYPES.filter((k) => !(gentle && k === 'failure'));
 }
+
+/** One set in words: "60 kg × 8", or for a timed hold "45 s" ("45 s + 10 kg"
+ * with a plate on the back). A hold keeps its seconds in reps too. */
+export function setLabel(set) {
+  const kg = set?.weight_kg || 0;
+  if (setFields(set).track === 'time') return `${set.reps} s${kg > 0 ? ` + ${kg} kg` : ''}`;
+  return `${kg} kg × ${set?.reps}`;
+}

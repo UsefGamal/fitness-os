@@ -6,6 +6,7 @@ import Icon from '../components/Icon.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { formatDate, LOCALE, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
+import { setLabel } from '../lib/sets.js';
 import { t } from '../lib/i18n.js';
 import { starterJustDone, starterProgress, STARTER_SESSIONS } from '../lib/starter.js';
 import { workoutSummary } from '../lib/summary.js';
@@ -115,8 +116,8 @@ export default function History() {
             ) : (
               <div key={s.id} className="set-row">
                 <span className="set-n done">{s.set_number}</span>
-                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`${s.weight_kg} kg × ${s.reps}${s.rpe ? ` · RPE ${s.rpe}` : ''}, edit set ${s.set_number}`}>
-                  {s.weight_kg} kg × {s.reps}{s.rpe ? <span className="muted"> · RPE {s.rpe}</span> : null}
+                <button type="button" style={{ background: 'none', border: 0, color: 'inherit', textAlign: 'start', minHeight: 44, padding: 0 }} onClick={() => setEditing(s.id)} aria-label={`${setLabel(s)}${s.rpe ? ` · RPE ${s.rpe}` : ''}, edit set ${s.set_number}`}>
+                  {setLabel(s)}{s.rpe ? <span className="muted"> · RPE {s.rpe}</span> : null}
                 </button>
                 <span />
                 <Icon name="chev" className="icon chev" />

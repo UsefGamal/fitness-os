@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { isWorkSet } from './data.js';
-import { cleanSet, isSetDefault, SET_DEFAULTS, SET_FIELDS, SET_TYPES, setFields, setWith, TRACKS, typeDefault } from './sets.js';
+import { cleanSet, isSetDefault, SET_DEFAULTS, SET_FIELDS, SET_TYPES, setFields, setLabel, setWith, TRACKS, typeDefault } from './sets.js';
 
 const plain = { id: 1, exercise_id: 2, set_number: 1, reps: 8, weight_kg: 40, rpe: null, rir: null, is_warmup: false };
 
@@ -78,4 +78,10 @@ test('set kinds: picked on the workout screen, warm-ups drop out of work sets', 
   assert.deepEqual(typeChoices(), ['work', 'warmup', 'drop', 'failure']);
   assert.deepEqual(typeChoices({ gentle: true }), ['work', 'warmup', 'drop']);
   assert.equal(TYPE_LETTER.work, undefined);
+});
+
+test('setLabel: kg × reps, or seconds for a timed hold', () => {
+  assert.equal(setLabel({ weight_kg: 60, reps: 8 }), '60 kg × 8');
+  assert.equal(setLabel({ weight_kg: 0, reps: 45, track: 'time', duration_s: 45 }), '45 s');
+  assert.equal(setLabel({ weight_kg: 10, reps: 30, track: 'time', duration_s: 30 }), '30 s + 10 kg');
 });
