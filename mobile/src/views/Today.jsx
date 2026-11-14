@@ -95,12 +95,10 @@ export default function Today() {
   const still = stillTime({ data, today, nowMinutes: nowMin, sessionTime: sessionAt(times), scheduled: sessionKeyOn(today, T, moves), recovery: isRecoveryWeek(data, today), moveTo });
   const wrapFor = card === 'wrapup' ? wrapWeek(today, data) : null;
   const [wrapOpen, setWrapOpen] = useState(false);
-  // What's new, once per version (E1-S6). A new install skips straight to "seen".
+  // What's new (E1-S6): every version since the notes this phone last saw.
+  // Only closing the sheet (or finishing setup) marks them seen, so a build
+  // with no note of its own never hides the next one's.
   const news = unseenNotes(data, APP.version, WHATS_NEW);
-  const seenVersion = data.settings?.whats_new_seen;
-  useEffect(() => {
-    if (!news.length && seenVersion !== APP.version) update((d) => markSeen(d, APP.version));
-  }, [news.length, seenVersion, update]);
   const name = firstName(data.profile);
   const greet = t(`home.greet.${partOfDay(new Date().getHours())}`);
   const addWater = (ml) => { update((d) => D.addWater(d, today, ml)); feedback('water'); };

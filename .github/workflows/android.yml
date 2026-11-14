@@ -141,6 +141,9 @@ jobs:
       - name: Version from the tag
         run: scripts/version-from-tag.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
 
+      - name: Check What's new has this version
+        run: scripts/check-whats-new.sh "$APK_VERSION_NAME"
+
       # PT-02 / SEC-05: the build (npm ci, tests, Vite, Gradle) runs with no
       # signing secret in its environment. Only the next step sees the key,
       # and it runs nothing but zipalign and apksigner.
