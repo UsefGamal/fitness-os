@@ -10,6 +10,18 @@ export function repRange(reps) {
   return [lo, m[2] ? Number(m[2]) : lo];
 }
 
+/** A timed hold: "30-45s" -> [30, 45], "60s" -> [60, 60], "30-45s/side"
+ * -> [30, 45]; null for anything counted in reps. */
+export function holdRange(reps) {
+  const m = /^\s*(\d+)(?:\s*-\s*(\d+))?\s*(?:s|sec|secs|seconds)\b\s*(?:\/\s*side|each side)?\s*$/i.exec(String(reps ?? ''));
+  if (!m) return null;
+  const lo = Number(m[1]);
+  return [lo, m[2] ? Number(m[2]) : lo];
+}
+
+/** Seconds added to a hold each time, like one more rep. */
+export const HOLD_STEP = 5;
+
 const kgOf = (s) => s.weight_kg || 0;
 
 const fmt = (sets) => {
@@ -59,6 +71,8 @@ export function jumpFor(top, step = 2.5) {
  * Returns { weightKg, reps, reason, kind: 'start'|'add'|'repeat'|'deload'|'harder' }.
  */
 export function progressionTarget(planReps, plannedSets, sessions, { step = 2.5, bodyweight = null } = {}) {
+  const hold = holdRange(planReps);
+  if (hold) return holdTarget(hold, plannedSets, sessions);
   const range = repRange(planReps);
   const last = sessions[0];
   if (!last?.length) {
@@ -88,4 +102,24 @@ export function progressionTarget(planReps, plannedSets, sessions, { step = 2.5,
   const minReps = Math.min(...atTop.map((s) => s.reps));
   const reps = Math.min(hi, Math.max(lo, minReps + 1));
   return { weightKg: top, reps, kind: 'repeat', reason: noLoad ? `Last time ${fmt(last)}: aim for ${reps} reps.` : `Last time ${fmt(last)}: same weight, aim for ${reps} reps.` };
+}
+
+/** A timed hold (plank, wall sit): a set's seconds are kept in `reps` (and
+ * in duration_s), so it climbs through the plan's range HOLD_STEP seconds
+ * at a time, then points to a harder version. Any weight stays as it was.
+ * @param {number[]} range @param {number} plannedSets @param {any[][]} sessions */
+function holdTarget(range, plannedSets, sessions) {
+  const [lo, hi] = range;
+  const last = sessions[0];
+  if (!last?.length) return { weightKg: 0, reps: lo, kind: 'start', timed: true, reason: `First time: hold for ${lo} seconds with good form.` };
+  const top = Math.max(...last.map(kgOf));
+  const atTop = last.filter((s) => kgOf(s) === top);
+  const secs = atTop.map((s) => s.reps || 0);
+  const same = secs.every((r) => r === secs[0]);
+  const was = `${atTop.length}×${same ? secs[0] : secs.join('/')} s${top > 0 ? ` at ${top} kg` : ''}`;
+  if (atTop.length >= plannedSets && secs.every((r) => r >= hi)) {
+    return { weightKg: top, reps: hi, kind: 'harder', timed: true, reason: `Last time ${was}, all at the top of ${lo}-${hi} s: try a harder version, or hold ${HOLD_STEP} s longer.` };
+  }
+  const reps = Math.min(hi, Math.max(lo, Math.min(...secs) + HOLD_STEP));
+  return { weightKg: top, reps, kind: 'repeat', timed: true, reason: `Last time ${was}: aim for ${reps} seconds.` };
 }

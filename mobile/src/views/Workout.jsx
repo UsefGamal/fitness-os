@@ -15,7 +15,7 @@ import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js
 import { comeback, comebackTarget } from '../lib/comeback.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
-import { isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
+import { HOLD_STEP, holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
 import { alternatives } from '../lib/similar.js';
 import { roundDone, roundRest } from '../lib/superset.js';
 import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
@@ -34,7 +34,7 @@ import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
 import { isShortSession } from '../lib/summary.js';
 import { gateOn, gentleDay } from '../lib/safety.js';
-import { setFields, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
+import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
@@ -326,11 +326,14 @@ export default function Workout() {
     );
   }
 
+  // A timed hold ("30-45s"): one Seconds stepper, no weight to pick.
+  const timed = Boolean(ex && holdRange(ex.reps));
+  const noWeight = (w) => !timed && D.missingWeight(exRow, w);
   const logSet = (w = weight, r = reps) => {
     if (!exRow || r < 1) return;
-    if (D.missingWeight(exRow, w)) return;
+    if (noWeight(w)) return;
     const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
-    update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w }));
+    update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w, seconds: timed ? r : null }));
     unlockAudio();
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
@@ -551,7 +554,7 @@ export default function Workout() {
                             </button>
                           );
                         })()}
-                        <span>{t('workout.setLine', { kg: s.weight_kg, reps: s.reps })}</span>
+                        <span>{setFields(s).track === 'time' ? setLabel(s) : t('workout.setLine', { kg: s.weight_kg, reps: s.reps })}</span>
                         <span />
                         <button type="button" className="icon-btn" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="trash" /></button>
                       </div>
@@ -562,13 +565,19 @@ export default function Workout() {
               {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
               {target?.kind === 'harder' && sets.length === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
               <div className="row stepper-pair" style={{ alignItems: 'flex-end' }}>
-                <div className="grow"><Stepper label={t('workout.kgLabel')} value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
-                <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
+                {timed ? (
+                  <div className="grow"><Stepper label={t('workout.secsLabel')} value={reps} onChange={setReps} step={HOLD_STEP} min={0} max={600} /></div>
+                ) : (
+                  <>
+                    <div className="grow"><Stepper label={t('workout.kgLabel')} value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
+                    <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
+                  </>
+                )}
               </div>
               {barbell && weight > barKg ? <div className="plate-line">{t('workout.perSide', { plates: plateText(platesPerSide(weight, barKg, settings.plates).plates) })}{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (${t('workout.makes', { kg: platesPerSide(weight, barKg, settings.plates).loaded })})`}</div> : null}
-              <button type="button" className="btn glow log-btn" disabled={D.missingWeight(exRow, weight)} onClick={() => logSet()}><Icon name="check" /> {t('workout.logSet', { n: sets.length + 1 })}</button>
-              {D.missingWeight(exRow, weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.needWeight')}</div> : null}
-              {settings.auto_rest && !D.missingWeight(exRow, weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
+              <button type="button" className="btn glow log-btn" disabled={noWeight(weight)} onClick={() => logSet()}><Icon name="check" /> {t('workout.logSet', { n: sets.length + 1 })}</button>
+              {noWeight(weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.needWeight')}</div> : null}
+              {settings.auto_rest && !noWeight(weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
               <div className="tool-row">
                 <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.filter(D.isWorkSet).length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget, warmup: barbell && !sets.some(D.isWorkSet) ? warmupSets(weight, barKg, settings.plates) : [] })); }}><Icon name="timer" /> {t('workout.rest')}</button>
                 <button type="button" className="tbtn" onClick={() => tweak((tw, n) => addExtraSet(tw, n, x.orig))}><Icon name="plus" /> {t('workout.addSet')}</button>

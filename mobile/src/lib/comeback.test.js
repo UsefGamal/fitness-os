@@ -92,3 +92,9 @@ test('still time today: two hours after the session time, around the edges', () 
   assert.ok(stillTime({ ...base, data: skipToday(data, addDays(TODAY, -1)), nowMinutes: 20 * 60 }));
   assert.equal(stillTime({ ...base, data: ago(20), nowMinutes: 20 * 60 }), null);
 });
+
+test('a timed hold back after a gap: the bottom of its range, in seconds', () => {
+  const t = comebackTarget({ weightKg: 0, reps: 40, kind: 'repeat', timed: true, reason: '' }, 'fresh', { planReps: '30-45s', sessions: [] });
+  assert.deepEqual([t.reps, t.kind], [30, 'easy']);
+  assert.doesNotMatch(t.reason, /weight/);
+});

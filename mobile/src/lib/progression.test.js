@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { isBodyweight, jumpFor, progressionTarget, repRange, stepFor } from './progression.js';
+import { holdRange, isBodyweight, jumpFor, progressionTarget, repRange, stepFor } from './progression.js';
 
 const S = (kg, ...reps) => reps.map((r) => ({ weight_kg: kg, reps: r }));
 
@@ -89,4 +89,22 @@ test('a bodyweight move progresses by reps, then a harder version, never by kg',
   assert.equal(isBodyweight({ equipment: 'body only' }), true);
   assert.equal(isBodyweight({ equipment: 'barbell' }), false);
   assert.equal(isBodyweight(null), false);
+});
+
+test('timed holds: "30-45s" counts seconds, 5 s at a time, then a harder version', () => {
+  assert.deepEqual(holdRange('30-45s'), [30, 45]);
+  assert.deepEqual(holdRange('60s'), [60, 60]);
+  assert.deepEqual(holdRange('30-45s/side'), [30, 45]);
+  assert.equal(holdRange('8-10'), null);
+  const first = progressionTarget('30-45s', 2, []);
+  assert.equal(first.timed, true);
+  assert.equal(first.reps, 30);
+  assert.equal(first.weightKg, 0);
+  assert.match(first.reason, /hold for 30 seconds/);
+  assert.doesNotMatch(first.reason, /weight/);
+  const next = progressionTarget('30-45s', 2, [S(0, 35, 30)]);
+  assert.deepEqual([next.kind, next.reps], ['repeat', 35]);
+  assert.match(next.reason, /aim for 35 seconds/);
+  const top = progressionTarget('30-45s', 2, [S(0, 45, 45)]);
+  assert.equal(top.kind, 'harder');
 });

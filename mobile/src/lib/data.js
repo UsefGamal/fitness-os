@@ -114,11 +114,14 @@ function updateWorkout(data, workoutId, fn) {
   return { ...data, workouts: data.workouts.map((w) => (w.id === workoutId ? fn(w) : w)) };
 }
 
-export function addSet(data, workoutId, { exerciseId, reps, weightKg, rpe = null }) {
+/** Add a set. A timed hold (`seconds`) keeps its seconds in `reps` too, so
+ * progression, records and older readers still see a number they know. */
+export function addSet(data, workoutId, { exerciseId, reps, weightKg, rpe = null, seconds = null }) {
   const nextSetId = nextId(allSets(data));
   return updateWorkout(data, workoutId, (w) => {
     const setNumber = w.sets.filter((s) => s.exercise_id === exerciseId).length + 1;
-    const set = { id: nextSetId, exercise_id: exerciseId, set_number: setNumber, reps, weight_kg: weightKg, rpe, rir: null, is_warmup: false };
+    const plain = { id: nextSetId, exercise_id: exerciseId, set_number: setNumber, reps, weight_kg: weightKg, rpe, rir: null, is_warmup: false };
+    const set = seconds != null ? { ...plain, reps: seconds, track: 'time', duration_s: seconds } : plain;
     return { ...w, sets: [...w.sets, set] };
   });
 }
@@ -126,7 +129,8 @@ export function addSet(data, workoutId, { exerciseId, reps, weightKg, rpe = null
 export function updateSet(data, workoutId, setId, changes) {
   return updateWorkout(data, workoutId, (w) => ({
     ...w,
-    sets: w.sets.map((s) => (s.id === setId ? { ...s, ...changes } : s)),
+    // A timed hold keeps duration_s in step with its seconds (reps).
+    sets: w.sets.map((s) => (s.id !== setId ? s : s.track === 'time' && changes.reps != null ? { ...s, ...changes, duration_s: changes.reps } : { ...s, ...changes })),
   }));
 }
 
