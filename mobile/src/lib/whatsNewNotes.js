@@ -8,6 +8,7 @@ export const WHATS_NEW = [
     version: '1.0.1',
     items: [
       { icon: 'star', text: 'What\'s new now lists every change since the version you had before, even if you skipped a few updates.' },
+      { icon: 'bell', text: 'Warm-ups show in the notification: the move and its countdown, and warm-up weights before a barbell lift.' },
     ],
   },
   {
