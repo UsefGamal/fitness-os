@@ -48,3 +48,16 @@ export function followSteps(lines, { hold = DEFAULT_HOLD } = {}) {
 export function startOf(steps, index) {
   return steps.slice(0, Math.max(0, index)).reduce((n, s) => n + s.seconds, 0);
 }
+
+/** What the notification shows while following along (warm-up, cool-down,
+ * stretches): the move now as its title, "2 of 6 · Next: Hip circles" under
+ * it, and the routine's name below.
+ * @param {{ name: string, side?: string }[]} steps @param {number} index @param {string} title */
+export function followShadeLines(steps, index, title) {
+  const step = steps[index];
+  if (!step) return null;
+  const next = steps[index + 1];
+  const now = `${step.name}${step.side ? ` (${step.side.toLowerCase()})` : ''}`;
+  const after = next ? `Next: ${next.name}${next.side ? ` (${next.side.toLowerCase()})` : ''}` : 'Last one';
+  return { label: now.slice(0, 120), detail: `${index + 1} of ${steps.length} · ${after}`.slice(0, 200), progress: String(title || '').slice(0, 80) };
+}

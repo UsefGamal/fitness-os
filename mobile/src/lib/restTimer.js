@@ -72,11 +72,16 @@ export function timerToRestore(raw, now = Date.now()) {
  * The two text lines the notification shows under the exercise name:
  * `detail` is the next set ("Set 3 of 4 · 60 kg × 8", or "Set 1 of 3 · 8-10
  * reps" when the load isn't known yet) and `progress` the workout so far
- * ("Lower A · 7/18 sets"). Empty parts are left out.
- * @param {{ setNo?: number, setsPlanned?: number, weightKg?: number, reps?: number, targetReps?: string | number, workout?: string, done?: number, planned?: number }} [next]
+ * ("Lower A · 7/18 sets"). Empty parts are left out. Before the first set
+ * of a barbell lift, `warmup` puts the warm-up ramp first ("Warm up: 20 kg ×
+ * 8, 40 × 5 · Set 1 of 3 · 60 kg × 8").
+ * @param {{ setNo?: number, setsPlanned?: number, weightKg?: number, reps?: number, targetReps?: string | number, workout?: string, done?: number, planned?: number, warmup?: { kg: number, reps: number }[] }} [next]
  */
-export function shadeLines({ setNo, setsPlanned, weightKg, reps, targetReps, workout, done, planned } = {}) {
+export function shadeLines({ setNo, setsPlanned, weightKg, reps, targetReps, workout, done, planned, warmup } = {}) {
   const parts = [];
+  if (Array.isArray(warmup) && warmup.length) {
+    parts.push(`Warm up: ${warmup.slice(0, 4).map((w, i) => `${+Number(w.kg).toFixed(2)}${i ? '' : ' kg'} × ${w.reps}`).join(', ')}`);
+  }
   if (setNo > 0) parts.push(setsPlanned > 0 ? `Set ${Math.min(setNo, 99)} of ${setsPlanned}` : `Set ${Math.min(setNo, 99)}`);
   if (weightKg > 0 && reps > 0) parts.push(`${+Number(weightKg).toFixed(2)} kg × ${reps}`);
   else if (reps > 0) parts.push(`${reps} reps`);

@@ -41,6 +41,15 @@ function keep(state) {
 // imported plan can't keep the shade timer and its wakelock going for days.
 export const MAX_REST_S = 30 * 60;
 
+// Who has the shade's countdown: the rest timer, or a warm-up or stretch
+// follow-along (store/followShade.js). While a follow-along has it, what the
+// shade does belongs to that and never turns into a rest here.
+let owner = 'rest';
+export function setShadeOwner(who) {
+  owner = who;
+}
+const restOwnsShade = () => owner === 'rest';
+
 /** The workout under way, for the shade: its name and the sets done so far
  * (the name is kept in `notes`), used when the caller sent no lines. */
 function currentWorkout() {
@@ -105,6 +114,7 @@ export const useTimer = create((set, get) => ({
    * notification's next-set and workout lines (shadeLines). */
   start(seconds, label, lines = null) {
     if (!(seconds > 0)) return;
+    owner = 'rest';
     seconds = Math.min(seconds, MAX_REST_S);
     const endsAt = Date.now() + seconds * 1000;
     set({ endsAt, total: seconds, label, lines, pausedLeft: null });
@@ -151,7 +161,7 @@ export const useTimer = create((set, get) => ({
   },
   /** Pick up what the shade did while the app was in the background. */
   async sync() {
-    if (!isNative()) return;
+    if (!isNative() || !restOwnsShade()) return;
     let shade;
     try {
       shade = await RestTimer.state();
@@ -176,11 +186,13 @@ export const useTimer = create((set, get) => ({
 if (isNative()) {
   // Pause, Resume and +15s in the shade.
   RestTimer.addListener('changed', ({ endsAt, pausedLeft, label }) => {
+    if (!restOwnsShade()) return;
     const paused = Number(pausedLeft) > 0;
     useTimer.setState({ endsAt: endsAt || Date.now(), pausedLeft: paused ? Number(pausedLeft) : null, label });
   });
   // Skip in the shade ends it here too; at the end the app shows "Rest done".
   RestTimer.addListener('stopped', ({ finished }) => {
+    if (!restOwnsShade()) return;
     if (!finished) useTimer.setState({ endsAt: null, pausedLeft: null });
   });
 }

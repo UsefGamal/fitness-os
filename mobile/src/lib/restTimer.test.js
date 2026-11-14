@@ -72,3 +72,9 @@ test('the notification lines name the next set and the workout so far', () => {
   assert.equal(shadeLines({ setNo: 2, weightKg: 22.5, reps: 12 }).detail, 'Set 2 · 22.5 kg × 12');
   assert.deepEqual(shadeLines(), { detail: '', progress: '' });
 });
+
+test('shadeLines: the warm-up ramp comes first before a barbell lift', () => {
+  const lines = shadeLines({ setNo: 1, setsPlanned: 3, weightKg: 60, reps: 8, workout: 'Lower A', warmup: [{ kg: 20, reps: 8 }, { kg: 40, reps: 5 }, { kg: 50, reps: 3 }] });
+  assert.equal(lines.detail, 'Warm up: 20 kg × 8, 40 × 5, 50 × 3 · Set 1 of 3 · 60 kg × 8');
+  assert.equal(shadeLines({ setNo: 2, warmup: [] }).detail, 'Set 2');
+});
