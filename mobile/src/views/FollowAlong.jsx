@@ -10,6 +10,7 @@ import { effectiveDay } from '../lib/planEdit.js';
 import { activePlan } from '../lib/plan.js';
 import { clock, COUNTDOWN_BEEPS, stepAt, totalSeconds } from '../lib/training.js';
 import { useKeepAwake } from '../store/awake.js';
+import { followShadeOff, followToShade, onFollowShade } from '../store/followShade.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
@@ -73,6 +74,43 @@ export default function FollowAlong() {
     if (first) feedback('work');
     else if (COUNTDOWN_BEEPS.includes(at.left)) feedback('countdown');
   });
+
+  // The move now and its countdown in the notification shade, sent again
+  // whenever the move changes, pauses, resumes or jumps.
+  const shadeKey = run && !at?.done ? `${at.index}:${run.pausedAt ? 'p' : 'r'}:${run.startedAt}:${run.pausedMs}` : null;
+  useEffect(() => {
+    if (!shadeKey) {
+      followShadeOff();
+      return;
+    }
+    const doneMs = (run.pausedAt || Date.now()) - run.startedAt - run.pausedMs;
+    const leftMs = startOf(steps, at.index + 1) * 1000 - doneMs;
+    followToShade({ steps, index: at.index, title: src.title, leftMs, totalS: steps[at.index].seconds, paused: Boolean(run.pausedAt) });
+  }, [shadeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => followShadeOff(), []);
+
+  // Pause, Resume, ±15 s and Next pressed in the shade.
+  const running = Boolean(run) && !at?.done;
+  useEffect(() => {
+    if (!running) return undefined;
+    return onFollowShade((e) => {
+      const t = Date.now();
+      setRun((r) => {
+        if (!r) return r;
+        const elapsed = (r.pausedAt || t) - r.startedAt - r.pausedMs;
+        const here = stepAt(steps, Math.floor(elapsed / 1000));
+        if (here.done) return r;
+        // Next: start the next move now. Otherwise put the clock where the
+        // shade says this move has `leftMs` to go.
+        const end = startOf(steps, here.index + 1) * 1000;
+        const want = e.skipped ? end : end - Math.max(0, e.leftMs);
+        const at2 = e.paused ? (r.pausedAt || t) : t;
+        return { startedAt: at2 - r.pausedMs - want, pausedMs: r.pausedMs, pausedAt: e.paused ? at2 : null };
+      });
+      last.current = null;
+      setNow(t);
+    });
+  }, [running]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!src) return <div className="page"><div className="card empty">Nothing to follow here.</div></div>;
 

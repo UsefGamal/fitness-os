@@ -350,11 +350,21 @@ export default function Workout() {
     const resting = settings.auto_rest && rest > 0;
     if (resting) {
       const nx = day.exercises[ni];
+      // Set numbers in the shade count work sets: a set marked warm-up
+      // doesn't move "Set 2 of 3" on.
+      const nxRow = ni === current ? exRow : D.exerciseByName(data, nx.name);
+      const nxSets = nxRow ? after.sets.filter((s) => s.exercise_id === nxRow.id) : [];
+      const nxWork = nxSets.filter(D.isWorkSet).length;
+      // A new barbell lift: the warm-up ramp to its weight (last time's, or
+      // the weight just lifted on this one) goes first in the shade.
+      const nxEntry = ni === current ? entry : catalogue ? entryFor(nx.name, content.training, catalogue.byId) : null;
+      const nxKg = ni === current ? w : nxRow ? D.suggestSet(data, active.id, nxRow.id, 0).weightKg : 0;
+      const warmup = !nxWork && isBarbell(nx.name, nxEntry) ? warmupSets(nxKg, barKg, settings.plates) : [];
       timer.start(rest, nx.name, shadeLines({
-        setNo: done[ni] + 1, setsPlanned: nx.sets, targetReps: nx.reps,
+        setNo: nxWork + 1, setsPlanned: nx.sets, targetReps: nx.reps,
         // The same exercise again: the load just lifted is the best guess.
-        ...(ni === current ? { weightKg: w, reps: r } : {}),
-        workout: day.label, done: done.reduce((n, k) => n + k, 0), planned: totalTarget,
+        ...(ni === current ? { weightKg: w, reps: r } : nxKg > 0 && warmup.length ? { weightKg: nxKg } : {}),
+        workout: day.label, done: after.sets.filter(D.isWorkSet).length, planned: totalTarget, warmup,
       }));
     }
     if (ni !== current) setCurrent(ni);
@@ -560,7 +570,7 @@ export default function Workout() {
               {D.missingWeight(exRow, weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.needWeight')}</div> : null}
               {settings.auto_rest && !D.missingWeight(exRow, weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
               <div className="tool-row">
-                <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget })); }}><Icon name="timer" /> {t('workout.rest')}</button>
+                <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.filter(D.isWorkSet).length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget, warmup: barbell && !sets.some(D.isWorkSet) ? warmupSets(weight, barKg, settings.plates) : [] })); }}><Icon name="timer" /> {t('workout.rest')}</button>
                 <button type="button" className="tbtn" onClick={() => tweak((tw, n) => addExtraSet(tw, n, x.orig))}><Icon name="plus" /> {t('workout.addSet')}</button>
                 <button type="button" className="tbtn" aria-haspopup="dialog" onClick={() => setSheet('exmore')}><span className="more-dots" aria-hidden="true">⋯</span> {t('workout.moreShort')}</button>
               </div>

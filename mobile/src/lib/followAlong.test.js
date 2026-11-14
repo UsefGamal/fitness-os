@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { amountOf, followSteps, moveName, startOf, timing } from './followAlong.js';
+import { amountOf, followShadeLines, followSteps, moveName, startOf, timing } from './followAlong.js';
 
 test('times come from the line, else the default hold', () => {
   assert.deepEqual(timing('5 min hamstring & hip flexor stretch'), { seconds: 300, sides: 1 });
@@ -31,4 +31,11 @@ test('the line under the name drops the name', () => {
   assert.equal(amountOf(b), '30s/side');
   const [c] = followSteps(['Cat cow']);
   assert.equal(amountOf(c), '');
+});
+
+test('followShadeLines: the move now, how far along, and what is next', () => {
+  const steps = followSteps(['Arm circles 30s', 'Hip openers, 20s/side']);
+  assert.deepEqual(followShadeLines(steps, 0, 'Upper A warm-up'), { label: 'Arm circles', detail: '1 of 3 · Next: Hip openers (left side)', progress: 'Upper A warm-up' });
+  assert.equal(followShadeLines(steps, 2, 'x').detail, '3 of 3 · Last one');
+  assert.equal(followShadeLines(steps, 3, 'x'), null);
 });
