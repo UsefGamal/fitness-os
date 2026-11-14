@@ -98,6 +98,12 @@ export interface MealLog {
   [key: string]: any;
 }
 
+export interface FitnessTest {
+  date: ISODate;
+  /** Item key (content/fitness_test.py) -> the number and the move used. */
+  results: Record<string, { value: number; move?: string }>;
+}
+
 export interface Data {
   schemaVersion: number;
   saved_at?: string;
@@ -119,6 +125,8 @@ export interface Data {
   my_foods?: any[];
   progress_photos?: any[];
   health_daily?: any[];
+  /** Fitness test results, oldest first (lib/fitnessTest.js). */
+  fitness_tests?: FitnessTest[];
   /** Keys a newer version wrote that this one doesn't know; kept, never dropped. */
   _unknown?: Record<string, unknown>;
   [key: string]: any;
