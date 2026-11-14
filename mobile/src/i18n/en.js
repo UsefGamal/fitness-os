@@ -806,6 +806,7 @@ export default {
   'setType.failureNote': 'No more good reps were possible',
   'workout.kgLabel': 'Weight (kg)',
   'workout.repsLabel': 'Reps',
+  'workout.secsLabel': 'Seconds',
   'workout.perSide': 'Per side: {plates} kg',
   'workout.makes': 'makes {kg} kg',
   'workout.logSet': 'Log set {n}',
