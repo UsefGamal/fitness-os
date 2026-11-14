@@ -8,6 +8,7 @@ export const WHATS_NEW = [
     version: '1.0.1',
     items: [
       { icon: 'star', text: 'What\'s new now lists every change since the version you had before, even if you skipped a few updates.' },
+      { icon: 'timer', text: 'Planks and other holds now count seconds, not weight and reps.' },
     ],
   },
   {
