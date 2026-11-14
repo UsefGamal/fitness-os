@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { compareVersions, markSeen, notesUpTo, parseVersion, unseenNotes } from './whatsNew.js';
+import { compareVersions, lastSeen, markSeen, notesUpTo, parseVersion, unseenNotes } from './whatsNew.js';
 import { WHATS_NEW } from './whatsNewNotes.js';
 
 const notes = [
@@ -35,6 +35,25 @@ test('an update shows every version since the one last seen', () => {
   assert.deepEqual(unseenNotes({ ...used, settings: { whats_new_seen: '0.10.0' } }, '0.10.0', notes), []);
   // A build with no note of its own shows nothing new.
   assert.deepEqual(unseenNotes({ ...used, settings: { whats_new_seen: '0.10.0' } }, '0.10.1', notes), []);
+});
+
+test('a skipped note is still shown: a build with no note leaves "seen" alone', () => {
+  // 0.10.1 had no note; the phone still says 0.9.5, so 0.10.0 waits for it.
+  const d = { ...used, settings: { whats_new_seen: '0.9.5' } };
+  assert.deepEqual(unseenNotes(d, '0.10.1', notes).map((n) => n.version), ['0.10.0']);
+});
+
+test('0.9.9 and 1.0.0 marked themselves seen without notes: they count as 0.9.8', () => {
+  assert.equal(lastSeen({ settings: { whats_new_seen: '1.0.0' } }), '0.9.8');
+  assert.equal(lastSeen({ settings: { whats_new_seen: '0.9.9' } }), '0.9.8');
+  assert.equal(lastSeen({ settings: { whats_new_seen: '0.9.7' } }), '0.9.7');
+  assert.equal(lastSeen({ settings: {} }), null);
+  const onOne = { ...used, settings: { whats_new_seen: '1.0.0' } };
+  assert.deepEqual(versions(unseenNotes(onOne, '1.0.1', WHATS_NEW)), ['1.0.1', '1.0.0', '0.9.9']);
+  const onSeven = { ...used, settings: { whats_new_seen: '0.9.7' } };
+  assert.deepEqual(versions(unseenNotes(onSeven, '1.0.1', WHATS_NEW)), ['1.0.1', '1.0.0', '0.9.9', '0.9.8']);
+  // Once 1.0.1's sheet is closed, nothing shows again.
+  assert.deepEqual(unseenNotes({ ...used, ...markSeen(onOne, '1.0.1') }, '1.0.1', WHATS_NEW), []);
 });
 
 test('a phone that never saw a note gets only the latest; a new install gets none', () => {

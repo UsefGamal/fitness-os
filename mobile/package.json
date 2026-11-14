@@ -1,7 +1,7 @@
 {
   "name": "fitness-os-mobile",
   "private": true,
-  "version": "0.9.8",
+  "version": "1.0.1",
   "type": "module",
   "description": "The standalone Fitness OS phone app. Runs inside the APK, data saved on the phone.",
   "scripts": {
