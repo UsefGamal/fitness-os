@@ -16,6 +16,7 @@ import { comeback, comebackTarget } from '../lib/comeback.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { HOLD_STEP, holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
+import { neighbours } from '../lib/progressions.js';
 import { alternatives } from '../lib/similar.js';
 import { roundDone, roundRest } from '../lib/superset.js';
 import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
@@ -245,6 +246,8 @@ export default function Workout() {
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, dayNames, data.workouts.length, data.exercises]);
+  // Easier and harder versions of a bodyweight move (content/progressions.py).
+  const ladderSteps = ex ? neighbours(ex.name, content.training.progressions) : null;
   const swapOptions = useMemo(() => (entry && catalogue ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : []), [entry, catalogue]);
 
   if (!day) {
@@ -650,6 +653,16 @@ export default function Workout() {
           <p className="muted small" style={{ marginTop: 0 }}>For today only; your plan stays the same.</p>
           <div className="list">
             {ex.swapped_from ? <button type="button" className="list-row" onClick={() => swapTo(null)}><div className="grow">Back to {ex.swapped_from}</div></button> : null}
+            {[['easier', 'ladder.swapEasier', 'ladder.down'], ['harder', 'ladder.swapHarder', 'ladder.up']].map(([side, label, dir]) => {
+              const step = ladderSteps?.[side];
+              // The plan's own move already has its "Back to" row.
+              return step && step.name !== ex.swapped_from ? (
+                <button key={side} type="button" className="list-row" onClick={() => swapToName(step.name)}>
+                  <div className="grow"><div>{t(label, { name: step.name })}</div><div className="meta">{t('ladder.swapMeta', { dir: t(dir) })}</div></div>
+                  <Icon name="chev" className="icon chev" />
+                </button>
+              ) : null;
+            })}
             {ex.alternative ? (
               <button type="button" className="list-row" onClick={() => swapToName(ex.alternative)}>
                 <div className="grow"><div>{t('workout.planBackup')}</div><div className="meta">{ex.alternative}</div></div>

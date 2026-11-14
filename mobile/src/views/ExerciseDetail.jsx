@@ -4,6 +4,7 @@ import Alternatives from '../components/Alternatives.jsx';
 import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
+import Ladder from '../components/Ladder.jsx';
 import LineChart from '../components/LineChart.jsx';
 import { formatDate } from '../lib/dates.js';
 import { safeVideo } from '../lib/links.js';
@@ -62,6 +63,7 @@ export default function ExerciseDetail() {
         </div>
       ) : null}
       {photo ? <HowTo entry={photo} target={target} /> : null}
+      <Ladder name={ex.name} ladders={content.training.progressions} exercises={data.exercises} />
       <Alternatives key={ex.id} entry={photo} group={ex.muscle_group} catalogue={catalogue} />
       <div className="section-label">History</div>
       {history.length ? (
