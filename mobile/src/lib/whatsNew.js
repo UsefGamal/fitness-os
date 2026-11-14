@@ -1,7 +1,8 @@
-// "What's new" after an update (E1-S6): once per version, on Home, the app
-// says in a few plain lines what changed. Which notes to show is decided
-// here; the notes themselves are in whatsNewNotes.js. The last version a
-// person has seen is kept in settings.whats_new_seen.
+// "What's new" after an update (E1-S6): on Home, the app lists in a few
+// plain lines everything that changed since the version this phone last
+// saw notes for. Which notes to show is decided here; the notes themselves
+// are in whatsNewNotes.js. The last version whose notes were shown (or that
+// a new install started on) is kept in settings.whats_new_seen.
 
 /** "0.9.5" -> [0, 9, 5]; null for anything that isn't a release version. */
 export function parseVersion(v) {
@@ -16,6 +17,18 @@ export function compareVersions(a, b) {
   if (!x || !y) return null;
   for (let i = 0; i < 3; i += 1) if (x[i] !== y[i]) return x[i] - y[i];
   return 0;
+}
+
+// 0.9.9 and 1.0.0 shipped without notes, and those builds marked themselves
+// as seen anyway. A phone that says it saw one of them really last saw
+// 0.9.8's notes, so it still gets everything after that.
+const NOTELESS_BUILDS = { '0.9.9': '0.9.8', '1.0.0': '0.9.8' };
+
+/** The version whose notes this phone really saw last, or null. */
+export function lastSeen(data) {
+  const seen = data.settings?.whats_new_seen;
+  if (!parseVersion(seen)) return null;
+  return NOTELESS_BUILDS[seen] ?? seen;
 }
 
 /** Has this phone been used yet? A new install has nothing to compare with. */
@@ -37,8 +50,8 @@ export function notesUpTo(current, notes) {
 export function unseenNotes(data, current, notes) {
   const upTo = notesUpTo(current, notes);
   if (!upTo.length) return [];
-  const seen = data.settings?.whats_new_seen;
-  if (parseVersion(seen)) return upTo.filter((n) => compareVersions(n.version, seen) > 0);
+  const seen = lastSeen(data);
+  if (seen) return upTo.filter((n) => compareVersions(n.version, seen) > 0);
   return hasHistory(data) ? upTo.slice(0, 1) : [];
 }
 

@@ -1,9 +1,36 @@
 // What changed, per released version, in the words a friend would use.
-// Add an entry for the next version when a pull request changes something
-// a person will notice; three to six short lines, newest version first.
+// Every release needs an entry for its version (the release build checks):
+// one to six short lines on what a person will notice, newest version first.
 // The version is the tag without the "v". lib/whatsNew.js decides which
 // of these a phone still has to see.
 export const WHATS_NEW = [
+  {
+    version: '1.0.1',
+    items: [
+      { icon: 'star', text: 'What\'s new now lists every change since the version you had before, even if you skipped a few updates.' },
+    ],
+  },
+  {
+    version: '1.0.0',
+    items: [
+      { icon: 'moon', text: 'Light theme: Settings, Look and modules, Theme. Pick Dark, Light or Match phone.' },
+      { icon: 'barbell', text: 'Tap a logged set\'s number to mark it a warm-up, a drop set or to failure. Warm-ups don\'t count as work sets.' },
+      { icon: 'calendar', text: 'Your week can start on Sunday or Monday (Settings, Times). Training at different times? Tick "My training time varies".' },
+      { icon: 'book', text: 'Better plan suggestions: every plan now trains each muscle at least twice a week.' },
+      { icon: 'check', text: 'After 8 weeks on a plan, Plan offers a check-in: a better plan if one fits, then keep or swap each exercise.' },
+      { icon: 'sunrise', text: 'Ramadan mode: late meals stop at 23:30, a meal after midnight counts for last night, and a note after Eid.' },
+    ],
+  },
+  {
+    version: '0.9.9',
+    items: [
+      { icon: 'bolt', text: 'Logging a set feels instant, even with years of history.' },
+      { icon: 'waves', text: 'Settings, Training, Vibration: Off, Light or Strong.' },
+      { icon: 'trophy', text: 'Sunday wrap-up on Home: your sessions, sets and meal days for the week, and you can share it as a picture.' },
+      { icon: 'heart', text: 'Back after a break? A welcome back card and a lighter first session instead of a broken streak.' },
+      { icon: 'timer', text: 'Missed your session time? Home asks "Still time today?": start now, move it to tomorrow or skip.' },
+    ],
+  },
   {
     version: '0.9.8',
     items: [
