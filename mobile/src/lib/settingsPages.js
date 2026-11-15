@@ -10,6 +10,9 @@ export const SETTINGS_PAGES = [
   { key: 'about', icon: 'gear', title: 'settings.about', note: 'settings.aboutNote' },
   // Reached from App and about (and from setup), so the root stays short.
   { key: 'install', icon: 'download', title: 'settings.install', note: 'settings.installNote', root: false },
+  // HELP-1: reached from Help and about, so the root stays at 10 rows.
+  { key: 'help', icon: 'info', title: 'settings.help', note: 'settings.helpNote', root: false },
+  { key: 'privacy', icon: 'lock', title: 'settings.privacy', note: 'settings.privacyNote', root: false },
 ];
 
 /** The pages with a row of their own on the Settings root. */

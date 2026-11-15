@@ -16,7 +16,7 @@ import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { backfillEaten } from '../lib/meals.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { keepPhotoLock } from '../lib/photoLock.js';
-import { hasMirror, lastSaveMs, onMirrorResult, readMirror, writeMirror } from './mirror.js';
+import { cancelMirror, hasMirror, lastSaveMs, onMirrorResult, readMirror, writeMirror } from './mirror.js';
 import { logStart } from './native.js';
 import { APP } from '../lib/version.js';
 import { SAVE_OK, recordSave } from '../lib/saveHealth.js';
@@ -35,6 +35,16 @@ const SAVE_DELAY = 400;
 let pending = null; // data waiting to be written
 let timer = null;
 let blocked = false; // data from a newer app version: never overwrite it
+
+/** Delete everything (HELP-1): drop anything waiting and never write
+ * again until the app restarts, so the wiped copies stay wiped. */
+export function stopSaving() {
+  blocked = true;
+  pending = null;
+  if (timer) clearTimeout(timer);
+  timer = null;
+  cancelMirror();
+}
 
 /** Write anything waiting now. `hidden`: the app is going to the
  * background, so the file is written at once too, not 300 ms later. */
