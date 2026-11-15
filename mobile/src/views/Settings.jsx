@@ -511,6 +511,7 @@ function TrainingSettings({ data, update }) {
         <Choice label="Rest for big lifts" value={t.rest_compound} onChange={(v) => set({ rest_compound: Number(v) })} options={rest} />
         <Choice label="Rest for small lifts" value={t.rest_isolation} onChange={(v) => set({ rest_isolation: Number(v) })} options={rest} />
         <Toggle on={t.auto_rest} onClick={() => set({ auto_rest: !t.auto_rest })} title="Start rest after each set" note="The timer starts when you log a set" />
+        <Toggle on={t.gym_mode === true} onClick={() => set({ gym_mode: t.gym_mode !== true })} title={tr('gym.title')} note={tr('gym.note')} />
         <Choice label="Target workout length" value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
           options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
       </div>

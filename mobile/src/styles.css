@@ -788,3 +788,12 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .first-how { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 14px; }
 .first-how li { display: flex; gap: 12px; align-items: flex-start; font-size: calc(16px * var(--ts)); line-height: 1.4; }
 .first-num { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+
+/* Gym mode (UIUX-4): App puts .gym on <html> while a workout runs on the
+   workout screen with the switch on. No tab bar (everything placed above it
+   drops to the bottom), and Log set sticks to the bottom of the screen while
+   its exercise is in view, out of the way while the rest timer is up. */
+:root.gym { --tabbar: 0px; }
+:root.gym .tabbar { display: none; }
+:root.gym .log-btn { position: sticky; bottom: calc(var(--sab) + 12px); z-index: 5; box-shadow: 0 6px 20px var(--deep-shadow); }
+:root.gym .with-timer .log-btn { position: static; box-shadow: none; }

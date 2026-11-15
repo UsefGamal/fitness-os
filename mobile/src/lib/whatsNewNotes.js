@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.3',
+    items: [
+      { icon: 'dumbbell', text: 'Gym mode (Settings, Training): no tab bar during a workout, Log set at the bottom, Back pauses.' },
+    ],
+  },
+  {
     version: '1.0.2',
     items: [
       { icon: 'info', text: 'Help in Settings: ten quick answers, like how to update, back up or move a session.' },
