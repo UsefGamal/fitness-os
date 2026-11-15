@@ -158,6 +158,8 @@ test('home card priority: doctor note, welcome back, wrap-up, recovery', () => {
   assert.equal(homeCard(data, content, '2026-11-08', { first: true }), 'first');
   assert.equal(homeCard(data, content, '2026-11-08', { goal: true, first: true }), 'goal');
   assert.equal(homeCard(data, content, '2026-11-08', { back: true, goal: true }), 'back');
+  assert.equal(homeCard(data, content, '2026-11-08', { target: true, first: true }), 'target');
+  assert.equal(homeCard(data, content, '2026-11-08', { goal: true, target: true }), 'goal');
   assert.equal(homeCard(data, content, '2026-11-08'), 'wrapup');
   assert.equal(homeCard(data, content, '2026-11-11'), null);
 });

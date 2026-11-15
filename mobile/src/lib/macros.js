@@ -21,6 +21,7 @@ import { addDays, daysBetween } from './dates.js';
 import { deficitShare, ramadanActive } from './ramadan.js';
 import { capProtein, isMinorNow, safeMode } from './safety.js';
 import { reverseStatus } from './maintenance.js';
+import { adjustTotal } from './targetCheck.js';
 
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
 const KCAL_PER_KG_FAT = 7700;
@@ -197,7 +198,15 @@ export function macroTargets(data, nutrition, today) {
   const plain = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
   // After a reached goal (MAINT-1): maintenance comes in weekly steps.
   const rev = mode === 'maintain' && currentGoal(data)?.reverse ? reverseStatus(currentGoal(data).reverse, logs, t, today) : null;
-  const energy = rev && !rev.done ? { kcal: rev.kcal, deficit: Math.max(0, pyRound(t) - rev.kcal), reasons: ['reverse'] } : plain;
+  let energy = rev && !rev.done ? { kcal: rev.kcal, deficit: Math.max(0, pyRound(t) - rev.kcal), reasons: ['reverse'] } : plain;
+  // The weekly target check's confirmed adjustments (TARGET-1), on a cut
+  // only, and never under the floor.
+  const adjust = mode === 'lose' || mode === 'recomp' ? adjustTotal(data) : 0;
+  if (adjust) {
+    const floor = MIN_KCAL[p.gender] ?? MIN_KCAL.female;
+    const kcal = Math.max(floor, plain.kcal + adjust);
+    energy = { kcal, deficit: Math.max(0, pyRound(t) - kcal), reasons: [...new Set([...plain.reasons, ...(kcal === floor ? ['floor'] : []), 'adjusted'])] };
+  }
   const split = macroSplit(energy.kcal, goalMid ?? weight, mode);
   // The protein cap is counted on the weight today, and carbs take up the rest.
   const protein = capProtein(data, split.protein, weight, today);
@@ -223,5 +232,6 @@ export function macroTargets(data, nutrition, today) {
     ...(activeAvg != null ? { active_avg: activeAvg } : {}),
     ...(ramadanActive(data, today) ? { ramadan: true } : {}),
     ...(rev ? { reverse: rev } : {}),
+    ...(adjust ? { adjust } : {}),
   };
 }
