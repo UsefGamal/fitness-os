@@ -83,7 +83,8 @@ export function backfillEaten(data, nutrition) {
     if (!m.completed || m.custom || m.eaten) return m;
     const meal = mealDayFor(m.log_date, nutrition).meals.find((x) => x.slot === m.meal_slot);
     if (!meal) return m;
-    const option = meal.options.find((o) => o.key === m.option_key) || meal.options[0];
+    // A library swap (lib/mealLibrary.js) counts with the library meal's numbers.
+    const option = meal.options.find((o) => o.key === m.option_key) || (nutrition.library || []).find((o) => o.key === m.option_key) || meal.options[0];
     return { ...m, eaten: eatenOf(option) };
   });
   return next.some((m, i) => m !== rows[i]) ? { ...data, meal_logs: next } : data;

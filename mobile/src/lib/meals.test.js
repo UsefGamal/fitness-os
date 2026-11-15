@@ -5,6 +5,7 @@ import test from 'node:test';
 import { emptyData, mealLog } from './data.js';
 import { parseDataFile, toDataFile } from './dataFile.js';
 import { backfillEaten, dayTotals, eatenMeals, eatenOf, mealDayFor, mealDayNumber, mealStart, pickOption, slotLabel, tickMeal } from './meals.js';
+import { applySwaps } from './mealLibrary.js';
 import { migrate } from './migrate.js';
 import { clearCustomMeal, logCustomMeal } from './myFoods.js';
 import { finishSetup } from './setup.js';
@@ -25,8 +26,9 @@ test('day totals follow the picked options', () => {
   const day = mealDayFor(N.plan_start_date, N);
   const a = dayTotals(day);
   assert.equal(a.kcal, Math.round(day.meals.reduce((s, m) => s + m.options[0].kcal, 0)));
-  const b = dayTotals(day, { breakfast: 'option_b' });
-  assert.equal(b.kcal, a.kcal - Math.round(day.meals[0].options[0].kcal) + Math.round(day.meals[0].options[1].kcal));
+  const swapped = applySwaps(day, (s) => (s === 'breakfast' ? otherBreakfast(day) : null), N);
+  const b = dayTotals(swapped, { breakfast: otherBreakfast(day) });
+  assert.equal(b.kcal, Math.round(a.kcal - day.meals[0].options[0].kcal + swapped.meals[0].options[1].kcal));
 });
 
 test('slot labels', () => {
@@ -44,7 +46,9 @@ test('eaten totals: only the ticked meals, and 0 with none ticked (E3-S12)', () 
 
 // DA-1: past meals never change.
 const DAY = '2026-11-04';
-const planDay = () => mealDayFor(DAY, N);
+// The plan has one meal per slot; a library swap adds a second option.
+const otherBreakfast = (day) => N.library.find((m) => m.meals.includes('breakfast') && m.key !== day.meals[0].options[0].key).key;
+const planDay = () => { const day = mealDayFor(DAY, N); return applySwaps(day, (s) => (s === 'breakfast' ? otherBreakfast(day) : null), N); };
 const breakfast = () => planDay().meals.find((m) => m.slot === 'breakfast');
 
 test('ticking a meal copies its numbers; unticking clears them', () => {

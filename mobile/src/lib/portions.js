@@ -38,6 +38,13 @@ export function planKcal(nutrition) {
   return Math.round(list.reduce((n, d) => n + dayKcal(d), 0) / list.length);
 }
 
+/** The plan's normal day's protein: option A over the non-refeed days. */
+export function planProtein(nutrition) {
+  const days = nutrition.days.filter((d) => !d.is_refeed);
+  const list = days.length ? days : nutrition.days;
+  return Math.round(list.reduce((n, d) => n + d.meals.reduce((m, x) => m + (optionA(x)?.protein || 0), 0), 0) / list.length);
+}
+
 /** { factor, raw, state }: state 'same' (inside the dead band, or no
  * target), 'scaled', or 'far' (outside the clamp: rule 7). */
 export function scaleFactor(target, plan) {
@@ -91,7 +98,7 @@ function totalsOf(parts, units) {
 }
 
 /** The candidate unit counts for one food. */
-function candidates(p, factor, scaleProtein) {
+function candidates(p, factor, scaleProtein, proteinFactor = 1) {
   const { count, step } = p;
   const fixed = !p.macros || p.macros[0] <= 0;
   if (fixed) return [count];
@@ -101,8 +108,10 @@ function candidates(p, factor, scaleProtein) {
   let to;
   if (KEEP_SIDE.has(p.key)) return [count];
   if (p.protein && !scaleProtein) {
-    // Protein foods keep their units going down; going up they may grow.
-    from = count;
+    // Protein foods keep their units going down, unless the person needs
+    // less protein than the plan holds (proteinFactor < 1): then they may
+    // shrink as far as that. Going up they may grow.
+    from = factor < 1 && proteinFactor < 1 ? Math.min(count, lo(count * proteinFactor)) : count;
     to = factor > 1 ? hi(count * factor) + step : count;
   } else if (factor < 1) {
     // Going down nothing grows.
@@ -128,7 +137,7 @@ function build(option, parts, units, sum, err, score) {
 
 /** The best few ways to scale one option, best first (different kcal
  * each), so a day can pick the mix that lands closest. */
-export function optionChoices(option, factor, foods, { proteinCap = false } = {}, keep = 6) {
+export function optionChoices(option, factor, foods, { proteinCap = false, proteinFactor = 1 } = {}, keep = 6) {
   if (factor === 1 || !option?.items?.length) return [{ ...option, changed: false, fits: true, score: 0 }];
   const parts = portionsOf(option).map(([key, count]) => {
     const macros = foods[key] || null;
@@ -136,8 +145,9 @@ export function optionChoices(option, factor, foods, { proteinCap = false } = {}
   });
   const goal = option.kcal * factor;
   // Going up, protein never drops; going down, only the protein foods' units are kept.
-  const floor = proteinCap || factor < 1 ? -Infinity : option.protein - 1e-6;
-  const lists = parts.map((p) => candidates(p, factor, proteinCap));
+  // With a smaller protein target (proteinFactor < 1), never below that share.
+  const floor = proteinCap ? -Infinity : factor >= 1 ? option.protein - 1e-6 : proteinFactor < 1 ? option.protein * proteinFactor - 1e-6 : -Infinity;
+  const lists = parts.map((p) => candidates(p, factor, proteinCap, proteinFactor));
   // Small search: an option has at most five foods and a handful of
   // candidates each. The best fit wins; ties go to the most even scaling.
   const byKcal = new Map();
@@ -147,7 +157,8 @@ export function optionChoices(option, factor, foods, { proteinCap = false } = {}
       const sum = totalsOf(parts, units);
       if (sum.protein < floor) return;
       const err = Math.abs(sum.kcal - goal) / goal;
-      const shape = parts.reduce((n, p, j) => n + Math.abs(units[j] / p.count - (p.protein && !proteinCap && factor < 1 ? 1 : factor)), 0) / parts.length;
+      const keepTo = (p0) => (p0.protein && !proteinCap && factor < 1 ? Math.max(factor, proteinFactor) : factor);
+      const shape = parts.reduce((n, p, j) => n + Math.abs(units[j] / p.count - keepTo(p)), 0) / parts.length;
       const score = Math.max(err, 0.02) + 0.02 * shape;
       const k = Math.round(sum.kcal);
       const had = byKcal.get(k);
@@ -241,7 +252,11 @@ export function planFit(data, nutrition, today) {
   const target = macroTargets(data, nutrition, today);
   if (target.source === 'plan') return { state: 'same', factor: 1, plan, cap: false };
   const f = scaleFactor(target.kcal, plan);
-  return { ...f, plan, cap: Boolean(target.gated?.includes('protein_cap')) };
+  // A smaller person needs less protein than the plan holds: protein foods
+  // may then shrink, never below their own target (and never below 60%).
+  const planP = planProtein(nutrition);
+  const proteinFactor = f.factor < 1 && target.protein > 0 && planP > 0 ? Math.max(0.6, Math.min(1, target.protein / planP)) : 1;
+  return { ...f, plan, cap: Boolean(target.gated?.includes('protein_cap')), proteinFactor };
 }
 
 const cache = new Map();
@@ -253,12 +268,21 @@ const cache = new Map();
 export function planDayFor(iso, data, nutrition, today, fit = planFit(data, nutrition, today)) {
   const day = mealDayFor(iso, nutrition, mealStart(data, nutrition));
   if (fit.state !== 'scaled') return { day, fit };
-  const key = `${day.day_index}|${fit.factor}|${fit.cap}`;
+  const key = `${day.day_index}|${fit.factor}|${fit.cap}|${fit.proteinFactor ?? 1}`;
   let hit = cache.get(key);
   if (!hit || hit.nutrition !== nutrition) {
-    hit = { nutrition, ...scaleDay(day, fit.factor, nutrition, { proteinCap: fit.cap }) };
+    hit = { nutrition, ...scaleDay(day, fit.factor, nutrition, { proteinCap: fit.cap, proteinFactor: fit.proteinFactor ?? 1 }) };
     if (cache.size > 64) cache.clear();
     cache.set(key, hit);
   }
   return hit.fits ? { day: hit.day, fit } : { day, fit: { ...fit, state: 'far' } };
+}
+
+/** One option (a plan meal or a library swap) fitted to the person, with
+ * its ingredient lines rewritten when portions changed. Unchanged when
+ * the plan isn't scaled. */
+export function fitOption(option, fit, nutrition) {
+  if (!option || fit?.state !== 'scaled' || !option.items?.length) return option;
+  const best = optionChoices(option, fit.factor, nutrition.foods, { proteinCap: fit.cap, proteinFactor: fit.proteinFactor ?? 1 }, 1)[0];
+  return withText(best, nutrition.food_names || {});
 }
