@@ -50,6 +50,8 @@ const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof 
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
 const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
+// FIRST-1: set up two days ago, no workout finished, nothing backed up.
+const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11-04' }, workouts: d.workouts.filter((w) => !w.finished_at), settings: { ...d.settings, last_backup_at: null, auto_backup: undefined, first_week: undefined } });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
@@ -142,6 +144,8 @@ export const STATES = [
       await p.getByRole('textbox').fill('DELETE');
     },
   },
+  { name: 'first week on Home', route: '/', data: firstWeek, check: (p) => p.getByText(en['first.title']).waitFor() },
+  { name: 'sheet: add the widget', route: '/', data: firstWeek, act: (p) => btnNamed(p, en['first.widget']).click() },
   { name: 'light: Home', route: '/', data: lightTheme },
   { name: 'light: Plan', route: '/plan', data: lightTheme },
   { name: 'light: Workout', route: '/workout', data: lightTheme },

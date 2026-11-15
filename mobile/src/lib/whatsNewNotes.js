@@ -12,6 +12,7 @@ export const WHATS_NEW = [
       { icon: 'trend', text: 'Fitness test on Stats: push-ups, squats and a plank hold, to see how you improve.' },
       { icon: 'barbell', text: 'A bodyweight move\'s page shows its easier and harder versions.' },
       { icon: 'check', text: 'With TalkBack on, the app says each set, new record, rest over and meal ticked.' },
+      { icon: 'star', text: 'New on the app? Home shows five first-week steps that tick themselves as you go.' },
     ],
   },
   {

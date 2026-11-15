@@ -64,5 +64,27 @@ export async function hasScreenLock() {
   }
 }
 
+/** { count, canPin } for the home-screen widget (FIRST-1); null off the
+ * phone or on an older APK without the method. */
+export async function widgetStatus() {
+  if (!isNative()) return null;
+  try {
+    const r = await Widget.status();
+    return { count: Number(r.count) || 0, canPin: r.canPin === true };
+  } catch {
+    return null;
+  }
+}
+
+/** Asks the launcher to pin the widget; false when it can't. */
+export async function pinWidget() {
+  if (!isNative()) return false;
+  try {
+    return (await Widget.pin()).asked === true;
+  } catch {
+    return false;
+  }
+}
+
 /** The automatic backup's folder (BAK-1): store/autoBackup.js. */
 export const BackupFolder = registerPlugin('BackupFolder');
