@@ -25,6 +25,9 @@ import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
 import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
+import { backAction, inGymMode } from './lib/gymMode.js';
+import { pauseWorkout } from './lib/training.js';
+import { announce } from './lib/announce.js';
 import { needsScreening } from './lib/safety.js';
 import Screening from './views/Screening.jsx';
 import Setup from './views/Setup.jsx';
@@ -80,7 +83,11 @@ function Shell() {
   // Swipe left or right on a tab page to open the tab next to it.
   const mealsOn = useData((s) => moduleOn(s.data, 'meals'));
   const locale = useData((s) => localeOf(s.data));
-  const swipe = useSwipeTabs(pathname, { rtl: dirOf(locale) === 'rtl', tabs: tabPaths(mealsOn) });
+  const tabSwipe = useSwipeTabs(pathname, { rtl: dirOf(locale) === 'rtl', tabs: tabPaths(mealsOn) });
+  // Gym mode (UIUX-4): no tab bar and no tab swipes while a workout runs.
+  const gym = useData((s) => inGymMode(s.data, s.activeWorkoutId, pathname));
+  useLayoutEffect(() => { document.documentElement.classList.toggle('gym', gym); }, [gym]);
+  const swipe = gym ? {} : tabSwipe;
   const tabAnim = state?.swipe === 'forward' ? 'swipe-fwd' : state?.swipe === 'back' ? 'swipe-back' : 'tab-in';
   return (
     <>
@@ -161,6 +168,14 @@ function listenBackButton() {
   if (!Capacitor.isNativePlatform()) return;
   CapApp.addListener('backButton', ({ canGoBack }) => {
     if (closeTopOverlay()) return;
+    // Gym mode: Back pauses the running workout and stays on it (UIUX-4).
+    const st = useData.getState();
+    const path = window.location.hash.replace(/^#/, '').split('?')[0] || '/';
+    if (backAction(st.data, st.activeWorkoutId, path) === 'pause') {
+      st.update((d) => pauseWorkout(d, st.activeWorkoutId));
+      announce(t('gym.paused'));
+      return;
+    }
     if (canGoBack && window.history.length > 1 && window.location.hash !== '#/') window.history.back();
     else CapApp.exitApp();
   });

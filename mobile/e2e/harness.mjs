@@ -54,6 +54,8 @@ const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05
 const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11-04' }, workouts: d.workouts.filter((w) => !w.finished_at), settings: { ...d.settings, last_backup_at: null, auto_backup: undefined, first_week: undefined } });
 // UIUX-2: the biggest text size.
 const bigText = (d) => ({ ...d, settings: { ...d.settings, text_size: 130 } });
+// UIUX-4: gym mode switched on.
+const gymOn = (d) => ({ ...d, settings: { ...d.settings, training: { ...d.settings?.training, gym_mode: true } } });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
@@ -169,6 +171,7 @@ export const STATES = [
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },
   { name: 'after Eid on Home', route: '/', data: afterEid, check: (p) => p.getByText(en['ramadan.afterChip']).first().waitFor() },
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
+  { name: 'gym mode: logging a set', route: '/workout', data: gymOn, act: startSession, check: async (p) => { if (await p.locator('.tabbar').isVisible()) throw new Error('tab bar still shown in gym mode'); } },
   // UIUX-2: the app's own 130% text size (Settings > Look).
   { name: 'text 130%: Home', route: '/', data: bigText },
   { name: 'text 130%: Workout', route: '/workout', data: bigText },
