@@ -1084,6 +1084,7 @@ export default {
 
   'lib.title': 'Meal library',
   'lib.kcal': 'kcal',
+  'lib.proteinLabel': 'Protein',
   'lib.sub': '{n} meals. Portions fit your calorie target.',
   'lib.open': 'Library',
   'lib.search': 'Search meals or ingredients',

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applySwaps, byProtein, filterMeals, goalFit, ingredientSet, ingredientsOf, kcalFit, kindsFor, libraryMeal, mealsForSlot, pickCounts, recentKeys, recommend, shownOption, similarity, similarMeals, sortForGoal, suits } from './mealLibrary.js';
+import { addDays } from './dates.js';
+import { applySwaps, byProtein, dayFor, swapTarget, filterMeals, goalFit, ingredientSet, ingredientsOf, kcalFit, kindsFor, libraryMeal, mealsForSlot, pickCounts, recentKeys, recommend, shownOption, similarity, similarMeals, sortForGoal, suits } from './mealLibrary.js';
 import { fitOption, planFit } from './portions.js';
 import { shoppingList } from './shopping.js';
 import { mealDayFor } from './meals.js';
@@ -145,4 +146,20 @@ test('recommendations follow the goal, the history and the shopping list', () =>
 test('the plan day still fits the person after the library change', () => {
   const fit = planFit({ profile: null, goals: [], body_logs: [], settings: {} }, N, '2026-11-16');
   assert.equal(fit.state, 'same');
+});
+
+test('a library link names the slot and day it swaps', () => {
+  const p = (q) => new URLSearchParams(q);
+  assert.deepEqual(swapTarget(p('slot=lunch&date=2026-11-20'), '2026-11-16', N.meal_slots), { slot: 'lunch', date: '2026-11-20' });
+  assert.deepEqual(swapTarget(p('slot=lunch&date=nonsense'), '2026-11-16', N.meal_slots), { slot: 'lunch', date: '2026-11-16' });
+  assert.equal(swapTarget(p('slot=brunch'), '2026-11-16', N.meal_slots), null);
+  assert.equal(swapTarget(p(''), '2026-11-16', N.meal_slots), null);
+});
+
+test('dayFor applies the person\'s swaps for that date only', () => {
+  const data = { profile: null, goals: [], body_logs: [], settings: {}, meal_logs: [{ log_date: N.plan_start_date, meal_slot: 'dinner', option_key: 'shrimp_noodles' }] };
+  const { day } = dayFor(N.plan_start_date, data, N, N.plan_start_date);
+  assert.equal(day.meals.find((m) => m.slot === 'dinner').options.at(-1).key, 'shrimp_noodles');
+  const next = dayFor(addDays(N.plan_start_date, 1), data, N, N.plan_start_date).day;
+  assert.ok(next.meals.every((m) => m.options.length === 1));
 });

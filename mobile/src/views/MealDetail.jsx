@@ -62,7 +62,7 @@ export default function MealDetail() {
 
       <div className="tile-grid">
         {hideKcal ? null : <div className="stat-tile macro"><div className="stat-tile-label">{t('lib.kcal')}</div><div className="macro-value">{Math.round(shown.kcal)}</div></div>}
-        <div className="stat-tile macro"><div className="stat-tile-label">{t('meals.proteinEaten')}</div><div className="macro-value">{Math.round(shown.protein)}<span className="unit">g</span></div></div>
+        <div className="stat-tile macro"><div className="stat-tile-label">{t('lib.proteinLabel')}</div><div className="macro-value">{Math.round(shown.protein)}<span className="unit">g</span></div></div>
       </div>
       <p className="muted small" style={{ margin: '4px 4px 0' }}>{t('lib.carbsFat', { carbs: Math.round(shown.carbs), fat: Math.round(shown.fat), fiber: Math.round(shown.fiber) })}{scaled ? ` · ${t('lib.scaledNote')}` : ''}</p>
       {goalFit(meal, goal) >= 0.7 ? <p className="small accent-line" style={{ margin: '8px 4px 0' }}><Icon name="check" className="icon inline" /> {t('lib.goalGood')}: {t(`lib.why.goal.${goal}`).toLowerCase()}</p> : null}

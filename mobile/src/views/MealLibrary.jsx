@@ -17,9 +17,15 @@ import { content, useData } from '../store/useData.js';
 const N = content.nutrition;
 const KINDS = ['breakfast', 'lunch', 'dinner', 'snack', 'suhoor', 'iftar'];
 
+/** A new link (another slot or day to swap) starts the screen fresh, so
+ * filters from the last visit don't carry over. */
 export default function MealLibrary() {
-  const navigate = useNavigate();
   const [params] = useSearchParams();
+  return <LibraryScreen key={params.toString()} params={params} />;
+}
+
+function LibraryScreen({ params }) {
+  const navigate = useNavigate();
   const data = useData((s) => s.data);
   const today = useToday();
   const swap = swapTarget(params, today, N.meal_slots);
