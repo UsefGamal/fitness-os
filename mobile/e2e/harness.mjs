@@ -52,6 +52,8 @@ const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01'
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
 // FIRST-1: set up two days ago, no workout finished, nothing backed up.
 const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11-04' }, workouts: d.workouts.filter((w) => !w.finished_at), settings: { ...d.settings, last_backup_at: null, auto_backup: undefined, first_week: undefined } });
+// UIUX-2: the biggest text size.
+const bigText = (d) => ({ ...d, settings: { ...d.settings, text_size: 130 } });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
@@ -146,6 +148,9 @@ export const STATES = [
   },
   { name: 'first week on Home', route: '/', data: firstWeek, check: (p) => p.getByText(en['first.title']).waitFor() },
   { name: 'sheet: add the widget', route: '/', data: firstWeek, act: (p) => btnNamed(p, en['first.widget']).click() },
+  { name: 'text 130%: Plan', route: '/plan', data: bigText },
+  { name: 'text 130%: Stats', route: '/stats', data: bigText },
+  { name: 'text 130%: Settings', route: '/settings', data: bigText },
   { name: 'light: Home', route: '/', data: lightTheme },
   { name: 'light: Plan', route: '/plan', data: lightTheme },
   { name: 'light: Workout', route: '/workout', data: lightTheme },
@@ -164,11 +169,12 @@ export const STATES = [
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },
   { name: 'after Eid on Home', route: '/', data: afterEid, check: (p) => p.getByText(en['ramadan.afterChip']).first().waitFor() },
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
-  { name: 'text 130%: Home', route: '/', font: '130%' },
-  { name: 'text 130%: Workout', route: '/workout', font: '130%' },
+  // UIUX-2: the app's own 130% text size (Settings > Look).
+  { name: 'text 130%: Home', route: '/', data: bigText },
+  { name: 'text 130%: Workout', route: '/workout', data: bigText },
   // FEEL-1: the steppers keep 48 px buttons at 360 px and 130% text.
-  { name: 'text 130%: logging a set', route: '/workout', font: '130%', act: startSession, floor: { sel: '.stepper button', min: 48 } },
-  { name: 'text 130%: Meals', route: '/meals', font: '130%', act: toFullMeals },
+  { name: 'text 130%: logging a set', route: '/workout', data: bigText, act: startSession, floor: { sel: '.stepper button', min: 48 } },
+  { name: 'text 130%: Meals', route: '/meals', data: bigText, act: toFullMeals },
 ];
 
 /** Interactive elements under 44 x 44, measured in the page. Inline links

@@ -11,7 +11,7 @@ export const WHATS_NEW = [
       { icon: 'lock', text: 'Privacy page: where every copy of your data goes, and Delete everything to start over.' },
       { icon: 'trend', text: 'Fitness test on Stats: push-ups, squats and a plank hold, to see how you improve.' },
       { icon: 'barbell', text: 'A bodyweight move\'s page shows its easier and harder versions.' },
-      { icon: 'check', text: 'With TalkBack on, the app says each set, new record, rest over and meal ticked.' },
+      { icon: 'check', text: 'Bigger text up to 130% (Settings, Look), and TalkBack now says each set, record, rest over and meal.' },
       { icon: 'star', text: 'New on the app? Home shows five first-week steps that tick themselves as you go.' },
     ],
   },

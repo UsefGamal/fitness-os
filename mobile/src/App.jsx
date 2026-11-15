@@ -41,7 +41,7 @@ import Plan from './views/Plan.jsx';
 import Settings from './views/Settings.jsx';
 import Today from './views/Today.jsx';
 import Workout from './views/Workout.jsx';
-import { themeChoice } from './lib/theme.js';
+import { textScale, textSize, themeChoice } from './lib/theme.js';
 import { applyTheme, followPhone } from './store/theme.js';
 
 // Screens you open now and then load on first use, so start-up stays quick.
@@ -175,6 +175,9 @@ export default function App() {
   // Light theme (THEME-1): before paint, so there is no dark flash.
   const theme = useData((s) => themeChoice(s.data));
   useLayoutEffect(() => { applyTheme(theme); return followPhone(theme); }, [theme]);
+  // Text size (UIUX-2): one variable every font size reads.
+  const ts = useData((s) => textScale(textSize(s.data)));
+  useLayoutEffect(() => { document.documentElement.style.setProperty('--ts', String(ts)); }, [ts]);
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
   const [perms, setPerms] = useState(false);
