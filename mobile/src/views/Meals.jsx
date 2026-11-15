@@ -66,6 +66,7 @@ function Targets() {
         </div>
         <div className="small">{t('mealsSimple.perMeal', { g: perMeal, n: S.meals_per_day })}</div>
         {showKcal ? <div className="muted small" style={{ marginTop: 6 }}>{t('mealsSimple.kcal', { kcal: target.kcal })}</div> : null}
+        {showKcal && target.reverse && !target.reverse.done ? <div className="muted small" style={{ marginTop: 4 }}>{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</div> : null}
         {target.source === 'plan' ? <div className="muted small" style={{ marginTop: 6 }}><Link to="/profile">{t('mealsSimple.setUp')}</Link></div> : null}
         <div className="row between" style={{ marginTop: 14 }}>
           <strong><Icon name="drop" className="icon" /> {t('mealsSimple.water')}</strong>
@@ -177,6 +178,7 @@ function MealPlan() {
           {t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
         </div>
       </details>
+      {target.reverse && !target.reverse.done && !kcalHidden(data) ? <p className="muted small" role="note">{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</p> : null}
       {fit.state === 'far' ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
       {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
         <div key={r.key} className="warn" role="note">

@@ -66,6 +66,8 @@ export interface Goal {
   target_high_kg?: number | null;
   target_date?: ISODate | null;
   ended_on?: ISODate | null;
+  /** MAINT-1: maintenance reached in weekly steps from the cut's kcal. */
+  reverse?: { from_kcal: number; started_on: ISODate; step?: number; weeks?: number };
   [key: string]: unknown;
 }
 
