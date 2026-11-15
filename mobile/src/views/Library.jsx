@@ -41,7 +41,7 @@ export default function Library() {
         <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => setTab('mine')}>Your exercises</button>
         <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => setTab('all')}>All with photos</button>
       </div>
-      <input type="text" placeholder="Search exercises" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search exercises" style={{ marginBottom: 12 }} />
+      <input type="text" placeholder="Search exercises" value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('aria.searchExercises')} style={{ marginBottom: 12 }} />
       {/* Search and muscle chips first; the body map opens on request so the list starts on the first screen (UX-25). */}
       <div className="chip-row" role="group" aria-label={t('library.filter')}>
         <button type="button" className={`chip-btn${!muscle ? ' on' : ''}`} aria-pressed={!muscle} onClick={() => setMuscle(null)}>{t('library.all')}</button>
@@ -74,8 +74,8 @@ export default function Library() {
       </div>
       <form className="card stack" onSubmit={add}>
         <strong>Add your own exercise</strong>
-        <input type="text" placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="New exercise name" />
-        <select value={newMuscle} onChange={(e) => setNewMuscle(e.target.value)} aria-label="Muscle group">{MUSCLES.map((m) => <option key={m}>{m}</option>)}</select>
+        <input type="text" placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label={t('aria.newExercise')} />
+        <select value={newMuscle} onChange={(e) => setNewMuscle(e.target.value)} aria-label={t('aria.muscleGroup')}>{MUSCLES.map((m) => <option key={m}>{m}</option>)}</select>
         <button type="submit" className="btn secondary" disabled={!newName.trim()}>Add</button>
       </form>
       </>

@@ -1,3 +1,5 @@
+import { t } from '../lib/i18n.js';
+
 /** Inline SVG line of weigh-ins, with the goal band shaded. */
 export default function WeightChart({ logs, goalLow, goalHigh }) {
   if (logs.length < 2) return <div className="empty small">Two weigh-ins and a trend line shows up here.</div>;
@@ -11,7 +13,7 @@ export default function WeightChart({ logs, goalLow, goalHigh }) {
   const y = (v) => H - P - ((v - lo) / (hi - lo)) * (H - 2 * P);
   const d = logs.map((l, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(l.weight_kg).toFixed(1)}`).join(' ');
   return (
-    <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Weight from ${ws[0]} to ${ws[ws.length - 1]} kg`}>
+    <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('aria.weightChart', { from: ws[0], to: ws[ws.length - 1] })}>
       {goalLow && goalHigh ? <rect x={P} width={W - 2 * P} y={y(goalHigh)} height={Math.max(1, y(goalLow) - y(goalHigh))} fill="color-mix(in srgb, var(--accent) 12%, transparent)" /> : null}
       <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={x(logs.length - 1)} cy={y(ws[ws.length - 1])} r="4" fill="var(--accent)" />

@@ -32,7 +32,7 @@ export default function Catalogue({ q, muscle }) {
   );
   return (
     <>
-      <select value={equipment} onChange={(e) => { setEquipment(e.target.value); setLimit(PAGE); }} aria-label="Equipment" style={{ marginBottom: 12 }}>
+      <select value={equipment} onChange={(e) => { setEquipment(e.target.value); setLimit(PAGE); }} aria-label={t('aria.equipment')} style={{ marginBottom: 12 }}>
         <option value="">Any equipment</option>
         {kinds.map((k) => <option key={k} value={k}>{capitalize(k)}</option>)}
       </select>

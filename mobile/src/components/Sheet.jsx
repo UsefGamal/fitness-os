@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 
 import { pushOverlay } from '../lib/overlays.js';
 import { SHEET_CLOSE_MS } from '../lib/sheet.js';
+import { t } from '../lib/i18n.js';
 
 const CloseContext = createContext(null);
 
@@ -53,7 +54,7 @@ export default function Sheet({ title, onClose, children }) {
   return (
     <CloseContext.Provider value={close}>
       <div className={`sheet-wrap${closing ? ' closing' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
-        <button type="button" className="sheet-backdrop" aria-label="Close" onClick={close} />
+        <button type="button" className="sheet-backdrop" aria-label={t('aria.close')} onClick={close} />
         <div ref={panel} tabIndex={-1} className="sheet" style={dy ? { transform: `translateY(${dy}px)`, transition: 'none' } : undefined}>
           <div className="sheet-handle" onPointerDown={down} onPointerMove={moveP} onPointerUp={up} onPointerCancel={up}><span /></div>
           <div className="row between" style={{ margin: '0 4px 10px' }}>

@@ -338,7 +338,7 @@ export default function Settings() {
         <section className="card stack">
           <strong>Add these workouts from {csv.parsed.source}?</strong>
           {csv.parsed.source === 'Strong' ? (
-            <div className="seg" role="group" aria-label="Weights in the file are in">
+            <div className="seg" role="group" aria-label={t('aria.csvUnit')}>
               {['kg', 'lb'].map((u) => <button key={u} type="button" className={csv.unit === u ? 'on' : ''} onClick={() => readCsv(csv.text, u)}>Weights in {u}</button>)}
             </div>
           ) : null}

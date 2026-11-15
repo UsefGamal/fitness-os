@@ -5,6 +5,7 @@ import ErrorBoundary from './components/CrashScreen.jsx';
 import RecoveryScreen from './components/RecoveryScreen.jsx';
 import { recordError } from './store/errors.js';
 import Fanfare from './components/Fanfare.jsx';
+import Announcer from './components/Announcer.jsx';
 import SaveBar from './components/SaveBar.jsx';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -94,6 +95,7 @@ function Shell() {
       </div>
       <RestTimer compact={pathname !== '/workout'} />
       <Fanfare />
+      <Announcer />
       <TabBar />
     </>
   );
