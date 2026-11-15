@@ -1210,6 +1210,7 @@ export default {
 
   'lib.title': 'Meal library',
   'lib.kcal': 'kcal',
+  'lib.photoCredit': 'Photo: {author}, {license}, via Wikimedia Commons.',
   'lib.proteinLabel': 'Protein',
   'lib.sub': '{n} meals. Portions fit your calorie target.',
   'lib.open': 'Library',

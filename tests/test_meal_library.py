@@ -85,3 +85,15 @@ def test_option_shape_matches_the_app():
     assert len(o["items"]) == len(o["ingredients"]) == len(MEALS[0]["items"])
     foods, names, cats = meal_library.item_foods()
     assert set(o["items"]) <= set(foods) and set(o["items"]) <= set(cats)
+
+
+def test_meal_photos_are_open_and_credited():
+    from content.meal_photos import MEAL_PHOTOS
+
+    allowed = re.compile(r"^(CC0|Public domain|CC BY(-SA)? \d\.\d)$", re.I)
+    for key, (title, author, licence) in MEAL_PHOTOS.items():
+        assert key in MEALS_BY_KEY, key
+        assert title.startswith("File:"), title
+        assert author and "<" not in author, f"{key}: plain-text author"
+        assert allowed.match(licence), f"{key}: {licence}"
+        assert "goodfood" not in title.lower() and "bbc" not in title.lower()

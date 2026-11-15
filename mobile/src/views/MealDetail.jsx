@@ -53,6 +53,7 @@ export default function MealDetail() {
   return (
     <div className="page">
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> {t('nav.back')}</button>
+      {meal.photo ? <img className="meal-hero" src={meal.photo.file} alt="" decoding="async" /> : null}
       <h1 className="page-title" style={{ marginTop: 4 }}>{meal.name}</h1>
       <div className="chip-row">
         <span className="chip"><Icon name="timer" className="icon inline" /> {meal.minutes} min</span>
@@ -99,6 +100,7 @@ export default function MealDetail() {
         </>
       ) : null}
       <p className="muted small" style={{ margin: '16px 4px 0' }}>{t('lib.source', { source: N.nutrition_source })}</p>
+      {meal.photo ? <p className="muted small" style={{ margin: '4px 4px 0' }}>{t('lib.photoCredit', { author: meal.photo.author, license: meal.photo.license })}</p> : null}
     </div>
   );
 }

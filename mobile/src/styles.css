@@ -774,6 +774,7 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .swap-btn { flex: none; width: auto; min-height: 44px; padding: 0 14px; }
 .meal-thumb { display: inline-grid; place-items: center; color: var(--muted); }
 .accent-line { color: var(--accent); }
+.meal-hero { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 14px; margin: 8px 0 4px; background: var(--surface2); }
 .method-steps { margin: 0; padding: 14px 16px 14px 36px; display: grid; gap: 8px; }
 
 

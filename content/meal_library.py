@@ -289,9 +289,13 @@ def item_phrase(item):
 def meal_option(m):
     """A library meal in the app's option shape: the same fields a plan
     option has (key, items, ingredients, macros), plus the library's own."""
+    from content.meal_photos import MEAL_PHOTOS
+
     kcal, protein, carbs, fat, fiber = meal_totals(m)
+    photo = MEAL_PHOTOS.get(m["key"])
     return {
         "key": m["key"],
+        "photo": {"file": f"meal-photos/{m['key']}.jpg", "author": photo[1], "license": photo[2]} if photo else None,
         "name": m["name"],
         "meals": m["meals"],
         "protein_source": m["protein"],

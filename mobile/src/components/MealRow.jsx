@@ -24,7 +24,7 @@ export default function MealRow({ meal, fit, hideKcal, to, reasons }) {
   const why = reasonText(reasons);
   return (
     <Link to={to} className="list-row">
-      <span className="thumb blank meal-thumb" aria-hidden="true"><Icon name="meals" /></span>
+      {meal.photo ? <img className="thumb" src={meal.photo.file} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank meal-thumb" aria-hidden="true"><Icon name="meals" /></span>}
       <div className="grow">
         <div>{meal.name}</div>
         <div className="meta">{t(hideKcal ? 'lib.metaNoKcal' : 'lib.meta', { kcal: Math.round(shown.kcal), protein: Math.round(shown.protein), min: meal.minutes })}</div>
