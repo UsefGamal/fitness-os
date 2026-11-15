@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { addDays } from './dates.js';
 import { emptyData } from './data.js';
 import { mealDayFor } from './meals.js';
 import {
@@ -39,11 +40,11 @@ function personAt(kcal) {
   return best;
 }
 
-test('the plan day is the average of option A over normal days, about 1,920 kcal', () => {
+test('the plan day is the average of option A over normal days, about 2,000 kcal', () => {
   const plan = planKcal(N);
   const normal = N.days.filter((d) => !d.is_refeed);
   assert.equal(plan, Math.round(normal.reduce((n, d) => n + dayKcal(d), 0) / normal.length));
-  assert.ok(plan > 1850 && plan < 2000, `plan ${plan}`);
+  assert.ok(plan > 1850 && plan < 2050, `plan ${plan}`);
 });
 
 test('factor: dead band, scaled band and too far', () => {
@@ -108,11 +109,13 @@ test('factor 1 changes nothing', () => {
 });
 
 for (const kcal of [1500, 2400]) {
-  test(`three sample days fitted to ${kcal} kcal: day within 5%, protein foods kept, nothing removed, halves`, () => {
+  test(`three sample days fitted to ${kcal} kcal: day within 5%, protein kept to the person's need, nothing removed, halves`, () => {
     const factor = kcal / planKcal(N);
+    // A 1,500 kcal person needs about 70% of the plan's protein.
+    const proteinFactor = factor < 1 ? 0.7 : 1;
     for (const idx of [0, 4, 9]) {
       const day = N.days[idx];
-      const { day: s, fits } = scaleDay(day, factor, N);
+      const { day: s, fits } = scaleDay(day, factor, N, { proteinFactor });
       assert.equal(fits, true, `day ${day.day_index}`);
       const want = dayKcal(day) * factor;
       assert.ok(Math.abs(dayKcal(s) - want) / want <= DAY_TOLERANCE);
@@ -125,9 +128,10 @@ for (const kcal of [1500, 2400]) {
           assert.ok(units > 0, `${key} kept`);
           const step = stepOf(key);
           assert.ok(Math.abs(units / step - Math.round(units / step)) < 1e-4, `${key} ${units} in steps of ${step}`);
-          if (isProteinFood(N.foods[key], key)) assert.ok(units >= before.get(key), `${key} protein food not cut`);
+          if (proteinFactor === 1 && isProteinFood(N.foods[key], key)) assert.ok(units >= before.get(key), `${key} protein food not cut`);
         }
         if (factor > 1) assert.ok(o.protein >= orig.protein, 'protein not lower going up');
+        else assert.ok(o.protein >= orig.protein * proteinFactor - 0.5, 'protein not below the need');
         if (o.changed) assert.equal(o.ingredients.length, after.size);
         else assert.equal(o.ingredients, orig.ingredients);
       }));
@@ -185,11 +189,18 @@ test('option choices: best first, different kcal each', () => {
 });
 
 test('protein_cap lets protein foods shrink', () => {
-  const lunch = N.days[0].meals.find((m) => m.slot === 'lunch').options[0];
-  const plain = scaleOption(lunch, 0.75, N.foods);
-  const capped = scaleOption(lunch, 0.75, N.foods, { proteinCap: true });
-  assert.ok(capped.protein < plain.protein, `${capped.protein} < ${plain.protein}`);
-  assert.ok(Math.abs(capped.kcal - lunch.kcal * 0.75) / (lunch.kcal * 0.75) <= OPTION_TOLERANCE);
+  // Over every plan meal: capped is never higher, and lower for some.
+  let lower = 0;
+  for (const day of N.days) {
+    for (const meal of day.meals) {
+      const o = meal.options[0];
+      const plain = scaleOption(o, 0.75, N.foods);
+      const capped = scaleOption(o, 0.75, N.foods, { proteinCap: true });
+      if (capped.protein < plain.protein - 0.5) lower += 1;
+      if (capped.fits) assert.ok(Math.abs(capped.kcal - o.kcal * 0.75) / (o.kcal * 0.75) <= OPTION_TOLERANCE);
+    }
+  }
+  assert.ok(lower > 10, `${lower} meals lower with the cap`);
 });
 
 test('golden: Yusuf at 1,939 kcal and anyone without a profile see the plan exactly as written', () => {
@@ -214,8 +225,10 @@ test('a 1,500 kcal friend: smaller days, scaled shopping, scaled widget text', (
   const friend = personAt(1500);
   const fit = planFit(friend.d, N, TODAY);
   assert.equal(fit.state, 'scaled');
-  // 13 Nov is plan day 4, the protein-heavy day that can't drop that far; 14 Nov is day 5.
-  assert.equal(planDayFor(TODAY, friend.d, N, TODAY).fit.state, 'far');
+  // A smaller person needs less protein, so protein foods may shrink to
+  // their target: every day of the library plan fits (Nov 2026).
+  assert.ok(fit.proteinFactor < 1 && fit.proteinFactor >= 0.6);
+  for (let i = 0; i < 14; i += 1) assert.equal(planDayFor(addDays(TODAY, i), friend.d, N, TODAY).fit.state, 'scaled', `day ${i}`);
   const iso = '2026-11-14';
   const { day, fit: f } = planDayFor(iso, friend.d, N, TODAY);
   const plain = mealDayFor(iso, N);
@@ -231,13 +244,14 @@ test('a 1,500 kcal friend: smaller days, scaled shopping, scaled widget text', (
   const asWritten = flat(shoppingList(TODAY, N, 7, () => null));
   assert.deepEqual(Object.keys(scaled).sort(), Object.keys(asWritten).sort(), 'same foods to buy');
   assert.notDeepEqual(scaled, asWritten);
-  assert.ok(parseFloat(scaled['white_rice|g']) <= parseFloat(asWritten['white_rice|g']));
+  assert.ok(parseFloat(scaled['rice|g']) <= parseFloat(asWritten['rice|g']));
 
   // The widget's food line follows the scaled portions.
   const w = widgetDays(friend.d, content, TODAY);
   const tomorrow = w.find((e) => e.date === iso);
-  const scaledWhat = day.meals.map((m) => m.options[0].ingredients.join(', ').toLowerCase());
-  assert.ok(tomorrow.meals.some((m) => scaledWhat.includes(m.what.toLowerCase())), 'scaled text on the widget');
+  // Library meals show their name on the widget, whatever the portion.
+  const names = day.meals.map((m) => m.options[0].name);
+  assert.ok(tomorrow.meals.every((m) => names.includes(m.what)), 'meal names on the widget');
 });
 
 test('too far: a 1,100 kcal target shows the plan as written, state far', () => {
@@ -250,13 +264,20 @@ test('too far: a 1,100 kcal target shows the plan as written, state far', () => 
 });
 
 test('a scaled day that misses 5% falls back to the plan as written', () => {
-  // Day 4 is protein-heavy: at 0.7 it can't get there without cutting protein.
-  const day4 = N.days.find((d) => d.day_index === 4);
-  assert.equal(scaleDay(day4, 0.7, N).fits, false);
-  const iso = N.plan_start_date.replace(/\d\d$/, (dd) => String(Number(dd) + 3).padStart(2, '0'));
-  const fit = { state: 'scaled', factor: 0.7, plan: 1920, cap: false };
-  const got = planDayFor(iso, emptyData(content), N, TODAY, fit);
-  if (mealDayFor(iso, N).day_index !== 4) return;
+  // At half size with protein foods kept, no day can get there.
+  const day = mealDayFor(TODAY, N);
+  assert.equal(scaleDay(day, 0.5, N).fits, false);
+  const fit = { state: 'scaled', factor: 0.5, plan: 2000, cap: false, proteinFactor: 1 };
+  const got = planDayFor(TODAY, emptyData(content), N, TODAY, fit);
   assert.equal(got.fit.state, 'far');
-  assert.equal(got.day, day4);
+  assert.equal(got.day, day);
+});
+
+test("protein foods shrink only as far as each person's own protein target", () => {
+  const day = mealDayFor(TODAY, N);
+  const kept = scaleDay(day, 0.75, N, { proteinFactor: 1 }).day;
+  const shrunk = scaleDay(day, 0.75, N, { proteinFactor: 0.7 }).day;
+  const protein = (d) => d.meals.reduce((n, m) => n + m.options[0].protein, 0);
+  assert.ok(protein(shrunk) <= protein(kept));
+  assert.ok(protein(shrunk) >= protein(day) * 0.7 - 0.5, 'never below the target share');
 });

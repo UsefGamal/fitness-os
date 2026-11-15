@@ -9,9 +9,10 @@ This app has one real diet spec, not general nutrition best practices — deviat
 
 ## Diet constraints (hard rules)
 
-- **No fish/seafood, ever** — stated explicitly in the README's philosophy. Not even in a "healthy option."
+- **Fish and seafood are allowed** (changed Nov 2026; before that they were excluded).
 - **No pork, no alcohol, no shellfish** — enforced via Edamam's `HEALTH_LABELS = ["pork-free", "alcohol-free", "shellfish-free"]` in `edamam_sync.py`, and via `PORK_EXCLUDED_SETS` in `fitchef_sync.py` (a weaker guarantee — FitChef only has per-ingredient bacon/ham excludes, no generic "pork" tag; don't treat it as equivalent to Edamam's label).
-- **Two options per meal slot**, Egyptian-leaning (`option_a`) and Syrian/grilled-leaning (`option_b`) — both macro-matched to the same daily band. A new meal/recipe addition needs both, not just one.
+- **One meal library, no fixed A/B options** (Nov 2026). Meals live in `content/meal_library.py`, tagged by meal of day (breakfast, lunch, dinner, snack, suhoor, iftar), main protein and tags. The 14-day plan (`PLAN_DAYS`) puts one library meal in each slot; people swap any slot for another library meal that suits it (`mobile/src/lib/mealLibrary.js`). The Egyptian/Syrian split is gone.
+- **Numbers come from ingredients**, never typed in: each meal lists ingredient portions from `content/ingredients.py` (USDA FoodData Central SR Legacy, public domain, FDC id per row). Dish names may match well-known recipes; amounts and steps are written for Fitness OS, and no third-party recipe text or photos are bundled.
 - **Structured portions, not calorie-counting** — the user philosophy is explicit two-option meals with fixed items, not an open food log. Don't propose free-form calorie/macro entry as a "simpler" alternative; that's a different product than this one.
 
 ## Calorie/macro methodology — don't hand-pick numbers

@@ -21,7 +21,8 @@ import { weekStreaks } from './insights.js';
 import { macroTargets } from './macros.js';
 import { activePlan } from './plan.js';
 import { slotLabel } from './meals.js';
-import { planDayFor, planFit } from './portions.js';
+import { dayFor } from './mealLibrary.js';
+import { planFit } from './portions.js';
 import { programDayFor, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
 import { sessionAt } from './times.js';
@@ -35,6 +36,8 @@ function optionFor(meal, log) {
 /** "A bowl of ful medames, 2 boiled eggs, half a wholewheat pita". The
  * content already merges repeats (P14-19); any left are counted here. */
 export function mealWhat(option) {
+  // Library meals (lib/mealLibrary.js) have a name; older options list foods.
+  if (option.name) return option.name;
   const counts = new Map();
   for (const i of option.ingredients || []) counts.set(i, (counts.get(i) || 0) + 1);
   const s = [...counts].map(([name, n]) => (n > 1 ? `${name} ×${n}` : name)).join(', ');
@@ -70,7 +73,7 @@ export function widgetDays(data, content, today) {
     const done = D.workoutOn(data, date);
     const evening = eveningOn(data, date);
 
-    const { day } = planDayFor(date, data, N, today, fit);
+    const { day } = dayFor(date, data, N, today, fit);
     const meals = showMeals
       ? day.meals
         .map((m) => {

@@ -5,7 +5,7 @@ description: Use whenever making a UX, design, or feature-priority judgment call
 
 # The user
 
-Fitness OS has one user: a data engineer with a desk job, training for a 6-month body-recomposition program (103kg → 75-80kg, Aug 2026 – Jan 2027), based in Cairo (Africa/Cairo timezone; CI runs the date tests in it). Plays padel ~2x/week (1.5h) alongside the structured 4-day Upper/Lower gym program. Prefers Egyptian/Syrian-leaning food, no fish/seafood.
+Fitness OS has one user: a data engineer with a desk job, training for a 6-month body-recomposition program (103kg → 75-80kg, Aug 2026 – Jan 2027), based in Cairo (Africa/Cairo timezone; CI runs the date tests in it). Plays padel ~2x/week (1.5h) alongside the structured 4-day Upper/Lower gym program. Prefers Egyptian/Levantine-leaning food; fish and seafood are fine (Nov 2026); no pork, no alcohol.
 
 This isn't a demographic sketch for a market that doesn't exist — every field here comes from the app's profile defaults or the README. Update this file if any of it goes stale (e.g. the program window ends, the goal changes) rather than leaving it to drift from the real profile.
 

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { formatShoppingQty, parseShoppingUnit, picksFrom, shoppingList } from './shopping.js';
+import { applySwaps } from './mealLibrary.js';
+import { mealDayFor } from './meals.js';
 import { content } from './testContent.js';
 
 const N = content.nutrition;
@@ -23,33 +25,41 @@ test('quantities format like the old site', () => {
   assert.equal(formatShoppingQty(2.5, 'unit'), '×2.5');
 });
 
-test('the first plan week merges portions (matches the Python list)', () => {
+test('the first plan week merges portions into ingredients to buy', () => {
   const groups = shoppingList(N.plan_start_date, N);
-  const items = Object.fromEntries(groups.flatMap((g) => g.items).map((i) => [i.name, i.qty]));
-  assert.equal(items['Grilled chicken breast'], '1.5 kg');
-  assert.equal(items['Boiled egg'], '×13');
-  assert.equal(items['Wholewheat pita'], '×5');
-  assert.equal(items['White rice'], '450 g');
-  assert.equal(groups.flatMap((g) => g.items).length, 43);
-  // P14-19: sentence case, never a title-cased key.
-  for (const i of groups.flatMap((g) => g.items)) assert.doesNotMatch(i.name, /\b[a-z]+_|(?:\s[A-Z][a-z]+){2}/, i.name);
+  const items = Object.fromEntries(groups.flatMap((g) => g.items).map((i) => [i.key, i.qty]));
+  // Expected totals straight from the plan's items: grams and pieces add up.
+  const want = new Map();
+  for (let i = 0; i < 7; i += 1) {
+    const day = N.days[i];
+    for (const meal of day.meals) {
+      for (const item of meal.options[0].items) {
+        const [base, qty, unit] = parseShoppingUnit(item);
+        want.set(`${base}|${unit}`, (want.get(`${base}|${unit}`) || 0) + qty);
+      }
+    }
+  }
+  assert.equal(Object.keys(items).length, want.size);
+  for (const [k, total] of want) assert.equal(items[k], formatShoppingQty(total, k.split('|')[1]), k);
+  assert.ok(items['chicken_breast|g'], 'chicken by weight');
+  assert.ok(items['egg|pc'], 'eggs by count');
+  // P14-19: sentence case, never a key.
+  for (const i of groups.flatMap((g) => g.items)) assert.doesNotMatch(i.name, /\b[a-z]+_/, i.name);
   assert.deepEqual(groups.map((g) => g.name), N.category_order.filter((c) => groups.some((g) => g.name === c)));
 });
 
-test('the list buys only the picked option of each meal, A by default (UX-18)', () => {
-  const count = (groups) => groups.reduce((n, g) => n + g.items.length, 0);
-  const both = shoppingList(N.plan_start_date, N);
-  const onlyA = shoppingList(N.plan_start_date, N, 7, () => null);
-  assert.ok(count(onlyA) < count(both));
-  // One day, every meal switched to its second option: a different list from all-A.
+test('the list buys the picked meal of each slot: the plan meal, or a library swap (UX-18)', () => {
   const day = N.plan_start_date;
-  const logs = N.meal_slots.map((slot) => ({ log_date: day, meal_slot: slot, option_key: 'option_b' }));
+  const plain = shoppingList(day, N, 1, () => null);
+  // A library swap only shows when the day carries it (lib/mealLibrary.js applySwaps).
+  const logs = [{ log_date: day, meal_slot: 'lunch', option_key: 'shrimp_noodles' }];
   const pick = picksFrom(logs);
-  assert.equal(pick(day, N.meal_slots[0]), 'option_b');
-  assert.equal(pick('1999-01-01', N.meal_slots[0]), null);
-  const a1 = shoppingList(day, N, 1, () => null);
-  const b1 = shoppingList(day, N, 1, pick);
-  assert.notDeepEqual(a1, b1);
-  // A pick the meal doesn't have falls back to the first option.
-  assert.deepEqual(shoppingList(day, N, 1, () => 'option_zzz'), a1);
+  assert.equal(pick(day, 'lunch'), 'shrimp_noodles');
+  assert.equal(pick('1999-01-01', 'lunch'), null);
+  const dayOf = (iso) => applySwaps(mealDayFor(iso, N), (slot) => pick(iso, slot), N);
+  const swapped = shoppingList(day, N, 1, pick, N.plan_start_date, dayOf);
+  assert.notDeepEqual(swapped, plain);
+  assert.ok(swapped.flatMap((g) => g.items).some((i) => i.key === 'shrimp|g'));
+  // A pick the day doesn't have falls back to the plan meal.
+  assert.deepEqual(shoppingList(day, N, 1, () => 'option_zzz'), plain);
 });

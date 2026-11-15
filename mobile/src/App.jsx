@@ -69,6 +69,8 @@ collectNativeCrashes().catch(() => {});
 const Quests = lazy(() => import('./views/Quests.jsx'));
 const Shopping = lazy(() => import('./views/Shopping.jsx'));
 const Stats = lazy(() => import('./views/Stats.jsx'));
+const MealLibrary = lazy(() => import('./views/MealLibrary.jsx'));
+const MealDetail = lazy(() => import('./views/MealDetail.jsx'));
 const FitnessTest = lazy(() => import('./views/FitnessTest.jsx'));
 const Session = lazy(() => import('./views/Session.jsx'));
 
@@ -126,6 +128,8 @@ const router = createHashRouter([
       { path: '/follow', element: <FollowAlong /> },
       { path: '/photos', element: <Photos /> },
       { path: '/meals', element: <Meals /> },
+      { path: '/meals/library', element: <MealLibrary /> },
+      { path: '/meals/library/:key', element: <MealDetail /> },
       { path: '/stats', element: <Stats /> },
       { path: '/stats/fitness-test', element: <FitnessTest /> },
       { path: '/history', element: <HistoryList /> },

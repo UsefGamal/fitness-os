@@ -25,7 +25,9 @@ from content import (  # noqa: E402
     gym_exercises,
     gym_program,
     home_program,
+    ingredients,
     maintenance_plan,
+    meal_library,
     meal_plan,
     milestones,
     progressions,
@@ -67,19 +69,9 @@ def _trainer_only_names() -> set[str]:
     return names - general
 
 
-def _day_with_items(n: int) -> dict:
-    """get_day(n) plus each option's raw food keys, which the phone app's
-    shopping list needs (get_day only carries display names)."""
-    day = meal_plan.get_day(n)
-    raw = meal_plan.MEAL_PLAN_14_DAY[(n - 1) % MEAL_CYCLE_DAYS]["meals"]
-    for meal in day["meals"]:
-        for option in meal["options"]:
-            option["items"] = list(raw[meal["slot"]][option["key"]]["items"])
-    return day
-
-
 def build_content() -> dict:
     hide = _trainer_only_names()
+    LIB_FOODS, LIB_NAMES, LIB_CATEGORIES = meal_library.item_foods()
     return _plain(
         {
             "format": CONTENT_FORMAT,
@@ -124,10 +116,18 @@ def build_content() -> dict:
                 "max_deficit_share": 0.25 if gym_program.FLAVOR == "friends" else 1,
                 "drink_options": meal_plan.DRINK_OPTIONS,
                 "drinks": food_items.DRINKS,
-                "days": [_day_with_items(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
-                "foods": food_items.FOODS,
-                "food_categories": food_items.FOOD_CATEGORIES,
-                "food_names": {k: v[0] for k, v in food_items.FOOD_NAMES.items()},
+                "days": [meal_plan.get_day(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],
+                # The meal library (content/meal_library.py): every meal a slot
+                # can be swapped to, and which plan slots each kind suits.
+                "library": [meal_library.meal_option(m) for m in meal_library.MEALS],
+                "slot_kinds": meal_library.SLOT_KINDS,
+                "ramadan_slot_kinds": meal_library.RAMADAN_SLOT_KINDS,
+                "library_tags": meal_library.TAGS,
+                "library_proteins": meal_library.PROTEINS,
+                "nutrition_source": ingredients.USDA_SOURCE,
+                "foods": {**food_items.FOODS, **LIB_FOODS},
+                "food_categories": {**food_items.FOOD_CATEGORIES, **LIB_CATEGORIES},
+                "food_names": {**{k: v[0] for k, v in food_items.FOOD_NAMES.items()}, **LIB_NAMES},
                 "category_order": food_items.CATEGORY_ORDER,
                 "eating_out_tips": eating_out_guide.EATING_OUT_TIPS,
                 "maintenance_intro": maintenance_plan.MAINTENANCE_INTRO,

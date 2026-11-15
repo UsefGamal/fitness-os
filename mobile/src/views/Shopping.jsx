@@ -6,7 +6,8 @@ import { addDays, formatDate, weekStart } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { mealStart } from '../lib/meals.js';
-import { planDayFor, planFit } from '../lib/portions.js';
+import { dayFor } from '../lib/mealLibrary.js';
+import { planFit } from '../lib/portions.js';
 import { picksFrom, shoppingList } from '../lib/shopping.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
@@ -22,7 +23,8 @@ export default function Shopping() {
   // Portions fitted to the person's target (FIT-1), so the list buys what the Meals page shows.
   const groups = useMemo(() => {
     const fit = planFit(data, content.nutrition, today);
-    const dayOf = (date) => planDayFor(date, data, content.nutrition, today, fit).day;
+    // Swaps from the meal library count too (lib/mealLibrary.js).
+    const dayOf = (date) => dayFor(date, data, content.nutrition, today, fit).day;
     return shoppingList(today, content.nutrition, 7, picksFrom(data.meal_logs), planStart, dayOf);
   }, [today, data, planStart]);
   const checked = D.shoppingChecked(data, week);
