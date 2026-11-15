@@ -36,12 +36,17 @@ import { content, useData } from '../store/useData.js';
 import { hasScreenLock, widgetStatus } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
-import { markClearanceSeen } from '../lib/safety.js';
+import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
 import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
 import { dismissWrap, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 import FirstWeekCard from '../components/FirstWeekCard.jsx';
+import GoalReachedCard from '../components/GoalReachedCard.jsx';
+import { hideGoalReached, showGoalReached, startMaintenance } from '../lib/maintenance.js';
+import { currentGoal, macroTargets } from '../lib/macros.js';
+import { goalProgress } from '../lib/progress.js';
+import { announce } from '../lib/announce.js';
 import { firstWeekSteps, hideFirstWeek, markWidgetDone, showFirstWeek } from '../lib/firstWeek.js';
 
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
@@ -100,7 +105,15 @@ export default function Today() {
     return () => document.removeEventListener('visibilitychange', check);
   }, []);
   const firstSteps = firstWeekSteps(data, { widgetCount: widgets });
-  const card = homeCard(data, content, today, { back: showBack(data, today), first: showFirstWeek(data, today, firstSteps) });
+  // Goal reached (MAINT-1): offer maintenance, in weekly steps.
+  const progress = goalProgress(data.body_logs, currentGoal(data), today);
+  const goalCard = showGoalReached(data, progress);
+  const card = homeCard(data, content, today, { back: showBack(data, today), goal: goalCard, first: showFirstWeek(data, today, firstSteps) });
+  const targets = card === 'goal' ? macroTargets(data, content.nutrition, today) : null;
+  const beginMaintenance = () => {
+    update((d) => startMaintenance(d, today, { fromKcal: targets.kcal, tdeeKcal: targets.tdee ?? targets.kcal, weightKg: progress?.trend }));
+    announce(t('maint.started'));
+  };
   // "Still time today?" two hours after the session time (BACK-1 part D).
   const nowMin = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
   const moveTo = moveTargets(today, T, moves)[0] || null;
@@ -182,6 +195,9 @@ export default function Today() {
           <p className="muted small" style={{ margin: '0 0 4px' }}>{t(back.level === 'short' ? 'back.short' : back.level === 'fresh' ? 'back.fresh' : 'back.easy')}</p>
           {next && sessionKeyOn(today, T, moves) !== 'rest' ? <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> {t('back.start')}</button> : null}
         </section>
+      ) : null}
+      {card === 'goal' ? (
+        <GoalReachedCard targets={targets} showKcal={!kcalHidden(data) && targets?.source !== 'plan'} onStart={beginMaintenance} onLater={() => update(hideGoalReached)} />
       ) : null}
       {card === 'first' ? (
         <FirstWeekCard

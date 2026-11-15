@@ -20,6 +20,7 @@ import { activeKcalAverage, watchTdee } from './activity.js';
 import { addDays, daysBetween } from './dates.js';
 import { deficitShare, ramadanActive } from './ramadan.js';
 import { capProtein, isMinorNow, safeMode } from './safety.js';
+import { reverseStatus } from './maintenance.js';
 
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
 const KCAL_PER_KG_FAT = 7700;
@@ -193,7 +194,10 @@ export function macroTargets(data, nutrition, today) {
   const mode = safeMode(data, asked, today);
   // Ramadan: at most 15% of TDEE, none with the no_fasting_deficit gate.
   const share = deficitShare(data, today, nutrition.max_deficit_share ?? MAX_DEFICIT_SHARE);
-  const energy = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
+  const plain = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
+  // After a reached goal (MAINT-1): maintenance comes in weekly steps.
+  const rev = mode === 'maintain' && currentGoal(data)?.reverse ? reverseStatus(currentGoal(data).reverse, logs, t, today) : null;
+  const energy = rev && !rev.done ? { kcal: rev.kcal, deficit: Math.max(0, pyRound(t) - rev.kcal), reasons: ['reverse'] } : plain;
   const split = macroSplit(energy.kcal, goalMid ?? weight, mode);
   // The protein cap is counted on the weight today, and carbs take up the rest.
   const protein = capProtein(data, split.protein, weight, today);
@@ -218,5 +222,6 @@ export function macroTargets(data, nutrition, today) {
     ...(share !== MAX_DEFICIT_SHARE ? { share } : {}),
     ...(activeAvg != null ? { active_avg: activeAvg } : {}),
     ...(ramadanActive(data, today) ? { ramadan: true } : {}),
+    ...(rev ? { reverse: rev } : {}),
   };
 }

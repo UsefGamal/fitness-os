@@ -56,6 +56,10 @@ const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11
 const bigText = (d) => ({ ...d, settings: { ...d.settings, text_size: 130 } });
 // UIUX-4: gym mode switched on.
 const gymOn = (d) => ({ ...d, settings: { ...d.settings, training: { ...d.settings?.training, gym_mode: true } } });
+// MAINT-1: the goal range is where the weight already is; then the second
+// week of maintenance after it.
+const goalReached = (d) => ({ ...d, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, target_low_kg: 94, target_high_kg: 97 })) });
+const maintaining = (d) => ({ ...d, goals: [...d.goals.map((g) => ({ ...g, ended_on: g.ended_on || '2026-10-30' })), { id: 'gm', set_on: '2026-10-30', direction: 'maintain', start_weight_kg: 95, target_low_kg: 94, target_high_kg: 96, target_date: null, ended_on: null, reverse: { from_kcal: 1940, started_on: '2026-10-30', step: 150, weeks: 6 } }] });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
@@ -172,6 +176,8 @@ export const STATES = [
   { name: 'after Eid on Home', route: '/', data: afterEid, check: (p) => p.getByText(en['ramadan.afterChip']).first().waitFor() },
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
   { name: 'gym mode: logging a set', route: '/workout', data: gymOn, act: startSession, check: async (p) => { if (await p.locator('.tabbar').isVisible()) throw new Error('tab bar still shown in gym mode'); } },
+  { name: 'goal reached on Home', route: '/', data: goalReached, check: (p) => p.getByText(en['maint.title']).waitFor() },
+  { name: 'maintenance week on Meals', route: '/meals', data: maintaining, act: toFullMeals },
   // UIUX-2: the app's own 130% text size (Settings > Look).
   { name: 'text 130%: Home', route: '/', data: bigText },
   { name: 'text 130%: Workout', route: '/workout', data: bigText },

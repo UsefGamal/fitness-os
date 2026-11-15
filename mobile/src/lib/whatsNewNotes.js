@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.4',
+    items: [
+      { icon: 'trophy', text: 'Reached your goal? Home offers maintenance: calories go up a little each week, so the weight stays off.' },
+    ],
+  },
+  {
     version: '1.0.3',
     items: [
       { icon: 'dumbbell', text: 'Gym mode (Settings, Training): no tab bar during a workout, Log set at the bottom, Back pauses.' },
