@@ -1,4 +1,5 @@
 import { monthLabels } from '../lib/insights.js';
+import { t } from '../lib/i18n.js';
 
 const LEVEL = ['var(--surface2)', 'color-mix(in srgb, var(--accent) 45%, transparent)', 'color-mix(in srgb, var(--accent) 75%, transparent)', 'var(--accent)'];
 
@@ -11,7 +12,7 @@ export default function YearHeatmap({ grid, onPick }) {
   const months = monthLabels(grid);
   return (
     <div className="heatmap" ref={(el) => { if (el) el.scrollLeft = el.scrollWidth; }}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Training days over the last year">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('aria.yearHeatmap')}>
         {months.map((m) => <text key={m.col} x={20 + m.col * C} y={9} fontSize="9" fill="var(--chart-label)">{m.label}</text>)}
         {['M', 'W', 'F'].map((l, i) => <text key={l} x={0} y={16 + (i * 2 + 1) * C + 9} fontSize="9" fill="var(--chart-label)">{l}</text>)}
         {grid.map((col, wi) => col.map((day, di) => (day.future ? null : (

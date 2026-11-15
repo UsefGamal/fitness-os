@@ -14,6 +14,7 @@ import { followShadeOff, followToShade, onFollowShade } from '../store/followSha
 import { useCatalogue } from '../store/catalogue.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
+import { t } from '../lib/i18n.js';
 
 /** What to play for `src`: recovery | warmup:<day> | cooldown:<day> |
  * home-warmup:<i> | home-cooldown:<i>. */
@@ -162,9 +163,9 @@ export default function FollowAlong() {
         <div style={{ fontSize: 80, fontWeight: 800, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock(at.left)}</div>
         <div className="muted">{next ? `Next: ${next.name}${next.side ? ` (${next.side.toLowerCase()})` : ''}` : 'Last one'}</div>
         <div className="row" style={{ gap: 12 }}>
-          <button type="button" className="icon-btn" aria-label="Back one" disabled={at.index === 0} onClick={() => jump(at.index - 1)}><Icon name="back" /></button>
+          <button type="button" className="icon-btn" aria-label={t('aria.backOne')} disabled={at.index === 0} onClick={() => jump(at.index - 1)}><Icon name="back" /></button>
           <button type="button" className="btn secondary" style={{ width: 140 }} onClick={togglePause}><Icon name={run.pausedAt ? 'play' : 'pause'} /> {run.pausedAt ? 'Resume' : 'Pause'}</button>
-          <button type="button" className="icon-btn" aria-label="Next" onClick={() => jump(at.index + 1)}><Icon name="skip" /></button>
+          <button type="button" className="icon-btn" aria-label={t('aria.next')} onClick={() => jump(at.index + 1)}><Icon name="skip" /></button>
         </div>
         <button type="button" className="btn ghost" style={{ width: 200 }} onClick={() => window.confirm('Stop following along?') && setRun(null)}><Icon name="x" /> Stop</button>
       </div>

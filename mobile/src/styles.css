@@ -8,7 +8,7 @@
   --surface3: #3a3a3c;
   --text: #fff;
   --muted: #98989f; /* 4.5:1 or better on every surface (E6-S6) */
-  --faint: #7c7c80;
+  --faint: #7c7c80; /* icons, chevrons and borders only, never text: under 4.5:1 (A11Y-1) */
   --accent: #30d158;
   --accent-dim: rgba(48, 209, 88, 0.16);
   --on-accent: #000;

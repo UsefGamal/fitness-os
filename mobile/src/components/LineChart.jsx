@@ -1,4 +1,5 @@
 import { formatDate } from '../lib/dates.js';
+import { t } from '../lib/i18n.js';
 
 /** Inline SVG line of { date, value } points, oldest first. */
 export default function LineChart({ points, unit = 'kg', label = 'Trend' }) {
@@ -16,7 +17,7 @@ export default function LineChart({ points, unit = 'kg', label = 'Trend' }) {
   const last = points[points.length - 1];
   return (
     <figure style={{ margin: 0 }}>
-      <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${label}: ${vs[0]} to ${last.value} ${unit}`}>
+      <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('aria.lineChart', { label, from: vs[0], to: last.value, unit })}>
         <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.value)} r={i === points.length - 1 ? 4 : 2.5} fill="var(--accent)" />)}
       </svg>

@@ -21,6 +21,7 @@ import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { kcalHidden } from '../lib/safety.js';
+import { announce, mealTickLine } from '../lib/announce.js';
 import { useToday } from '../store/today.js';
 
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -203,6 +204,7 @@ function MealPlan() {
                   const ev = mealTickEvent({ nowDone: !log?.completed, doneBefore: done, slots: N.meal_slots.length });
                   update((d) => (log?.custom ? clearCustomMeal(d, date, meal.slot) : tickMeal(d, date, meal.slot, opt, !log?.completed)));
                   if (ev) feedback(ev);
+                  announce(mealTickLine({ meal: label(meal.slot), eaten: !log?.completed, done: done + (log?.completed ? -1 : 1), total: N.meal_slots.length }));
                 }}>
                 {log?.completed ? <Icon name="check" /> : null}
               </button>

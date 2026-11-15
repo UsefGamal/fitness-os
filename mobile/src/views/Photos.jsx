@@ -32,7 +32,7 @@ function Compare({ pair }) {
       <div className="handle" />
       <span className="tag" style={{ left: 8 }}>{formatDate(pair.before.date)}</span>
       <span className="tag" style={{ right: 8 }}>{formatDate(pair.after.date)}</span>
-      <input type="range" min="0" max="100" value={cut} onChange={(e) => setCut(Number(e.target.value))} aria-label="Slide between before and after" />
+      <input type="range" min="0" max="100" value={cut} onChange={(e) => setCut(Number(e.target.value))} aria-label={t('aria.photoSlide')} />
     </div>
   );
 }
@@ -169,7 +169,7 @@ function PhotosBody({ hasLock }) {
       ))}
 
       {viewing ? (
-        <div className="timer-full" role="dialog" aria-label="Photo">
+        <div className="timer-full" role="dialog" aria-label={t('aria.photo')}>
           <div className="muted">{formatDate(viewing.date)} · {POSES.find(([k]) => k === viewing.pose)?.[1]}</div>
           <div style={{ width: 'min(360px, 90vw)', aspectRatio: '3 / 4', borderRadius: 14, overflow: 'hidden' }}><Img path={viewing.file} className="fill-img" /></div>
           <div className="row" style={{ gap: 12 }}>
