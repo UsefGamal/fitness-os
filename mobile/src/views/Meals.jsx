@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
 import { addDays, formatDate } from '../lib/dates.js';
@@ -9,7 +9,8 @@ import { macroTargets } from '../lib/macros.js';
 import { mealsView, proteinPerMeal, servingsFor, setMealsView } from '../lib/mealsView.js';
 import { dayDrift } from '../lib/macroCheck.js';
 import { dayTotals, eatenMeals, pickOption, slotLabel, tickMeal } from '../lib/meals.js';
-import { planDayFor, portionsOf } from '../lib/portions.js';
+import { dayFor, shownOption } from '../lib/mealLibrary.js';
+import { portionsOf } from '../lib/portions.js';
 import { sessionKeyOn } from '../lib/schedule.js';
 import { effectiveTimes, mealDay, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
@@ -104,7 +105,10 @@ function MealPlan() {
   const today = useToday();
   // In Ramadan a late meal after midnight still belongs to last night.
   const opensOn = mealDay(data, today, clock());
-  const [date, setDate] = useState(opensOn);
+  // Back from a library swap: open on the day that was swapped.
+  const [params] = useSearchParams();
+  const asked = params.get('date');
+  const [date, setDate] = useState(/^\d{4}-\d{2}-\d{2}$/.test(asked || '') ? asked : opensOn);
   // Looking at today when midnight passes: follow the new day.
   const shownToday = useRef(opensOn);
   useEffect(() => {
@@ -114,8 +118,9 @@ function MealPlan() {
   }, [opensOn]);
   // Portions fitted to the person's kcal target (FIT-1); 'far' when the
   // plan can't be fitted, so it shows as written with a calm line.
-  const { day, fit } = planDayFor(date, data, N, today);
-  const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || 'option_a']));
+  // Library swaps (lib/mealLibrary.js) are applied and fitted the same way.
+  const { day, fit } = dayFor(date, data, N, today);
+  const picks = Object.fromEntries(N.meal_slots.map((s) => [s, D.mealLog(data, date, s)?.option_key || null]));
   // Meals where something else was eaten count with their own numbers (UX-20).
   const custom = customMeals(data, date);
   const [otherFor, setOtherFor] = useState(null);
@@ -142,7 +147,10 @@ function MealPlan() {
     <div className="page">
       <div className="plan-head">
         <h1 className="page-title">{t('tab.meals')}</h1>
-        <Link to="/shopping" className="chip big-chip"><Icon name="cart" className="icon" /> {t('meals.shopping')}</Link>
+        <div className="row" style={{ gap: 6 }}>
+          <Link to="/meals/library" className="chip big-chip"><Icon name="book" className="icon" /> {t('lib.open')}</Link>
+          <Link to="/shopping" className="chip big-chip"><Icon name="cart" className="icon" /> {t('meals.shopping')}</Link>
+        </div>
       </div>
       <div className="row between card day-nav">
         <button type="button" className="icon-btn" aria-label={t('meals.prevDay')} onClick={() => setDate(addDays(date, -1))}><Icon name="back" /></button>
@@ -180,7 +188,7 @@ function MealPlan() {
       {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
         <div key={r.key} className="warn" role="note">
           {r.label} with these picks: {r.total} {r.unit}, {Math.round(Math.abs(r.diff) * 100)}% {r.over ? 'over' : 'under'} your {r.target} {r.unit} target.
-          {day.is_refeed && r.key === 'kcal' && r.over ? ' It is a refeed day, so a little over is planned.' : r.key === 'protein' && !r.over ? ' Try the other option on a meal, or add a protein snack.' : ''}
+          {day.is_refeed && r.key === 'kcal' && r.over ? ' It is a refeed day, so a little over is planned.' : r.key === 'protein' && !r.over ? ' Swap a meal for a higher-protein one from the library, or add a protein snack.' : ''}
         </div>
       ))}
       {fasting ? <div className="card small"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.mealsNote')}</span></div>
@@ -190,7 +198,8 @@ function MealPlan() {
       {day.meals.map((meal) => {
         const log = D.mealLog(data, date, meal.slot);
         const pick = picks[meal.slot];
-        const opt = meal.options.find((o) => o.key === pick) || meal.options[0];
+        const opt = shownOption(meal, pick);
+        const planMeal = meal.options[0];
         return (
           <section key={meal.slot} className={`card meal-card${log?.completed ? ' eaten' : ''}`}>
             <div className="row between">
@@ -217,18 +226,17 @@ function MealPlan() {
               </div>
             ) : (
               <>
-              <div className="pick-row" role="radiogroup" aria-label={t('meals.pickAria', { meal: label(meal.slot) })}>
-                {meal.options.map((o, i) => (
-                  <button key={o.key} type="button" role="radio" aria-checked={o.key === opt.key} className={`pick${o.key === opt.key ? ' on' : ''}`} onClick={() => update((d) => pickOption(d, date, meal.slot, o))}>
-                    {String.fromCharCode(65 + i)} · {o.cuisine}
-                  </button>
-                ))}
+              <div className="meal-pick">
+                <div className="grow">
+                  <div className="meal-name">{opt.name || mealWhat(opt)}</div>
+                  {opt.swapped ? <div className="muted small">{t('meals.planMeal', { name: planMeal.name || mealWhat(planMeal) })}</div> : null}
+                </div>
+                <Link to={`/meals/library?slot=${meal.slot}&date=${date}`} className="btn secondary small swap-btn"><Icon name="undo" /> {t('meals.swap')}</Link>
               </div>
               <details className="meal-more">
                 <summary>
                   <div className="grow">
-                    <div>{mealWhat(opt)}</div>
-                    <div className="muted small" style={{ marginTop: 2 }}>{t('meals.kcalProtein', { kcal: opt.kcal, protein: opt.protein })}</div>
+                    <div className="muted small">{t('meals.kcalProtein', { kcal: Math.round(opt.kcal), protein: Math.round(opt.protein) })}</div>
                   </div>
                   <Icon name="chev" className="icon chev" />
                 </summary>
@@ -246,7 +254,11 @@ function MealPlan() {
                   <div className="muted small" style={{ marginTop: 6 }}>{t('meals.fullMacros', { kcal: opt.kcal, protein: opt.protein, carbs: opt.carbs, fat: opt.fat })}</div>
                 </div>
               </details>
-                <button type="button" className="btn ghost small ate-else-btn" onClick={() => setOtherFor(meal.slot)}>{t('other.open')}</button>
+                <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
+                  {opt.key && N.library?.some((m) => m.key === opt.key) ? <Link to={`/meals/library/${encodeURIComponent(opt.key)}?slot=${meal.slot}&date=${date}`} className="btn ghost small"><Icon name="book" /> {t('meals.recipe')}</Link> : null}
+                  {opt.swapped ? <button type="button" className="btn ghost small" onClick={() => update((d) => pickOption(d, date, meal.slot, planMeal))}><Icon name="back" /> {t('meals.backToPlan')}</button> : null}
+                  <button type="button" className="btn ghost small ate-else-btn" onClick={() => setOtherFor(meal.slot)}>{t('other.open')}</button>
+                </div>
               </>
             )}
             {log?.custom ? <button type="button" className="btn ghost small ate-else-btn" onClick={() => update((d) => clearCustomMeal(d, date, meal.slot))}>{t('other.back')}</button> : null}

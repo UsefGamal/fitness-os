@@ -237,3 +237,15 @@ export function dayFor(iso, data, nutrition, today, fit = planFit(data, nutritio
   const logs = new Map((data.meal_logs || []).filter((m) => m && m.log_date === iso).map((m) => [m.meal_slot, m.option_key]));
   return { day: applySwaps(day, (slot) => logs.get(slot) || null, nutrition, (o) => fitOption(o, f, nutrition)), fit: f };
 }
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** "?slot=lunch&date=…" on the library: the swap a visit is for, or null.
+ * `params` is a URLSearchParams; an unknown slot means no swap, a missing
+ * or bad date means today. */
+export function swapTarget(params, today, slots) {
+  const slot = params.get('slot');
+  if (!slot || !slots.includes(slot)) return null;
+  const date = params.get('date');
+  return { slot, date: ISO_DATE.test(date || '') ? date : today };
+}

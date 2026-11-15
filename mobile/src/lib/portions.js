@@ -250,7 +250,7 @@ export function scaleDay(day, factor, nutrition, opts = {}) {
 export function planFit(data, nutrition, today) {
   const plan = planKcal(nutrition);
   const target = macroTargets(data, nutrition, today);
-  if (target.source === 'plan') return { state: 'same', factor: 1, plan, cap: false };
+  if (target.source === 'plan') return { state: 'same', factor: 1, plan, cap: false, proteinFactor: 1 };
   const f = scaleFactor(target.kcal, plan);
   // A smaller person needs less protein than the plan holds: protein foods
   // may then shrink, never below their own target (and never below 60%).

@@ -762,3 +762,12 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .ladder-step.current { background: var(--accent); color: var(--on-accent); }
 .list-row.ladder-current { background: var(--accent-dim); }
 
+/* Meal library (views/MealLibrary.jsx, MealDetail.jsx, Meals swap). */
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 4px 10px; }
+.meal-pick { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; }
+.meal-pick .meal-name { font-weight: 600; }
+.swap-btn { flex: none; width: auto; min-height: 44px; padding: 0 14px; }
+.meal-thumb { display: inline-grid; place-items: center; color: var(--muted); }
+.accent-line { color: var(--accent); }
+.method-steps { margin: 0; padding: 14px 16px 14px 36px; display: grid; gap: 8px; }
+
