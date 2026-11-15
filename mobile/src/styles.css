@@ -773,3 +773,15 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .privacy-row { align-items: flex-start; }
 .privacy-row .chip { flex: none; margin-top: 2px; }
 .privacy-count { margin-top: 4px; color: var(--text); }
+
+/* The first-week card (FIRST-1): steps as an inset list inside the card. */
+.first-steps { list-style: none; margin: 0 -16px -6px; padding: 0; }
+.first-steps li + li .list-row { border-top: var(--hair); }
+.first-step { min-height: 48px; font-size: 16px; }
+.first-step.done { color: var(--muted); }
+.first-tick { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--surface2); color: var(--accent); }
+.first-tick .icon { width: 17px; height: 17px; }
+.first-tick.on { background: var(--accent); color: var(--on-accent); }
+.first-how { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 14px; }
+.first-how li { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.4; }
+.first-num { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-weight: 700; }

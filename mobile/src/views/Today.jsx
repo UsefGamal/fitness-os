@@ -33,7 +33,7 @@ import { WHATS_NEW } from '../lib/whatsNewNotes.js';
 import { starterProgress } from '../lib/starter.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
-import { hasScreenLock } from '../store/native.js';
+import { hasScreenLock, widgetStatus } from '../store/native.js';
 import { SESSIONS } from './Session.jsx';
 import { useToday } from '../store/today.js';
 import { markClearanceSeen } from '../lib/safety.js';
@@ -41,6 +41,8 @@ import { homeCard } from '../lib/homeCard.js';
 import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
 import { dismissWrap, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
+import FirstWeekCard from '../components/FirstWeekCard.jsx';
+import { firstWeekSteps, hideFirstWeek, markWidgetDone, showFirstWeek } from '../lib/firstWeek.js';
 
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
@@ -88,7 +90,17 @@ export default function Today() {
   // One card under the session at most: doctor note, welcome back, the
   // Sunday wrap-up, the recovery suggestion (lib/homeCard.js).
   const back = comeback(data, today);
-  const card = homeCard(data, content, today, { back: showBack(data, today) });
+  // The first-week card (FIRST-1): the phone says whether a widget is
+  // placed; asked again when the app comes back from the home screen.
+  const [widgets, setWidgets] = useState(null);
+  useEffect(() => {
+    const check = () => { if (document.visibilityState === 'visible') widgetStatus().then((w) => setWidgets(w ? w.count : null)); };
+    check();
+    document.addEventListener('visibilitychange', check);
+    return () => document.removeEventListener('visibilitychange', check);
+  }, []);
+  const firstSteps = firstWeekSteps(data, { widgetCount: widgets });
+  const card = homeCard(data, content, today, { back: showBack(data, today), first: showFirstWeek(data, today, firstSteps) });
   // "Still time today?" two hours after the session time (BACK-1 part D).
   const nowMin = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
   const moveTo = moveTargets(today, T, moves)[0] || null;
@@ -170,6 +182,15 @@ export default function Today() {
           <p className="muted small" style={{ margin: '0 0 4px' }}>{t(back.level === 'short' ? 'back.short' : back.level === 'fresh' ? 'back.fresh' : 'back.easy')}</p>
           {next && sessionKeyOn(today, T, moves) !== 'rest' ? <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> {t('back.start')}</button> : null}
         </section>
+      ) : null}
+      {card === 'first' ? (
+        <FirstWeekCard
+          steps={firstSteps}
+          onWeigh={() => setWeighing(true)}
+          onHide={() => update(hideFirstWeek)}
+          onWidgetDone={() => update(markWidgetDone)}
+          onPinAsked={() => widgetStatus().then((w) => setWidgets(w ? w.count : null))}
+        />
       ) : null}
       {picking ? <DayPicker date={today} dayName={longWeekday(today)} training={T} data={data} update={update} onClose={() => setPicking(false)} /> : null}
 
