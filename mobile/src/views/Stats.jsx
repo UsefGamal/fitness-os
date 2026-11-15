@@ -8,6 +8,7 @@ import LineChart from '../components/LineChart.jsx';
 import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
+import { nextDue } from '../lib/fitnessTest.js';
 import { formatDate, formatNumber } from '../lib/dates.js';
 import { profileOf } from '../lib/macros.js';
 import * as D from '../lib/data.js';
@@ -24,6 +25,19 @@ const MEASURES = [
 ];
 const VOLUME_FILL = [null, 'color-mix(in srgb, var(--accent) 35%, transparent)', 'color-mix(in srgb, var(--accent) 65%, transparent)', 'var(--accent)'];
 const MODES = [['volume', 'Volume'], ['recovery', 'Recovery'], ['untrained', 'Untrained']];
+
+/** The fitness test's row: when the next one is due (lib/fitnessTest.js). */
+function FitnessTestRow({ data, today }) {
+  const due = nextDue(data, today, content.training.fitness_test.every_days);
+  const meta = due.status === 'never' ? t('ftest.statsMeta') : due.status === 'due' ? t('ftest.statsDue', { date: formatDate(due.last) }) : t('ftest.statsLater', { n: due.days });
+  return (
+    <Link to="/stats/fitness-test" className="list-row">
+      <Icon name="medal" />
+      <div className="grow"><div>{t('ftest.title')}</div><div className="meta" style={due.status === 'due' ? { color: 'var(--accent)' } : undefined}>{meta}</div></div>
+      <Icon name="chev" className="icon chev" />
+    </Link>
+  );
+}
 
 /** The shared header: two numbers, consistency with the calendar folded
  * away, and the two links. */
@@ -52,6 +66,7 @@ function Summary({ data, today }) {
       </details>
       <div className="list">
         <Link to="/history" className="list-row"><Icon name="calendar" /><div className="grow"><div>{t('stats.history')}</div><div className="meta">{t('stats.historyMeta', { n: data.workouts.length })}</div></div><Icon name="chev" className="icon chev" /></Link>
+        <FitnessTestRow data={data} today={today} />
         <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">{t('plan.library')}</div><Icon name="chev" className="icon chev" /></Link>
       </div>
     </>

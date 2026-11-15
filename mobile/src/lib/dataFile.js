@@ -12,9 +12,11 @@
 //   (kept for the next export, never read by the app) and drops keys that
 //   could reach an object's prototype;
 // - drops progress photo entries whose file isn't a photo in the photos
-//   folder, so "Delete photo" can never remove the data file.
+//   folder, so "Delete photo" can never remove the data file;
+// - drops fitness test rows without a date or a sensible number.
 import { seedExercises, defaultSettings } from './data.js';
 import { CURRENT_SCHEMA, migrate, NewerSchemaError, schemaOf } from './migrate.js';
+import { cleanTests } from './fitnessTest.js';
 import { cleanSet } from './sets.js';
 
 export const FILE_FORMAT = 'fitness-os-export';
@@ -34,7 +36,7 @@ export const DATA_KEYS = new Set([
   'schemaVersion', 'version', 'saved_at', 'profile', 'goals', 'safety', 'diet', 'program', 'checkins',
   'rewards', 'exercises', 'body_logs', 'hydration_logs', 'workouts', 'meal_logs', 'bonus_logs', 'shopping',
   'settings', 'session_moves', 'exercise_notes', 'achievements', 'evening_plan', 'progress_photos',
-  'health_daily', 'plan_overrides', 'setup', 'my_foods', '_unknown',
+  'health_daily', 'plan_overrides', 'setup', 'my_foods', 'fitness_tests', '_unknown',
 ]);
 const BAD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
@@ -134,6 +136,8 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
   if (Array.isArray(raw.progress_photos)) {
     cleaned.progress_photos = raw.progress_photos.filter((ph) => isObject(ph) && isPhotoFile(ph.file));
   }
+  // Fitness test results (lib/fitnessTest.js): every row is checked.
+  if (raw.fitness_tests !== undefined) cleaned.fitness_tests = cleanTests(raw.fitness_tests, content.training?.fitness_test?.items);
   if (version < 2) cleaned.plan_overrides = isObject(raw.plan_overrides) ? raw.plan_overrides : {};
   const current = migrate(cleaned, content);
   // V3: the six set fields are checked on every import. A wrong type, a

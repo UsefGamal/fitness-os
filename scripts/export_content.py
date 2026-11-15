@@ -20,6 +20,7 @@ from content import (  # noqa: E402
     eating_out_guide,
     exercise_photos,
     exercise_targets,
+    fitness_test,
     food_items,
     gym_exercises,
     gym_program,
@@ -27,6 +28,7 @@ from content import (  # noqa: E402
     maintenance_plan,
     meal_plan,
     milestones,
+    progressions,
     recovery_program,
     routines,
     simple_meals,
@@ -94,6 +96,8 @@ def build_content() -> dict:
                 "recovery_checklist": recovery_program.RECOVERY_CHECKLIST,
                 "cardio_session": cardio_program.CARDIO_SESSION,
                 "cardio_alternatives": cardio_program.ALTERNATIVES,
+                "progressions": progressions.LADDERS,
+                "fitness_test": {"every_days": fitness_test.EVERY_DAYS, "items": fitness_test.ITEMS, "guide": fitness_test.GUIDE},
                 "exercise_photos": {k: v for k, v in exercise_photos.EXERCISE_PHOTOS.items() if k not in hide},
                 "exercise_targets": {
                     name: {"main": main, "helpers": helpers, "angle": angle}

@@ -74,6 +74,16 @@ test('photo entries that point outside the photos folder are dropped', () => {
   for (const b of bad) assert.equal(isPhotoFile(b?.file), false);
 });
 
+test('fitness test rows are checked on import and restore losslessly', () => {
+  const good = { date: '2026-11-01', results: { pushups: { value: 12, move: 'Knee Push-up' }, plank: { value: 45, move: 'Plank' } } };
+  const bad = [{ date: 'yesterday', results: { plank: { value: 1 } } }, { date: '2026-11-02', results: { plank: { value: -5 } } }, 'x', null];
+  const d = parseDataFile(hostile({ fitness_tests: [good, ...bad] }), content);
+  assert.deepEqual(d.fitness_tests, [good]);
+  assert.deepEqual(parseDataFile(toDataFile(d), content).fitness_tests, [good]);
+  assert.equal('fitness_tests' in parseDataFile(hostile({}), content), false, 'older backups stay as they were');
+  assert.deepEqual(parseDataFile(hostile({ fitness_tests: 'nope' }), content).fitness_tests, []);
+});
+
 test('unknown keys go into the _unknown bag, prototype keys are dropped', () => {
   const text = hostile({ a_key_from_the_future: { kept: true }, blob: 'x'.repeat(100) }).replace('{', '{"__proto__":{"polluted":true},"constructor":1,');
   const d = parseDataFile(text, content);
@@ -140,10 +150,11 @@ test('pentest JS-01: a shared copy keeps only the plan, workouts and meals', () 
     diet: { ramadan: { start: '2027-02-18' } },
     setup: { minor: true },
     checkins: [{ date: '2026-11-01' }],
+    fitness_tests: [{ date: '2026-11-01', results: { plank: { value: 61, move: 'Plank' } } }],
   };
   data.workouts = data.workouts.map((w) => ({ ...w, pain_note: 'left knee' }));
   const copy = JSON.parse(toShareCopy(data));
-  for (const k of ['profile', 'goals', 'diet', 'setup', 'checkins', 'settings', 'safety', 'body_logs', 'hydration_logs', 'health_daily', 'progress_photos']) {
+  for (const k of ['profile', 'goals', 'diet', 'setup', 'checkins', 'settings', 'safety', 'body_logs', 'hydration_logs', 'health_daily', 'progress_photos', 'fitness_tests']) {
     assert.equal(k in copy, false, k);
     assert.ok(SHARE_OMITS.includes(k), k);
   }
