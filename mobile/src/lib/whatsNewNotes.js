@@ -5,6 +5,35 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.5',
+    items: [
+      { icon: 'trend', text: 'Weight steady for 3 weeks on a cut? Home offers a small calorie adjustment. You choose, and Meals can undo it.' },
+    ],
+  },
+  {
+    version: '1.0.4',
+    items: [
+      { icon: 'trophy', text: 'Reached your goal? Home offers maintenance: calories go up a little each week, so the weight stays off.' },
+    ],
+  },
+  {
+    version: '1.0.3',
+    items: [
+      { icon: 'dumbbell', text: 'Gym mode (Settings, Training): no tab bar during a workout, Log set at the bottom, Back pauses.' },
+    ],
+  },
+  {
+    version: '1.0.2',
+    items: [
+      { icon: 'info', text: 'Help in Settings: ten quick answers, like how to update, back up or move a session.' },
+      { icon: 'lock', text: 'Privacy page: where every copy of your data goes, and Delete everything to start over.' },
+      { icon: 'trend', text: 'Fitness test on Stats: push-ups, squats and a plank hold, to see how you improve.' },
+      { icon: 'barbell', text: 'A bodyweight move\'s page shows its easier and harder versions.' },
+      { icon: 'check', text: 'Bigger text up to 130% (Settings, Look), and TalkBack now says each set, record, rest over and meal.' },
+      { icon: 'star', text: 'New on the app? Home shows five first-week steps that tick themselves as you go.' },
+    ],
+  },
+  {
     version: '1.0.1',
     items: [
       { icon: 'star', text: 'What\'s new now lists every change since the version you had before, even if you skipped a few updates.' },

@@ -22,6 +22,8 @@ import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { kcalHidden } from '../lib/safety.js';
+import { clearAdjustments } from '../lib/targetCheck.js';
+import { announce, mealTickLine } from '../lib/announce.js';
 import { useToday } from '../store/today.js';
 
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -62,10 +64,11 @@ function Targets() {
       <section className="card">
         <div className="muted small">{t('mealsSimple.proteinLabel')}</div>
         <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 6px' }}>
-          <span style={{ fontSize: 30, fontWeight: 700 }}>{target.protein}</span><span className="muted">{t('mealsSimple.gramsDay')}</span>
+          <span style={{ fontSize: 'calc(30px * var(--ts))', fontWeight: 700 }}>{target.protein}</span><span className="muted">{t('mealsSimple.gramsDay')}</span>
         </div>
         <div className="small">{t('mealsSimple.perMeal', { g: perMeal, n: S.meals_per_day })}</div>
         {showKcal ? <div className="muted small" style={{ marginTop: 6 }}>{t('mealsSimple.kcal', { kcal: target.kcal })}</div> : null}
+        {showKcal && target.reverse && !target.reverse.done ? <div className="muted small" style={{ marginTop: 4 }}>{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</div> : null}
         {target.source === 'plan' ? <div className="muted small" style={{ marginTop: 6 }}><Link to="/profile">{t('mealsSimple.setUp')}</Link></div> : null}
         <div className="row between" style={{ marginTop: 14 }}>
           <strong><Icon name="drop" className="icon" /> {t('mealsSimple.water')}</strong>
@@ -184,6 +187,13 @@ function MealPlan() {
           {t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
         </div>
       </details>
+      {target.reverse && !target.reverse.done && !kcalHidden(data) ? <p className="muted small" role="note">{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</p> : null}
+      {target.adjust && !kcalHidden(data) ? (
+        <div className="row muted small" role="note" style={{ gap: 8, margin: '0 0 12px' }}>
+          <span className="grow">{t('tcheck.note', { kcal: Math.abs(target.adjust) })}</span>
+          <button type="button" className="mini-btn" onClick={() => update(clearAdjustments)}>{t('tcheck.undo')}</button>
+        </div>
+      ) : null}
       {fit.state === 'far' ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
       {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
         <div key={r.key} className="warn" role="note">
@@ -212,6 +222,7 @@ function MealPlan() {
                   const ev = mealTickEvent({ nowDone: !log?.completed, doneBefore: done, slots: N.meal_slots.length });
                   update((d) => (log?.custom ? clearCustomMeal(d, date, meal.slot) : tickMeal(d, date, meal.slot, opt, !log?.completed)));
                   if (ev) feedback(ev);
+                  announce(mealTickLine({ meal: label(meal.slot), eaten: !log?.completed, done: done + (log?.completed ? -1 : 1), total: N.meal_slots.length }));
                 }}>
                 {log?.completed ? <Icon name="check" /> : null}
               </button>

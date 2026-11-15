@@ -33,6 +33,7 @@ import { useTimer } from '../store/useTimer.js';
 import { howToSteps, showHowTo, starterProgress } from '../lib/starter.js';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
+import { announce, setLoggedLine } from '../lib/announce.js';
 import { isShortSession } from '../lib/summary.js';
 import { gateOn, gentleDay } from '../lib/safety.js';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
@@ -335,7 +336,7 @@ export default function Workout() {
   const logSet = (w = weight, r = reps) => {
     if (!exRow || r < 1) return;
     if (noWeight(w)) return;
-    const set = { exercise_id: exRow.id, reps: r, weight_kg: w };
+    const set = { exercise_id: exRow.id, reps: r, weight_kg: w, ...(timed ? { track: 'time', duration_s: r } : {}) };
     update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w, seconds: timed ? r : null }));
     unlockAudio();
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
@@ -379,6 +380,8 @@ export default function Workout() {
     // before this set.
     afterPaint(() => {
       const kind = D.setKind(data, active.id, set);
+      // TalkBack hears the set and, in the same line, a record (A11Y-1).
+      announce(setLoggedLine({ setNo: after.sets.filter((x) => x.exercise_id === exRow.id && D.isWorkSet(x)).length, set, name: ex.name, kind }));
       if (kind === 'best') {
         feedback('pr');
         setToast(t('workout.best', { name: ex.name, kg: w, reps: r }));
@@ -453,7 +456,7 @@ export default function Workout() {
 
   return (
     <div className="page">
-      {toast ? <div className="toast" role="status"><span className="pr">PR</span> {toast}</div> : null}
+      {toast ? <div className="toast" aria-hidden="true"><span className="pr">PR</span> {toast}</div> : null}
       {undo && !toast ? (
         <div className="toast undo-toast" role="status">
           {undo.label}
@@ -474,7 +477,7 @@ export default function Workout() {
           ]} />
         </div>
         {starter ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
-        {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '10px 0 0' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label="Workout length against your target"><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
+        {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '10px 0 0' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label={t('aria.workoutLength')}><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
         {paused ? (
           <div className="row between" style={{ gap: 8, marginTop: 10 }}>
             <span className="chip warn">{t('workout.paused')}</span>

@@ -6,6 +6,7 @@ import { feedback } from '../store/feedback.js';
 import { useTimer } from '../store/useTimer.js';
 import Icon from './Icon.jsx';
 import { t } from '../lib/i18n.js';
+import { announce } from '../lib/announce.js';
 
 // Quick lengths on the full screen timer.
 const PRESETS = [45, 60, 90, 120, 180];
@@ -63,8 +64,9 @@ export default function RestTimer({ compact = false }) {
     } else if (left === 0) {
       beeped.current = key;
       feedback('restDone', { inShade: useTimer.getState().inShade });
+      announce(t('timer.over', { label }));
     }
-  }, [endsAt, left, paused]);
+  }, [endsAt, left, paused, label]);
 
   if (!endsAt) return null;
   const done = left === 0 && !paused;
@@ -91,14 +93,13 @@ export default function RestTimer({ compact = false }) {
       <button type="button" className="tbtn" onClick={paused ? resume : pause} aria-label={paused ? 'Start the rest again' : 'Pause the rest'}>
         <Icon name={paused ? 'play' : 'pause'} /><span>{paused ? 'Start' : 'Pause'}</span>
       </button>
-      <button type="button" className="tbtn" onClick={skip} aria-label="Skip the rest"><Icon name="skip" /><span>Skip</span></button>
+      <button type="button" className="tbtn" onClick={skip} aria-label={t('aria.skipRest')}><Icon name="skip" /><span>Skip</span></button>
     </div>
   );
 
   if (compact && !full) {
     return (
       <div className={`timer-pill${done ? ' done' : ''}`} role="timer" aria-live="off">
-        <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
         <button type="button" className="pill-open" onClick={() => navigate('/workout')} aria-label={t('pill.open')}>
           <Icon name="timer" />
           <span className="t">{done ? t('pill.go') : clock(left)}</span>
@@ -114,8 +115,7 @@ export default function RestTimer({ compact = false }) {
   if (full) {
     return (
       <div className="timer-full" role="timer" aria-live="off">
-        <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
-        <button type="button" className="icon-btn timer-close" aria-label="Back to the workout" onClick={() => setFull(false)}><Icon name="chev" /></button>
+        <button type="button" className="icon-btn timer-close" aria-label={t('aria.backToWorkout')} onClick={() => setFull(false)}><Icon name="chev" /></button>
         <div className="muted">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
         <svg viewBox="0 0 280 280" className="ring" aria-hidden="true">
           <circle cx="140" cy="140" r={RING_R} fill="none" stroke="var(--surface2)" strokeWidth="14" />
@@ -126,7 +126,7 @@ export default function RestTimer({ compact = false }) {
         <div className="big-next">Next: {label}</div>
         {controls}
         {shadeHint}
-        <div className="timer-presets" role="group" aria-label="Start a new rest">
+        <div className="timer-presets" role="group" aria-label={t('aria.newRest')}>
           {PRESETS.map((sec) => (
             <button key={sec} type="button" className={`tpre${sec === total ? ' on' : ''}`} onClick={() => restart(sec)}>{clock(sec)}</button>
           ))}
@@ -137,7 +137,6 @@ export default function RestTimer({ compact = false }) {
 
   return (
     <div className={`timer${done ? ' done' : ''}`} role="timer" aria-live="off">
-      <span className="sr-only" role="status">{done ? t('timer.over', { label }) : ''}</span>
       <button type="button" className="timer-open" onClick={() => setFull(true)}>
         <div className="t">{done ? 'Go' : clock(left)}</div>
         <div className="grow">

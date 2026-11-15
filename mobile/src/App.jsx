@@ -5,6 +5,7 @@ import ErrorBoundary from './components/CrashScreen.jsx';
 import RecoveryScreen from './components/RecoveryScreen.jsx';
 import { recordError } from './store/errors.js';
 import Fanfare from './components/Fanfare.jsx';
+import Announcer from './components/Announcer.jsx';
 import SaveBar from './components/SaveBar.jsx';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -24,6 +25,9 @@ import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
 import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
+import { backAction, inGymMode } from './lib/gymMode.js';
+import { pauseWorkout } from './lib/training.js';
+import { announce } from './lib/announce.js';
 import { needsScreening } from './lib/safety.js';
 import Screening from './views/Screening.jsx';
 import Setup from './views/Setup.jsx';
@@ -40,7 +44,7 @@ import Plan from './views/Plan.jsx';
 import Settings from './views/Settings.jsx';
 import Today from './views/Today.jsx';
 import Workout from './views/Workout.jsx';
-import { themeChoice } from './lib/theme.js';
+import { textScale, textSize, themeChoice } from './lib/theme.js';
 import { applyTheme, followPhone } from './store/theme.js';
 
 // Screens you open now and then load on first use, so start-up stays quick.
@@ -81,7 +85,11 @@ function Shell() {
   // Swipe left or right on a tab page to open the tab next to it.
   const mealsOn = useData((s) => moduleOn(s.data, 'meals'));
   const locale = useData((s) => localeOf(s.data));
-  const swipe = useSwipeTabs(pathname, { rtl: dirOf(locale) === 'rtl', tabs: tabPaths(mealsOn) });
+  const tabSwipe = useSwipeTabs(pathname, { rtl: dirOf(locale) === 'rtl', tabs: tabPaths(mealsOn) });
+  // Gym mode (UIUX-4): no tab bar and no tab swipes while a workout runs.
+  const gym = useData((s) => inGymMode(s.data, s.activeWorkoutId, pathname));
+  useLayoutEffect(() => { document.documentElement.classList.toggle('gym', gym); }, [gym]);
+  const swipe = gym ? {} : tabSwipe;
   const tabAnim = state?.swipe === 'forward' ? 'swipe-fwd' : state?.swipe === 'back' ? 'swipe-back' : 'tab-in';
   return (
     <>
@@ -96,6 +104,7 @@ function Shell() {
       </div>
       <RestTimer compact={pathname !== '/workout'} />
       <Fanfare />
+      <Announcer />
       <TabBar />
     </>
   );
@@ -163,6 +172,14 @@ function listenBackButton() {
   if (!Capacitor.isNativePlatform()) return;
   CapApp.addListener('backButton', ({ canGoBack }) => {
     if (closeTopOverlay()) return;
+    // Gym mode: Back pauses the running workout and stays on it (UIUX-4).
+    const st = useData.getState();
+    const path = window.location.hash.replace(/^#/, '').split('?')[0] || '/';
+    if (backAction(st.data, st.activeWorkoutId, path) === 'pause') {
+      st.update((d) => pauseWorkout(d, st.activeWorkoutId));
+      announce(t('gym.paused'));
+      return;
+    }
     if (canGoBack && window.history.length > 1 && window.location.hash !== '#/') window.history.back();
     else CapApp.exitApp();
   });
@@ -177,6 +194,9 @@ export default function App() {
   // Light theme (THEME-1): before paint, so there is no dark flash.
   const theme = useData((s) => themeChoice(s.data));
   useLayoutEffect(() => { applyTheme(theme); return followPhone(theme); }, [theme]);
+  // Text size (UIUX-2): one variable every font size reads.
+  const ts = useData((s) => textScale(textSize(s.data)));
+  useLayoutEffect(() => { document.documentElement.style.setProperty('--ts', String(ts)); }, [ts]);
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
   const [perms, setPerms] = useState(false);

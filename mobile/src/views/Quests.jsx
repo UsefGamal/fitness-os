@@ -34,7 +34,7 @@ export default function Quests() {
         <div className="row between">
           <div>
             <div className="muted small">Level {badge.level}{badge.current ? ` · ${badge.current.name}` : ''}</div>
-            <div style={{ fontSize: 30, fontWeight: 700 }}>{points} <span className="muted" style={{ fontSize: 15, fontWeight: 500 }}>points</span></div>
+            <div style={{ fontSize: 'calc(30px * var(--ts))', fontWeight: 700 }}>{points} <span className="muted" style={{ fontSize: 'calc(15px * var(--ts))', fontWeight: 500 }}>points</span></div>
           </div>
           <Icon name="star" className="icon" />
         </div>

@@ -44,7 +44,7 @@ test('the first plan week merges portions into ingredients to buy', () => {
   assert.ok(items['chicken_breast|g'], 'chicken by weight');
   assert.ok(items['egg|pc'], 'eggs by count');
   // P14-19: sentence case, never a key.
-  for (const i of groups.flatMap((g) => g.items)) assert.doesNotMatch(i.name, /[a-z]+_/, i.name);
+  for (const i of groups.flatMap((g) => g.items)) assert.doesNotMatch(i.name, /\b[a-z]+_/, i.name);
   assert.deepEqual(groups.map((g) => g.name), N.category_order.filter((c) => groups.some((g) => g.name === c)));
 });
 

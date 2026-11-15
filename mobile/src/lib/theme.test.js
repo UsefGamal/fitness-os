@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { resolveTheme, setTheme, THEME_BG, themeChoice } from './theme.js';
+import { resolveTheme, setTextSize, setTheme, TEXT_SIZES, textScale, textSize, THEME_BG, themeChoice } from './theme.js';
 
 test('theme: dark by default, light or matching the phone when chosen', () => {
   assert.equal(themeChoice({}), 'dark');
@@ -21,9 +21,28 @@ test('theme: every dark colour token has a light value', () => {
   const names = (b) => new Set([...b.matchAll(/(--[a-z0-9-]+):\s*(?![^;]*env\()/g)].map((m) => m[1]));
   const dark = names(block(':root {'));
   const light = names(block(':root[data-theme="light"] {'));
-  // Sizes and safe areas are the same in both themes.
-  const layout = new Set(['--radius', '--radius-lg', '--gutter', '--tabbar']);
+  // Sizes, safe areas and the text size are the same in both themes.
+  const layout = new Set(['--radius', '--radius-lg', '--gutter', '--tabbar', '--ts']);
   for (const n of dark) if (!layout.has(n)) assert.ok(light.has(n), `${n} has no light value`);
   assert.equal(THEME_BG.light, '#f2f2f7');
   assert.ok(block(':root[data-theme="light"] {').includes(`--bg: ${THEME_BG.light}`));
+});
+
+test('text size: 100% by default, 115 or 130 when picked, anything else ignored', () => {
+  assert.deepEqual(TEXT_SIZES, [100, 115, 130]);
+  assert.equal(textSize({}), 100);
+  assert.equal(textSize({ settings: { text_size: 130 } }), 130);
+  assert.equal(textSize({ settings: { text_size: 200 } }), 100);
+  const d = setTextSize({ settings: { theme: 'light' } }, 115);
+  assert.deepEqual(d.settings, { theme: 'light', text_size: 115 });
+  assert.equal(setTextSize(d, 999), d);
+  assert.equal(textScale(130), 1.3);
+  assert.equal(textScale(undefined), 1);
+});
+
+test('text size: every font size up to 34 px follows --ts', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const fixed = [...css.matchAll(/font-size: *([0-9.]+)px/g)].map((m) => Number(m[1])).filter((n) => n <= 34);
+  assert.deepEqual(fixed, []);
+  assert.match(css, /--ts: 1;/);
 });

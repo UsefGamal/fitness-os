@@ -19,3 +19,22 @@ export function resolveTheme(choice, phoneLight = false) {
 export function setTheme(data, choice) {
   return THEMES.includes(choice) ? { ...data, settings: { ...data.settings, theme: choice } } : data;
 }
+
+// Text size (UIUX-2): 100, 115 or 130 percent, in Settings > Look. Every
+// font size up to 34 px is `calc(Npx * var(--ts))`; the big timer digits
+// stay as they are, they are display sizes already.
+export const TEXT_SIZES = [100, 115, 130];
+
+export function textSize(data) {
+  const v = data?.settings?.text_size;
+  return TEXT_SIZES.includes(v) ? v : 100;
+}
+
+/** The --ts value for a size: 1, 1.15 or 1.3. */
+export function textScale(size) {
+  return (TEXT_SIZES.includes(size) ? size : 100) / 100;
+}
+
+export function setTextSize(data, size) {
+  return TEXT_SIZES.includes(size) ? { ...data, settings: { ...data.settings, text_size: size } } : data;
+}

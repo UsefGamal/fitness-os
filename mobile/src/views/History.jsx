@@ -93,7 +93,7 @@ export default function History() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{w.notes || w.workout_type}</h1>
       {editDate ? (
         <div className="row" style={{ margin: '-8px 0 16px' }}>
-          <input type="date" value={w.log_date} max={todayISO()} aria-label="Workout date" onChange={(e) => e.target.value && update((d) => D.editWorkout(d, w.id, { log_date: e.target.value }))} />
+          <input type="date" value={w.log_date} max={todayISO()} aria-label={t('aria.workoutDate')} onChange={(e) => e.target.value && update((d) => D.editWorkout(d, w.id, { log_date: e.target.value }))} />
           <button type="button" className="btn small" onClick={() => setEditDate(false)}>Done</button>
         </div>
       ) : (

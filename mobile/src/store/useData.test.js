@@ -67,3 +67,19 @@ test('localStorage full: the file still saves and the bar shows once both fail',
   assert.equal(JSON.parse(localStorage.getItem(KEY)).settings.water_goal_ml, 2700, 'retry catches up');
   assert.equal(useData.getState().saveFailing, false);
 });
+
+// Last: after this the store never saves again (HELP-1, Delete everything).
+test('stopSaving drops what is waiting and writes nothing after', async () => {
+  const { stopSaving } = await import('./useData.js');
+  useData.getState().update((d) => ({ ...d, settings: { ...d.settings, water_goal_ml: 3100 } }));
+  flushSave(); // localStorage now, the mirror 300 ms later
+  stopSaving(); // cancels that mirror write
+  await tick(400);
+  assert.notEqual(JSON.parse(files()['fitness-os-data.json']).settings.water_goal_ml, 3100, 'the waiting mirror write was dropped');
+  localStorage.removeItem(KEY);
+  useData.getState().update((d) => ({ ...d, settings: { ...d.settings, water_goal_ml: 3200 } }));
+  flushSave(true);
+  await tick(400);
+  assert.equal(localStorage.getItem(KEY), null, 'nothing written back');
+  assert.notEqual(JSON.parse(files()['fitness-os-data.json']).settings.water_goal_ml, 3200);
+});

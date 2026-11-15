@@ -5,6 +5,8 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, ROOT_PAGES } from '../lib/settingsPages.js';
 import { RELEASES_URL, safeOutside, SHARE_APP_TEXT } from '../lib/links.js';
 import InstallGuide from '../components/InstallGuide.jsx';
+import HelpPage from '../components/HelpPage.jsx';
+import PrivacyPage from '../components/PrivacyPage.jsx';
 import AutoBackup from '../components/AutoBackup.jsx';
 import { dateRange } from '../lib/autoBackup.js';
 import { longDate, todayISO } from '../lib/dates.js';
@@ -36,7 +38,7 @@ import Screening from './Screening.jsx';
 import RamadanSettings from '../components/RamadanSettings.jsx';
 import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t, t as tr } from '../lib/i18n.js';
-import { setTheme, themeChoice, THEMES } from '../lib/theme.js';
+import { setTextSize, setTheme, TEXT_SIZES, textSize, themeChoice, THEMES } from '../lib/theme.js';
 import { APP } from '../lib/version.js';
 import { notesUpTo } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
@@ -288,6 +290,8 @@ export default function Settings() {
       ) : null}
 
       {show('install') ? <InstallGuide /> : null}
+      {show('help') ? <HelpPage /> : null}
+      {show('privacy') ? <PrivacyPage data={data} onExport={exportNow} /> : null}
 
       {show('data') ? (<>
       <div className="section-label">Your data</div>
@@ -334,7 +338,7 @@ export default function Settings() {
         <section className="card stack">
           <strong>Add these workouts from {csv.parsed.source}?</strong>
           {csv.parsed.source === 'Strong' ? (
-            <div className="seg" role="group" aria-label="Weights in the file are in">
+            <div className="seg" role="group" aria-label={t('aria.csvUnit')}>
               {['kg', 'lb'].map((u) => <button key={u} type="button" className={csv.unit === u ? 'on' : ''} onClick={() => readCsv(csv.text, u)}>Weights in {u}</button>)}
             </div>
           ) : null}
@@ -402,6 +406,7 @@ export default function Settings() {
       <div className="section-label">{tr('theme.title')}</div>
       <div className="list">
         <Choice label={tr('theme.label')} value={themeChoice(data)} onChange={(v) => update((d) => setTheme(d, v))} options={THEMES.map((k) => [k, tr(`theme.${k}`)])} />
+        <Choice label={tr('theme.textSize')} value={textSize(data)} onChange={(v) => update((d) => setTextSize(d, Number(v)))} options={TEXT_SIZES.map((k) => [k, tr('theme.textPct', { n: k })])} />
       </div>
       <div className="section-label">Modules</div>
       <div className="list">
@@ -455,6 +460,8 @@ export default function Settings() {
       {show('about') ? (<>
       <div className="section-label">About</div>
       <div className="list">
+        <button type="button" className="list-row" onClick={() => navigate('/settings/help')}><Icon name="info" /><div className="grow"><div>{t('settings.help')}</div><div className="meta">{t('settings.helpNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => navigate('/settings/privacy')}><Icon name="lock" /><div className="grow"><div>{t('settings.privacy')}</div><div className="meta">{t('settings.privacyNote')}</div></div><Icon name="chev" className="icon chev" /></button>
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>{t('about.backup')}</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
@@ -504,6 +511,7 @@ function TrainingSettings({ data, update }) {
         <Choice label="Rest for big lifts" value={t.rest_compound} onChange={(v) => set({ rest_compound: Number(v) })} options={rest} />
         <Choice label="Rest for small lifts" value={t.rest_isolation} onChange={(v) => set({ rest_isolation: Number(v) })} options={rest} />
         <Toggle on={t.auto_rest} onClick={() => set({ auto_rest: !t.auto_rest })} title="Start rest after each set" note="The timer starts when you log a set" />
+        <Toggle on={t.gym_mode === true} onClick={() => set({ gym_mode: t.gym_mode !== true })} title={tr('gym.title')} note={tr('gym.note')} />
         <Choice label="Target workout length" value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
           options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
       </div>

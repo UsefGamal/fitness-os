@@ -63,9 +63,9 @@ function EditList({ day, sessionKey }) {
         <div key={`${ex.name}-${i}`} className="ex-card stack">
           <div className="row between">
             <div className="ex-name grow">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
-            <button type="button" className="icon-btn" aria-label={`Move ${ex.name} up`} disabled={i === 0} onClick={() => update((d) => P.moveExercise(d, sessionKey, T, i, -1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="back" className="icon" /></span></button>
-            <button type="button" className="icon-btn" aria-label={`Move ${ex.name} down`} disabled={i === day.exercises.length - 1} onClick={() => update((d) => P.moveExercise(d, sessionKey, T, i, 1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="chev" className="icon" /></span></button>
-            <button type="button" className="icon-btn" aria-label={`Remove ${ex.name}`} onClick={() => update((d) => P.removeExercise(d, sessionKey, T, i))}><Icon name="trash" /></button>
+            <button type="button" className="icon-btn" aria-label={t('my.up', { name: ex.name })} disabled={i === 0} onClick={() => update((d) => P.moveExercise(d, sessionKey, T, i, -1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="back" className="icon" /></span></button>
+            <button type="button" className="icon-btn" aria-label={t('my.down', { name: ex.name })} disabled={i === day.exercises.length - 1} onClick={() => update((d) => P.moveExercise(d, sessionKey, T, i, 1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="chev" className="icon" /></span></button>
+            <button type="button" className="icon-btn" aria-label={t('my.remove', { name: ex.name })} onClick={() => update((d) => P.removeExercise(d, sessionKey, T, i))}><Icon name="trash" /></button>
           </div>
           <div className="row">
             <label className="field" style={{ width: 80 }}><span>Sets</span><input type="number" inputMode="numeric" min="1" max="10" value={ex.sets} onChange={(e) => { const v = parseInt(e.target.value, 10); if (v >= 1 && v <= 10) update((d) => P.editExercise(d, sessionKey, T, i, { sets: v })); }} /></label>

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { holdDelay, stepValue } from '../lib/hold.js';
 import { tap } from '../store/feedback.js';
 import Icon from './Icon.jsx';
+import { t } from '../lib/i18n.js';
 
 /** Big +/- buttons so a set can be logged one-handed without the keyboard.
  * Holding a button keeps stepping, faster after a while (E4-S10). */
@@ -55,11 +56,11 @@ export default function Stepper({ value, onChange, step = 1, min = 0, max = 1000
     <label className="field">
       <span>{label}</span>
       <div className="stepper">
-        <button type="button" aria-label={`Less ${label}`} onPointerDown={lessDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={lessClick}>
+        <button type="button" aria-label={t('aria.less', { label })} onPointerDown={lessDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={lessClick}>
           <Icon name="minus" />
         </button>
         <input type="number" inputMode="decimal" aria-label={label} value={value} onChange={(e) => set(parseFloat(e.target.value))} onFocus={(e) => e.target.select()} />
-        <button type="button" aria-label={`More ${label}`} onPointerDown={moreDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={moreClick}>
+        <button type="button" aria-label={t('aria.more', { label })} onPointerDown={moreDown} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop} onContextMenu={noMenu} onClick={moreClick}>
           <Icon name="plus" />
         </button>
       </div>

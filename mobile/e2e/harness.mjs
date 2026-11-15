@@ -40,7 +40,7 @@ const SUNDAY = new Date('2026-11-08T07:00:00Z');
 const AFTERNOON = new Date('2026-11-06T12:00:00Z');
 const PORT = 4179;
 
-export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
+export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/settings/help', '/settings/privacy', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
 export const WIDTHS = [360, 390, 412];
 export const DIRS = ['ltr', 'rtl'];
 export const MIN_TAP = 44;
@@ -50,6 +50,25 @@ const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof 
 const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.blocks.map((b) => ({ ...b, schedule: b.schedule.map((x) => ({ ...x, session: 'rest', cardio_after: null })) })) } });
 const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
+// FIRST-1: set up two days ago, no workout finished, nothing backed up.
+const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11-04' }, workouts: d.workouts.filter((w) => !w.finished_at), settings: { ...d.settings, last_backup_at: null, auto_backup: undefined, first_week: undefined } });
+// UIUX-2: the biggest text size.
+const bigText = (d) => ({ ...d, settings: { ...d.settings, text_size: 130 } });
+// UIUX-4: gym mode switched on.
+const gymOn = (d) => ({ ...d, settings: { ...d.settings, training: { ...d.settings?.training, gym_mode: true } } });
+// MAINT-1: the goal range is where the weight already is; then the second
+// week of maintenance after it.
+const goalReached = (d) => ({ ...d, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, target_low_kg: 94, target_high_kg: 97 })) });
+const maintaining = (d) => ({ ...d, goals: [...d.goals.map((g) => ({ ...g, ended_on: g.ended_on || '2026-10-30' })), { id: 'gm', set_on: '2026-10-30', direction: 'maintain', start_weight_kg: 95, target_low_kg: 94, target_high_kg: 96, target_date: null, ended_on: null, reverse: { from_kcal: 1940, started_on: '2026-10-30', step: 150, weeks: 6 } }] });
+// TARGET-1: three flat weeks with every meal ticked, then after "Lower".
+const flatWeeks = (d) => {
+  const slots = [...new Set(d.meal_logs.map((m) => m.meal_slot))];
+  const day = (i) => new Date(Date.UTC(2026, 10, 6 - i)).toISOString().slice(0, 10);
+  const logs = Array.from({ length: 28 }, (_, i) => ({ id: 9000 + i, log_date: day(i), weight_kg: 95 }));
+  const meals = Array.from({ length: 21 }, (_, i) => slots.map((s, j) => ({ id: 9100 + i * 10 + j, log_date: day(i), meal_slot: s, option_key: 'option_a', completed: true }))).flat();
+  return { ...d, body_logs: logs, meal_logs: meals, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, set_on: '2026-09-01' })) };
+};
+const adjusted = (d) => ({ ...d, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, kcal_adjust: [{ on: '2026-11-01', kcal: -150 }] })) });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
@@ -129,6 +148,24 @@ export const STATES = [
       await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
     },
   },
+  {
+    name: 'help: an answer open',
+    route: '/settings/help',
+    act: async (p) => { await p.getByText(en['help.update.q']).click(); await p.getByText(en['help.update.a']).waitFor({ timeout: 5000 }); },
+  },
+  {
+    name: 'sheet: delete everything',
+    route: '/settings/privacy',
+    act: async (p) => {
+      await btnNamed(p, new RegExp(`^${en['wipe.title']}`)).click();
+      await p.getByRole('textbox').fill('DELETE');
+    },
+  },
+  { name: 'first week on Home', route: '/', data: firstWeek, check: (p) => p.getByText(en['first.title']).waitFor() },
+  { name: 'sheet: add the widget', route: '/', data: firstWeek, act: (p) => btnNamed(p, en['first.widget']).click() },
+  { name: 'text 130%: Plan', route: '/plan', data: bigText },
+  { name: 'text 130%: Stats', route: '/stats', data: bigText },
+  { name: 'text 130%: Settings', route: '/settings', data: bigText },
   { name: 'light: Home', route: '/', data: lightTheme },
   { name: 'light: Plan', route: '/plan', data: lightTheme },
   { name: 'light: Workout', route: '/workout', data: lightTheme },
@@ -147,11 +184,17 @@ export const STATES = [
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },
   { name: 'after Eid on Home', route: '/', data: afterEid, check: (p) => p.getByText(en['ramadan.afterChip']).first().waitFor() },
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
-  { name: 'text 130%: Home', route: '/', font: '130%' },
-  { name: 'text 130%: Workout', route: '/workout', font: '130%' },
+  { name: 'gym mode: logging a set', route: '/workout', data: gymOn, act: startSession, check: async (p) => { if (await p.locator('.tabbar').isVisible()) throw new Error('tab bar still shown in gym mode'); } },
+  { name: 'goal reached on Home', route: '/', data: goalReached, check: (p) => p.getByText(en['maint.title']).waitFor() },
+  { name: 'maintenance week on Meals', route: '/meals', data: maintaining, act: toFullMeals },
+  { name: 'target check on Home', route: '/', data: flatWeeks, check: (p) => p.getByText(en['tcheck.title']).waitFor() },
+  { name: 'adjusted target on Meals', route: '/meals', data: adjusted, act: toFullMeals, check: (p) => p.getByRole('button', { name: en['tcheck.undo'] }).waitFor() },
+  // UIUX-2: the app's own 130% text size (Settings > Look).
+  { name: 'text 130%: Home', route: '/', data: bigText },
+  { name: 'text 130%: Workout', route: '/workout', data: bigText },
   // FEEL-1: the steppers keep 48 px buttons at 360 px and 130% text.
-  { name: 'text 130%: logging a set', route: '/workout', font: '130%', act: startSession, floor: { sel: '.stepper button', min: 48 } },
-  { name: 'text 130%: Meals', route: '/meals', font: '130%', act: toFullMeals },
+  { name: 'text 130%: logging a set', route: '/workout', data: bigText, act: startSession, floor: { sel: '.stepper button', min: 48 } },
+  { name: 'text 130%: Meals', route: '/meals', data: bigText, act: toFullMeals },
 ];
 
 /** Interactive elements under 44 x 44, measured in the page. Inline links

@@ -154,6 +154,12 @@ test('home card priority: doctor note, welcome back, wrap-up, recovery', () => {
   const doctor = { ...data, safety: { screen_version: 1, gates: { needs_clearance: true } } };
   assert.equal(homeCard(doctor, content, '2026-11-08', { back: true }), 'clearance');
   assert.equal(homeCard(data, content, '2026-11-08', { back: true }), 'back');
+  assert.equal(homeCard(data, content, '2026-11-08', { back: true, first: true }), 'back');
+  assert.equal(homeCard(data, content, '2026-11-08', { first: true }), 'first');
+  assert.equal(homeCard(data, content, '2026-11-08', { goal: true, first: true }), 'goal');
+  assert.equal(homeCard(data, content, '2026-11-08', { back: true, goal: true }), 'back');
+  assert.equal(homeCard(data, content, '2026-11-08', { target: true, first: true }), 'target');
+  assert.equal(homeCard(data, content, '2026-11-08', { goal: true, target: true }), 'goal');
   assert.equal(homeCard(data, content, '2026-11-08'), 'wrapup');
   assert.equal(homeCard(data, content, '2026-11-11'), null);
 });

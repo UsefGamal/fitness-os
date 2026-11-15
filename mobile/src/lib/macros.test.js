@@ -104,3 +104,43 @@ test('rule A: the friends build caps a cut at 25% of TDEE', () => {
   assert.equal(energyTarget(fast).kcal, 1200, "Yusuf's build: no share cap, so 1% BW a week and the floor decide");
   assert.deepEqual(energyTarget({ ...fast, share: 0.25 }), { kcal: 1350, deficit: 450, reasons: ['capped'] });
 });
+
+// ── Maintenance after a reached goal (MAINT-1) ─────────────────────────
+test('maintain with a reverse: weekly steps up to the TDEE, then plain maintenance', () => {
+  const d = emptyData(content);
+  d.profile = { height_cm: 180, date_of_birth: '1994-01-01', gender: 'male', activity_level: 'moderate' };
+  d.body_logs = [{ id: 1, log_date: '2027-03-01', weight_kg: 80 }];
+  d.goals = [{ id: 'g2', direction: 'maintain', start_weight_kg: 80, target_low_kg: 79, target_high_kg: 81, ended_on: null, reverse: { from_kcal: 2000, started_on: '2027-03-01', step: 150, weeks: 6 } }];
+  const first = macroTargets(d, N, '2027-03-03');
+  assert.equal(first.mode, 'maintain');
+  assert.equal(first.kcal, 2000);
+  assert.deepEqual(first.reasons, ['reverse']);
+  assert.equal(first.reverse.week, 1);
+  assert.equal(first.deficit, first.tdee - 2000);
+  assert.equal(macroTargets(d, N, '2027-03-15').kcal, 2300);
+  const after = macroTargets(d, N, '2027-04-12');
+  assert.equal(after.reverse.done, true);
+  assert.equal(after.kcal, after.tdee);
+  assert.deepEqual(after.reasons, []);
+  // Without a reverse, maintain is the TDEE from day one.
+  delete d.goals[0].reverse;
+  assert.equal(macroTargets(d, N, '2027-03-03').reverse, undefined);
+});
+
+// ── The weekly target check's adjustments (TARGET-1) ───────────────────
+test('a confirmed adjustment lowers a cut, never under the floor, and not maintenance', () => {
+  const d = emptyData(content);
+  d.profile = { height_cm: 180, date_of_birth: '1994-01-01', gender: 'male', activity_level: 'moderate' };
+  d.body_logs = [{ id: 1, log_date: '2027-01-31', weight_kg: 90 }];
+  d.goals = [{ id: 'g1', direction: 'lose', start_weight_kg: 95, target_low_kg: 80, target_high_kg: 82, target_date: '2027-12-01', ended_on: null }];
+  const before = macroTargets(d, N, '2027-01-31');
+  d.goals[0].kcal_adjust = [{ on: '2027-01-31', kcal: -150 }];
+  const after = macroTargets(d, N, '2027-01-31');
+  assert.equal(after.kcal, before.kcal - 150);
+  assert.equal(after.adjust, -150);
+  assert.ok(after.reasons.includes('adjusted'));
+  d.goals[0].kcal_adjust = [{ on: '2027-01-31', kcal: -5000 }];
+  assert.equal(macroTargets(d, N, '2027-01-31').kcal, 1500);
+  d.goals[0].direction = 'maintain';
+  assert.equal(macroTargets(d, N, '2027-01-31').adjust, undefined);
+});
