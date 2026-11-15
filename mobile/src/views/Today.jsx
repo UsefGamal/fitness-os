@@ -44,7 +44,9 @@ import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 import FirstWeekCard from '../components/FirstWeekCard.jsx';
 import GoalReachedCard from '../components/GoalReachedCard.jsx';
 import { hideGoalReached, showGoalReached, startMaintenance } from '../lib/maintenance.js';
-import { currentGoal, macroTargets } from '../lib/macros.js';
+import { currentGoal, macroTargets, MIN_KCAL, profileOf } from '../lib/macros.js';
+import TargetCheckCard from '../components/TargetCheckCard.jsx';
+import { keepTarget, lowerTarget, targetCheckDue } from '../lib/targetCheck.js';
 import { goalProgress } from '../lib/progress.js';
 import { announce } from '../lib/announce.js';
 import { firstWeekSteps, hideFirstWeek, markWidgetDone, showFirstWeek } from '../lib/firstWeek.js';
@@ -108,8 +110,10 @@ export default function Today() {
   // Goal reached (MAINT-1): offer maintenance, in weekly steps.
   const progress = goalProgress(data.body_logs, currentGoal(data), today);
   const goalCard = showGoalReached(data, progress);
-  const card = homeCard(data, content, today, { back: showBack(data, today), goal: goalCard, first: showFirstWeek(data, today, firstSteps) });
-  const targets = card === 'goal' ? macroTargets(data, content.nutrition, today) : null;
+  // The weekly target check (TARGET-1): after 3 flat weeks, a confirm-only offer.
+  const targets = macroTargets(data, content.nutrition, today);
+  const check = targetCheckDue(data, { targets, slots: content.nutrition.meal_slots, minKcal: MIN_KCAL[profileOf(data).gender] ?? MIN_KCAL.female, today });
+  const card = homeCard(data, content, today, { back: showBack(data, today), goal: goalCard, target: Boolean(check), first: showFirstWeek(data, today, firstSteps) });
   const beginMaintenance = () => {
     update((d) => startMaintenance(d, today, { fromKcal: targets.kcal, tdeeKcal: targets.tdee ?? targets.kcal, weightKg: progress?.trend }));
     announce(t('maint.started'));
@@ -198,6 +202,9 @@ export default function Today() {
       ) : null}
       {card === 'goal' ? (
         <GoalReachedCard targets={targets} showKcal={!kcalHidden(data) && targets?.source !== 'plan'} onStart={beginMaintenance} onLater={() => update(hideGoalReached)} />
+      ) : null}
+      {card === 'target' ? (
+        <TargetCheckCard step={check.step} kcal={targets.kcal} onLower={() => { update((d) => lowerTarget(d, check.step, today)); announce(t('tcheck.lowered', { kcal: targets.kcal - check.step })); }} onKeep={() => update((d) => keepTarget(d, today))} />
       ) : null}
       {card === 'first' ? (
         <FirstWeekCard

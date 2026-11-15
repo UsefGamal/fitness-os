@@ -21,6 +21,7 @@ import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { kcalHidden } from '../lib/safety.js';
+import { clearAdjustments } from '../lib/targetCheck.js';
 import { announce, mealTickLine } from '../lib/announce.js';
 import { useToday } from '../store/today.js';
 
@@ -179,6 +180,12 @@ function MealPlan() {
         </div>
       </details>
       {target.reverse && !target.reverse.done && !kcalHidden(data) ? <p className="muted small" role="note">{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</p> : null}
+      {target.adjust && !kcalHidden(data) ? (
+        <div className="row muted small" role="note" style={{ gap: 8, margin: '0 0 12px' }}>
+          <span className="grow">{t('tcheck.note', { kcal: Math.abs(target.adjust) })}</span>
+          <button type="button" className="mini-btn" onClick={() => update(clearAdjustments)}>{t('tcheck.undo')}</button>
+        </div>
+      ) : null}
       {fit.state === 'far' ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
       {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
         <div key={r.key} className="warn" role="note">

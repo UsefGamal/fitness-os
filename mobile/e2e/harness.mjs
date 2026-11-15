@@ -60,6 +60,15 @@ const gymOn = (d) => ({ ...d, settings: { ...d.settings, training: { ...d.settin
 // week of maintenance after it.
 const goalReached = (d) => ({ ...d, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, target_low_kg: 94, target_high_kg: 97 })) });
 const maintaining = (d) => ({ ...d, goals: [...d.goals.map((g) => ({ ...g, ended_on: g.ended_on || '2026-10-30' })), { id: 'gm', set_on: '2026-10-30', direction: 'maintain', start_weight_kg: 95, target_low_kg: 94, target_high_kg: 96, target_date: null, ended_on: null, reverse: { from_kcal: 1940, started_on: '2026-10-30', step: 150, weeks: 6 } }] });
+// TARGET-1: three flat weeks with every meal ticked, then after "Lower".
+const flatWeeks = (d) => {
+  const slots = [...new Set(d.meal_logs.map((m) => m.meal_slot))];
+  const day = (i) => new Date(Date.UTC(2026, 10, 6 - i)).toISOString().slice(0, 10);
+  const logs = Array.from({ length: 28 }, (_, i) => ({ id: 9000 + i, log_date: day(i), weight_kg: 95 }));
+  const meals = Array.from({ length: 21 }, (_, i) => slots.map((s, j) => ({ id: 9100 + i * 10 + j, log_date: day(i), meal_slot: s, option_key: 'option_a', completed: true }))).flat();
+  return { ...d, body_logs: logs, meal_logs: meals, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, set_on: '2026-09-01' })) };
+};
+const adjusted = (d) => ({ ...d, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, kcal_adjust: [{ on: '2026-11-01', kcal: -150 }] })) });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
 const eightWeeks = (d) => {
   const id = d.program?.active_block;
@@ -178,6 +187,8 @@ export const STATES = [
   { name: 'gym mode: logging a set', route: '/workout', data: gymOn, act: startSession, check: async (p) => { if (await p.locator('.tabbar').isVisible()) throw new Error('tab bar still shown in gym mode'); } },
   { name: 'goal reached on Home', route: '/', data: goalReached, check: (p) => p.getByText(en['maint.title']).waitFor() },
   { name: 'maintenance week on Meals', route: '/meals', data: maintaining, act: toFullMeals },
+  { name: 'target check on Home', route: '/', data: flatWeeks, check: (p) => p.getByText(en['tcheck.title']).waitFor() },
+  { name: 'adjusted target on Meals', route: '/meals', data: adjusted, act: toFullMeals, check: (p) => p.getByRole('button', { name: en['tcheck.undo'] }).waitFor() },
   // UIUX-2: the app's own 130% text size (Settings > Look).
   { name: 'text 130%: Home', route: '/', data: bigText },
   { name: 'text 130%: Workout', route: '/workout', data: bigText },
