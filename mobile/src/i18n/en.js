@@ -154,6 +154,8 @@ export default {
   'settings.modules': 'Look and modules',
   'theme.title': 'Look',
   'theme.label': 'Theme',
+  'theme.textSize': 'Text size',
+  'theme.textPct': '{n}%',
   'theme.dark': 'Dark',
   'theme.light': 'Light',
   'theme.system': 'Match phone',

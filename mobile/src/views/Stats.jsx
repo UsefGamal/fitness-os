@@ -56,7 +56,7 @@ function Summary({ data, today }) {
           <div className="grow">
             <div className="row between"><strong>{t('stats.consistency')}</strong><span className="muted small">{t('stats.last6')}</span></div>
             <div className="row between" style={{ alignItems: 'baseline', marginTop: 4 }}>
-              <span className="macro-value" style={{ fontSize: 28 }}>{t('stats.days', { n: days })}</span>
+              <span className="macro-value" style={{ fontSize: 'calc(28px * var(--ts))' }}>{t('stats.days', { n: days })}</span>
               <span className="muted small">{t('stats.best', { n: weeks.longest })}</span>
             </div>
             <div className="small" style={{ color: 'var(--accent)', marginTop: 2 }}>{t('stats.showCalendar')} <Icon name="chev" className="icon inline chev" /></div>
@@ -298,7 +298,7 @@ function Badges({ data, today }) {
   return (
     <>
       <section className="card">
-        <div className="row between" style={{ alignItems: 'baseline' }}><h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2><span className="macro-value" style={{ fontSize: 28 }}>{earned} / {all.length}</span></div>
+        <div className="row between" style={{ alignItems: 'baseline' }}><h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2><span className="macro-value" style={{ fontSize: 'calc(28px * var(--ts))' }}>{earned} / {all.length}</span></div>
         <div className="progress" style={{ margin: '12px 0 8px' }} role="progressbar" aria-label={t('stats.achievements')} aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={earned}><span style={{ transform: `scaleX(${all.length ? earned / all.length : 0})` }} /></div>
         <div className="muted small">{latest ? t('stats.latestBadge', { name: latest.label, date: formatDate(latest.date) }) : t('stats.noBadge')}</div>
       </section>

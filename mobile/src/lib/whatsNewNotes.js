@@ -13,6 +13,7 @@ export const WHATS_NEW = [
       { icon: 'barbell', text: 'A bodyweight move\'s page shows its easier and harder versions.' },
       { icon: 'check', text: 'With TalkBack on, the app says each set, new record, rest over and meal ticked.' },
       { icon: 'star', text: 'New on the app? Home shows five first-week steps that tick themselves as you go.' },
+      { icon: 'info', text: 'Bigger text: Settings, Look and modules, Text size. Pick 100, 115 or 130%.' },
     ],
   },
   {

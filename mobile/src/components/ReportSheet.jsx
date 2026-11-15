@@ -29,7 +29,7 @@ export default function ReportSheet({ onClose }) {
         onChange={(e) => setText(e.target.value)}
         rows={12}
         spellCheck={false}
-        style={{ width: '100%', fontSize: 16, fontFamily: 'ui-monospace, monospace', lineHeight: 1.35 }}
+        style={{ width: '100%', fontSize: 'calc(16px * var(--ts))', fontFamily: 'ui-monospace, monospace', lineHeight: 1.35 }}
       />
       <p className="muted small" style={{ margin: '6px 4px 10px', textAlign: 'end' }}>{t('report.length', { n: text.length, max: EDIT_MAX })}</p>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
