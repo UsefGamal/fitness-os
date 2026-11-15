@@ -5,6 +5,8 @@ import Icon from '../components/Icon.jsx';
 import { pageOf, ROOT_PAGES } from '../lib/settingsPages.js';
 import { RELEASES_URL, safeOutside, SHARE_APP_TEXT } from '../lib/links.js';
 import InstallGuide from '../components/InstallGuide.jsx';
+import HelpPage from '../components/HelpPage.jsx';
+import PrivacyPage from '../components/PrivacyPage.jsx';
 import AutoBackup from '../components/AutoBackup.jsx';
 import { dateRange } from '../lib/autoBackup.js';
 import { longDate, todayISO } from '../lib/dates.js';
@@ -288,6 +290,8 @@ export default function Settings() {
       ) : null}
 
       {show('install') ? <InstallGuide /> : null}
+      {show('help') ? <HelpPage /> : null}
+      {show('privacy') ? <PrivacyPage data={data} onExport={exportNow} /> : null}
 
       {show('data') ? (<>
       <div className="section-label">Your data</div>
@@ -455,6 +459,8 @@ export default function Settings() {
       {show('about') ? (<>
       <div className="section-label">About</div>
       <div className="list">
+        <button type="button" className="list-row" onClick={() => navigate('/settings/help')}><Icon name="info" /><div className="grow"><div>{t('settings.help')}</div><div className="meta">{t('settings.helpNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => navigate('/settings/privacy')}><Icon name="lock" /><div className="grow"><div>{t('settings.privacy')}</div><div className="meta">{t('settings.privacyNote')}</div></div><Icon name="chev" className="icon chev" /></button>
         <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>{t('about.backup')}</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>

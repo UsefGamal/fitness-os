@@ -40,7 +40,7 @@ const SUNDAY = new Date('2026-11-08T07:00:00Z');
 const AFTERNOON = new Date('2026-11-06T12:00:00Z');
 const PORT = 4179;
 
-export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
+export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/settings/help', '/settings/privacy', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
 export const WIDTHS = [360, 390, 412];
 export const DIRS = ['ltr', 'rtl'];
 export const MIN_TAP = 44;
@@ -127,6 +127,19 @@ export const STATES = [
       await p.getByRole('button', { name: new RegExp(en['setType.drop']) }).click();
       await p.getByRole('button', { name: new RegExp(`^D: set 1, ${en['setType.drop']}`) }).click();
       await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
+    },
+  },
+  {
+    name: 'help: an answer open',
+    route: '/settings/help',
+    act: async (p) => { await p.getByText(en['help.update.q']).click(); await p.getByText(en['help.update.a']).waitFor({ timeout: 5000 }); },
+  },
+  {
+    name: 'sheet: delete everything',
+    route: '/settings/privacy',
+    act: async (p) => {
+      await btnNamed(p, new RegExp(`^${en['wipe.title']}`)).click();
+      await p.getByRole('textbox').fill('DELETE');
     },
   },
   { name: 'light: Home', route: '/', data: lightTheme },

@@ -36,6 +36,12 @@ export async function readMirror() {
   return null;
 }
 
+/** Drop a write still waiting (Delete everything). */
+export function cancelMirror() {
+  clearTimeout(timer);
+  pending = null;
+}
+
 /** Coalesces bursts (tapping + on a stepper) into one write. `now`: write
  * at once (the app is going to the background and may be killed, TL-09). */
 export function writeMirror(data, now = false) {
