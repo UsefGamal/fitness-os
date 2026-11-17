@@ -295,7 +295,7 @@ def meal_option(m):
     photo = MEAL_PHOTOS.get(m["key"])
     return {
         "key": m["key"],
-        "photo": {"file": f"meal-photos/{m['key']}.jpg", "author": photo[1], "license": photo[2]} if photo else None,
+        "photo": {"file": f"meal-photos/{m['key']}.webp", "thumb": f"meal-photos/{m['key']}-thumb.webp", "author": photo[1], "license": photo[2]} if photo else None,
         "name": m["name"],
         "meals": m["meals"],
         "protein_source": m["protein"],

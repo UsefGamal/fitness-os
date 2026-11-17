@@ -59,6 +59,13 @@ jobs:
           path: mobile/public/exercise-db
           key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
 
+      # Meal photos come from Wikimedia Commons, which limits request
+      # rates: keep them between runs, keyed on the photo list.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: mobile/public/meal-photos
+          key: meal-photos-${{ hashFiles('content/meal_photos.py', 'scripts/fetch_meal_photos.py') }}
+
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
@@ -130,6 +137,13 @@ jobs:
         with:
           path: mobile/public/exercise-db
           key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
+
+      # Meal photos come from Wikimedia Commons, which limits request
+      # rates: keep them between runs, keyed on the photo list.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: mobile/public/meal-photos
+          key: meal-photos-${{ hashFiles('content/meal_photos.py', 'scripts/fetch_meal_photos.py') }}
 
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:

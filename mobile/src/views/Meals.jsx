@@ -238,6 +238,7 @@ function MealPlan() {
             ) : (
               <>
               <div className="meal-pick">
+                {opt.photo ? <img className="thumb" src={opt.photo.thumb} alt="" loading="lazy" decoding="async" /> : null}
                 <div className="grow">
                   <div className="meal-name">{opt.name || mealWhat(opt)}</div>
                   {opt.swapped ? <div className="muted small">{t('meals.planMeal', { name: planMeal.name || mealWhat(planMeal) })}</div> : null}
