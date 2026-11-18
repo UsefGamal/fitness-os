@@ -14,10 +14,17 @@ Photos already there are kept, so a rebuild downloads nothing new. The
 output is gitignored. Commons limits request rates, so thumbnails come
 from its API (cached), downloads are spaced out and retried, and a photo
 that still fails is skipped (the app shows a placeholder) and listed.
+
+Two environment variables keep CI quick:
+    MEAL_PHOTOS_BUDGET=300  stop trying new downloads after 300 s; the rest
+                            are fetched by a later run (CI keeps the set)
+    MEAL_PHOTOS_SKIP=1      download nothing, only write NOTICE.txt (the APK
+                            builds, after CI's own fetch step)
 """
 
 import io
 import json
+import os
 import sys
 import time
 import urllib.parse
@@ -45,7 +52,16 @@ def thumb_urls(titles: list[str]) -> dict[str, str]:
     out = {}
     for i in range(0, len(titles), 20):
         batch = titles[i : i + 20]
-        q = urllib.parse.urlencode({"action": "query", "format": "json", "prop": "imageinfo", "iiprop": "url", "iiurlwidth": str(WIDTH), "titles": "|".join(batch)})
+        q = urllib.parse.urlencode(
+            {
+                "action": "query",
+                "format": "json",
+                "prop": "imageinfo",
+                "iiprop": "url",
+                "iiurlwidth": str(WIDTH),
+                "titles": "|".join(batch),
+            }
+        )
         data = json.loads(download(f"https://commons.wikimedia.org/w/api.php?{q}"))
         norm = {n["to"]: n["from"] for n in data.get("query", {}).get("normalized", [])}
         for page in data.get("query", {}).get("pages", {}).values():
@@ -57,14 +73,17 @@ def thumb_urls(titles: list[str]) -> dict[str, str]:
     return out
 
 
-def download(url: str) -> bytes:
+def download(url: str, deadline: float = float("inf")) -> bytes:
     for attempt in range(4):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return r.read()
         except OSError:
-            time.sleep(15 * (attempt + 1))
+            wait = 15 * (attempt + 1)
+            if attempt == 3 or time.monotonic() + wait > deadline:
+                break
+            time.sleep(wait)
     raise OSError(f"Could not download {url}")
 
 
@@ -81,12 +100,23 @@ def main() -> None:
         raise SystemExit("Pillow is needed for the meal photos: pip install pillow")
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "meal-photos")
     out.mkdir(parents=True, exist_ok=True)
-    todo = {key: title for key, (title, _a, _l) in MEAL_PHOTOS.items() if not ((out / f"{key}.webp").exists() and (out / f"{key}-thumb.webp").exists())}
+    todo = {
+        key: title
+        for key, (title, _a, _l) in MEAL_PHOTOS.items()
+        if not ((out / f"{key}.webp").exists() and (out / f"{key}-thumb.webp").exists())
+    }
+    if os.environ.get("MEAL_PHOTOS_SKIP") == "1":
+        todo = {}
+    budget = float(os.environ.get("MEAL_PHOTOS_BUDGET") or 0)
+    deadline = time.monotonic() + budget if budget > 0 else float("inf")
     urls = thumb_urls(sorted(set(todo.values()))) if todo else {}
     missing = []
     for key, title in sorted(todo.items()):
+        if time.monotonic() > deadline:
+            missing.append(key)
+            continue
         try:
-            data = download(urls[title])
+            data = download(urls[title], deadline)
         except (KeyError, OSError):
             missing.append(key)
             continue
@@ -94,9 +124,12 @@ def main() -> None:
         save_webp(data, out / f"{key}-thumb.webp", THUMB)
         time.sleep(3)
     notice = ["Meal photos from Wikimedia Commons (https://commons.wikimedia.org), under the licences below.", ""]
-    notice += [f"{key}: {title}, by {author}, {licence}" for key, (title, author, licence) in sorted(MEAL_PHOTOS.items())]
+    notice += [
+        f"{key}: {title}, by {author}, {licence}" for key, (title, author, licence) in sorted(MEAL_PHOTOS.items())
+    ]
     (out / "NOTICE.txt").write_text("\n".join(notice) + "\n", encoding="utf-8")
-    print(f"{len(MEAL_PHOTOS) - len(missing)} of {len(MEAL_PHOTOS)} meal photos in {out}")
+    have = sum((out / f"{key}.webp").exists() for key in MEAL_PHOTOS)
+    print(f"{have} of {len(MEAL_PHOTOS)} meal photos in {out}")
     if missing:
         # The app shows a placeholder for these; a later run fetches them.
         print("Not downloaded this time (Commons rate limit?): " + ", ".join(missing))

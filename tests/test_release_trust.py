@@ -24,7 +24,7 @@ def test_every_action_is_pinned_to_a_commit():
         for line in f.read_text(encoding="utf-8").splitlines():
             m = re.search(r"uses:\s*([^\s#]+)", line)
             if m:
-                assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", m.group(1)), f"{f.name}: {m.group(1)}"
+                assert re.fullmatch(r"[\w.-]+/[\w.-]+(?:/[\w.-]+)*@[0-9a-f]{40}", m.group(1)), f"{f.name}: {m.group(1)}"
 
 
 def test_the_default_token_can_only_read():
