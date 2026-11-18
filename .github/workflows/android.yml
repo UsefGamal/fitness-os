@@ -59,6 +59,30 @@ jobs:
           path: mobile/public/exercise-db
           key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
 
+      # Meal photos come from Wikimedia Commons, which limits request
+      # rates. Each run starts from the last run's set, fetches what is
+      # missing for at most 5 minutes, and saves the set straight away (so
+      # a later failure can't lose it). A photo still missing shows a
+      # placeholder and comes in on a later run. The builds below don't
+      # download again (MEAL_PHOTOS_SKIP).
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: mobile/public/meal-photos
+          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
+          restore-keys: meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+
+      - name: Fetch meal photos
+        timeout-minutes: 8
+        continue-on-error: true
+        env:
+          MEAL_PHOTOS_BUDGET: "300"
+        run: python scripts/fetch_meal_photos.py mobile/public/meal-photos
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: mobile/public/meal-photos
+          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
+
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
@@ -68,6 +92,7 @@ jobs:
       # ── Debug: every PR and main push ─────────────────────────────────
       - name: Build debug APK
         env:
+          MEAL_PHOTOS_SKIP: "1"
           APK_VERSION_CODE: ${{ github.run_number }}
           APK_VERSION_NAME: 0.4.${{ github.run_number }}
         run: scripts/build-apk.sh debug
@@ -79,6 +104,7 @@ jobs:
       # change that leaks Yusuf's plan into it fails here, not at release.
       - name: Build friends debug APK
         env:
+          MEAL_PHOTOS_SKIP: "1"
           FITNESS_OS_FLAVOR: friends
           APK_VERSION_CODE: ${{ github.run_number }}
           APK_VERSION_NAME: 0.4.${{ github.run_number }}
@@ -131,6 +157,30 @@ jobs:
           path: mobile/public/exercise-db
           key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
 
+      # Meal photos come from Wikimedia Commons, which limits request
+      # rates. Each run starts from the last run's set, fetches what is
+      # missing for at most 5 minutes, and saves the set straight away (so
+      # a later failure can't lose it). A photo still missing shows a
+      # placeholder and comes in on a later run. The builds below don't
+      # download again (MEAL_PHOTOS_SKIP).
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: mobile/public/meal-photos
+          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
+          restore-keys: meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+
+      - name: Fetch meal photos
+        timeout-minutes: 8
+        continue-on-error: true
+        env:
+          MEAL_PHOTOS_BUDGET: "300"
+        run: python scripts/fetch_meal_photos.py mobile/public/meal-photos
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: mobile/public/meal-photos
+          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
+
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
@@ -148,6 +198,8 @@ jobs:
       # signing secret in its environment. Only the next step sees the key,
       # and it runs nothing but zipalign and apksigner.
       - name: Build unsigned release APKs
+        env:
+          MEAL_PHOTOS_SKIP: "1"
         run: |
           # P14-02: one tag, two APKs: Yusuf's and the friends one.
           FITNESS_OS_FLAVOR=yusuf scripts/build-apk.sh unsigned
