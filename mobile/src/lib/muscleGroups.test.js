@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { FRONT, BACK } from '../components/muscleShapes.js';
-import { countByGroup, exerciseGroups, GROUP_OF_OUTLINE, GROUP16, GROUPS16, groupOfMuscle, groupStats, groupsOfTarget, inGroup, musclesOfGroup, outlinesOf, recoveryOf } from './muscleGroups.js';
+import { countByGroup, exerciseGroups, GROUP_OF_OUTLINE, GROUP16, GROUPS16, groupOfMuscle, groupStats, groupsOfTarget, inGroup, musclesOfGroup, outlinesOf, recoveryOf, trainedGroups } from './muscleGroups.js';
 import { MUSCLES, musclesOf } from './muscles.js';
 import { smoothPath } from './muscleMap.js';
 
@@ -52,7 +52,7 @@ test('filters and counts by group', () => {
   assert.equal(c.shoulders, 2);
   assert.equal(c.chest, 1);
   assert.equal(c.abs, 0);
-  assert.deepEqual(musclesOfGroup('shoulders'), ['front delts', 'side delts', 'rear delts']);
+  assert.deepEqual(musclesOfGroup('shoulders'), ['front delts', 'side delts', 'rear delts', 'rotator cuff']);
   assert.deepEqual(musclesOfGroup('calves'), ['calves']);
   assert.equal(GROUP16.back.label, 'Back');
 });
@@ -86,4 +86,18 @@ test('smooth outlines are closed curves through the corners', () => {
   assert.ok(d.endsWith('Z'));
   assert.equal(smoothPath('1 2 3 4'), '');
   assert.equal(smoothPath('0 0 10 0 10 10', 0), 'M0 0C0 0 10 0 10 0C10 0 10 10 10 10C10 10 0 0 0 0Z');
+});
+
+test('deep muscles sit in Shoulders and Quads; stretches train no group', () => {
+  assert.equal(groupOfMuscle('rotator cuff'), 'shoulders');
+  assert.equal(groupOfMuscle('hip flexors'), 'quads');
+  assert.ok(musclesOfGroup('shoulders').includes('rotator cuff'));
+  assert.ok(musclesOfGroup('quads').includes('hip flexors'));
+  const stretch = { name: 'Quad Stretch', category: 'stretching', primary: ['quadriceps'], secondary: [] };
+  const lift = { name: 'Leg Extensions', category: 'strength', primary: ['quadriceps'], secondary: [] };
+  assert.deepEqual(trainedGroups({ name: 'Quad Stretch' }, {}, stretch), { main: [], helpers: [] });
+  assert.deepEqual(trainedGroups({ name: 'Leg Extensions' }, {}, lift).main, ['quads']);
+  // The hand-checked table wins over the catalogue's category.
+  const T = { exercise_targets: { 'Quad Stretch': { main: ['quadriceps'], helpers: [] } } };
+  assert.deepEqual(trainedGroups({ name: 'Quad Stretch' }, T, stretch).main, ['quads']);
 });
