@@ -7,7 +7,7 @@ export const WHATS_NEW = [
   {
     version: '1.1.0',
     items: [
-      { icon: 'home', text: 'The app is now called Tafra (طفرة, a leap). Your data stays as it was.' },
+      { icon: 'home', text: 'The app is now called Tafra (طفرة, a leap), with a new icon. Your data stays as it was.' },
       { icon: 'play', text: 'Smoother motion: cards grow into their page, tabs glide and sheets follow your finger.' },
       { icon: 'chart', text: 'Colour follows progress: bars go green at target and a new record sparks.' },
     ],

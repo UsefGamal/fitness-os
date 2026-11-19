@@ -3,15 +3,16 @@ import { useEffect } from 'react';
 import { t } from '../lib/i18n.js';
 import { INTRO_MS } from '../lib/intro.js';
 
-// The bolt from the launch screen (res/drawable/splash.png), so the intro
-// picks up exactly where Android's splash leaves off.
-const BOLT = 'M13 2 3 14h9l-1 8 10-12h-9z';
+// The Tafra mark (a leaping ط) from the launch screen and launcher icon
+// (res/drawable/ic_launcher_foreground.xml), so the intro picks up exactly
+// where Android's splash leaves off. Its counter is a hole: fill even-odd.
+const MARK = 'M11.72 6.06L15.55 4.55L13.79 10.98L16.97 9.56C20.1 8.99 22.6 10.81 22.83 14.02C23 16.15 21.86 17.68 19.82 17.8L7.54 17.8L1 19.5L6.46 14.87L9.02 14.87ZM12.14 14.9L19.19 14.9C19.39 13.59 18.82 12.45 17.83 12.26L16.92 12.31C15.27 13.02 13.56 14.02 12.14 14.9Z';
 
 /**
- * A 1.8 s intro over Home (MOVE-1): the splash bolt is drawn as a line, then
+ * A 1.8 s intro over Home (MOVE-1): the splash mark is drawn as a line, then
  * fills green with a glow, the ring springs closed around it, the name's
  * letters rise one by one and today's session follows. Then the whole intro
- * shrinks into the bolt like a closing iris, showing Home (already drawn
+ * shrinks into the mark like a closing iris, showing Home (already drawn
  * underneath). A tap anywhere skips it.
  */
 export default function Intro({ line, onDone }) {
@@ -34,8 +35,8 @@ export default function Intro({ line, onDone }) {
         <circle className="intro-ring-bg" cx="80" cy="80" r="70" />
         <circle className="intro-ring" cx="80" cy="80" r="70" />
         <g className="intro-bolt" transform="translate(23 23) scale(4.75)">
-          <path className="intro-bolt-line" d={BOLT} pathLength="100" />
-          <path className="intro-bolt-fill" d={BOLT} />
+          <path className="intro-bolt-line" d={MARK} pathLength="100" />
+          <path className="intro-bolt-fill" d={MARK} fillRule="evenodd" />
         </g>
       </svg>
       <span className="intro-text">
