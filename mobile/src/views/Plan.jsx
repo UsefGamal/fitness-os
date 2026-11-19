@@ -26,7 +26,7 @@ import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { sessionIcs, sessionMinutes } from '../lib/calendar.js';
 import { MUSCLE, dayMuscles, targetFor } from '../lib/muscles.js';
 import { moveSession, moveTargets, undoMove, weekView } from '../lib/schedule.js';
-import { alternatives } from '../lib/similar.js';
+import { swapPicks } from '../lib/similar.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { saveExport } from '../store/mirror.js';
 import { dataUrlOf, shareFile, shareText, shareTextFile } from '../store/share.js';
@@ -41,10 +41,12 @@ function EditList({ day, sessionKey }) {
   const T = activePlan(data, content);
   const [adding, setAdding] = useState('');
   const { catalogue } = useCatalogue();
-  // Up to 8 catalogue exercises that work the same muscles, best first.
+  // Up to 8 catalogue exercises that work the same muscles, best first,
+  // leaving out what the day already has.
+  const inDay = day.exercises.map((x) => x.name);
   const recommended = (name) => {
     const entry = catalogue ? entryFor(name, T, catalogue.byId) : null;
-    return entry ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : [];
+    return entry ? swapPicks(entry, catalogue.exercises, { skip: inDay }) : [];
   };
   const swap = (i, value) => {
     if (!value) return;
@@ -57,7 +59,7 @@ function EditList({ day, sessionKey }) {
   const options = (current) => {
     const m = byMuscle(current);
     const sorted = [...data.exercises].sort((a, b) => (b.muscle_group === m) - (a.muscle_group === m) || a.name.localeCompare(b.name));
-    return sorted.filter((e) => e.name !== current);
+    return sorted.filter((e) => e.name !== current && !inDay.includes(e.name));
   };
   return (
     <>
@@ -225,7 +227,7 @@ export default function Plan() {
         </Link>
       )}
 
-      <WeekStrip week={week} onPick={(d) => { setPicked(d); setEditing(false); }} />
+      <WeekStrip week={week} picked={picked.date} onPick={(d) => { setPicked(d); setEditing(false); }} />
 
       {day ? (
         <>
@@ -255,14 +257,17 @@ export default function Plan() {
                 <ExerciseRow key={`${ex.name}-${i}`} ex={ex} target={targetOf(ex.name)} to={exerciseLink(ex.name)} />
               ))}
               {day.cardio_after ? <div className="card tip-card small"><Icon name="bulb" /><div className="grow muted">{t('plan.after', { text: day.cooldown[0] })}</div></div> : null}
-              {/* Today's Start stays pinned above the tab bar while the list scrolls (UX-08). */}
-              {picked.date === today ? (
-                <div className="start-bar"><button type="button" className="btn glow" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button></div>
-              ) : null}
-              <div className="action-stack">
-                {picked.date === today ? null : (
-                  <button type="button" className="btn secondary" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> {t('plan.doToday', { label: day.label })}</button>
+              {/* Start stays pinned above the tab bar while the list scrolls
+                  (UX-08), and follows the picked day: another day's session
+                  starts today (BeFit item 9). */}
+              <div className="start-bar">
+                {picked.date === today ? (
+                  <button type="button" className="btn glow hero" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button>
+                ) : (
+                  <button type="button" className="btn glow hero" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> {t('plan.startDay', { label: day.label })}</button>
                 )}
+              </div>
+              <div className="action-stack">
                 {picked.date >= today ? <button type="button" className="btn outline" onClick={addToCalendar}><Icon name="calendar" /> {t('plan.calendar')}</button> : null}
               </div>
             </>
