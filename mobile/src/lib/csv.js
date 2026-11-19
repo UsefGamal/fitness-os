@@ -93,7 +93,7 @@ const num = (s) => {
 
 // Column names per source app; the first that matches the header wins.
 const SOURCES = [
-  { key: 'fitness-os', label: 'Fitness OS', needs: ['date', 'exercise', 'weight_kg', 'reps'], date: 'date', workout: 'workout', exercise: 'exercise', weight: 'weight_kg', reps: 'reps', rpe: 'rpe', kg: true },
+  { key: 'fitness-os', label: 'Tafra (and Fitness OS)', needs: ['date', 'exercise', 'weight_kg', 'reps'], date: 'date', workout: 'workout', exercise: 'exercise', weight: 'weight_kg', reps: 'reps', rpe: 'rpe', kg: true },
   { key: 'hevy', label: 'Hevy', needs: ['start_time', 'exercise_title', 'reps'], date: 'start_time', workout: 'title', exercise: 'exercise_title', weight: 'weight_kg', weightLb: 'weight_lbs', reps: 'reps', rpe: 'rpe', type: 'set_type', kg: true },
   { key: 'strong', label: 'Strong', needs: ['Date', 'Exercise Name', 'Reps'], date: 'Date', workout: 'Workout Name', exercise: 'Exercise Name', weight: 'Weight', reps: 'Reps', rpe: 'RPE', order: 'Set Order', kg: false },
 ];

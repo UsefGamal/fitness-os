@@ -40,8 +40,8 @@ export default function Intro({ line, onDone }) {
       </svg>
       <span className="intro-text">
         <span className="intro-name" aria-hidden="true">
-          {[...`${t('home.wordmark')} `].map((ch, i) => <span key={`a${i}`} className="intro-ch" style={{ '--c': i }}>{ch === ' ' ? '\u00a0' : ch}</span>)}
-          {[...t('home.wordmarkOs')].map((ch, i) => <span key={`b${i}`} className="intro-ch accent" style={{ '--c': i + t('home.wordmark').length + 1 }}>{ch}</span>)}
+          {[...t('home.wordmark')].map((ch, i) => <span key={`a${i}`} className="intro-ch" style={{ '--c': i }}>{ch === ' ' ? '\u00a0' : ch}</span>)}
+          {[...t('home.wordmarkOs')].map((ch, i) => <span key={`b${i}`} className="intro-ch accent" style={{ '--c': i + t('home.wordmark').length }}>{ch}</span>)}
         </span>
         {line ? <span className="intro-line">{line}</span> : null}
       </span>

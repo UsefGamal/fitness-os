@@ -103,7 +103,7 @@ test('no word of blame anywhere in the wrap-up text', () => {
 test('send my week: the text a friend reads before sending', () => {
   const s = weekStats(fortnight(), content, '2026-11-01');
   assert.equal(weekText(s, { feel: ' Tired but good ', check: 'W 12 · S 140 · 3F9A-12CD' }), [
-    'My week on Fitness OS (1 Nov to 7 Nov)',
+    'My week on Tafra (1 Nov to 7 Nov)',
     'Sessions: 3 of 4',
     'Work sets: 7',
     'Days every meal was ticked: 2',

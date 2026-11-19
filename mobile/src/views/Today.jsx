@@ -136,7 +136,7 @@ export default function Today() {
     <div className="page home">
       <header className="home-head">
         <div className="row between">
-          <div className="wordmark" aria-hidden="true">{t('home.wordmark')} <span>{t('home.wordmarkOs')}</span></div>
+          <div className="wordmark" aria-hidden="true">{t('home.wordmark')}<span>{t('home.wordmarkOs')}</span></div>
           <Link to="/settings" className="icon-btn round" aria-label={t('home.settings')}><Icon name="gear" /></Link>
         </div>
         <h1 className="greeting">

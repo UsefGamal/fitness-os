@@ -31,7 +31,7 @@ export function sessionIcs({ date, time, minutes = 60, title, description = '', 
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Fitness OS//Plan//EN',
+    'PRODID:-//Tafra//Plan//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',

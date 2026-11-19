@@ -32,7 +32,7 @@ test('every video link in the plan content passes', () => {
 
 test('the update page and the share text are exactly the fixed strings (UPD-1)', () => {
   assert.equal(RELEASES_URL, 'https://github.com/UsefGamal/fitness-os/releases/latest');
-  assert.equal(SHARE_APP_TEXT, 'Fitness OS: a free training and meal plan app that keeps your data on your phone. Download: https://github.com/UsefGamal/fitness-os/releases/latest');
+  assert.equal(SHARE_APP_TEXT, 'Tafra: a free training and meal plan app that keeps your data on your phone. Download: https://github.com/UsefGamal/fitness-os/releases/latest');
   assert.equal(safeOutside(RELEASES_URL), RELEASES_URL);
   for (const bad of [`${RELEASES_URL}/`, 'https://github.com/UsefGamal/fitness-os', 'https://github.com.evil.example/UsefGamal/fitness-os/releases/latest', 'http://github.com/UsefGamal/fitness-os/releases/latest', 'javascript:alert(1)', '', null, 42]) {
     assert.equal(safeOutside(bad), null, String(bad));

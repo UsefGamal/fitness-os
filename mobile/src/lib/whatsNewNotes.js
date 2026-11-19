@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.0',
+    items: [
+      { icon: 'home', text: 'The app is now called Tafra (طفرة, a leap). Your data stays as it was.' },
+      { icon: 'play', text: 'Smoother motion: cards grow into their page, tabs glide and sheets follow your finger.' },
+      { icon: 'chart', text: 'Colour follows progress: bars go green at target and a new record sparks.' },
+    ],
+  },
+  {
     version: '1.0.9',
     items: [
       { icon: 'home', text: "Home is clearer: the card says Today's workout, the session name is bigger, and the pace sits in the advice line." },

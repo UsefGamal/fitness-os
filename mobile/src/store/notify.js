@@ -20,7 +20,7 @@ export async function enableReminders() {
 }
 
 // P14-12: reminders post on their own channel, private on the lock screen
-// (Android shows "Fitness OS" and hides the text until the phone is
+// (Android shows "Tafra" and hides the text until the phone is
 // unlocked).
 const CHANNEL = 'reminders';
 let channelReady = false;

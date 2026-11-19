@@ -83,7 +83,7 @@ async function setupStates(browser) {
       const { ctx, page, errors } = await context(browser, { width });
       await page.goto(`${URL0}#/`);
       if (dir === 'rtl') await page.evaluate(() => { document.documentElement.dir = 'rtl'; });
-      const shown = await page.getByText('Welcome to Fitness OS').first().isVisible({ timeout: 5000 }).catch(() => false);
+      const shown = await page.getByText('Welcome to Tafra').first().isVisible({ timeout: 5000 }).catch(() => false);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
       check(`setup: a new phone opens on setup (${width} ${dir})`, shown && !overflow && !errors.length, `${shown ? '' : 'setup not shown '}${overflow ? 'sideways scroll ' : ''}${errors.join('; ')}`.trim());
       await ctx.close();

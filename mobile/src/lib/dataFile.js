@@ -84,7 +84,7 @@ function isObject(v) {
 /** trusted: a snapshot this install wrote, whose keys stay where they are. */
 export function parseDataFile(text, content, { trusted = false } = {}) {
   if (typeof text === 'string' && text.length > MAX_FILE_BYTES) {
-    throw new ImportError('That file is too big to be a Fitness OS backup (over 10 MB), so nothing was changed.');
+    throw new ImportError('That file is too big to be a Tafra backup (over 10 MB), so nothing was changed.');
   }
   let raw;
   try {
@@ -96,7 +96,7 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
     throw new ImportError("That's a shared copy without health data, so it can't be restored. Use a full backup (Settings > \"Export a backup\").");
   }
   if (!isObject(raw) || raw.format !== FILE_FORMAT) {
-    throw new ImportError('That isn\'t a Fitness OS data file. Use Settings > "Export a backup" in the app (or "Download my data" on the old site).');
+    throw new ImportError('That isn\'t a Tafra data file. Use Settings > "Export a backup" in the app (or "Download my data" on the old site).');
   }
   const version = schemaOf(raw);
   if (version < 1) throw new ImportError("That file's version can't be read, so nothing was changed.");

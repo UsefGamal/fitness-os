@@ -62,7 +62,7 @@ public class TodayWidget extends AppWidgetProvider {
         String route = "";
         if (day != null) {
             v.setTextViewText(R.id.widget_kicker, day.optString("kicker", "Today"));
-            v.setTextViewText(R.id.widget_title, day.optString("title", "Fitness OS"));
+            v.setTextViewText(R.id.widget_title, day.optString("title", "Tafra"));
             v.setTextViewText(R.id.widget_subtitle, day.optString("subtitle", ""));
             String streak = day.optString("streak", "");
             v.setTextViewText(R.id.widget_streak, streak.isEmpty() ? "" : "🔥 " + streak);
