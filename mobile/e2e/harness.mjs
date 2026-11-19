@@ -107,6 +107,18 @@ export const STATES = [
   { name: 'sheet: export CSV', route: '/settings/data', act: (p) => p.getByRole('button', { name: new RegExp(`^${en['set.exportCsv']}`) }).click() },
   { name: 'library: by muscle', route: '/library', act: (p) => p.getByRole('button', { name: 'All with photos' }).click() },
   { name: 'library: one group', route: '/library', act: async (p) => { await p.getByRole('button', { name: 'All with photos' }).click(); await p.getByRole('button', { name: 'Shoulders', exact: true }).click(); } },
+  // BeFit item 10: Swap by muscle (the chips work without the catalogue).
+  {
+    name: 'sheet: swap by muscle',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await p.locator('.tbtn[aria-haspopup="dialog"]').first().click();
+      await btnNamed(p, en['workout.swap']).click();
+      await p.locator('.sheet .chip-btn').nth(2).click();
+    },
+  },
+  { name: 'plan: another day picked', route: '/plan', act: (p) => p.locator('.week-day').nth(0).click() },
   { name: 'stats: recovery by group', route: '/stats?tab=muscles', act: (p) => p.getByRole('button', { name: 'Recovery' }).click() },
   { name: 'sheet: more menu', route: '/plan', act: (p) => btnNamed(p, en['more.label']).first().click() },
   {
