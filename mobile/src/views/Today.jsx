@@ -22,7 +22,9 @@ import { mealDayFor, mealStart } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, questsOn } from '../lib/quests.js';
 import { lastTimePreview } from '../lib/lastTime.js';
-import { isChangedOn, moveSession, moveTargets, programDayFor, sessionKeyOn } from '../lib/schedule.js';
+import { isChangedOn, moveSession, moveTargets, programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
+import { weekGlance } from '../lib/weekGlance.js';
+import WeekStrip from '../components/WeekStrip.jsx';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { dayMuscles } from '../lib/muscles.js';
@@ -72,6 +74,7 @@ export default function Today() {
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
   const water = D.waterOn(data, today);
   const weeks = weekStreaks(data, today);
+  const glance = weekGlance(data, today);
   const streak = weeks.current;
   const mealDay = mealDayFor(today, content.nutrition, mealStart(data, content.nutrition));
   const dailyQuests = content.quests.bonus_tasks.filter((q) => q.frequency === 'daily');
@@ -247,7 +250,11 @@ export default function Today() {
         </div>
       ) : null}
 
-      {/* The week strip lives on Plan only (UX-04). */}
+      {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
+      <section className="card home-week">
+        <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
+        <div className="muted small home-week-line">{t('home.weekLine', { days: glance.days, need: weeks.week.need, sets: glance.sets })}</div>
+      </section>
       {isRecoveryWeek(data, today) ? (
         <div className="pill-row warn">
           <Icon name="calendar" />

@@ -5,6 +5,16 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.11',
+    items: [
+      { icon: 'calendar', text: 'Home shows your week at a glance: days trained, the plan ahead, and work sets so far.' },
+      { icon: 'chart', text: 'Stats > Body shows what you burn, measured from your own month of meals and weigh-ins, beside the app\'s estimate.' },
+      { icon: 'check', text: 'Meals shows the last 7 days: how much you logged and the days protein hit 90%.' },
+      { icon: 'lock', text: 'Stats lists what unlocks next, and Settings > Data has a data health check.' },
+      { icon: 'trend', text: 'The widget shows your trend weight and its change this week, and watch data is kept for 400 days.' },
+    ],
+  },
+  {
     version: '1.1.10',
     items: [
       { icon: 'chart', text: 'The weight chart shows your trend line over each weigh-in, with kg and dates, 4 weeks to All, and a table view.' },

@@ -113,3 +113,16 @@ test('back after a gap: no streak, and past days are plain, never "missed" (BACK
   assert.ok(days.every((x) => x.week.every((w) => w.s !== 'missed')));
   assert.ok(days[0].week.slice(0, 3).every((w) => w.s === 'rest'));
 });
+
+test('the widget stats line leads with the trend and its week change (DV-29)', async () => {
+  const { weekTrend } = await import('./widget.js');
+  const logs = Array.from({ length: 14 }, (_, i) => ({ log_date: addDays(today, -13 + i), weight_kg: 90 - i * 0.1 }));
+  assert.match(weekTrend(logs, today), /^\d+\.\d kg ▼\d\.\d$/);
+  assert.equal(weekTrend([{ log_date: today, weight_kg: 80 }], today), '80.0 kg');
+  assert.equal(weekTrend([], today), '');
+  let data = { ...D.emptyData(content), body_logs: logs };
+  assert.match(widgetDays(data, content, today)[0].stats, /^\d+\.\d kg ▼/);
+  assert.ok(!widgetDays(data, content, today)[1].stats.includes(' kg ▼'));
+  data = { ...data, settings: { ...data.settings, widget_private: true } };
+  assert.equal(widgetDays(data, content, today)[0].stats, '');
+});
