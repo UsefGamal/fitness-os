@@ -616,7 +616,7 @@ button.quick { width: 100%; border: 0; font: inherit; text-align: start; cursor:
 .quick-note { color: var(--muted); font-size: calc(13px * var(--ts)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Plan */
-.plan-head { display: flex; align-items: center; gap: 8px; margin: 0 4px 4px; }
+.plan-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 4px 4px; }
 .plan-head .page-title { margin: 0; flex: 1; }
 .plan-sub { color: var(--muted); font-size: calc(15px * var(--ts)); margin: 0 4px 16px; }
 .route-card { display: flex; align-items: center; gap: 16px; color: var(--text); border-radius: var(--radius-lg); }

@@ -49,3 +49,12 @@ test('add, move and remove; removing half a pair unpairs the other', () => {
     assert.ok(!list.some((e) => e.pair && e.pair[0] === letter));
   }
 });
+
+test('a plank swapped or added in is timed in seconds, so it logs seconds', () => {
+  let d = P.swapExercise(fresh(), 'lower', T, 0, 'Plank');
+  assert.equal(P.effectiveDay('lower', T, d).exercises[0].reps, '30-45s');
+  d = P.swapExercise(d, 'lower', T, 0, 'Leg Press');
+  assert.equal(P.effectiveDay('lower', T, d).exercises[0].reps, '8-12');
+  d = P.addExercise(fresh(), 'push', T, 'Wall Sit');
+  assert.equal(P.effectiveDay('push', T, d).exercises.at(-1).reps, '30-45s');
+});

@@ -5,7 +5,7 @@ import { formatDate } from '../lib/dates.js';
 import { macroTargets } from '../lib/macros.js';
 import { isTime } from '../lib/times.js';
 import { t } from '../lib/i18n.js';
-import { goalSlipDays, ramadanOf, ramadanSet, setRamadan, switchRamadan } from '../lib/ramadan.js';
+import { goalSlipDays, ramadanOf, ramadanSet, setRamadan, setRamadanDate, switchRamadan } from '../lib/ramadan.js';
 import { content } from '../store/useData.js';
 import Icon from './Icon.jsx';
 
@@ -28,11 +28,11 @@ export default function RamadanSettings({ data, update }) {
           <>
             <label className="list-row">
               <div className="grow">{t('ramadan.from')}</div>
-              <input type="date" style={{ width: 'auto' }} value={r.from} max={r.to} onChange={(e) => e.target.value && set({ from: e.target.value })} />
+              <input type="date" style={{ width: 'auto' }} value={r.from} onChange={(e) => e.target.value && update((d) => setRamadanDate(d, 'from', e.target.value))} />
             </label>
             <label className="list-row">
               <div className="grow">{t('ramadan.to')}</div>
-              <input type="date" style={{ width: 'auto' }} value={r.to} min={r.from} onChange={(e) => e.target.value && set({ to: e.target.value })} />
+              <input type="date" style={{ width: 'auto' }} value={r.to} onChange={(e) => e.target.value && update((d) => setRamadanDate(d, 'to', e.target.value))} />
             </label>
             <label className="list-row">
               <div className="grow"><div>{t('ramadan.suhoor')}</div><div className="meta">{t('ramadan.suhoorNote')}</div></div>

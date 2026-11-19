@@ -50,7 +50,7 @@ export default function History() {
     if (!g) groups.push((g = { exercise_id: s.exercise_id, name: data.exercises.find((e) => e.id === s.exercise_id)?.name || 'Exercise', sets: [] }));
     g.sets.push(s);
   }
-  const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) ? s.weight_kg * s.reps : 0), 0);
+  const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) && s.track !== 'time' ? s.weight_kg * s.reps : 0), 0);
 
   const sum = justFinished ? workoutSummary(data, w.id) : null;
   // Starter fortnight: say where a beginner is after this session.
@@ -104,7 +104,7 @@ export default function History() {
       )}
       <div className="stat-grid">
         <div className="stat"><div className="label">Sets</div><div className="value">{w.sets.length}</div></div>
-        <div className="stat"><div className="label">Volume</div><div className="value">{Math.round(volume)}<span className="unit">kg</span></div></div>
+        <div className="stat"><div className="label">Volume</div><div className="value">{Math.round(volume).toLocaleString(LOCALE)}<span className="unit">kg</span></div></div>
       </div>
       {w.pain_note ? <div className="card small"><span className="chip warn">Pain note</span> {w.pain_note}</div> : null}
       {groups.map((g) => (
