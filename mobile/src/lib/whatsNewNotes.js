@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.6',
+    items: [
+      { icon: 'dumbbell', text: 'New workout screen: each set is a row. Tap the reps or kg to change them, tap the tick to log it.' },
+      { icon: 'timer', text: 'The top of a workout shows the time, the kg lifted so far and about how many kcal.' },
+      { icon: 'barbell', text: 'Every exercise in a workout has a small photo. Tap it to see the move.' },
+    ],
+  },
+  {
     version: '1.0.5',
     items: [
       { icon: 'trend', text: 'Weight steady for 3 weeks on a cut? Home offers a small calorie adjustment. You choose, and Meals can undo it.' },
