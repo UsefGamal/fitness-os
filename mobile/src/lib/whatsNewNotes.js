@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.4',
+    items: [
+      { icon: 'check', text: 'Bodyweight moves like squats, lunges and pike push-ups can be ticked off without typing a weight.' },
+    ],
+  },
+  {
     version: '1.1.3',
     items: [
       { icon: 'home', text: 'The Tafra icon now shows on your home screen, instead of the default Android icon.' },

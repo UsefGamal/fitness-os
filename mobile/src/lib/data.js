@@ -248,10 +248,16 @@ export function e1rm(weightKg, reps) {
   return reps === 1 ? weightKg : weightKg * (1 + Math.min(reps, E1RM_MAX_REPS) / 30);
 }
 
+// Equipment that carries no load to type. The Library says 'Bodyweight',
+// routines add their bodyweight moves as 'Body Only', and the exercise
+// catalogue (free-exercise-db) says 'body only': all three are the same.
+const NO_LOAD = new Set(['bodyweight', 'body only', 'body weight', 'none']);
+
 /** Does this exercise need a load to mean anything (UX-11)? Bodyweight
  * moves and exercises with no equipment recorded don't. */
 export function needsWeight(exercise) {
-  return !!exercise?.equipment && exercise.equipment !== 'Bodyweight';
+  const eq = String(exercise?.equipment ?? '').trim().toLowerCase();
+  return eq !== '' && !NO_LOAD.has(eq);
 }
 
 /** True when a set of this exercise can't be logged yet: it needs a load

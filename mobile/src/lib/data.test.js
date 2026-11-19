@@ -155,6 +155,31 @@ test('a 0 kg set of a weighted lift is never a best; bodyweight moves still coun
   assert.equal(D.personalBests(d).has(2), true);
 });
 
+test("bodyweight moves added by a routine or the catalogue log with no kg", () => {
+  // Routines add their bodyweight moves as 'Body Only' and the catalogue says
+  // 'body only'; both used to grey out the set tick until a kg was typed.
+  for (const equipment of ['Body Only', 'body only', 'Bodyweight', ' bodyweight ', null, '']) {
+    assert.equal(D.missingWeight({ id: 1, name: 'Squat', equipment }, 0), false, String(equipment));
+  }
+  for (const equipment of ['Dumbbell', 'machine', 'Cable']) {
+    assert.equal(D.missingWeight({ id: 1, name: 'Lift', equipment }, 0), true, equipment);
+  }
+});
+
+test('every bodyweight move a routine adds can be logged with no kg', async () => {
+  const { startRoutine } = await import('./routines.js');
+  for (const r of content.training.routines) {
+    const d = startRoutine(fresh(), content, r.id, '2026-11-08');
+    for (const day of r.program) {
+      for (const ex of day.exercises.filter((x) => x.bodyweight)) {
+        const row = D.exerciseByName(d, ex.name);
+        assert.ok(row, `${r.id}: ${ex.name} is in the Library`);
+        assert.equal(D.needsWeight(row), false, `${r.id}: ${ex.name} (${row.equipment}) asks for a kg`);
+      }
+    }
+  }
+});
+
 test('lastTopKg is the heaviest work set of the last earlier workout (UX-12)', () => {
   const set = (id, kg, extra = {}) => ({ id, exercise_id: 1, weight_kg: kg, reps: 8, is_warmup: false, ...extra });
   const d = { workouts: [
