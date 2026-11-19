@@ -3,7 +3,7 @@
 // days, week streaks and estimated-1RM history. Pure helpers, tested in
 // insights.test.js.
 import { addDays, daysBetween, fromISO, LOCALE, weekStart } from './dates.js';
-import { e1rm, isWorkSet } from './data.js';
+import { e1rm, isLoadSet, isWorkSet } from './data.js';
 
 export const GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 export const RECOVER_DAYS = 2; // a group trained in the last 48 h is still recovering
@@ -155,7 +155,7 @@ export function e1rmSeries(data, exerciseId) {
   const best = new Map();
   for (const w of data.workouts) {
     for (const s of w.sets) {
-      if (s.exercise_id !== exerciseId || !isWorkSet(s)) continue;
+      if (s.exercise_id !== exerciseId || !isLoadSet(s)) continue;
       const v = e1rm(s.weight_kg, s.reps);
       if (v > (best.get(w.log_date) || 0)) best.set(w.log_date, v);
     }
@@ -169,7 +169,7 @@ export function e1rmSeries(data, exerciseId) {
 export function trackedExercises(data) {
   const sessions = new Map();
   for (const w of data.workouts) {
-    for (const id of new Set(w.sets.filter((s) => s.weight_kg > 0 && isWorkSet(s)).map((s) => s.exercise_id))) {
+    for (const id of new Set(w.sets.filter((s) => s.weight_kg > 0 && isLoadSet(s)).map((s) => s.exercise_id))) {
       sessions.set(id, (sessions.get(id) || 0) + 1);
     }
   }
@@ -205,7 +205,7 @@ export function strengthMove(data, today, days = 28) {
 /** Total kg lifted (weight x reps) across every work set.
  * @param {import('../types').Data} data */
 export function totalVolume(data) {
-  return data.workouts.reduce((n, w) => n + w.sets.reduce((m, s) => m + (isWorkSet(s) ? (s.weight_kg || 0) * (s.reps || 0) : 0), 0), 0);
+  return data.workouts.reduce((n, w) => n + w.sets.reduce((m, s) => m + (isLoadSet(s) ? (s.weight_kg || 0) * (s.reps || 0) : 0), 0), 0);
 }
 
 /** Months covered by a year grid, for the labels: [{ col, label }]. */
