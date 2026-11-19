@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- "Rest done" notification, open: the folded row, the workout so far, and
-     +30s rest / Open workout. -->
+     +30s rest / Open workout, or +30s rest / Log set & rest
+     when the app sent the set to log. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -27,6 +28,14 @@
         <TextView
             android:id="@+id/d_more"
             style="@style/NotifButton" />
+
+        <TextView
+            android:id="@+id/d_log"
+            style="@style/NotifButton"
+            android:layout_marginEnd="0dp"
+            android:background="@drawable/notif_btn_go"
+            android:textColor="#000000"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/d_open"

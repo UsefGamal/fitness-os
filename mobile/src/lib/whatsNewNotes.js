@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.7',
+    items: [
+      { icon: 'timer', text: 'When a rest ends, "Log set & rest" on the notification logs the set it shows and starts your next rest, without opening the app.' },
+    ],
+  },
+  {
     version: '1.0.6',
     items: [
       { icon: 'dumbbell', text: 'New workout screen: each set is a row. Tap the reps or kg to change them, tap the tick to log it.' },
