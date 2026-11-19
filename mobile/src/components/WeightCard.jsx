@@ -7,6 +7,7 @@ import { strengthMove } from '../lib/insights.js';
 import { currentGoal } from '../lib/macros.js';
 import { adviceKey, changeGood, goalProgress, statusGood } from '../lib/progress.js';
 import Icon from './Icon.jsx';
+import RollNumber from './RollNumber.jsx';
 
 const W = 132;
 const H = 56;
@@ -37,13 +38,13 @@ export default function WeightCard({ data, today, onLog }) {
     : move.kg > 0 ? t('home.strengthUp', { name: move.name, kg: move.kg, days: move.days })
       : t('home.strengthHold', { name: move.name, kg: move.now });
   return (
-    <section className="card hero-card">
+    <section className={`card hero-card${statusGood(p.mode, p.status) ? '' : ' neutral'}`}>
       <Link to="/stats?tab=body" className="hero-link">
       <span className="sr-only">{t('home.weightOpen')}</span>
       <div className="hero-top">
         <div className="grow">
           <span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span>
-          <div className="hero-value"><span className="num">{p.trend}</span><span className="unit">{t('home.kg')}</span></div>
+          <div className="hero-value"><span className="num"><RollNumber value={p.trend} /></span><span className="unit">{t('home.kg')}</span></div>
         </div>
         {spark ? (
           <svg className="spark" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">

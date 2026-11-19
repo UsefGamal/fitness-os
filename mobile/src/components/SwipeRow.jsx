@@ -20,7 +20,9 @@ export default function SwipeRow({ children, onLeft, onRight, leftLabel = 'Delet
       s.locked = Math.abs(x) > Math.abs(y) ? 'x' : 'y';
       if (s.locked === 'x') e.currentTarget.setPointerCapture?.(e.pointerId);
     }
-    if (s.locked === 'x') setDx(Math.max(onLeft ? -140 : 0, Math.min(onRight ? 140 : 0, x)));
+    // MOVE-1: past the stop it stretches like rubber instead of halting.
+    const rubber = (v, max) => (Math.abs(v) <= max ? v : Math.sign(v) * (max + Math.sqrt(Math.abs(v) - max) * 3));
+    if (s.locked === 'x') setDx(rubber(Math.max(onLeft ? -400 : 0, Math.min(onRight ? 400 : 0, x)), 120));
   };
   const up = () => {
     if (dx <= -LIMIT && onLeft) onLeft();

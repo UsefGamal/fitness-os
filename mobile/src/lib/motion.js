@@ -23,3 +23,19 @@ export function restQuiet(endsAt, now = Date.now()) {
   const left = endsAt - now;
   return left > 0 && left <= QUIET_BEFORE_REST_END_MS;
 }
+
+/** MOVE-1, colour follows progress: the class a progress bar gets. 'full'
+ * (gold) once the target is met, 'over' (amber) past `overAt` times it, ''
+ * otherwise. Pass overAt: Infinity where more is fine (protein, water). */
+export function fillTone(value, target, { overAt = 1.1 } = {}) {
+  if (!target || !(value > 0)) return '';
+  const f = value / target;
+  if (f > overAt) return 'over';
+  return f >= 1 ? 'full' : '';
+}
+
+/** MOVE-1: the rest timer turns yellow in its last 10 seconds. */
+export const ENDING_S = 10;
+export function restEnding(leftS, running = true) {
+  return running && leftS > 0 && leftS <= ENDING_S;
+}

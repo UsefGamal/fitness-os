@@ -17,6 +17,7 @@ import { effectiveTimes, mealDay, ramadanActive } from '../lib/ramadan.js';
 import { activePlan } from '../lib/plan.js';
 import { mealWhat } from '../lib/widget.js';
 import CountUp from '../components/CountUp.jsx';
+import { fillTone } from '../lib/motion.js';
 import OtherFoodSheet from '../components/OtherFoodSheet.jsx';
 import { clearCustomMeal, customMeals } from '../lib/myFoods.js';
 import { mealTickEvent } from '../lib/rewards.js';
@@ -75,7 +76,7 @@ function Targets() {
           <strong><Icon name="drop" className="icon" /> {t('mealsSimple.water')}</strong>
           <span className="muted small">{water} / {WATER_GOAL} ml</span>
         </div>
-        <div className="progress" style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
+        <div className={`progress ${fillTone(water, WATER_GOAL, { overAt: Infinity })}`} style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
         <div className="row">
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 250)); feedback('water'); }}>{t('mealsSimple.add250')}</button>
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 500)); feedback('water'); }}>{t('mealsSimple.add500')}</button>
@@ -170,13 +171,13 @@ function MealPlan() {
           <div className="stat-tile-label">{t('meals.kcalEaten')}</div>
           <div className="macro-value"><CountUp value={eaten.kcal} /></div>
           <div className="stat-tile-label">/ {target.kcal} kcal</div>
-          <div className="progress" style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.kcal, target.kcal)})` }} /></div>
+          <div className={`progress ${fillTone(eaten.kcal, target.kcal)}`} style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.kcal, target.kcal)})` }} /></div>
         </div>
         <div className="stat-tile macro">
           <div className="stat-tile-label">{t('meals.proteinEaten')}</div>
           <div className="macro-value"><CountUp value={eaten.protein} /></div>
           <div className="stat-tile-label">/ {target.protein} g</div>
-          <div className="progress" style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.protein, target.protein)})` }} /></div>
+          <div className={`progress ${fillTone(eaten.protein, target.protein, { overAt: Infinity })}`} style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.protein, target.protein)})` }} /></div>
         </div>
       </div>
       <details className="macro-more">

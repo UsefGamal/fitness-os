@@ -428,19 +428,31 @@ details.more > summary::-webkit-details-marker { display: none; }
 
 /* Intro on open (components/Intro.jsx, 1.8 s). The bolt sits where the
    Android splash draws it, so the hand-over is seamless. */
-.intro { position: fixed; inset: 0; z-index: 100; background: var(--bg); border: 0; padding: 0; margin: 0; color: var(--text); width: 100%; animation: intro-out 0.35s ease-in 1.45s forwards; }
+.intro { position: fixed; inset: 0; z-index: 100; background: var(--bg); border: 0; padding: 0; margin: 0; color: var(--text); width: 100%;
+  clip-path: circle(150% at 50% 50%); animation: intro-out 0.42s cubic-bezier(.6, 0, .8, .2) 1.38s forwards; }
+/* A soft green light behind the bolt that swells as it charges. */
+.intro-glow { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent); opacity: 0; transform: scale(.4);
+  animation: intro-glow 0.9s var(--ease-emph) 0.45s forwards; }
 .intro-mark { position: absolute; left: 50%; top: 50%; width: 160px; height: 160px; transform: translate(-50%, -50%); overflow: visible; }
 .intro-ring-bg { fill: none; stroke: var(--accent-dim); stroke-width: 6; opacity: 0; animation: intro-fade 0.3s ease-out 0.1s forwards; }
-.intro-ring { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transform: rotate(-90deg); transform-origin: 80px 80px; animation: intro-ring 0.65s cubic-bezier(.6, 0, .2, 1) 0.15s forwards; }
-.intro-bolt { fill: var(--accent); transform-origin: 80px 80px; animation: intro-charge 0.45s ease-out 0.55s; }
+.intro-ring { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transform: rotate(-90deg); transform-origin: 80px 80px; animation: intro-ring 0.7s cubic-bezier(.3, 1.2, .4, 1) 0.3s forwards; }
+.intro-bolt { transform-box: fill-box; }
+.intro-bolt-line { fill: none; stroke: var(--accent); stroke-width: 0.9; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: intro-draw 0.45s ease-in-out forwards; }
+.intro-bolt-fill { fill: var(--accent); opacity: 0; transform-origin: 12px 12px; animation: intro-fill 0.5s var(--spring) 0.42s forwards; }
 .intro-text { position: absolute; left: 0; right: 0; top: calc(50% + 100px); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 24px; }
-.intro-name { font-size: calc(30px * var(--ts)); font-weight: 700; letter-spacing: -0.03em; opacity: 0; animation: intro-up 0.4s ease-out 0.65s forwards; }
-.intro-line { font-size: calc(17px * var(--ts)); color: var(--muted); opacity: 0; animation: intro-up 0.4s ease-out 0.9s forwards; }
+.intro-name { display: flex; font-size: calc(32px * var(--ts)); font-weight: 800; letter-spacing: -0.03em; }
+.intro-ch { display: inline-block; opacity: 0; transform: translateY(14px); animation: intro-up 0.42s var(--spring) forwards; animation-delay: calc(0.62s + var(--c) * 0.035s); }
+.intro-ch.accent { color: var(--accent); }
+.intro-line { font-size: calc(17px * var(--ts)); color: var(--muted); opacity: 0; animation: intro-up 0.4s ease-out 1s forwards; }
+@keyframes intro-draw { to { stroke-dashoffset: 0; } }
+@keyframes intro-fill { 0% { opacity: 0; transform: scale(.7); } 100% { opacity: 1; transform: none; } }
+@keyframes intro-glow { 0% { opacity: 0; transform: scale(.4); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: .7; transform: scale(1); } }
 @keyframes intro-ring { to { stroke-dashoffset: 0; } }
 @keyframes intro-fade { to { opacity: 1; } }
-@keyframes intro-charge { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
-@keyframes intro-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes intro-out { to { opacity: 0; transform: scale(1.04); visibility: hidden; } }
+@keyframes intro-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+/* The exit: the intro closes into the bolt like an iris, showing Home. */
+@keyframes intro-out { to { clip-path: circle(0% at 50% 50%); visibility: hidden; } }
 
 /* Right-to-left (E9-S2): the layout uses logical sides (inline-start/end)
    above, and arrows that mean forward or back point the other way. */
@@ -863,3 +875,166 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 .skel-card { height: 180px; }
 .skel-card.short { height: 96px; }
 @media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+
+/* ===== MOVE-1: modern motion and colour (Nov 2026) =====
+   Springs, a sliding tab highlight, cards that grow into pages, presses that
+   glow from the finger, colour that follows progress. Transform, opacity and
+   colour only; everything stops under "Remove animations" (bottom block). */
+:root {
+  --spring: cubic-bezier(.3, 1.35, .5, 1);      /* a small overshoot, then settle */
+  --spring-soft: cubic-bezier(.25, 1.15, .5, 1);
+  --ease-emph: cubic-bezier(.2, 0, 0, 1);        /* Material 3 emphasized */
+  --gold: #ffd60a;
+  --gold-dim: rgba(255, 214, 10, 0.16);
+  --tab-meals: var(--orange);
+  --tab-library: var(--blue);
+  --tab-stats: var(--purple);
+}
+/* Tab colours on the light bar are a step darker, for 4.5:1 text. */
+:root[data-theme="light"] { --gold: #9a6700; --gold-dim: rgba(255, 204, 0, 0.2); --tab-meals: #a84f00; --tab-library: #006591; --tab-stats: #7d3c9e; }
+
+/* Springs on the things that arrive. */
+.sheet { animation: sheet-up 340ms var(--spring-soft); }
+.toast, .fanfare { animation: pop-in 380ms var(--spring); }
+.timer-pill { animation: pill-in 360ms var(--spring); }
+@keyframes pill-in { from { opacity: 0; transform: translate(-50%, 16px) scale(.9); } to { opacity: 1; transform: translateX(-50%); } }
+
+/* Tabs: the page slides in from the side of the tab you came from (the
+   swipe classes), the highlight slides under the icons in the tab's colour,
+   and the icon you pick hops once. */
+.tabbar { position: fixed; }
+.tab { position: relative; z-index: 1; transition: color 200ms ease; }
+.tab.active { color: var(--tone, var(--accent)); }
+.tab-ind { --dir: 1; position: absolute; top: 6px; left: 0; width: calc(100% / var(--n)); height: 32px; pointer-events: none; z-index: 0;
+  transform: translateX(calc(100% * var(--i) * var(--dir))); transition: transform 380ms var(--spring); }
+[dir="rtl"] .tab-ind { --dir: -1; left: auto; right: 0; }
+.tab-ind::before { content: ''; position: absolute; inset: 0 calc(50% - 30px); border-radius: 16px; background: color-mix(in srgb, var(--tone) 18%, transparent); transition: background-color 300ms ease; }
+.tab.active svg { animation: tab-hop 420ms var(--spring); }
+@keyframes tab-hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-3px) scale(1.12); } 100% { transform: none; } }
+
+/* Cards rise in one after another when a page opens (staggered entrance). */
+.route.tab-in .page > *, .route.push-in .page > *, .route.swipe-fwd .page > *, .route.swipe-back .page > * { animation: rise-in 360ms var(--ease-emph) both; }
+.route .page > :nth-child(2) { animation-delay: 30ms; }
+.route .page > :nth-child(3) { animation-delay: 60ms; }
+.route .page > :nth-child(4) { animation-delay: 90ms; }
+.route .page > :nth-child(5) { animation-delay: 120ms; }
+.route .page > :nth-child(6) { animation-delay: 150ms; }
+.route .page > :nth-child(n+7) { animation-delay: 180ms; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Card grows into the page it opens (View Transitions, store/motionFx.js).
+   While it runs the usual page slide stays out of the way. */
+:root.vt-morph .route, :root.vt-morph .route .page > * { animation: none !important; }
+::view-transition-group(hero) { animation-duration: 340ms; animation-timing-function: var(--ease-emph); }
+::view-transition-old(hero), ::view-transition-new(hero) { height: 100%; object-fit: cover; overflow: clip; }
+::view-transition-old(hero) { animation: vt-out 160ms ease-out both; }
+::view-transition-new(hero) { animation: vt-in 260ms ease-out 60ms both; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 200ms; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; } }
+.route[style*="view-transition-name"] { border-radius: 0; }
+
+/* Predictive back: the page shrinks as the swipe moves (motionFx.js). */
+.route.backing { overflow: hidden; box-shadow: 0 12px 40px var(--deep-shadow); transform-origin: center 40%; }
+
+/* Collapsing large title: a small bar fades in once the big title has gone. */
+.compact-title { position: fixed; top: 0; left: 0; right: 0; z-index: 15; padding: calc(var(--sat) + 10px) 56px 10px; text-align: center; background: var(--bg); border-bottom: var(--hair);
+  font-weight: 600; font-size: calc(17px * var(--ts)); opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity 200ms ease, transform 260ms var(--spring-soft); }
+.compact-title span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compact-title.on { opacity: 1; transform: none; }
+:root.gym .compact-title { display: none; }
+
+/* A press glows from where the finger touched (colour 3). */
+.btn, .mini-btn, .chip-btn, .pill-btn, .tbtn, .st-tick, button.chip, .tpre { position: relative; overflow: hidden; isolation: isolate; }
+.glow::before { content: ''; position: absolute; z-index: -1; left: var(--px, 50%); top: var(--py, 50%); width: 240px; height: 240px; margin: -120px 0 0 -120px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 45%, transparent), transparent); animation: glow-out 520ms ease-out forwards; }
+.btn:not(.secondary):not(.ghost).glow::before { background: radial-gradient(closest-side, rgba(255, 255, 255, .45), transparent); }
+@keyframes glow-out { from { transform: scale(.1); opacity: 1; } to { transform: scale(1); opacity: 0; } }
+
+/* Done is green: a ticked row flashes green and keeps a soft tint (colour 1);
+   a tick fills from the middle, and the logged set row settles in. */
+.list-row:has(.check.on.pop), .meal-card:has(.check.on.pop) { animation: done-flash 700ms ease-out; }
+@keyframes done-flash { 0% { background-color: color-mix(in srgb, var(--accent) 30%, var(--surface)); } 100% { background-color: var(--surface); } }
+.check.on { box-shadow: 0 0 0 0 var(--accent); }
+.check.on.pop { animation: tick-pop 360ms var(--spring), tick-ring 600ms ease-out; }
+@keyframes tick-ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
+.check.on svg, .st-tick.on svg { stroke-dasharray: 30; animation: tick-draw 320ms var(--ease-emph) 60ms both; }
+@keyframes tick-draw { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+.st-tick.on { animation: tick-pop 360ms var(--spring), tick-ring 600ms ease-out; }
+.st-row.done { animation: row-done 600ms ease-out; }
+@keyframes row-done { 0% { background-color: color-mix(in srgb, var(--accent) 38%, transparent); transform: scale(1.015); } 100% { background-color: var(--accent-dim); transform: none; } }
+.st-row.open.next { animation: next-in 420ms var(--spring-soft); }
+@keyframes next-in { from { box-shadow: inset 0 0 0 1.5px transparent; } to { box-shadow: inset 0 0 0 1.5px var(--accent); } }
+
+/* Colour follows progress (colour 2): bars fill green, turn gold when the
+   target is met and amber past it. */
+.progress > span { transition: transform 420ms var(--spring-soft), background-color 300ms ease; }
+.progress.full > span { background: var(--gold); }
+.progress.over > span { background: var(--caution); }
+.progress.full { box-shadow: 0 0 0 1px var(--gold-dim), 0 0 12px var(--gold-dim); transition: box-shadow 300ms ease; }
+
+/* The rest ring turns yellow in the last 10 seconds, then flashes at zero. */
+.ring .ring-fill { transition: stroke 400ms ease; }
+.ring.ending .ring-fill { stroke: var(--warn); }
+.ring.done { animation: ring-flash 600ms ease-out 2; }
+@keyframes ring-flash { 50% { transform: scale(1.04); filter: brightness(1.6); } }
+.timer-pill.ending .t { color: var(--warn); transition: color 300ms ease; }
+
+/* Weight card mood (colour 6): greener on a good-pace week, neutral when it
+   drifts. Never red. */
+.hero-card { transition: background 600ms ease; }
+.hero-card.neutral { background: linear-gradient(135deg, color-mix(in srgb, var(--text) 6%, transparent), transparent 55%), var(--surface); }
+
+/* Rolling digits (odometer) for the weight on Home. */
+.roll { display: inline-flex; overflow: hidden; line-height: 1; height: 1em; vertical-align: top; }
+.roll-d { display: inline-flex; flex-direction: column; transition: transform 700ms var(--spring-soft); }
+.roll-d > span { height: 1em; }
+.roll-s { display: inline-block; }
+
+/* Muscle map lights up one muscle after another when it appears (colour 5). */
+polygon.lit { animation: lit-in 420ms ease-out both; animation-delay: calc(var(--k, 0) * 45ms + 120ms); }
+@keyframes lit-in { from { fill-opacity: 0.08; } to { fill-opacity: 1; } }
+
+/* Shimmer: a light sweep across the loading boxes. */
+.skel { position: relative; overflow: hidden; animation: none; }
+.skel::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 7%, transparent), transparent); animation: shimmer 1.3s ease-in-out infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* A wrong value shakes, with a red line that fades once fixed (colour 8). */
+input[aria-invalid="true"], .shake { animation: shake 360ms cubic-bezier(.36, .07, .19, .97); }
+@keyframes shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+label.field input { transition: box-shadow 300ms ease; }
+
+/* Celebrations: record sparks, a badge that flips like a coin, a green wash
+   when a workout is saved (motionFx.js). Rare on purpose. */
+.sparks { position: fixed; z-index: 90; width: 0; height: 0; pointer-events: none; }
+.sparks i { position: absolute; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; background: var(--accent); animation: spark 760ms var(--ease-emph) forwards; }
+.sparks i.gold { background: var(--gold); width: 5px; height: 5px; }
+@keyframes spark { from { transform: none; opacity: 1; } 70% { opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(.3); opacity: 0; } }
+.fanfare .medal { animation: coin 900ms var(--ease-emph) 120ms both; }
+@keyframes coin { from { transform: perspective(200px) rotateY(-180deg); filter: grayscale(1); } to { transform: none; filter: none; } }
+.wash { position: fixed; inset: 0; z-index: 85; pointer-events: none; background: radial-gradient(circle at var(--wx) var(--wy), color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%);
+  animation: wash 950ms ease-out forwards; }
+@keyframes wash { from { opacity: 0; } 25% { opacity: 1; } to { opacity: 0; } }
+
+/* Pull to refresh on Stats: a ring that fills as you pull. */
+.ptr { display: grid; place-items: center; height: 0; overflow: visible; position: relative; z-index: 2; }
+.ptr svg { width: 30px; height: 30px; transform: translateY(calc(var(--pull, 0) * 1px - 34px)) rotate(calc(var(--pull, 0) * 4deg)); opacity: min(1, calc(var(--pull, 0) / 40)); }
+.ptr circle { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 76; stroke-dashoffset: calc(76 - var(--pull, 0) * 76 / 72); }
+.ptr.busy svg { animation: spin 800ms linear infinite; transform: translateY(18px); opacity: 1; }
+@keyframes spin { to { transform: translateY(18px) rotate(360deg); } }
+
+/* Swipe-to-delete stretches past its stop like rubber. */
+.swipe-top { transition: transform 340ms var(--spring); }
+
+/* Opening a page with sets already done doesn't replay their ticks. */
+.route:not(.settled) .st-row.done, .route:not(.settled) .st-tick.on, .route:not(.settled) .st-tick.on svg, .route:not(.settled) .check.on svg, .route:not(.settled) .st-row.open.next { animation: none; }
+
+/* Remove animations: no motion at all, colours still change. */
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .toast, .fanfare, .timer-pill, .tab.active svg, .route .page > *, .check.on.pop, .st-tick.on, .st-row.done, .st-row.open.next,
+  polygon.lit, .skel::after, input[aria-invalid="true"], .shake, .fanfare .medal, .ring.done { animation: none !important; }
+  .tab-ind, .roll-d, .compact-title, .progress > span { transition: none; }
+  .glow::before { display: none; }
+}

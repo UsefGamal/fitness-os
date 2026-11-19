@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
@@ -18,6 +18,9 @@ import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
 import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from '../lib/statsView.js';
 import { content, useData } from '../store/useData.js';
+import PullRefresh from '../components/PullRefresh.jsx';
+import { healthSettings, syncHealth } from '../store/phoneSync.js';
+import { isNative } from '../store/native.js';
 import { useToday } from '../store/today.js';
 
 const MEASURES = [
@@ -423,9 +426,13 @@ export default function Stats() {
   const tabs = statsTabs(weightOn);
   const tab = tabs.includes(params.get('tab')) ? params.get('tab') : tabs[0];
   const setTab = (k) => setParams(k === tabs[0] ? {} : { tab: k }, { replace: true });
+  // Pull to refresh reads Health Connect again, so only on the phone with it on.
+  const pullOn = useData((s) => isNative() && healthSettings(s.data).enabled);
+  const refresh = useCallback(() => syncHealth().catch(() => null), []);
 
   return (
     <div className="page">
+      <PullRefresh enabled={pullOn} onRefresh={refresh} label={t('stats.refreshing')} />
       <h1 className="page-title">{t('tab.stats')}</h1>
       <div className="seg stats-tabs" role="tablist" aria-label={t('tab.stats')}>
         {tabs.map((k) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{t(`stats.tab.${k}`)}</button>)}

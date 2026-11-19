@@ -140,6 +140,8 @@ function sound(notes, opts, onSilenced) {
 /** Play the sound (and buzz) for a workout moment, if switched on.
  * `inShade`: the rest timer runs in the phone's shade, which chimes itself. */
 export function feedback(event, { force = false, inShade = false } = {}) {
+  // MOVE-1: the screen's own reaction (sparks, a green wash) listens for this.
+  try { window.dispatchEvent(new CustomEvent('fos-feedback', { detail: event })); } catch { /* no window in tests */ }
   // SA-06: in the last 3 s of a rest only the timer speaks; anything else
   // just buzzes (the 3-2-1 and rest-done cues themselves are not held back).
   const quiet = !force && !['countdown', 'restDone', 'stop'].includes(event) && restQuiet(useTimer.getState().endsAt);

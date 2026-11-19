@@ -728,6 +728,7 @@ export default {
   'home.streakAria': '{n} weeks in a row. This week: {done} of {need} sessions.',
   'home.planTitle': 'Plan',
   'common.loading': 'Loading',
+  'stats.refreshing': 'Reading Health Connect',
   'home.planToday': "Today's workout",
   'home.planNext': 'Next workout',
   'home.viewPlan': 'View full plan',

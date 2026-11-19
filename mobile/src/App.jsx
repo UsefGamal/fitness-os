@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Outlet, ScrollRestoration, createHashRouter, RouterProvider, useLocation, useNavigationType } from 'react-router';
 
 import ErrorBoundary from './components/CrashScreen.jsx';
@@ -46,6 +46,8 @@ import Today from './views/Today.jsx';
 import Workout from './views/Workout.jsx';
 import { textScale, textSize, themeChoice } from './lib/theme.js';
 import { applyTheme, followPhone } from './store/theme.js';
+import { installMotion, morphLanded } from './store/motionFx.js';
+import CompactTitle from './components/CompactTitle.jsx';
 
 // Screens you open now and then load on first use, so start-up stays quick.
 const CatalogueDetail = lazy(() => import('./views/CatalogueDetail.jsx'));
@@ -91,11 +93,20 @@ function Shell() {
   useLayoutEffect(() => { document.documentElement.classList.toggle('gym', gym); }, [gym]);
   const swipe = gym ? {} : tabSwipe;
   const tabAnim = state?.swipe === 'forward' ? 'swipe-fwd' : state?.swipe === 'back' ? 'swipe-back' : 'tab-in';
+  // MOVE-1: a tapped card grows into this page once it is on screen.
+  const routeRef = useRef(null);
+  useLayoutEffect(() => { morphLanded(routeRef.current); }, [pathname]);
+  // Ticks and done rows only animate when they change, not when a page opens
+  // with them already done: the page counts as settled after its entrance.
+  useEffect(() => {
+    const id = setTimeout(() => routeRef.current?.classList.add('settled'), 450);
+    return () => clearTimeout(id);
+  }, [pathname]);
   return (
     <>
       {/* New pages open at the top; Back returns to where you were (UX-03). */}
       <ScrollRestoration />
-      <div key={pathname} {...swipe} className={`route ${TABS.has(pathname) ? tabAnim : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
+      <div key={pathname} ref={routeRef} {...swipe} className={`route ${TABS.has(pathname) ? tabAnim : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
         <ErrorBoundary key={pathname}>
           {/* Rule 19: a page that is still loading says so (after a short
               delay, so a fast open never flashes the skeleton). */}
@@ -104,6 +115,7 @@ function Shell() {
           </Suspense>
         </ErrorBoundary>
       </div>
+      <CompactTitle pathname={pathname} />
       <RestTimer compact={pathname !== '/workout'} />
       <Fanfare />
       <Announcer />
@@ -151,6 +163,12 @@ const router = createHashRouter([
     ], APP),
   },
 ]);
+installMotion((to) => router.navigate(to));
+// The pages a card opens load while the phone is idle, so the card can grow
+// straight into a drawn page instead of a loading one (MOVE-1).
+(globalThis.requestIdleCallback || ((f) => setTimeout(f, 1500)))(() => {
+  for (const load of [() => import('./views/ExerciseDetail.jsx'), () => import('./views/History.jsx'), () => import('./views/MealDetail.jsx'), () => import('./views/CatalogueDetail.jsx'), () => import('./views/Stats.jsx'), () => import('./views/Library.jsx')]) load().catch(() => {});
+});
 
 /** Decides on each open whether the intro plays, and what it says. */
 function introFor() {

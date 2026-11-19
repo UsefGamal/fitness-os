@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { clock, COUNTDOWN_BEEPS } from '../lib/training.js';
+import { restEnding } from '../lib/motion.js';
 import { feedback } from '../store/feedback.js';
 import { useTimer } from '../store/useTimer.js';
 import Icon from './Icon.jsx';
@@ -99,7 +100,7 @@ export default function RestTimer({ compact = false }) {
 
   if (compact && !full) {
     return (
-      <div className={`timer-pill${done ? ' done' : ''}`} role="timer" aria-live="off">
+      <div className={`timer-pill${done ? ' done' : ''}${restEnding(left, !paused && !done) ? ' ending' : ''}`} role="timer" aria-live="off">
         <button type="button" className="pill-open" onClick={() => navigate('/workout')} aria-label={t('pill.open')}>
           <Icon name="timer" />
           <span className="t">{done ? t('pill.go') : clock(left)}</span>
@@ -117,7 +118,7 @@ export default function RestTimer({ compact = false }) {
       <div className="timer-full" role="timer" aria-live="off">
         <button type="button" className="icon-btn timer-close" aria-label={t('aria.backToWorkout')} onClick={() => setFull(false)}><Icon name="chev" /></button>
         <div className="muted">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
-        <svg viewBox="0 0 280 280" className="ring" aria-hidden="true">
+        <svg viewBox="0 0 280 280" className={`ring${done ? ' done' : restEnding(left, !paused) ? ' ending' : ''}`} aria-hidden="true">
           <circle cx="140" cy="140" r={RING_R} fill="none" stroke="var(--surface2)" strokeWidth="14" />
           <circle ref={ringRef} className="ring-fill" cx="140" cy="140" r={RING_R} fill="none" stroke="var(--accent)" strokeWidth="14" strokeLinecap="round"
             strokeDasharray={RING_C} style={{ strokeDashoffset: RING_C * (1 - fraction) }} transform="rotate(-90 140 140)" />
