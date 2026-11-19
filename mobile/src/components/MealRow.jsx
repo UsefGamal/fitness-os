@@ -4,6 +4,7 @@ import { t } from '../lib/i18n.js';
 import { fitOption } from '../lib/portions.js';
 import { content } from '../store/useData.js';
 import Icon from './Icon.jsx';
+import { MealThumb } from './MealPhoto.jsx';
 
 const N = content.nutrition;
 
@@ -24,7 +25,7 @@ export default function MealRow({ meal, fit, hideKcal, to, reasons }) {
   const why = reasonText(reasons);
   return (
     <Link to={to} className="list-row">
-      {meal.photo ? <img className="thumb" src={meal.photo.thumb} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank meal-thumb" aria-hidden="true"><Icon name="meals" /></span>}
+      <MealThumb photo={meal.photo} />
       <div className="grow">
         <div>{meal.name}</div>
         <div className="meta">{t(hideKcal ? 'lib.metaNoKcal' : 'lib.meta', { kcal: Math.round(shown.kcal), protein: Math.round(shown.protein), min: meal.minutes })}</div>

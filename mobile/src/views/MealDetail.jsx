@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
+import { useMealPhoto } from '../components/useMealPhoto.js';
 import MealRow from '../components/MealRow.jsx';
 import { formatDate } from '../lib/dates.js';
 import * as D from '../lib/data.js';
@@ -28,6 +29,7 @@ export default function MealDetail() {
   const today = useToday();
   const swap = swapTarget(params, today, N.meal_slots);
   const meal = libraryMeal(key, N);
+  const photo = useMealPhoto(meal?.photo);
   const fit = useMemo(() => planFit(data, N, today), [data, today]);
   const [done, setDone] = useState('');
   if (!meal) return <div className="page"><div className="card empty">{t('lib.notFound')}</div></div>;
@@ -53,7 +55,7 @@ export default function MealDetail() {
   return (
     <div className="page">
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> {t('nav.back')}</button>
-      {meal.photo ? <img className="meal-hero" src={meal.photo.file} alt="" decoding="async" /> : null}
+      {photo.shown ? <img className="meal-hero" src={photo.shown.file} alt="" decoding="async" onError={photo.onError} /> : null}
       <h1 className="page-title" style={{ marginTop: 4 }}>{meal.name}</h1>
       <div className="chip-row">
         <span className="chip"><Icon name="timer" className="icon inline" /> {meal.minutes} min</span>
@@ -100,7 +102,7 @@ export default function MealDetail() {
         </>
       ) : null}
       <p className="muted small" style={{ margin: '16px 4px 0' }}>{t('lib.source', { source: N.nutrition_source })}</p>
-      {meal.photo ? <p className="muted small" style={{ margin: '4px 4px 0' }}>{t('lib.photoCredit', { author: meal.photo.author, license: meal.photo.license })}</p> : null}
+      {photo.shown ? <p className="muted small" style={{ margin: '4px 4px 0' }}>{t('lib.photoCredit', { author: photo.shown.author, license: photo.shown.license })}</p> : null}
     </div>
   );
 }
