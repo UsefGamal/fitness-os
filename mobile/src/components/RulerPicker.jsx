@@ -15,6 +15,7 @@ export default function RulerPicker({ value, onChange, min, max, step = 1, major
   const box = useRef(null);
   const busy = useRef(false); // the person is dragging: don't scroll under them
   const last = useRef(value);
+  const ours = useRef(null); // where we scrolled it ourselves, so that scroll isn't read as a drag
   const count = Math.round((max - min) / step);
   const width = count * TICK;
   const toX = (v) => Math.round(((v - min) / step) * TICK);
@@ -22,7 +23,8 @@ export default function RulerPicker({ value, onChange, min, max, step = 1, major
   useEffect(() => {
     const el = box.current;
     if (!el || busy.current) return;
-    el.scrollLeft = toX(value);
+    ours.current = toX(value);
+    el.scrollLeft = ours.current;
   }, [value]);
 
   useEffect(() => {
@@ -31,6 +33,8 @@ export default function RulerPicker({ value, onChange, min, max, step = 1, major
     let raf = 0;
     let idle = 0;
     const onScroll = () => {
+      if (ours.current != null && Math.abs(el.scrollLeft - ours.current) < 2) return;
+      ours.current = null;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const v = snap(min + (el.scrollLeft / TICK) * step, { min, max, step });
@@ -42,7 +46,7 @@ export default function RulerPicker({ value, onChange, min, max, step = 1, major
       });
       clearTimeout(idle);
       busy.current = true;
-      idle = setTimeout(() => { busy.current = false; el.scrollTo({ left: toX(last.current), behavior: 'smooth' }); }, 140);
+      idle = setTimeout(() => { busy.current = false; ours.current = toX(last.current); el.scrollTo({ left: ours.current, behavior: 'smooth' }); }, 140);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => { el.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); clearTimeout(idle); };
