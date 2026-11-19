@@ -609,6 +609,8 @@ a.stat-tile:active, .quick:active { transform: scale(0.98); background: var(--su
 .mini-btn:active { transform: scale(0.95); color: var(--accent); }
 .mini-btn:disabled { opacity: 0.4; }
 .quick { display: flex; align-items: center; gap: 12px; min-height: 72px; }
+/* A tile that opens a sheet is a <button> (#181): drop the browser's button border, centring and font. */
+button.quick { width: 100%; border: 0; font: inherit; text-align: start; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .quick .icon { width: 24px; height: 24px; }
 .quick-title { font-size: calc(16px * var(--ts)); font-weight: 600; }
 .quick-note { color: var(--muted); font-size: calc(13px * var(--ts)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

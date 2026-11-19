@@ -26,3 +26,12 @@ test('launcher icon: both adaptive icons use the Tafra layers', () => {
   assert.match(fg, /#FF30D158/, 'the mark is green');
   assert.ok(existsSync(new URL('mipmap-xxxhdpi/ic_launcher.png', RES)));
 });
+
+// Samsung's "Add to Home screen?" sheet showed "Couldn't add widget" over a
+// grey box (19 Nov 2026): the widget had no preview of its own, so the
+// launcher tried to draw one from the live layout. Give it a picture.
+test('widget: the picker has a preview image', () => {
+  const xml = readFileSync(new URL('xml/widget_today_info.xml', RES), 'utf8');
+  assert.match(xml, /android:previewImage="@drawable\/widget_preview"/);
+  assert.ok(existsSync(new URL('drawable-nodpi/widget_preview.png', RES)));
+});
