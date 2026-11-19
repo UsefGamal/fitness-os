@@ -121,7 +121,7 @@ async function setLog(browser) {
   await page.goto(`${URL0}#/workout`);
   await page.addStyleTag({ content: '.fanfare,.intro,.toast{display:none!important}' });
   await page.getByRole('button', { name: /^Start / }).first().click({ timeout: 20000 });
-  const weight = page.getByRole('spinbutton', { name: 'Weight (kg)', exact: true });
+  const weight = page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ });
   // Let the prefill settle first, or it can overwrite the typed weight.
   await page.waitForTimeout(1500);
   await weight.fill('20');
@@ -130,7 +130,7 @@ async function setLog(browser) {
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
   // Measured in the page: the tap, then the frame after the new row lands.
   const r = await page.evaluate(() => new Promise((resolve) => {
-    const button = document.querySelector('.ex-card.current .log-btn');
+    const button = document.querySelector('.ex-card.current .st-tick.next');
     // The session's "n/N sets" line: after a set in a superset, the card
     // moves on to the partner, so its own rows aren't a reliable signal.
     const rows = () => {
@@ -224,7 +224,7 @@ async function comebackDay(browser) {
   await page.getByRole('button', { name: /^Start / }).first().click({ timeout: 20000 });
   await page.waitForTimeout(1500);
   const reason = (await page.locator('.ex-card.current .reason').first().textContent().catch(() => '')) || '';
-  const kg = Number(await page.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).inputValue());
+  const kg = Number(await page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).inputValue());
   // 90% of 60 kg (all sets at the top of the range would otherwise add).
   check('back: the first session back is 90% of last time, never "add"', /^Welcome back: [\d.]+ kg today, a little lighter/.test(reason) && kg > 50 && kg < 60, `${kg} kg, "${reason}"`);
   await page.getByRole('button', { name: /^Log set 1/ }).click();

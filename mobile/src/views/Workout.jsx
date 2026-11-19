@@ -6,7 +6,6 @@ import Sheet from '../components/Sheet.jsx';
 import SwipeRow from '../components/SwipeRow.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
-import Stepper from '../components/Stepper.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { safeVideo } from '../lib/links.js';
@@ -15,7 +14,7 @@ import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js
 import { comeback, comebackTarget } from '../lib/comeback.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
-import { HOLD_STEP, holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
+import { holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
 import { neighbours } from '../lib/progressions.js';
 import { alternatives } from '../lib/similar.js';
 import { roundDone, roundRest } from '../lib/superset.js';
@@ -38,6 +37,7 @@ import { isShortSession } from '../lib/summary.js';
 import { gateOn, gentleDay } from '../lib/safety.js';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
+import { readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from '../lib/liveStats.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
 const UNDO_MS = 7000;
@@ -80,6 +80,58 @@ function nextIndex(day, workout, data, current) {
   if (ex && doneOf(ex) < ex.sets) return current;
   const open = day.exercises.findIndex((x) => doneOf(x) < x.sets);
   return open >= 0 ? open : current;
+}
+
+/** Time, volume and kcal at the top of a running workout (B2). It ticks
+ * every second on its own, so the rest of the screen doesn't re-render. */
+function LiveStrip({ workout, bodyKg }) {
+  const [now, setNow] = useState(Date.now());
+  const paused = Boolean(workout.paused_at);
+  useEffect(() => {
+    if (paused) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [paused]);
+  const ms = activeMs(workout, now);
+  return (
+    <div className="live-strip">
+      <div className="live-cell"><div className="live-val"><i className={`live-dot${paused ? ' off' : ''}`} aria-hidden="true" />{stopwatch(ms)}</div><div className="live-label">{t('workout.duration')}</div></div>
+      <div className="live-cell"><div className="live-val">{workoutVolume(workout.sets)}</div><div className="live-label">{t('workout.volumeKg')}</div></div>
+      <div className="live-cell"><div className="live-val">{workoutKcal(ms, bodyKg)}</div><div className="live-label">{t('workout.kcalAbout')}</div></div>
+    </div>
+  );
+}
+
+/** A reps or kg cell you tap to type in (B1). Keeps what's typed until it
+ * reads as a number, then hands the number up. */
+function NumBox({ value, onChange, whole = false, max, label }) {
+  const [text, setText] = useState(String(value));
+  const [editing, setEditing] = useState(false);
+  useEffect(() => { if (!editing) setText(String(value)); }, [value, editing]);
+  return (
+    <input
+      className="st-input"
+      type="text"
+      inputMode={whole ? 'numeric' : 'decimal'}
+      aria-label={label}
+      value={text}
+      onFocus={(e) => { setEditing(true); e.target.select(); }}
+      onBlur={() => { setEditing(false); setText(String(value)); }}
+      onChange={(e) => {
+        setText(e.target.value);
+        const n = readNumber(e.target.value, { whole, max });
+        if (n != null) onChange(n);
+      }}
+    />
+  );
+}
+
+/** The exercise's first photo, small, with the muscle letter on it. */
+function Thumb({ entry, onClick, label }) {
+  const src = entry?.photos?.[0];
+  if (!src) return <span className="ex-thumb empty" aria-hidden="true"><Icon name="barbell" /></span>;
+  const img = <img src={`exercise-db/${src}`} alt="" decoding="async" />;
+  return onClick ? <button type="button" className="ex-thumb" onClick={onClick} aria-label={label}>{img}</button> : <span className="ex-thumb" aria-hidden="true">{img}</span>;
 }
 
 function IntervalsLink() {
@@ -152,6 +204,7 @@ export default function Workout() {
   const [undo, setUndo] = useState(null); // { set, label } after a delete
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
   const [typing, setTyping] = useState(null); // the logged set whose kind is being picked
+  const [showPhoto, setShowPhoto] = useState(false); // the big moving photo, opened from the thumbnail
   const openSwap = () => setSheet('swap');
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
@@ -468,7 +521,7 @@ export default function Workout() {
         <div className="row between" style={{ gap: 8 }}>
           <div className="grow" style={{ minWidth: 0 }}>
             <h1 className="section-title" style={{ margin: 0 }}>{day.label}</h1>
-            <div className="muted small" style={{ marginTop: 2 }}>{elapsed(ms)}{lengthTarget ? ` / ${settings.target_min} min` : ''} · {t('workout.setsOf', { done: totalDone, all: totalTarget })} · {t('plan.tempo', { tempo: T.trainer_plan.tempo })}</div>
+            <div className="muted small" style={{ marginTop: 2 }}>{lengthTarget ? t('workout.lengthOf', { time: elapsed(ms), min: settings.target_min }) : null}{t('workout.setsOf', { done: totalDone, all: totalTarget })} · {t('plan.tempo', { tempo: T.trainer_plan.tempo })}</div>
           </div>
           <MoreMenu title={t('workout.more')} actions={[
             { key: 'pause', label: t(paused ? 'workout.resume' : 'workout.pause'), note: paused ? null : t('workout.pauseNote'), icon: paused ? 'play' : 'pause', onClick: () => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id))) },
@@ -476,6 +529,7 @@ export default function Workout() {
             { key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') },
           ]} />
         </div>
+        <LiveStrip workout={active} bodyKg={D.latestWeight(data)?.weight_kg} />
         {starter ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
         {lengthTarget ? <div className={`target-bar${lengthTarget.over ? ' over' : ''}`} style={{ margin: '10px 0 0' }} role="progressbar" aria-valuenow={Math.round(lengthTarget.fraction * 100)} aria-label={t('aria.workoutLength')}><span style={{ width: `${Math.min(100, lengthTarget.fraction * 100)}%` }} /></div> : null}
         {paused ? (
@@ -509,19 +563,23 @@ export default function Workout() {
         const isCurrent = i === current;
         const restText = x.pair ? t('workout.restAfterRound', { rest: x.rest }) : x.rest ? t('plan.rest', { rest: x.rest }) : null;
         const meta = [`${x.sets} × ${x.reps}`, restText, x.rir ? t('workout.rir', { rir: x.rir }) : null].filter(Boolean).join(' · ');
-        const dots = (
-          <span className="set-dots" aria-label={t('workout.setsOf', { done: sets.length, all: x.sets })}>
-            {Array.from({ length: Math.max(x.sets, sets.length) }, (_, k) => <i key={k} className={k < sets.length ? 'on' : ''} />)}
-          </span>
-        );
+        const xEntry = catalogue ? entryFor(x.name, content.training, catalogue.byId) : null;
+        // "1/4 logged · 10 kg" once a set is in, else the plan and last time (B2).
+        const lastSet = sets[sets.length - 1];
+        const status = sets.length
+          ? (lastSet && setFields(lastSet).track !== 'time' && lastSet.weight_kg ? t('workout.loggedKg', { done: sets.length, all: x.sets, kg: lastSet.weight_kg }) : t('workout.logged', { done: sets.length, all: x.sets }))
+          : upcoming(x);
         if (!isCurrent) {
           return (
-            <button key={`${x.name}-${i}`} type="button" className={`ex-card collapsed${sets.length >= x.sets ? ' finished' : ''}`} onClick={() => setCurrent(i)} aria-expanded={false}>
-              <div className="row between" style={{ gap: 8 }}>
-                <div className="grow ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
-                {dots}
+            <button key={`${x.name}-${i}`} type="button" className={`ex-card collapsed${sets.length >= x.sets ? ' finished' : ''}${sets.length ? ' started' : ''}`} onClick={() => setCurrent(i)} aria-expanded={false}>
+              <div className="ex-line">
+                <Thumb entry={xEntry} />
+                <div className="grow" style={{ minWidth: 0 }}>
+                  <div className="ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
+                  <div className="small ex-next">{status}</div>
+                </div>
+                {x.sets <= sets.length ? <span className="st-tick on small" aria-hidden="true"><Icon name="check" /></span> : null}
               </div>
-              <div className="muted small ex-next">{upcoming(x)}</div>
             </button>
           );
         }
@@ -530,15 +588,16 @@ export default function Workout() {
         const howTo = howToSteps(howToEntry);
         return (
           <div key={`${x.name}-${i}`} className="ex-card current">
-            <div className="row between" style={{ gap: 8, alignItems: 'flex-start' }}>
-              <div className="grow">
+            <div className="ex-line" style={{ alignItems: 'flex-start' }}>
+              <Thumb entry={xEntry} onClick={xEntry?.photos?.length ? () => setShowPhoto(!showPhoto) : null} label={t(showPhoto ? 'workout.hidePhoto' : 'workout.showPhoto')} />
+              <div className="grow" style={{ minWidth: 0 }}>
                 <div className="ex-name big">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
+                <div className="ex-status">{status}</div>
                 <div className="ex-meta">{meta}</div>
               </div>
-              <span className={`chip${sets.length >= x.sets ? ' accent' : ''}`}>{t('workout.setsChip', { done: sets.length, all: x.sets })}</span>
             </div>
             <div className="stack" style={{ marginTop: 12 }}>
-              {catalogue && entryFor(x.name, content.training, catalogue.byId) ? <ExercisePhotos entry={entryFor(x.name, content.training, catalogue.byId)} compact /> : null}
+              {showPhoto && xEntry ? <ExercisePhotos entry={xEntry} compact /> : null}
               {howTo.length ? (
                 <details className="how-to" open>
                   <summary><Icon name="bulb" className="icon" /><span className="grow">{t('starter.howTo')}</span><Icon name="chev" className="icon chev" /></summary>
@@ -547,43 +606,53 @@ export default function Workout() {
               ) : null}
               {x.note ? <div className="ex-note"><Icon name="info" className="icon" /> {x.note}</div> : null}
               {exerciseNote(data, x.name) ? <div className="ex-note"><Icon name="info" className="icon" /> {t('workout.yourNote', { note: exerciseNote(data, x.name) })}</div> : null}
-              {sets.length ? (
-                <div className="done-sets">
-                  {sets.map((s) => (
-                    <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
-                      <div className="set-row">
-                        {(() => {
-                          const type = setFields(s).set_type;
-                          return (
-                            <button type="button" className={`set-n done${type === 'work' ? '' : ` t-${type}`}`} aria-label={t('setType.aria', { shown: TYPE_LETTER[type] || s.set_number, n: s.set_number, type: t(`setType.${type}`) })} onClick={() => setTyping(s)}>
-                              {TYPE_LETTER[type] || s.set_number}
-                            </button>
-                          );
-                        })()}
-                        <span>{setFields(s).track === 'time' ? setLabel(s) : t('workout.setLine', { kg: s.weight_kg, reps: s.reps })}</span>
-                        <span />
-                        <button type="button" className="icon-btn" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="trash" /></button>
-                      </div>
-                    </SwipeRow>
-                  ))}
-                </div>
-              ) : null}
               {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
               {target?.kind === 'harder' && sets.length === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
-              <div className="row stepper-pair" style={{ alignItems: 'flex-end' }}>
-                {timed ? (
-                  <div className="grow"><Stepper label={t('workout.secsLabel')} value={reps} onChange={setReps} step={HOLD_STEP} min={0} max={600} /></div>
-                ) : (
-                  <>
-                    <div className="grow"><Stepper label={t('workout.kgLabel')} value={weight} onChange={setWeight} step={2.5} max={500} decimals={2} /></div>
-                    <div className="grow"><Stepper label={t('workout.repsLabel')} value={reps} onChange={setReps} step={1} min={0} max={100} /></div>
-                  </>
-                )}
+              {/* The set table (B1): one row per set, tap reps or kg to type, the tick logs it. */}
+              <div className={`set-table${timed ? ' timed' : ''}`} role="group" aria-label={t('workout.tableAria', { name: x.name })}>
+                <div className="st-row st-head" aria-hidden="true">
+                  <span>{t('workout.colSet')}</span>
+                  <span>{t(timed ? 'workout.colSecs' : 'workout.colReps')}</span>
+                  {timed ? null : <span>{t('workout.colKg')}</span>}
+                  <span>{t('workout.colDone')}</span>
+                </div>
+                {setRows(sets, x.sets).map((r) => {
+                  if (r.kind === 'done') {
+                    const s = r.set;
+                    const type = setFields(s).set_type;
+                    const isTime = setFields(s).track === 'time';
+                    return (
+                      <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
+                        <div className="st-row done">
+                          <button type="button" className={`set-n${type === 'work' ? '' : ` t-${type}`}`} aria-label={t('setType.aria', { shown: TYPE_LETTER[type] || s.set_number, n: s.set_number, type: t(`setType.${type}`) })} onClick={() => setTyping(s)}>
+                            {TYPE_LETTER[type] || s.set_number}
+                          </button>
+                          <span>{isTime ? setLabel(s) : s.reps}</span>
+                          {timed ? null : <span>{isTime ? '' : s.weight_kg}</span>}
+                          <button type="button" className="st-tick on" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="check" /></button>
+                        </div>
+                      </SwipeRow>
+                    );
+                  }
+                  return (
+                    <div key={`open-${r.n}`} className={`st-row open${r.next ? ' next' : ''}`}>
+                      <span className="set-n">{r.n}</span>
+                      {r.next
+                        ? <NumBox value={reps} onChange={setReps} whole max={timed ? 600 : 100} label={t(timed ? 'workout.editSecs' : 'workout.editReps', { n: r.n })} />
+                        : <span>{reps}</span>}
+                      {timed ? null : r.next
+                        ? <NumBox value={weight} onChange={setWeight} max={500} label={t('workout.editKg', { n: r.n })} />
+                        : <span>{weight}</span>}
+                      {r.next
+                        ? <button type="button" className="st-tick next" disabled={noWeight(weight)} aria-label={t('workout.logSet', { n: sets.length + 1 })} onClick={() => logSet()}><Icon name="check" /></button>
+                        : <span className="st-tick" aria-hidden="true"><Icon name="check" /></span>}
+                    </div>
+                  );
+                })}
               </div>
               {barbell && weight > barKg ? <div className="plate-line">{t('workout.perSide', { plates: plateText(platesPerSide(weight, barKg, settings.plates).plates) })}{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (${t('workout.makes', { kg: platesPerSide(weight, barKg, settings.plates).loaded })})`}</div> : null}
-              <button type="button" className="btn glow log-btn" disabled={noWeight(weight)} onClick={() => logSet()}><Icon name="check" /> {t('workout.logSet', { n: sets.length + 1 })}</button>
-              {noWeight(weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.needWeight')}</div> : null}
-              {settings.auto_rest && !noWeight(weight) ? <div className="muted small" style={{ textAlign: 'center', marginTop: 6 }}>{t('workout.autoRest')}</div> : null}
+              {noWeight(weight) ? <div className="muted small" style={{ textAlign: 'center' }}>{t('workout.needWeight')}</div> : null}
+              {settings.auto_rest && !noWeight(weight) && sets.length < x.sets ? <div className="muted small" style={{ textAlign: 'center' }}>{t('workout.autoRestTick')}</div> : null}
               <div className="tool-row">
                 <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.filter(D.isWorkSet).length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget, warmup: barbell && !sets.some(D.isWorkSet) ? warmupSets(weight, barKg, settings.plates) : [] })); }}><Icon name="timer" /> {t('workout.rest')}</button>
                 <button type="button" className="tbtn" onClick={() => tweak((tw, n) => addExtraSet(tw, n, x.orig))}><Icon name="plus" /> {t('workout.addSet')}</button>

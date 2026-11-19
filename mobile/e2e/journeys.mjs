@@ -4,7 +4,7 @@
 // checking the crash screen is not showing.
 //
 //   setup      every setup step answered, then Home
-//   workout    log 3 sets with the steppers, leave and return, finish,
+//   workout    log 3 sets in the set table, leave and return, finish,
 //              summary, History
 //   resume     a reload in the middle of a workout keeps it
 //   weigh-in   save a weight from Home
@@ -137,7 +137,7 @@ async function startAndLog(page, n) {
   await tab(page, 'Start').click();
   await page.getByRole('button', { name: /^Start / }).first().click();
   for (let i = 1; i <= n; i += 1) {
-    await num(page, 'Weight (kg)').fill('20');
+    await page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
     await btn(page, en['workout.logSet'].replace('{n}', i)).click();
     await settle(page, 300);
   }
@@ -147,21 +147,10 @@ async function workout(page) {
   await setUp(page);
   await tab(page, 'Start').click();
   await page.getByRole('button', { name: /^Start / }).first().click();
-  // Set 1: the + stepper twice, then held for a second.
-  const weight = num(page, 'Weight (kg)');
-  const more = btn(page, 'More Weight (kg)');
-  const start = Number(await weight.inputValue());
-  await more.click();
-  await more.click();
-  const tapped = Number(await weight.inputValue());
-  if (!(tapped > start)) throw new Error(`two taps on + did not raise the weight (${start} -> ${tapped})`);
-  const box = await more.boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.clock.runFor(1000);
-  await page.mouse.up();
-  const held = Number(await weight.inputValue());
-  if (!(held - tapped > 3)) throw new Error(`holding + for a second moved the weight by ${held - tapped}, expected more than 3`);
+  // Set 1: tap the kg cell of the set table and type a weight (B1).
+  const weight = page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ });
+  await weight.fill('22,5');
+  const held = 22.5;
   await btn(page, en['workout.logSet'].replace('{n}', 1)).click();
   await settle(page, 300);
   for (const i of [2, 3]) {
@@ -177,7 +166,7 @@ async function workout(page) {
   let d = await read(page);
   const open = d.workouts.find((w) => !w.finished_at);
   if (!open || open.sets.length !== 3) throw new Error(`expected a running workout with 3 sets, found ${open ? open.sets.length : 'none'}`);
-  if (open.sets[0].weight_kg !== held) throw new Error(`set 1 saved ${open.sets[0].weight_kg} kg, the stepper showed ${held}`);
+  if (open.sets[0].weight_kg !== held) throw new Error(`set 1 saved ${open.sets[0].weight_kg} kg, 22,5 was typed`);
   // Finish, summary, History.
   await btn(page, en['workout.finishWorkout']).click();
   await page.getByRole('button', { name: new RegExp(`^(${en['workout.save']}|${en['workout.saveShort']})$`) }).click();
