@@ -226,3 +226,17 @@ test('a timed hold keeps its seconds in reps and duration_s, also after an edit'
   data = D.updateSet(data, workoutId, s.id, { reps: 45 });
   assert.equal(data.workouts[0].sets[0].duration_s, 45);
 });
+
+test('timed holds and distances are not load: no e1RM, record or tonnage (CHART-1)', () => {
+  assert.equal(D.isLoadSet({ weight_kg: 60, reps: 8 }), true);
+  assert.equal(D.isLoadSet({ weight_kg: 20, reps: 60, track: 'time', duration_s: 60 }), false);
+  assert.equal(D.isLoadSet({ weight_kg: 0, reps: 400, track: 'distance' }), false);
+  assert.equal(D.isLoadSet({ weight_kg: 60, reps: 8, is_warmup: true }), false);
+  const d = {
+    exercises: [{ id: 1, name: 'Bear Plank', muscle_group: 'Core', equipment: 'Body Only' }, { id: 2, name: 'Row', muscle_group: 'Back', equipment: 'Machine' }],
+    workouts: [{ id: 1, log_date: '2026-11-01', sets: [{ id: 1, exercise_id: 1, weight_kg: 20, reps: 60, track: 'time', duration_s: 60 }, { id: 2, exercise_id: 2, weight_kg: 50, reps: 10 }] }],
+  };
+  assert.equal(D.personalBests(d).has(1), false);
+  assert.equal(D.personalBests(d).get(2).weight_kg, 50);
+  assert.equal(D.setKind(d, 2, { exercise_id: 1, weight_kg: 25, reps: 60, track: 'time' }), null);
+});

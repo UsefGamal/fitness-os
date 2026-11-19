@@ -1,7 +1,13 @@
+import { dateScale } from '../lib/chartScale.js';
 import { t } from '../lib/i18n.js';
 
+const weighed = (l) => l.weight_kg > 0;
+const byDate = (a, b) => a.log_date.localeCompare(b.log_date);
+
 /** Inline SVG line of weigh-ins, with the goal band shaded. */
-export default function WeightChart({ logs, goalLow, goalHigh }) {
+export default function WeightChart({ logs: all, goalLow, goalHigh }) {
+  // Weighed days only (a waist-only entry has no weight), oldest first.
+  const logs = all.filter(weighed).sort(byDate);
   if (logs.length < 2) return <div className="empty small">Two weigh-ins and a trend line shows up here.</div>;
   const W = 340;
   const H = 160;
@@ -9,7 +15,9 @@ export default function WeightChart({ logs, goalLow, goalHigh }) {
   const ws = logs.map((l) => l.weight_kg);
   const lo = Math.min(...ws, goalLow ?? Infinity) - 1;
   const hi = Math.max(...ws, goalHigh ?? -Infinity) + 1;
-  const x = (i) => P + (i / (logs.length - 1)) * (W - 2 * P);
+  // By date (CHART-1): a week with no weigh-ins draws a week wide.
+  const at = dateScale(logs.map((l) => l.log_date), P, W - P);
+  const x = (i) => at(logs[i].log_date);
   const y = (v) => H - P - ((v - lo) / (hi - lo)) * (H - 2 * P);
   const d = logs.map((l, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(l.weight_kg).toFixed(1)}`).join(' ');
   return (

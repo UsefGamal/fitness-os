@@ -1,4 +1,5 @@
 // Stats page helpers (Nov 2026 redesign). Pure, tested in statsView.test.js.
+import { isLoadSet } from './data.js';
 import { daysBetween } from './dates.js';
 import { GROUPS } from './insights.js';
 
@@ -52,9 +53,11 @@ export function activeDays(workouts, today, days = 182) {
   return set.size;
 }
 
-/** Sessions in the last 7 days, today included. */
+/** Training days in the last 7 days, today included. Days, not workouts,
+ * so a gym session and a walk on the same day count once, the same way
+ * the week streak and Home count them (CHART-1). */
 export function sessionsLast7(workouts, today) {
-  return workouts.filter((w) => w.log_date && w.log_date <= today && daysBetween(w.log_date, today) < 7).length;
+  return activeDays(workouts, today, 7);
 }
 
 const CATEGORY = {
@@ -79,10 +82,26 @@ export function latestBadge(all) {
   return all.filter((b) => b.earned && b.date).sort((a, b) => (a.date < b.date ? 1 : -1))[0] || null;
 }
 
-/** Records count and those set in the last `days` (default 30). */
-export function recordSummary(bests, today, days = 30) {
+/** First date each exercise got a load set: Map(exercise_id -> date). */
+export function firstLoadDates(workouts) {
+  const out = new Map();
+  for (const w of workouts) {
+    for (const s of w.sets) {
+      if (!isLoadSet(s) || !(s.weight_kg > 0)) continue;
+      const cur = out.get(s.exercise_id);
+      if (!cur || w.log_date < cur) out.set(s.exercise_id, w.log_date);
+    }
+  }
+  return out;
+}
+
+/** Records count and those set in the last `days` (default 30). A best
+ * from an exercise's very first session isn't new: there was nothing to
+ * beat (CHART-1; without `firstDates` every best counts, as before). */
+export function recordSummary(bests, today, days = 30, firstDates = null) {
   const list = [...bests];
-  return { total: list.length, recent: list.filter((b) => b.log_date && daysBetween(b.log_date, today) < days).length };
+  const beatSomething = (b) => !firstDates || (firstDates.get(b.exercise_id) || b.log_date) < b.log_date;
+  return { total: list.length, recent: list.filter((b) => b.log_date && daysBetween(b.log_date, today) < days && beatSomething(b)).length };
 }
 
 /** Change across an e1RM series [{ date, value }]: { now, change } or null. */
