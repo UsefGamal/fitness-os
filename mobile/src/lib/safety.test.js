@@ -4,9 +4,9 @@ import { test } from 'node:test';
 import { emptyData } from './data.js';
 import { macroTargets, saveProfile } from './macros.js';
 import {
-  GATES, PROTEIN_CAP_G_PER_KG, QUESTIONS, SCREEN_VERSION, allowedDirections, answeredAll, applyScreening, capProtein,
+  GATES, SKIP_GATES, PROTEIN_CAP_G_PER_KG, QUESTIONS, SCREEN_VERSION, allowedDirections, answeredAll, applyScreening, capProtein,
   celebratesWeightLoss, gateOn, gentleDay, gentleRir, gatesOn, isMinorNow, kcalHidden, markClearanceSeen, needsScreening, safeMode,
-  questionsFor, recheckForSex, screeningResult, screeningState, setHide, showClearance, skipScreening,
+  NURSING_KCAL, questionsFor, recheckForSex, safeDay, swapLimits, screeningResult, screeningState, setHide, showClearance, skipScreening,
 } from './safety.js';
 import { content } from './testContent.js';
 
@@ -22,7 +22,7 @@ const adult = (over = {}) => ({
 });
 
 test('every question names real gates and hide switches', () => {
-  assert.equal(QUESTIONS.length, 7);
+  assert.equal(QUESTIONS.length, 8);
   for (const q of QUESTIONS) {
     for (const g of q.gates) assert.ok(GATES.includes(g), `${q.key}: ${g}`);
     for (const h of q.hides) assert.ok(['hide_weight', 'hide_kcal'].includes(h));
@@ -44,7 +44,7 @@ test('all no: nothing on; a yes switches on its gates; no answer counts as yes',
   assert.equal(screeningResult(missing).gates.needs_clearance, true);
   assert.equal(answeredAll(missing), false);
   assert.equal(answeredAll(NO), true);
-  assert.ok(Object.values(screeningResult({}).gates).every(Boolean), 'no answers at all: everything on');
+  assert.deepEqual(Object.keys(screeningResult({}).gates).filter((g) => screeningResult({}).gates[g]), SKIP_GATES, 'no answers at all: every limit on, nothing that only a yes gives');
 });
 
 test('pregnancy and breastfeeding are never asked of a man', () => {
@@ -52,9 +52,11 @@ test('pregnancy and breastfeeding are never asked of a man', () => {
   assert.ok(!keys('male').includes('pregnant'));
   assert.ok(keys('female').includes('pregnant'));
   assert.ok(keys(null).includes('pregnant'), 'sex not given: still asked');
-  assert.equal(keys('male').length, QUESTIONS.length - 1);
+  assert.equal(keys('male').length, QUESTIONS.length - 2);
+  assert.ok(!keys('male').includes('breastfeeding') && keys('female').includes('breastfeeding'));
   const man = { ...NO };
   delete man.pregnant;
+  delete man.breastfeeding;
   assert.equal(answeredAll(man, 'male'), true, 'a man answering the six others is done');
   assert.equal(answeredAll(man, 'female'), false);
   assert.equal(answeredAll(man), false);
@@ -66,6 +68,7 @@ test('pregnancy and breastfeeding are never asked of a man', () => {
 test('the check uses the profile sex, and a switch away from male asks again', () => {
   const man = { ...NO };
   delete man.pregnant;
+  delete man.breastfeeding;
   const d = applyScreening(adult(), man, TODAY);
   assert.equal(gateOn(d, 'no_deficit', TODAY), false);
   assert.equal(d.safety.screened_as, 'male');
@@ -104,7 +107,8 @@ test('a later all-clear switches the gates off but leaves the hide switches alon
 
 test('skipped is gated: every limit on and kcal hidden, until the check is done', () => {
   const d = skipScreening(adult(), TODAY);
-  assert.deepEqual(gatesOn(d, TODAY), GATES);
+  assert.deepEqual(gatesOn(d, TODAY), SKIP_GATES);
+  assert.ok(!gatesOn(d, TODAY).includes('nursing_extra'), 'skipping never adds food');
   assert.equal(kcalHidden(d), true);
   assert.equal(screeningState(d, TODAY), 'skipped');
   assert.equal(showClearance(d, TODAY), false, 'no doctor note for someone who only skipped');
@@ -204,4 +208,70 @@ test('beginner_only: every set stops at least 3 reps short of failure', () => {
   assert.equal(g.gentle, true);
   assert.equal(day.exercises[0].rir, '1-2', 'the plan itself is untouched');
   assert.equal(gentleDay(open, null, TODAY), null);
+});
+
+// SAFE-2: what a "yes" changes in the plan, not only a note.
+const SWAPS = content.training.safety_swaps.swaps;
+const day = (...names) => ({ key: 'x', label: 'Day', exercises: names.map((name) => ({ name, sets: 3, reps: '8-10', rir: '1-2' })) });
+const her = (over = {}) => adult({ profile: { ...adult().profile, gender: 'female' }, ...over });
+
+test('pregnancy swaps moves on the back, crunches and head-down moves, and sets stop 3 short', () => {
+  const d = applyScreening(her(), { ...NO, pregnant: true }, TODAY);
+  assert.equal(gateOn(d, 'pregnancy_safe', TODAY), true);
+  const out = safeDay(d, day('Bench Press', 'Cable Crunch', 'Lat Pulldown'), TODAY, SWAPS);
+  assert.deepEqual(out.exercises.map((e) => e.name), ['Incline Dumbbell Press', 'Pallof Press', 'Lat Pulldown']);
+  assert.equal(out.exercises[0].safety_swap, 'Bench Press');
+  assert.equal(out.exercises[0].sets, 3, 'sets and reps stay');
+  assert.ok(out.exercises.every((e) => e.rir === '3'), 'gentler sets');
+  assert.deepEqual(out.safety_changes[0], { from: 'Bench Press', to: 'Incline Dumbbell Press', why: 'pregnancy' });
+});
+
+test('a swap never doubles a move already in the day; none left means it is left out', () => {
+  const d = applyScreening(her(), { ...NO, pregnant: true }, TODAY);
+  const out = safeDay(d, day('Bench Press', 'Incline Dumbbell Press'), TODAY, SWAPS);
+  assert.deepEqual(out.exercises.map((e) => e.name), ['30° Incline DB Press', 'Incline Dumbbell Press']);
+  const ankle = applyScreening(adult(), { ...NO, injury: true, injury_areas: ['ankle'] }, TODAY);
+  const left = safeDay(ankle, day('Back Squat', 'Standing Calf Raise'), TODAY, SWAPS);
+  assert.deepEqual(left.exercises.map((e) => e.name), ['Back Squat']);
+  assert.deepEqual(left.safety_changes, [{ from: 'Standing Calf Raise', to: null, why: 'ankle' }]);
+});
+
+test('injury areas swap what loads them, and only with a yes to the injury question', () => {
+  const knee = applyScreening(adult(), { ...NO, injury: true, injury_areas: ['knee', 'nope', 'knee'] }, TODAY);
+  assert.deepEqual(knee.safety.injury_areas, ['knee'], 'known areas, once');
+  assert.deepEqual(safeDay(knee, day('Back Squat', 'Leg Extension'), TODAY, SWAPS).exercises.map((e) => e.name), ['Romanian Deadlift', 'Leg Curl']);
+  const no = applyScreening(adult(), { ...NO, injury_areas: ['knee'] }, TODAY);
+  assert.equal(no.safety.injury_areas, undefined);
+  assert.equal(safeDay(no, day('Back Squat'), TODAY, SWAPS).exercises[0].name, 'Back Squat');
+  const both = applyScreening(adult(), { ...NO, injury: true, injury_areas: ['knee', 'lower_back'] }, TODAY);
+  assert.deepEqual(swapLimits(both, TODAY), ['lower_back', 'knee']);
+  const two = safeDay(both, day('Back Squat'), TODAY, SWAPS);
+  assert.equal(two.exercises[0].name, 'Leg Curl', 'lower back sends it to Leg Press, which the knee then swaps on');
+  const fixed = applyScreening(knee, NO, TODAY);
+  assert.equal(fixed.safety.injury_areas, undefined, 'answering no again clears the areas');
+});
+
+test('no limits: the day is the gentle day, untouched', () => {
+  const d = applyScreening(adult(), NO, TODAY);
+  const plain = day('Bench Press');
+  assert.equal(safeDay(d, plain, TODAY, SWAPS), plain);
+  assert.equal(safeDay(d, null, TODAY, SWAPS), null);
+});
+
+test('breastfeeding adds about 400 kcal on top of maintenance, and only a real yes does', () => {
+  const base = macroTargets(applyScreening(her(), NO, TODAY), content.nutrition, TODAY);
+  const nursing = macroTargets(applyScreening(her(), { ...NO, breastfeeding: true }, TODAY), content.nutrition, TODAY);
+  assert.equal(nursing.mode, 'maintain');
+  assert.equal(nursing.kcal, base.tdee + NURSING_KCAL);
+  assert.ok(nursing.gated.includes('nursing_extra') && nursing.reasons.includes('nursing'));
+  const blank = { ...NO };
+  delete blank.breastfeeding;
+  const unsure = applyScreening(her(), blank, TODAY);
+  assert.equal(gateOn(unsure, 'no_deficit', TODAY), true, 'blank still plays safe');
+  assert.equal(gateOn(unsure, 'nursing_extra', TODAY), false, 'but adds no food');
+});
+
+test('diabetes switches on the steady-carbs note', () => {
+  assert.equal(gateOn(applyScreening(adult(), { ...NO, diabetes: true }, TODAY), 'steady_carbs', TODAY), true);
+  assert.equal(gateOn(applyScreening(adult(), NO, TODAY), 'steady_carbs', TODAY), false);
 });

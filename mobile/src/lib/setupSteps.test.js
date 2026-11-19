@@ -12,7 +12,7 @@ const safety = (steps) => steps.filter((s) => s.startsWith('safety:')).map((s) =
 
 test('a man never gets the pregnancy and breastfeeding screen', () => {
   assert.ok(!safety(setupSteps({ gender: 'male' }, TODAY)).includes('pregnant'));
-  assert.equal(safety(setupSteps({ gender: 'male' }, TODAY)).length, QUESTIONS.length - 1);
+  assert.equal(safety(setupSteps({ gender: 'male' }, TODAY)).length, QUESTIONS.length - 2);
 });
 
 test('a woman, or someone who skipped the sex, does', () => {
@@ -24,7 +24,7 @@ test('a woman, or someone who skipped the sex, does', () => {
 test('switching from female to male on Back drops the screen', () => {
   const her = setupSteps({ gender: 'female' }, TODAY);
   const him = setupSteps({ gender: 'male' }, TODAY);
-  assert.equal(her.length - him.length, 1);
+  assert.equal(her.length - him.length, 2);
   assert.ok(her.includes('safety:pregnant') && !him.includes('safety:pregnant'));
 });
 

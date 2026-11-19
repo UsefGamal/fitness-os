@@ -33,6 +33,7 @@ from content import (  # noqa: E402
     progressions,
     recovery_program,
     routines,
+    safety_swaps,
     simple_meals,
 )
 from content.tdee import ACTIVITY_LEVELS, ACTIVITY_MULTIPLIERS, GENDERS  # noqa: E402
@@ -91,6 +92,7 @@ def build_content() -> dict:
                 "progressions": progressions.LADDERS,
                 "fitness_test": {"every_days": fitness_test.EVERY_DAYS, "items": fitness_test.ITEMS, "guide": fitness_test.GUIDE},
                 "exercise_photos": {k: v for k, v in exercise_photos.EXERCISE_PHOTOS.items() if k not in hide},
+                "safety_swaps": {"areas": safety_swaps.AREAS, "swaps": safety_swaps.SWAPS},
                 "exercise_targets": {
                     name: {"main": main, "helpers": helpers, "angle": angle}
                     for name, (main, helpers, angle) in exercise_targets.EXERCISE_TARGETS.items()

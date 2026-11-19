@@ -19,7 +19,7 @@
 import { activeKcalAverage, watchTdee } from './activity.js';
 import { addDays, daysBetween } from './dates.js';
 import { deficitShare, ramadanActive } from './ramadan.js';
-import { capProtein, isMinorNow, safeMode } from './safety.js';
+import { NURSING_KCAL, capProtein, gateOn, isMinorNow, safeMode } from './safety.js';
 import { reverseStatus } from './maintenance.js';
 import { adjustTotal } from './targetCheck.js';
 
@@ -213,11 +213,14 @@ export function macroTargets(data, nutrition, today) {
     const kcal = Math.max(floor, plain.kcal + adjust);
     energy = { kcal, deficit: Math.max(0, pyRound(t) - kcal), reasons: [...new Set([...plain.reasons, ...(kcal === floor ? ['floor'] : []), 'adjusted'])] };
   }
+  // Breastfeeding (SAFE-2): milk takes about 400 kcal a day on top.
+  const nursing = gateOn(data, 'nursing_extra', today);
+  if (nursing) energy = { ...energy, kcal: energy.kcal + NURSING_KCAL, reasons: [...new Set([...energy.reasons, 'nursing'])] };
   const split = macroSplit(energy.kcal, goalMid ?? weight, mode);
   // The protein cap is counted on the weight today, and carbs take up the rest.
   const protein = capProtein(data, split.protein, weight, today);
   const capped = protein < split.protein;
-  const gated = [...(mode !== asked ? ['no_deficit'] : []), ...(capped ? ['protein_cap'] : [])];
+  const gated = [...(mode !== asked ? ['no_deficit'] : []), ...(capped ? ['protein_cap'] : []), ...(nursing ? ['nursing_extra'] : [])];
   return {
     ...split,
     ...(capped ? { protein, carbs: pyRound(Math.max(energy.kcal - protein * 4 - split.fat * 9, 0) / 4) } : {}),
