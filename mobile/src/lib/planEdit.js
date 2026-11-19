@@ -5,6 +5,7 @@
 // routines, written for this data shape.
 import { planOverrides, withPlanOverrides } from './plan.js';
 import { programDay } from './schedule.js';
+import { repsForSwap } from './holds.js';
 
 export const DEFAULT_REST = '1.5m';
 
@@ -45,13 +46,13 @@ export function editExercise(data, key, training, index, changes) {
 export function swapExercise(data, key, training, index, name) {
   return withExercises(data, key, training, (list) => {
     const old = list[index];
-    list[index] = { name, sets: old.sets, reps: old.reps, rest: old.rest, rest_sec: old.rest_sec, rir: old.rir, type: old.type, pair: old.pair, swapped_from: old.swapped_from || old.name };
+    list[index] = { name, sets: old.sets, reps: repsForSwap(old.reps, name), rest: old.rest, rest_sec: old.rest_sec, rir: old.rir, type: old.type, pair: old.pair, swapped_from: old.swapped_from || old.name };
     return list;
   });
 }
 
 export function addExercise(data, key, training, name, { sets = 3, reps = '10-12', rest = DEFAULT_REST } = {}) {
-  return withExercises(data, key, training, (list) => [...list, { name, sets, reps, rest, rest_sec: restSec(rest), type: 'normal' }]);
+  return withExercises(data, key, training, (list) => [...list, { name, sets, reps: repsForSwap(reps, name), rest, rest_sec: restSec(rest), type: 'normal' }]);
 }
 
 export function removeExercise(data, key, training, index) {
