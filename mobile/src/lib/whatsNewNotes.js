@@ -8,7 +8,7 @@ export const WHATS_NEW = [
     version: '1.1.3',
     items: [
       { icon: 'home', text: 'The Tafra icon now shows on your home screen, instead of the default Android icon.' },
-      { icon: 'home', text: 'A leaner Tafra mark on the icon, the intro and notifications, and the line "Train. Eat. Leap." under the name.' },
+      { icon: 'home', text: 'A leaner Tafra mark on the icon, the intro and notifications, and the line "Your next leap." under the name.' },
       { icon: 'trend', text: 'The weight card on Home shows your latest weigh-in big, with the trend just under it.' },
     ],
   },

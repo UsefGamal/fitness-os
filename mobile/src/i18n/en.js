@@ -902,7 +902,7 @@ export default {
   'home.kg': 'kg',
   'home.wordmark': 'Tafra',
   'home.wordmarkOs': '.',
-  'intro.slogan': 'Train. Eat. Leap.',
+  'intro.slogan': 'Your next leap.',
   'home.quickStats': 'Today',
   'home.add250': '+250',
   'home.add500': '+500',
