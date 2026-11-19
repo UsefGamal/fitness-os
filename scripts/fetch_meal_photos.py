@@ -45,7 +45,9 @@ WIDTH = 640
 FETCH_WIDTH = 960
 THUMB = 112  # rows show photos at 56 px; 2x for sharp screens
 QUALITY = 70
-UA = "FitnessOS-build/1.0 (meal photos for a personal app)"
+# Wikimedia's User-Agent policy asks bots for a way to reach the operator
+# (a URL is enough); requests without one are throttled much harder.
+UA = "FitnessOS-build/1.0 (https://github.com/UsefGamal/fitness-os; meal photos for a personal app) python-urllib"
 
 try:
     from PIL import Image
@@ -86,8 +88,12 @@ def download(url: str, deadline: float = float("inf")) -> bytes:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return r.read()
-        except OSError:
+        except OSError as e:
             wait = 15 * (attempt + 1)
+            retry_after = getattr(e, "headers", None) and e.headers.get("Retry-After")
+            if retry_after and retry_after.isdigit():
+                wait = max(1, min(int(retry_after), 120))
+            print(f"  {getattr(e, 'code', '') or type(e).__name__} on {url[:90]}, waiting {wait} s", flush=True)
             if attempt == 3 or time.monotonic() + wait > deadline:
                 break
             time.sleep(wait)
