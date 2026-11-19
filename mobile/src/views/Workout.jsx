@@ -222,9 +222,23 @@ export default function Workout() {
     return () => clearInterval(id);
   }, []);
 
+  // The catalogue entry (photos, mechanic) of each exercise today, looked
+  // up once: entryFor scans the catalogue, and every card needs one, so
+  // doing it per render made logging a set slow on cheap phones (FEEL-1).
+  const names = (day?.exercises || []).map((x) => x.name).join('\n');
+  const entryOf = useMemo(() => {
+    const m = new Map();
+    const look = (n) => {
+      if (!catalogue) return null;
+      if (!m.has(n)) m.set(n, entryFor(n, content.training, catalogue.byId));
+      return m.get(n);
+    };
+    for (const n of names.split('\n')) if (n) look(n);
+    return look;
+  }, [catalogue, names]);
   const ex = day?.exercises[current];
   const exRow = ex ? D.exerciseByName(data, ex.name) : null;
-  const entry = ex && catalogue ? entryFor(ex.name, content.training, catalogue.byId) : null;
+  const entry = ex ? entryOf(ex.name) : null;
   const barbell = ex ? isBarbell(ex.name, entry) : false;
   const barKg = BARS[settings.bar]?.kg ?? 20;
 
@@ -403,7 +417,7 @@ export default function Workout() {
     });
     const restOf = (j) => {
       const x = day.exercises[j];
-      const mech = j === current ? entry?.mechanic : catalogue ? entryFor(x.name, content.training, catalogue.byId)?.mechanic : null;
+      const mech = j === current ? entry?.mechanic : entryOf(x.name)?.mechanic;
       return restFor(x, settings, { mechanic: mech, override: restOverride[x.name] });
     };
     const rest = roundDone(day.exercises, done, current) ? roundRest(day.exercises, current, restOf) : 0;
@@ -417,7 +431,7 @@ export default function Workout() {
       const nxWork = nxSets.filter(D.isWorkSet).length;
       // A new barbell lift: the warm-up ramp to its weight (last time's, or
       // the weight just lifted on this one) goes first in the shade.
-      const nxEntry = ni === current ? entry : catalogue ? entryFor(nx.name, content.training, catalogue.byId) : null;
+      const nxEntry = ni === current ? entry : entryOf(nx.name);
       const nxKg = ni === current ? w : nxRow ? D.suggestSet(data, active.id, nxRow.id, 0).weightKg : 0;
       const warmup = !nxWork && isBarbell(nx.name, nxEntry) ? warmupSets(nxKg, barKg, settings.plates) : [];
       timer.start(rest, nx.name, shadeLines({
@@ -572,7 +586,7 @@ export default function Workout() {
         const isCurrent = i === current;
         const restText = x.pair ? t('workout.restAfterRound', { rest: x.rest }) : x.rest ? t('plan.rest', { rest: x.rest }) : null;
         const meta = [`${x.sets} × ${x.reps}`, restText, x.rir ? t('workout.rir', { rir: x.rir }) : null].filter(Boolean).join(' · ');
-        const xEntry = catalogue ? entryFor(x.name, content.training, catalogue.byId) : null;
+        const xEntry = entryOf(x.name);
         // "1/4 logged · 10 kg" once a set is in, else the plan and last time (B2).
         const lastSet = sets[sets.length - 1];
         const status = sets.length
@@ -593,7 +607,7 @@ export default function Workout() {
           );
         }
         // First time a beginner meets this exercise: the how-to is open (starter fortnight).
-        const howToEntry = catalogue && showHowTo(data, x.name) ? entryFor(x.name, content.training, catalogue.byId) : null;
+        const howToEntry = showHowTo(data, x.name) ? xEntry : null;
         const howTo = howToSteps(howToEntry);
         return (
           <div key={`${x.name}-${i}`} className="ex-card current">
