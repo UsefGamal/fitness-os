@@ -61,6 +61,7 @@ export default function Fanfare() {
   const top = shown[shown.length - 1];
   return (
     <div role="status">
+    <button type="button" className="popup-dim" tabIndex={-1} aria-hidden="true" onClick={() => setShown(null)} />
     <button type="button" className="fanfare" onClick={() => setShown(null)}>
       <span className="medal"><Icon name="trophy" /></span>
       <span className="grow" style={{ textAlign: 'start' }}>

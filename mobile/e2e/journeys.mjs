@@ -131,6 +131,10 @@ async function setUp(page, { where = null } = {}) {
   await btn(page, en['setup.next']).click(); // time
   await btn(page, en['setup.go']).click();
   await page.locator('.home').first().waitFor({ timeout: 10000 });
+  // The guided tour plays once after setup (ONB-3); skipping it ends it.
+  await page.locator('.tour-card').waitFor({ timeout: 5000 });
+  await btn(page, en['tour.skip']).click();
+  await page.locator('.tour').waitFor({ state: 'detached', timeout: 3000 });
 }
 
 async function setup(page) {

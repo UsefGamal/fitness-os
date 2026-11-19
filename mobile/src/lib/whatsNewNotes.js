@@ -10,6 +10,8 @@ export const WHATS_NEW = [
       { icon: 'user', text: 'First-time setup is now one question per screen, like a story: a bar on top, Back on every screen, and big cards to tap.' },
       { icon: 'scale', text: 'Pick your age on a wheel and your height and weight on a ruler, and see your goal drawn as a line with its date.' },
       { icon: 'check', text: 'Men are no longer asked about pregnancy or breastfeeding in the safety check.' },
+      { icon: 'bulb', text: 'After setup, a short guided tour lights up each part of Home and the tabs. Play it again from Settings > Help.' },
+      { icon: 'info', text: 'Every popup now dims the page behind it, including the new-badge card.' },
     ],
   },
   {

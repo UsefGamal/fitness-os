@@ -41,6 +41,7 @@ export default function TabBar() {
           onClick={() => { if (i !== at) feedback('tap'); }}
           className={({ isActive }) => `tab ${tab.cls || ''}${isActive ? ' active' : ''}`}
           style={{ '--tone': tab.tone }}
+          data-tour={`tab-${tab.to === '/' ? 'home' : tab.to.slice(1)}`}
         >
           <Icon name={tab.icon} className="icon" />
           {t(tab.label)}

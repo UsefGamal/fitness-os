@@ -19,6 +19,7 @@ import {
   projectionPoints, setupSteps,
 } from '../lib/setupSteps.js';
 import { pushOverlay } from '../lib/overlays.js';
+import { finishTour } from '../lib/tour.js';
 import { screeningResult } from '../lib/safety.js';
 import { content, useData } from '../store/useData.js';
 
@@ -77,7 +78,8 @@ export default function Setup({ onDone }) {
   // show them (the weight given here would otherwise count as history).
   const finish = () => { update((d) => markSeen(finishSetup(d, content, a, today), APP.version)); onDone(); };
   const skipAll = () => { update((d) => markSeen(skipSetup(d, today), APP.version)); onDone(); };
-  const restore = () => { update((d) => skipSetup(d, today)); window.location.hash = '#/settings/data'; onDone(); };
+  // Restoring goes straight to the backup page, so no tour on top of it.
+  const restore = () => { update((d) => finishTour(skipSetup(d, today), today, { skipped: true })); window.location.hash = '#/settings/data'; onDone(); };
 
   const routine = routineById(content, pickRoutine(a));
   const goalDate = (a.goal === 'lose' || a.goal === 'recomp') && !noCut ? setupGoalDate(a.weight_kg, a.goal_kg, today) : null;
