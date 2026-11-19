@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
+import { startsMonday } from '../lib/dates.js';
+import { t } from '../lib/i18n.js';
 import { badgeProgress, doneKeys, questList, syncQuests, toggleDaily, totalPoints } from '../lib/quests.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
@@ -9,7 +11,7 @@ import { useToday } from '../store/today.js';
 const Q = content.quests;
 const GROUPS = [
   { key: 'daily', label: "Today's habits", note: 'Tick these yourself. They reset every day.' },
-  { key: 'weekly', label: 'This week', note: 'Earned from what you log. They reset every Sunday.' },
+  { key: 'weekly', label: 'This week', note: null },
   { key: 'once', label: 'Milestones', note: 'Earned once, from what you log.' },
 ];
 
@@ -63,7 +65,7 @@ export default function Quests() {
               ) : <div key={t.key} className="list-row">{inner}</div>;
             })}
           </div>
-          <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{g.note}</p>
+          <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{g.note ?? t('quests.weeklyNote', { day: t(startsMonday(data) ? 'week.monday' : 'week.sunday') })}</p>
         </div>
       ))}
     </div>

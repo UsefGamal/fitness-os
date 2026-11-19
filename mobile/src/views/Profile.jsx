@@ -45,18 +45,28 @@ export default function Profile() {
     start_weight_kg: num(p.start_weight_kg),
     goal_weight_low_kg: num(p.goal_weight_low_kg),
     goal_weight_high_kg: num(p.goal_weight_high_kg),
+    goal_date: p.goal_date || null,
     name: typeof p.name === 'string' ? p.name.trim().slice(0, 30) : undefined,
   };
   const errors = [];
   if (!(clean.height_cm >= 100 && clean.height_cm <= 250)) errors.push('Height must be between 100 and 250 cm.');
-  if (!(clean.goal_weight_low_kg >= 30 && clean.goal_weight_high_kg <= 300 && clean.goal_weight_low_kg <= clean.goal_weight_high_kg)) errors.push('Goal weights must be 30-300 kg, low first.');
+  // Keeping or gaining weight needs no goal weight or date (setup leaves
+  // them empty); losing does. Whatever is filled in is still checked.
+  const needsGoal = !['maintain', 'gain'].includes(p.direction || 'lose');
+  const noGoalWeights = clean.goal_weight_low_kg == null && clean.goal_weight_high_kg == null;
+  if (!(noGoalWeights && !needsGoal) && !(clean.goal_weight_low_kg >= 30 && clean.goal_weight_high_kg <= 300 && clean.goal_weight_low_kg <= clean.goal_weight_high_kg)) errors.push('Goal weights must be 30-300 kg, low first.');
   if (clean.start_weight_kg != null && !(clean.start_weight_kg >= 30 && clean.start_weight_kg <= 300)) errors.push('Start weight must be 30-300 kg.');
   if (!p.gender) errors.push('Pick the sex used for the calorie formula.');
   if (!p.date_of_birth || p.date_of_birth > today) errors.push('Pick a date of birth in the past.');
-  if (!p.goal_date) errors.push('Pick a goal date.');
+  if (!p.goal_date && needsGoal) errors.push('Pick a goal date.');
   if (goalIssues(clean).includes('bmi')) errors.push(t('profile.bmiLow', { min: minGoalWeight(clean.height_cm) }));
 
   const preview = macroTargets(saveProfile(data, clean, today), content.nutrition, today);
+  const issues = goalIssues(clean, preview.weight);
+  if (issues.includes('gainBelow')) errors.push(t('profile.gainBelow', { kg: preview.weight }));
+  if (issues.includes('loseAbove')) errors.push(t('profile.loseAbove', { kg: preview.weight }));
+  // A date that has passed is a note, not a block: the targets stay at a safe pace either way.
+  const pastDate = Boolean(p.goal_date && p.goal_date <= today && (p.direction || 'lose') !== 'maintain');
   const safeDate = preview.source !== 'plan' ? safeGoalDate(preview) : null;
 
   const save = (e) => {
@@ -134,6 +144,7 @@ export default function Profile() {
           <label className="field grow"><span>Goal high (kg)</span><input type="number" inputMode="decimal" step="0.5" value={p.goal_weight_high_kg ?? ''} onChange={set('goal_weight_high_kg')} /></label>
         </div>
         <label className="field"><span>Goal date</span><input type="date" value={p.goal_date || ''} onChange={set('goal_date')} /></label>
+        {pastDate && !errors.length ? <div className="small muted" role="note">{t('profile.pastDate')}</div> : null}
         {errors.length ? <div className="small" style={{ color: 'var(--danger)' }} role="alert">{errors[0]}</div> : null}
         <button type="submit" className="btn" disabled={!!errors.length}>{saved ? <><Icon name="check" /> Saved</> : 'Save'}</button>
       </form>

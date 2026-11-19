@@ -131,3 +131,14 @@ test('swapping keeps sets, reps and rest and adds the new exercise to the Librar
   assert.equal(M.swapExercise(data, key, 5, { name: 'X' }), data);
   assert.equal(M.swapExercise(data, key, 0, { name: ' ' }), data);
 });
+
+test('a plank added or swapped into your own workout is timed', () => {
+  let { data, key } = M.createSession(fresh(), 'Mine');
+  data = M.addExercise(data, key, { name: 'Plank', group: 'Core' });
+  data = M.addExercise(data, key, { name: 'Bench Press', group: 'Chest' });
+  assert.equal(M.mySession(data, key).exercises[0].reps, '30-45s');
+  data = M.swapExercise(data, key, 1, { name: 'Side Plank', group: 'Core' });
+  assert.equal(M.mySession(data, key).exercises[1].reps, '30-45s');
+  data = M.swapExercise(data, key, 0, { name: 'Bench Press' });
+  assert.equal(M.mySession(data, key).exercises[0].reps, '8-12');
+});

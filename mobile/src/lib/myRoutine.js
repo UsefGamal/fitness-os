@@ -5,6 +5,7 @@
 
 import { addCustomExercise, exerciseByName } from './data.js';
 import { activeBlock } from './plan.js';
+import { repsForSwap } from './holds.js';
 
 export const WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 export const REST_CHOICES = [45, 60, 90, 120, 180];
@@ -91,17 +92,18 @@ export function addExercise(data, key, { name, group = 'Other', equipment = null
   const clean = String(name || '').trim();
   if (!clean || !mySession(data, key)) return data;
   const withLib = exerciseByName(data, clean) ? data : addCustomExercise(data, { name: clean, muscle_group: group, equipment });
-  return editSession(withLib, key, (s) => ({ ...s, exercises: [...s.exercises, row(clean)] }));
+  return editSession(withLib, key, (s) => ({ ...s, exercises: [...s.exercises, row(clean, { reps: repsForSwap('8-12', clean) })] }));
 }
 
-/** Replace exercise `i` with another, keeping its sets, reps and rest. The
+/** Replace exercise `i` with another, keeping its sets, reps and rest
+ * (a hold put in for a lift gets seconds instead, lib/holds.js). The
  * new one joins the Library when it isn't there, so it can be logged. */
 export function swapExercise(data, key, i, { name, group = 'Other', equipment = null }) {
   const clean = String(name || '').trim();
   const s = mySession(data, key);
   if (!clean || !s || !s.exercises[i]) return data;
   const withLib = exerciseByName(data, clean) ? data : addCustomExercise(data, { name: clean, muscle_group: group, equipment });
-  return editSession(withLib, key, (x) => ({ ...x, exercises: x.exercises.map((e, j) => (j === i ? { ...e, name: clean } : e)) }));
+  return editSession(withLib, key, (x) => ({ ...x, exercises: x.exercises.map((e, j) => (j === i ? { ...e, name: clean, reps: repsForSwap(e.reps, clean) } : e)) }));
 }
 
 /** Change sets, reps or rest of exercise `i`. */
