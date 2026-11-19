@@ -9,7 +9,8 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { create } from 'zustand';
 
 import { t } from '../lib/i18n.js';
-import { syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
+import { shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
+import { addSet } from '../lib/data.js';
 import { trainingSettings } from '../lib/training.js';
 import { recordError } from './errors.js';
 import { feedback } from './feedback.js';
@@ -68,7 +69,7 @@ async function toShade() {
       await LocalNotifications.requestPermissions(); // Android 13+ needs it for any notification
     }
     // The permission dialog can take a while: send the timer as it is now.
-    const { endsAt, pausedLeft, total, label, lines } = useTimer.getState();
+    const { endsAt, pausedLeft, total, label, lines, logs } = useTimer.getState();
     if (!endsAt && pausedLeft == null) return;
     const { sounds } = trainingSettings(useData.getState().data);
     const texts = {
@@ -76,11 +77,14 @@ async function toShade() {
       done: t('shade.done'), nextSet: t('shade.nextSet'), nextSetLabel: t('shade.nextSetLabel'),
       paused: t('shade.paused'), pause: t('shade.pause'), resume: t('shade.resume'), left: t('shade.left'), sets: t('shade.sets'),
       next: t('shade.next'), go: t('shade.go'), moreRest: t('shade.moreRest'), openWorkout: t('shade.openWorkout'),
+      logSet: t('shade.logSet'),
     };
     const w = currentWorkout();
     await RestTimer.start({
       endsAt: endsAt || Date.now(), pausedLeft: pausedLeft || 0, total, label, ...w,
       detail: lines?.detail || '', progress: lines?.progress || w.workout, sound: sounds, texts,
+      // "Log set & rest" on Rest done: the sets it can log, and the rest after each.
+      logs: logs?.chain || [], logRest: logs?.restS || 0,
     });
     useTimer.setState({ inShade: true });
   } catch (err) {
@@ -102,22 +106,48 @@ async function checkShade() {
   }
 }
 
+/** Add the sets logged with "Log set & rest" in the shade (each once), and
+ * drop them from what the shade can still log. The shade has already
+ * started the rest after them; sync() then picks that up. */
+async function takeShadeLogs() {
+  if (!useData.getState().ready) return; // still loading: they wait in the shade
+  let got;
+  try {
+    got = await RestTimer.takeLogs();
+  } catch {
+    return; // Older APK without the button.
+  }
+  const adds = shadeLogsToAdd(useData.getState().data, got?.logs);
+  if (adds.length) {
+    useData.getState().update((d) => adds.reduce((acc, a) => addSet(acc, a.workoutId, a), d));
+    feedback('set');
+  }
+  const { logs } = useTimer.getState();
+  if (!logs) return;
+  const { data } = useData.getState();
+  const have = (e, w) => ((data?.workouts || []).find((x) => x.id === w)?.sets || []).filter((x) => x.exercise_id === e).length;
+  const chain = logs.chain.filter((c) => c.set.n > have(c.set.e, c.set.w));
+  useTimer.setState({ logs: chain.length ? { ...logs, chain } : null });
+}
+
 export const useTimer = create((set, get) => ({
   endsAt: null,
   total: 0,
   label: '',
   lines: null, // { detail, progress } for the notification (lib/restTimer.js shadeLines)
+  logs: null, // { chain, restS } for "Log set & rest" in the shade (lib/restTimer.js shadeLogChain)
   pausedLeft: null, // ms left while paused, else null
   inShade: false, // the countdown also runs in the notification shade, which chimes at the end
   shadeBlocked: false, // notifications are off, so the countdown can't show in the shade
   /** Start a rest before `label` (the next exercise); `lines` are the
-   * notification's next-set and workout lines (shadeLines). */
-  start(seconds, label, lines = null) {
+   * notification's next-set and workout lines (shadeLines), and `logs`
+   * what "Log set & rest" on Rest done can log ({ chain, restS }). */
+  start(seconds, label, lines = null, logs = null) {
     if (!(seconds > 0)) return;
     owner = 'rest';
     seconds = Math.min(seconds, MAX_REST_S);
     const endsAt = Date.now() + seconds * 1000;
-    set({ endsAt, total: seconds, label, lines, pausedLeft: null });
+    set({ endsAt, total: seconds, label, lines, logs: logs?.chain?.length ? logs : null, pausedLeft: null });
     feedback('restStart');
     toShade();
   },
@@ -156,12 +186,13 @@ export const useTimer = create((set, get) => ({
     get().stop();
   },
   stop() {
-    set({ endsAt: null, pausedLeft: null });
+    set({ endsAt: null, pausedLeft: null, logs: null });
     if (isNative()) RestTimer.stop().catch(() => {});
   },
   /** Pick up what the shade did while the app was in the background. */
   async sync() {
     if (!isNative() || !restOwnsShade()) return;
+    await takeShadeLogs();
     let shade;
     try {
       shade = await RestTimer.state();
@@ -189,6 +220,10 @@ if (isNative()) {
     if (!restOwnsShade()) return;
     const paused = Number(pausedLeft) > 0;
     useTimer.setState({ endsAt: endsAt || Date.now(), pausedLeft: paused ? Number(pausedLeft) : null, label });
+  });
+  // "Log set & rest" in the shade: add the set now (the shade runs the rest).
+  RestTimer.addListener('logged', () => {
+    if (restOwnsShade()) useTimer.getState().sync();
   });
   // Skip in the shade ends it here too; at the end the app shows "Rest done".
   RestTimer.addListener('stopped', ({ finished }) => {

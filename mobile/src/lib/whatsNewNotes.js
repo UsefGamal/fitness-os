@@ -5,6 +5,28 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.9',
+    items: [
+      { icon: 'home', text: "Home is clearer: the card says Today's workout, the session name is bigger, and the pace sits in the advice line." },
+      { icon: 'chart', text: 'Numbers line up in neat columns, headings wrap evenly, and a slow page shows grey boxes while it loads.' },
+      { icon: 'meals', text: 'Small fixes: Stats tabs fit their words, History no longer says Padel twice, and Home counts up when you add water.' },
+    ],
+  },
+  {
+    version: '1.0.8',
+    items: [
+      { icon: 'gear', text: 'Settings are simpler: six groups, and a search at the top to find any setting.' },
+      { icon: 'play', text: 'Training settings fold into four parts, with rest times picked from a list.' },
+      { icon: 'download', text: 'Data & backups is grouped, and Export CSV lets you pick workouts, body or meals.' },
+    ],
+  },
+  {
+    version: '1.0.7',
+    items: [
+      { icon: 'timer', text: 'When a rest ends, "Log set & rest" on the notification logs the set it shows and starts your next rest, without opening the app.' },
+    ],
+  },
+  {
     version: '1.0.6',
     items: [
       { icon: 'dumbbell', text: 'New workout screen: each set is a row. Tap the reps or kg to change them, tap the tick to log it.' },

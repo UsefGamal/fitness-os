@@ -39,6 +39,7 @@ export async function deleteEverything({ health = false, backups = true } = {}) 
   await scheduleReminders(content, false).catch(() => {});
   if (isNative()) {
     await RestTimer.stop().catch(() => {});
+    await RestTimer.takeLogs().catch(() => {}); // sets logged in the shade, not yet added
     await emptyDir(Directory.Data); // data file, mirror, snapshots, photos
     await emptyDir(Directory.Cache); // share and export copies waiting to be sent
   }

@@ -857,6 +857,27 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .st-tick:active:not(:disabled) { transform: scale(0.92); }
 .st-tick:disabled { opacity: 0.4; }
 
+/* Settings hub search (19 Nov redesign): looks like a field until tapped. */
+.settings-search-btn, .settings-search { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; margin: 4px 0 4px; border: 0; border-radius: 10px; background: var(--surface2); color: var(--muted); font-size: calc(16px * var(--ts)); text-align: start; }
+.settings-search { padding-inline-end: 0; }
+.settings-search input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); padding: 0; min-height: 44px; outline: none; font-size: calc(16px * var(--ts)); }
+.settings-search input::-webkit-search-cancel-button { display: none; }
+.settings-search .icon, .settings-search-btn .icon { flex: none; }
+/* Settings sections that fold (Training). */
+.folds { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.fold-head { margin: 0; font-size: inherit; font-weight: 600; }
+.fold-head .list-row { background: var(--surface); border-radius: 12px; font-weight: 600; }
+.fold > div { margin-top: 8px; }
+.icon.chev.open { transform: rotate(90deg); }
+@media (prefers-reduced-motion: no-preference) { .icon.chev { transition: transform 0.15s ease; } }
+.equip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 4px; }
+.equip-cell { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--surface); color: var(--muted); font-size: calc(14px * var(--ts)); text-align: start; }
+.equip-cell.on { background: var(--accent-dim); color: var(--text); }
+.equip-cell .icon { width: 16px; height: 16px; color: var(--accent); flex: none; }
+.data-summary strong { display: block; font-size: calc(18px * var(--ts)); }
+.data-summary .meta { display: flex; align-items: center; gap: 6px; color: var(--muted); margin-top: 4px; font-size: calc(14px * var(--ts)); }
+.data-summary .meta .icon { width: 16px; height: 16px; }
+
 /* 20-rule design pass (Nov 2026). */
 /* Rule 18: numbers line up in columns (weights, sets, macros, times). Only
    on the places that hold numbers: on prose it widens hyphens. */

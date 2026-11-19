@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { pageOf, ROOT_PAGES } from '../lib/settingsPages.js';
+import { pageOf, searchSettings, SETTINGS_GROUPS } from '../lib/settingsPages.js';
+import Sheet from '../components/Sheet.jsx';
 import { RELEASES_URL, safeOutside, SHARE_APP_TEXT } from '../lib/links.js';
 import InstallGuide from '../components/InstallGuide.jsx';
 import HelpPage from '../components/HelpPage.jsx';
@@ -218,15 +219,17 @@ export default function Settings() {
     setMsg(`Added ${n(p.workouts.length, 'workout')} and ${n(p.sets, 'set')} from ${csv.parsed.source}.`);
   };
 
-  const exportCsv = async () => {
+  // The CSVs picked in the sheet: workouts (one row per set), body, meals.
+  const [csvOut, setCsvOut] = useState(false);
+  const exportCsv = async (kinds) => {
+    const day = todayISO();
+    const files = { workouts: () => toCsv(data), body: () => bodyCsv(data), meals: () => mealsCsv(data) };
     try {
-      const day = todayISO();
-      const where = await saveExport(`fitness-os-workouts-${day}.csv`, toCsv(data), 'text/csv');
-      await saveExport(`fitness-os-body-${day}.csv`, bodyCsv(data), 'text/csv');
-      await saveExport(`fitness-os-meals-${day}.csv`, mealsCsv(data), 'text/csv');
-      setMsg(where ? 'Workouts, body and meals CSVs saved to Documents on your phone.' : 'Workouts, body and meals CSVs downloaded.');
+      let where = null;
+      for (const k of kinds) where = (await saveExport(`fitness-os-${k}-${day}.csv`, files[k](), 'text/csv')) || where;
+      setMsg(t(where ? 'set.csvSaved' : 'set.csvDownloaded'));
     } catch {
-      setMsg('Could not save the CSV. Check storage permission and try again.');
+      setMsg(t('set.csvFailed'));
     }
   };
 
@@ -276,37 +279,33 @@ export default function Settings() {
       {report ? <ReportSheet onClose={() => setReport(false)} /> : null}
       {news ? <WhatsNewSheet notes={notesUpTo(APP.version, WHATS_NEW)} onClose={() => setNews(false)} /> : null}
 
-      {!page ? (
-        <div className="list">
-          <button type="button" className="list-row" onClick={() => navigate('/profile')}><Icon name="user" /><div className="grow">{t('settings.profile')}</div><Icon name="chev" className="icon chev" /></button>
-          {D.moduleOn(data, 'quests') ? <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">{t('settings.quests')}</div><Icon name="chev" className="icon chev" /></button> : null}
-          {ROOT_PAGES.map((p) => (
-            <button key={p.key} type="button" className="list-row" onClick={() => navigate(`/settings/${p.key}`)}>
-              <Icon name={p.icon} /><div className="grow"><div>{t(p.title)}</div><div className="meta">{t(p.note)}</div></div><Icon name="chev" className="icon chev" />
-            </button>
-          ))}
-          <button type="button" className="list-row" onClick={shareApp}><Icon name="upload" /><div className="grow"><div>{t('settings.share')}</div><div className="meta">{t('settings.shareNote')}</div></div><Icon name="chev" className="icon chev" /></button>
-        </div>
-      ) : null}
+      {!page ? <Hub navigate={navigate} /> : null}
 
       {show('install') ? <InstallGuide /> : null}
       {show('help') ? <HelpPage /> : null}
       {show('privacy') ? <PrivacyPage data={data} onExport={exportNow} /> : null}
 
       {show('data') ? (<>
-      <div className="section-label">Your data</div>
+      <section className="card data-summary" aria-label={t('settings.data')}>
+        <strong>{t('set.summary', { workouts: n(s.workouts, 'workout'), weighIns: n(s.weighIns, 'weigh-in') })}</strong>
+        <div className="meta"><Icon name="lock" /> {t('set.stored')}</div>
+      </section>
+      <div className="section-label">{t('set.groupBackup')}</div>
       <div className="list">
-        <div className="list-row"><div className="grow">On this phone</div><span className="meta">{n(s.workouts, 'workout')} · {n(s.weighIns, 'weigh-in')}</span></div>
-        <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">Import your data</div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>Export a backup</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>{t('set.exportBackup')}</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => fileRef.current?.click()}><Icon name="upload" /><div className="grow">{t('set.importBackup')}</div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => navigate('/snapshots')}><Icon name="undo" /><div className="grow"><div>{t('set.snapshots')}</div><div className="meta">{t('set.snapshotsNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+      </div>
+      <div className="section-label">{t('set.groupImport')}</div>
+      <div className="list">
+        <button type="button" className="list-row" onClick={() => setCsvOut(true)}><Icon name="download" /><div className="grow"><div>{t('set.exportCsv')}</div><div className="meta">{t('set.exportCsvNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>{t('set.importStrong')}</div><div className="meta">{t('set.importStrongNote')}</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={shareCopy}><Icon name="upload" /><div className="grow"><div>{t('share.title')}</div><div className="meta">{t('share.note')}</div></div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={() => navigate('/snapshots')}><Icon name="undo" /><div className="grow"><div>Snapshots</div><div className="meta">Copies kept before each update, import or restore</div></div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={() => csvRef.current?.click()}><Icon name="upload" /><div className="grow"><div>Import workouts from Strong or Hevy</div><div className="meta">Their CSV export; you see what's added first</div></div><Icon name="chev" className="icon chev" /></button>
-        <button type="button" className="list-row" onClick={exportCsv}><Icon name="download" /><div className="grow"><div>Export as CSV</div><div className="meta">Workouts (one row per set), body and meals, for spreadsheets</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       <input ref={fileRef} type="file" accept="application/json,.json,.enc,application/octet-stream" hidden onChange={pick} />
       <input ref={csvRef} type="file" accept="text/csv,.csv,text/plain" hidden onChange={pickCsv} />
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Your data stays on this phone, with no server and no account. Export a backup now and then; uninstalling the app deletes its data.</p>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{t('set.privacyLine')}</p>
+      {csvOut ? <CsvSheet onClose={() => setCsvOut(false)} onExport={exportCsv} /> : null}
 
       <AutoBackup onRestore={openText} onMsg={setMsg} />
       {locked ? <UnlockSheet text={locked} onClose={() => setLocked(null)} onOpen={(plain) => { setLocked(null); restoreText(plain); }} /> : null}
@@ -364,6 +363,11 @@ export default function Settings() {
       {show('training') ? <TrainingSettings data={data} update={update} /> : null}
 
       {show('times') ? <TimesSettings data={data} update={update} toggleReminders={toggleReminders} /> : null}
+      {show('times') && D.moduleOn(data, 'quests') ? (
+        <div className="list" style={{ marginTop: 16 }}>
+          <button type="button" className="list-row" onClick={() => navigate('/quests')}><Icon name="star" /><div className="grow">{t('settings.quests')}</div><Icon name="chev" className="icon chev" /></button>
+        </div>
+      ) : null}
       {show('times') ? <RamadanSettings data={data} update={update} /> : null}
 
       {show('health') ? (<>
@@ -402,13 +406,23 @@ export default function Settings() {
       <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Health Connect is Android's on-phone health store. Nothing goes to a server.</p>
       </>) : null}
 
-      {show('modules') ? (<>
+      {show('prefs') ? (<>
       <div className="section-label">{tr('theme.title')}</div>
       <div className="list">
         <Choice label={tr('theme.label')} value={themeChoice(data)} onChange={(v) => update((d) => setTheme(d, v))} options={THEMES.map((k) => [k, tr(`theme.${k}`)])} />
         <Choice label={tr('theme.textSize')} value={textSize(data)} onChange={(v) => update((d) => setTextSize(d, Number(v)))} options={TEXT_SIZES.map((k) => [k, tr('theme.textPct', { n: k })])} />
       </div>
-      <div className="section-label">Modules</div>
+      <div className="list" style={{ marginTop: 16 }}>
+        {['modules', 'safety', 'health'].map((k) => (
+          <button key={k} type="button" className="list-row" onClick={() => navigate(`/settings/${k}`)}>
+            <Icon name={pageOf(k).icon} /><div className="grow"><div>{t(pageOf(k).title)}</div><div className="meta">{t(pageOf(k).note)}</div></div><Icon name="chev" className="icon chev" />
+          </button>
+        ))}
+      </div>
+      </>) : null}
+
+      {show('modules') ? (<>
+      <div className="section-label">{t('settings.modules')}</div>
       <div className="list">
         {MODULES.map((m) => {
           const on = data.settings?.modules?.[m.key] !== false;
@@ -458,20 +472,26 @@ export default function Settings() {
       </>) : null}
 
       {show('about') ? (<>
-      <div className="section-label">About</div>
+      <div className="section-label">{t('set.groupHelp')}</div>
       <div className="list">
         <button type="button" className="list-row" onClick={() => navigate('/settings/help')}><Icon name="info" /><div className="grow"><div>{t('settings.help')}</div><div className="meta">{t('settings.helpNote')}</div></div><Icon name="chev" className="icon chev" /></button>
         <button type="button" className="list-row" onClick={() => navigate('/settings/privacy')}><Icon name="lock" /><div className="grow"><div>{t('settings.privacy')}</div><div className="meta">{t('settings.privacyNote')}</div></div><Icon name="chev" className="icon chev" /></button>
-        <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
-        <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
-        <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>{t('about.backup')}</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>
-        <a className="list-row" href={safeOutside(RELEASES_URL)} target="_blank" rel="noreferrer"><Icon name="upload" /><div className="grow"><div>{t('about.update')}</div><div className="meta">{t('about.updateNote')} {t('about.updateHave', { version: APP.version })}</div></div><Icon name="chev" className="icon chev" /></a>
-        <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')} {t('about.signingSame')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
         <button type="button" className="list-row" onClick={() => navigate('/settings/install')}><Icon name="info" /><div className="grow"><div>{t('about.help')}</div><div className="meta">{t('about.helpNote')}</div></div><Icon name="chev" className="icon chev" /></button>
-        <div className="list-row"><div className="grow"><div>{t('about.check')}</div><div className="meta">{t('about.checkNote')}</div><div className="meta" data-testid="data-check" aria-label={t('about.checkAria', { line: checkLine(data) })} style={{ fontFamily: 'ui-monospace, monospace', marginTop: 4 }}>{checkLine(data).split(' · ').map((part, i) => <span key={i}>{i ? ' · ' : ''}<span style={{ whiteSpace: 'nowrap' }}>{part}</span></span>)}</div></div></div>
-        <p className="muted small" style={{ margin: '4px 16px 12px' }}>{t('about.notInstalled')}</p>
+      </div>
+      <div className="section-label">{t('set.groupUpdates')}</div>
+      <div className="list">
+        <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
+        <a className="list-row" href={safeOutside(RELEASES_URL)} target="_blank" rel="noreferrer"><Icon name="upload" /><div className="grow"><div>{t('about.update')}</div><div className="meta">{t('about.updateNote')} {t('about.updateHave', { version: APP.version })}</div></div><Icon name="chev" className="icon chev" /></a>
         {notesUpTo(APP.version, WHATS_NEW).length ? <button type="button" className="list-row" onClick={() => setNews(true)}><Icon name="star" /><div className="grow"><div>{t('whatsNew.title')}</div><div className="meta">{t('whatsNew.note')}</div></div><Icon name="chev" className="icon chev" /></button> : null}
+        <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
+        <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')} {t('about.signingSame')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
+        <div className="list-row"><div className="grow"><div>{t('about.check')}</div><div className="meta">{t('about.checkNote')}</div><div className="meta" data-testid="data-check" aria-label={t('about.checkAria', { line: checkLine(data) })} style={{ fontFamily: 'ui-monospace, monospace', marginTop: 4 }}>{checkLine(data).split(' · ').map((part, i) => <span key={i}>{i ? ' · ' : ''}<span style={{ whiteSpace: 'nowrap' }}>{part}</span></span>)}</div></div></div>
+      </div>
+      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{t('about.notInstalled')}</p>
+      <div className="section-label">{t('set.groupFeedback')}</div>
+      <div className="list">
         <button type="button" className="list-row" onClick={() => setReport(true)}><Icon name="upload" /><div className="grow"><div>{t('about.report')}</div><div className="meta">{t('about.reportNote')}</div></div><Icon name="chev" className="icon chev" /></button>
+        <button type="button" className="list-row" onClick={shareApp}><Icon name="upload" /><div className="grow"><div>{t('settings.share')}</div><div className="meta">{t('settings.shareNote')}</div></div><Icon name="chev" className="icon chev" /></button>
       </div>
       </>) : null}
     </div>
@@ -499,86 +519,186 @@ function Choice({ label, value, onChange, options }) {
   );
 }
 
-/** Settings → Training: rest defaults, auto-start, sounds, vibration, target length. */
+/** The Settings hub: a search, then six categories in two groups. */
+function Hub({ navigate }) {
+  const [searching, setSearching] = useState(false);
+  const [q, setQ] = useState('');
+  const hits = searchSettings(q, tr);
+  return (
+    <>
+      {searching ? (
+        <div className="settings-search">
+          <Icon name="search" />
+          <input type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr('settings.search')} aria-label={tr('settings.search')} />
+          <button type="button" className="icon-btn" aria-label={tr('settings.searchClose')} onClick={() => { setSearching(false); setQ(''); }}><Icon name="x" /></button>
+        </div>
+      ) : (
+        <button type="button" className="settings-search-btn" onClick={() => setSearching(true)}><Icon name="search" /><span>{tr('settings.search')}</span></button>
+      )}
+      {q.trim() ? (
+        hits.length ? (
+          <div className="list">
+            {hits.map((h) => (
+              <button key={h.label} type="button" className="list-row" onClick={() => navigate(h.to)}>
+                <div className="grow">{tr(h.label)}</div><Icon name="chev" className="icon chev" />
+              </button>
+            ))}
+          </div>
+        ) : <p className="muted small" role="status" style={{ margin: '12px 16px' }}>{tr('settings.noMatch', { q: q.trim() })}</p>
+      ) : SETTINGS_GROUPS.map((g) => (
+        <section key={g.label} aria-label={tr(g.label)}>
+          <div className="section-label">{tr(g.label)}</div>
+          <div className="list">
+            {g.rows.map((r) => (
+              <button key={r.key} type="button" className="list-row" onClick={() => navigate(r.to)}>
+                <Icon name={r.icon} /><div className="grow"><div>{tr(r.title)}</div><div className="meta">{tr(r.note)}</div></div><Icon name="chev" className="icon chev" />
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
+    </>
+  );
+}
+
+/** Pick which CSVs to export (Data & backups). */
+function CsvSheet({ onClose, onExport }) {
+  const [kinds, setKinds] = useState(['workouts', 'body', 'meals']);
+  const flip = (k) => setKinds((ks) => (ks.includes(k) ? ks.filter((x) => x !== k) : [...ks, k]));
+  return (
+    <Sheet title={tr('set.csvTitle')} onClose={onClose}>
+      <div className="list">
+        {['workouts', 'body', 'meals'].map((k) => {
+          const cap = k[0].toUpperCase() + k.slice(1);
+          return <Toggle key={k} on={kinds.includes(k)} onClick={() => flip(k)} title={tr(`set.csv${cap}`)} note={tr(`set.csv${cap}Note`)} />;
+        })}
+      </div>
+      <button type="button" className="btn" style={{ marginTop: 12 }} disabled={!kinds.length}
+        onClick={() => { onExport(['workouts', 'body', 'meals'].filter((k) => kinds.includes(k))); onClose(); }}>
+        {kinds.length === 1 ? tr('set.csvSaveOne') : tr('set.csvSave', { n: kinds.length })}
+      </button>
+    </Sheet>
+  );
+}
+
+/** A section that folds open and shut, with its state for TalkBack. */
+function Fold({ id, title, open, onToggle, children }) {
+  return (
+    <section className="fold">
+      <h2 className="fold-head">
+        <button type="button" className="list-row" aria-expanded={open} aria-controls={`fold-${id}`} onClick={onToggle}>
+          <div className="grow">{title}</div><Icon name="chev" className={`icon chev${open ? ' open' : ''}`} />
+        </button>
+      </h2>
+      {open ? <div id={`fold-${id}`}>{children}</div> : null}
+    </section>
+  );
+}
+
+/** A value row that opens a sheet to pick from a list (rest times). */
+function PickRow({ label, value, options, onChange }) {
+  const [open, setOpen] = useState(false);
+  const shown = options.find(([v]) => String(v) === String(value))?.[1] ?? String(value);
+  return (
+    <>
+      <button type="button" className="list-row" onClick={() => setOpen(true)}>
+        <div className="grow">{label}</div><span className="meta">{shown}</span><Icon name="chev" className="icon chev" />
+      </button>
+      {open ? (
+        <Sheet title={label} onClose={() => setOpen(false)}>
+          <div className="list" role="radiogroup" aria-label={label}>
+            {options.map(([v, text]) => {
+              const on = String(v) === String(value);
+              return (
+                <button key={v} type="button" role="radio" aria-checked={on} className="list-row" onClick={() => { onChange(v); setOpen(false); }}>
+                  <div className="grow">{text}</div>{on ? <Icon name="check" /> : null}
+                </button>
+              );
+            })}
+          </div>
+        </Sheet>
+      ) : null}
+    </>
+  );
+}
+
+/** Settings → Training, in four sections that fold: Rest & workout (open),
+ * Equipment & experience, Sounds & vibration, Advanced. */
 function TrainingSettings({ data, update }) {
   const t = trainingSettings(data);
   const set = (changes) => update((d) => setTraining(d, changes));
   const rest = REST_CHOICES.map((sec) => [sec, clock(sec)]);
+  const [open, setOpen] = useState({ rest: true });
+  const fold = (id) => ({ id, open: Boolean(open[id]), onToggle: () => setOpen((o) => ({ ...o, [id]: !o[id] })) });
+  const owned = ownedKinds(t);
   return (
-    <>
-      <div className="section-label">Training</div>
-      <div className="list">
-        <Choice label="Rest for big lifts" value={t.rest_compound} onChange={(v) => set({ rest_compound: Number(v) })} options={rest} />
-        <Choice label="Rest for small lifts" value={t.rest_isolation} onChange={(v) => set({ rest_isolation: Number(v) })} options={rest} />
-        <Toggle on={t.auto_rest} onClick={() => set({ auto_rest: !t.auto_rest })} title="Start rest after each set" note="The timer starts when you log a set" />
-        <Toggle on={t.gym_mode === true} onClick={() => set({ gym_mode: t.gym_mode !== true })} title={tr('gym.title')} note={tr('gym.note')} />
-        <Choice label="Target workout length" value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
-          options={TARGET_CHOICES.map((m) => [m, m ? `${m} min` : 'Off'])} />
-      </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>The plan's rest for an exercise always comes first; these are for exercises without one.</p>
-
-      <div className="section-label">Bar and plates</div>
-      <div className="list">
-        <Choice label="Bar" value={t.bar} onChange={(v) => set({ bar: v })} options={Object.entries(BARS).map(([k, b]) => [k, `${b.label} (${b.kg} kg)`])} />
-        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ width: '100%' }}>Plates you have</div>
-          {ALL_PLATES.map((p) => {
-            const on = t.plates.includes(p);
-            return (
-              <button key={p} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on}
-                onClick={() => set({ plates: on ? t.plates.filter((x) => x !== p) : [...t.plates, p].sort((a, b) => b - a) })}>{p} kg</button>
-            );
-          })}
+    <div className="folds">
+      <Fold title={tr('set.restWorkout')} {...fold('rest')}>
+        <div className="list">
+          <PickRow label={tr('set.restBig')} value={t.rest_compound} options={rest} onChange={(v) => set({ rest_compound: Number(v) })} />
+          <PickRow label={tr('set.restSmall')} value={t.rest_isolation} options={rest} onChange={(v) => set({ rest_isolation: Number(v) })} />
+          <Toggle on={t.auto_rest} onClick={() => set({ auto_rest: !t.auto_rest })} title={tr('set.autoRest')} />
+          <PickRow label={tr('set.targetLength')} value={t.target_min} onChange={(v) => set({ target_min: Number(v) })}
+            options={TARGET_CHOICES.map((m) => [m, m ? tr('set.minutes', { n: m }) : tr('set.off')])} />
         </div>
-      </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Used for the plates-per-side line and warm-up sets on barbell lifts.</p>
+        <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{tr('set.restNote')}</p>
+      </Fold>
 
-      <div className="section-label">{tr('levels.title')}</div>
-      <div className="list">
-        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
-          {LEVELS.map((l) => <button key={l} type="button" className={`chip${t.level === l ? ' accent' : ''}`} aria-pressed={t.level === l} onClick={() => set({ level: t.level === l ? null : l })}>{tr(`levels.${l}`)}</button>)}
+      <Fold title={tr('set.equipExp')} {...fold('equip')}>
+        <div className="section-label">{tr('levels.title')}</div>
+        <div className="seg" role="group" aria-label={tr('levels.title')} style={{ margin: '0 0 8px' }}>
+          {LEVELS.map((l) => <button key={l} type="button" className={t.level === l ? 'on' : ''} aria-pressed={t.level === l} onClick={() => set({ level: t.level === l ? null : l })}>{tr(`levels.short.${l}`)}</button>)}
         </div>
-      </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>{tr('levels.note')}</p>
-
-      <div className="section-label">Equipment you have</div>
-      <div className="list">
-        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+        <div className="section-label">{tr('set.equipment')}</div>
+        <div className="chip-row">
           {PRESETS.map((p) => {
-            const owned = ownedKinds(t);
             const on = p.kinds === null ? owned === null : owned !== null && owned.length === p.kinds.length && p.kinds.every((k) => owned.includes(k));
             return <button key={p.key} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on} onClick={() => set({ equipment: p.kinds })}>{p.label}</button>;
           })}
         </div>
-        <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ width: '100%' }}>Or tick what you have <span className="meta">(bodyweight always counts)</span></div>
+        <div className="equip-grid">
           {KINDS.map((k) => {
-            const owned = ownedKinds(t);
             const on = owned === null || owned.includes(k);
             const next = on ? (owned || KINDS).filter((x) => x !== k) : [...(owned || []), k];
-            return <button key={k} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on} onClick={() => set({ equipment: next.length === KINDS.length ? null : next })}>{k}</button>;
+            return <button key={k} type="button" className={`equip-cell${on ? ' on' : ''}`} aria-pressed={on} onClick={() => set({ equipment: next.length === KINDS.length ? null : next })}>{on ? <Icon name="check" /> : null}<span>{k}</span></button>;
           })}
         </div>
-      </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>When something is missing, the workout screen offers the closest same-muscle exercise you can do instead.</p>
+        <p className="muted small" style={{ margin: '8px 16px 12px' }}>{tr('set.equipNote')}</p>
+      </Fold>
 
-      <div className="section-label">Sounds and vibration</div>
-      <div className="list">
-        <Toggle icon="sound" on={t.sounds} onClick={() => set({ sounds: !t.sounds })} title="Sounds" note="Rest start, 3-2-1, rest done and workout start" />
-        {t.sounds ? (
-          <>
-            <Choice label="Volume" value={t.volume} onChange={(v) => set({ volume: v })} options={Object.keys(VOLUMES).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} />
-            <Choice label="Sound set" value={t.sound_set} onChange={(v) => set({ sound_set: v })} options={Object.entries(SOUND_SETS)} />
-            <button type="button" className="list-row" onClick={() => { unlockAudio(); feedback('test', { force: true }); }}><Icon name="play" /><div className="grow">Play a test sound</div></button>
-          </>
-        ) : null}
-        <Choice label={tr('settings.touchSounds')} value={t.reward_sounds} onChange={(v) => set({ reward_sounds: v })} options={Object.entries(REWARD_LEVELS)} />
-        <p className="muted small" style={{ margin: '0 16px 8px' }}>{tr('settings.touchSoundsNote')}</p>
-        {/* The old Vibrate switch stays in step, for an older app reading this backup. */}
-        <Choice label={tr('settings.vibration')} value={hapticLevel(t)} onChange={(v) => set({ haptics: v, vibrate: v !== 'off' })} options={Object.entries(HAPTIC_LEVELS)} />
-        <p className="muted small" style={{ margin: '0 16px 8px' }}>{tr('settings.vibrationNote')}</p>
-      </div>
-    </>
+      <Fold title={tr('set.soundsVib')} {...fold('sound')}>
+        <div className="list">
+          <Toggle icon="sound" on={t.sounds} onClick={() => set({ sounds: !t.sounds })} title={tr('set.sounds')} />
+          {t.sounds ? (
+            <>
+              <Choice label={tr('set.volume')} value={t.volume} onChange={(v) => set({ volume: v })} options={Object.keys(VOLUMES).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} />
+              <Choice label={tr('set.soundSet')} value={t.sound_set} onChange={(v) => set({ sound_set: v })} options={Object.entries(SOUND_SETS)} />
+              <button type="button" className="list-row" onClick={() => { unlockAudio(); feedback('test', { force: true }); }}><Icon name="play" /><div className="grow">{tr('set.testSound')}</div></button>
+            </>
+          ) : null}
+          <Choice label={tr('settings.touchSounds')} value={t.reward_sounds} onChange={(v) => set({ reward_sounds: v })} options={Object.entries(REWARD_LEVELS)} />
+          {/* The old Vibrate switch stays in step, for an older app reading this backup. */}
+          <Choice label={tr('settings.vibration')} value={hapticLevel(t)} onChange={(v) => set({ haptics: v, vibrate: v !== 'off' })} options={Object.entries(HAPTIC_LEVELS)} />
+        </div>
+      </Fold>
+
+      <Fold title={tr('set.advanced')} {...fold('adv')}>
+        <div className="list">
+          <Toggle on={t.gym_mode === true} onClick={() => set({ gym_mode: t.gym_mode !== true })} title={tr('gym.title')} note={tr('gym.note')} />
+          <Choice label={tr('set.bar')} value={t.bar} onChange={(v) => set({ bar: v })} options={Object.entries(BARS).map(([k, b]) => [k, `${b.label} (${b.kg} kg)`])} />
+          <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ width: '100%' }}>{tr('set.plates')}</div>
+            {ALL_PLATES.map((p) => {
+              const on = t.plates.includes(p);
+              return (
+                <button key={p} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on}
+                  onClick={() => set({ plates: on ? t.plates.filter((x) => x !== p) : [...t.plates, p].sort((a, b) => b - a) })}>{p} kg</button>
+              );
+            })}
+          </div>
+        </div>
+      </Fold>
+    </div>
   );
 }
 
@@ -599,6 +719,10 @@ function TimesSettings({ data, update, toggleReminders }) {
   const on = Boolean(data.settings.notifications);
   return (
     <>
+      <div className="section-label">{tr('set.mealTimes')}</div>
+      <div className="list">
+        {Object.entries(t.meal_times).map(([slot, v]) => <TimeRow key={slot} label={slotLabel(slot)} value={v} onChange={(x) => set({ meal_times: { [slot]: x } })} />)}
+      </div>
       <div className="section-label">Training times</div>
       <div className="list">
         <Choice label={tr('week.startsOn')} value={data.profile?.week_start === 'mon' ? 'mon' : 'sun'} onChange={(v) => update((d) => ({ ...d, profile: { ...d.profile, week_start: v } }))} options={[['sun', tr('week.sunday')], ['mon', tr('week.monday')]]} />
@@ -621,11 +745,6 @@ function TimesSettings({ data, update, toggleReminders }) {
         ) : null}
       </div>
 
-      <div className="section-label">Meal times</div>
-      <div className="list">
-        {Object.entries(t.meal_times).map(([slot, v]) => <TimeRow key={slot} label={slotLabel(slot)} value={v} onChange={(x) => set({ meal_times: { [slot]: x } })} />)}
-      </div>
-      <p className="muted small" style={{ margin: '-4px 16px 12px' }}>Times are used for reminders, the Today and Plan screens, the widget and Health Connect.</p>
     </>
   );
 }

@@ -255,7 +255,7 @@ async function restore(page, { ctx }) {
   await page.getByRole('button', { name: new RegExp(`^(${en['workout.save']}|${en['workout.saveShort']})$`) }).click();
   await btn(page, en['finish.done']).click();
   await page.goto(`${URL0}#/settings/data`);
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Export a backup/ }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Export backup/ }).click()]);
   const file = await download.path();
   await settle(page);
   const before = await read(page);

@@ -66,10 +66,6 @@ export function nextId(rows) {
   return rows.reduce((max, r) => Math.max(max, r.id || 0), 0) + 1;
 }
 
-function allSets(data) {
-  return data.workouts.flatMap((w) => w.sets.map((s) => ({ ...s, log_date: w.log_date, workout_id: w.id })));
-}
-
 export function exerciseByName(data, name) {
   return data.exercises.find((e) => e.name === name) || null;
 }
@@ -117,7 +113,11 @@ function updateWorkout(data, workoutId, fn) {
 /** Add a set. A timed hold (`seconds`) keeps its seconds in `reps` too, so
  * progression, records and older readers still see a number they know. */
 export function addSet(data, workoutId, { exerciseId, reps, weightKg, rpe = null, seconds = null }) {
-  const nextSetId = nextId(allSets(data));
+  // The highest set id so far, without copying every set: this
+  // runs on each tap of a set, and years of sets made it slow (FEEL-1).
+  let maxId = 0;
+  for (const w of data.workouts) for (const s of w.sets) if (s.id > maxId) maxId = s.id;
+  const nextSetId = maxId + 1;
   return updateWorkout(data, workoutId, (w) => {
     const setNumber = w.sets.filter((s) => s.exercise_id === exerciseId).length + 1;
     const plain = { id: nextSetId, exercise_id: exerciseId, set_number: setNumber, reps, weight_kg: weightKg, rpe, rir: null, is_warmup: false };

@@ -30,6 +30,11 @@ public class RestTimerPlugin extends Plugin {
                 o.put("finished", finished);
                 notifyListeners("stopped", o, true);
             }
+
+            @Override
+            public void onLogged() {
+                notifyListeners("logged", new JSObject(), true);
+            }
         };
     }
 
@@ -51,11 +56,17 @@ public class RestTimerPlugin extends Plugin {
         long pausedMs = Math.max(0, Math.min(paused == null ? 0 : paused.longValue(), MAX_REST_MS));
         long totalMs = Math.max(0, Math.min(total == null ? 0 : (long) (total.doubleValue() * 1000), MAX_REST_MS));
         Number sets = number(call, "sets");
+        // "Log set & rest": the sets it can log (at most 10) and the rest after each.
+        com.getcapacitor.JSArray logs = call.getArray("logs");
+        String logsJson = logs == null ? "[]" : logs.length() > 10 ? "[]" : logs.toString();
+        if (logsJson.length() > 8000) logsJson = "[]";
+        Number logRest = number(call, "logRest"); // seconds
+        long logRestMs = Math.max(0, Math.min(logRest == null ? 0 : (long) (logRest.doubleValue() * 1000), MAX_REST_MS));
         RestTimerService.setTexts(call.getObject("texts"));
         RestTimerService.start(getContext(), ends, pausedMs, totalMs, call.getString("label", ""),
             // The workout line: "Lower A · 7/18 sets" from the app, else the workout's name.
             call.getString("progress", call.getString("workout", "")), call.getString("detail", ""),
-            sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true));
+            sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true), logsJson, logRestMs);
         call.resolve();
     }
 
@@ -65,6 +76,16 @@ public class RestTimerPlugin extends Plugin {
         if (!(v instanceof Number)) return null;
         double d = ((Number) v).doubleValue();
         return Double.isNaN(d) || Double.isInfinite(d) ? null : (Number) v;
+    }
+
+    /** { logs: [json...] }: the sets logged with "Log set & rest" since the last call (each given once). */
+    @PluginMethod
+    public void takeLogs(PluginCall call) {
+        com.getcapacitor.JSArray a = new com.getcapacitor.JSArray();
+        for (String s : RestTimerService.takePending(getContext())) a.put(s);
+        JSObject o = new JSObject();
+        o.put("logs", a);
+        call.resolve(o);
     }
 
     @PluginMethod
