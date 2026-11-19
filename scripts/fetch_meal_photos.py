@@ -8,10 +8,13 @@ writes, per meal:
     <out>/<key>.webp        the photo, WIDTH px wide
     <out>/<key>-thumb.webp  a THUMB px thumbnail for list rows
     <out>/NOTICE.txt        every photo's credit and licence
+    <out>/titles.json       which Commons file each saved photo came from
 
 Pillow does the WebP conversion (CI installs it; see android.yml).
-Photos already there are kept, so a rebuild downloads nothing new. The
-output is gitignored. Commons limits request rates, so thumbnails come
+Photos already there are kept, so a rebuild downloads nothing new, unless
+titles.json says the photo came from a different Commons file (the meal's
+photo was changed); CI keeps the set across edits to content/meal_photos.py
+for that reason. The output is gitignored. Commons limits request rates, so thumbnails come
 from its API (cached), downloads are spaced out and retried, and a photo
 that still fails is skipped (the app shows a placeholder) and listed.
 
@@ -36,9 +39,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from content.meal_photos import MEAL_PHOTOS  # noqa: E402
 
 WIDTH = 640
+# Commons serves (and caches) thumbnails only at standard widths; other
+# widths are rendered on demand and throttled hard, which is what left
+# most photos missing. Ask for the next standard width up and shrink it.
+FETCH_WIDTH = 960
 THUMB = 112  # rows show photos at 56 px; 2x for sharp screens
 QUALITY = 70
-UA = "FitnessOS-build/1.0 (meal photos for a personal app)"
+# Wikimedia's User-Agent policy asks bots for a way to reach the operator
+# (a URL is enough); requests without one are throttled much harder.
+UA = "FitnessOS-build/1.0 (https://github.com/UsefGamal/fitness-os; meal photos for a personal app) python-urllib"
 
 try:
     from PIL import Image
@@ -47,7 +56,7 @@ except ImportError:  # pragma: no cover - CI and dev installs have it
 
 
 def thumb_urls(titles: list[str]) -> dict[str, str]:
-    """Commons' own WIDTH px thumbnails for the titles, 20 per API call.
+    """Commons' own FETCH_WIDTH px thumbnails for the titles, 20 per API call.
     Thumbnails are cached by Wikimedia, which keeps us inside its limits."""
     out = {}
     for i in range(0, len(titles), 20):
@@ -58,7 +67,7 @@ def thumb_urls(titles: list[str]) -> dict[str, str]:
                 "format": "json",
                 "prop": "imageinfo",
                 "iiprop": "url",
-                "iiurlwidth": str(WIDTH),
+                "iiurlwidth": str(FETCH_WIDTH),
                 "titles": "|".join(batch),
             }
         )
@@ -79,8 +88,12 @@ def download(url: str, deadline: float = float("inf")) -> bytes:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return r.read()
-        except OSError:
+        except OSError as e:
             wait = 15 * (attempt + 1)
+            retry_after = getattr(e, "headers", None) and e.headers.get("Retry-After")
+            if retry_after and retry_after.isdigit():
+                wait = max(1, min(int(retry_after), 120))
+            print(f"  {getattr(e, 'code', '') or type(e).__name__} on {url[:90]}, waiting {wait} s", flush=True)
             if attempt == 3 or time.monotonic() + wait > deadline:
                 break
             time.sleep(wait)
@@ -100,10 +113,17 @@ def main() -> None:
         raise SystemExit("Pillow is needed for the meal photos: pip install pillow")
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "meal-photos")
     out.mkdir(parents=True, exist_ok=True)
+    titles_file = out / "titles.json"
+    try:
+        saved = json.loads(titles_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        saved = {}
+    have_files = {key for key in MEAL_PHOTOS if (out / f"{key}.webp").exists() and (out / f"{key}-thumb.webp").exists()}
+    # A photo saved before titles.json existed is taken as current.
+    for key in have_files - saved.keys():
+        saved[key] = MEAL_PHOTOS[key][0]
     todo = {
-        key: title
-        for key, (title, _a, _l) in MEAL_PHOTOS.items()
-        if not ((out / f"{key}.webp").exists() and (out / f"{key}-thumb.webp").exists())
+        key: title for key, (title, _a, _l) in MEAL_PHOTOS.items() if key not in have_files or saved.get(key) != title
     }
     if os.environ.get("MEAL_PHOTOS_SKIP") == "1":
         todo = {}
@@ -122,7 +142,17 @@ def main() -> None:
             continue
         save_webp(data, out / f"{key}.webp", WIDTH)
         save_webp(data, out / f"{key}-thumb.webp", THUMB)
+        saved[key] = title
+        titles_file.write_text(json.dumps(saved, indent=1, sort_keys=True), encoding="utf-8")
         time.sleep(3)
+    # Photos of meals that no longer have one, or whose new photo didn't
+    # download, must not ship under the wrong credit.
+    for key in list(saved):
+        if key not in MEAL_PHOTOS or saved[key] != MEAL_PHOTOS[key][0]:
+            for name in (f"{key}.webp", f"{key}-thumb.webp"):
+                (out / name).unlink(missing_ok=True)
+            del saved[key]
+    titles_file.write_text(json.dumps(saved, indent=1, sort_keys=True), encoding="utf-8")
     notice = ["Meal photos from Wikimedia Commons (https://commons.wikimedia.org), under the licences below.", ""]
     notice += [
         f"{key}: {title}, by {author}, {licence}" for key, (title, author, licence) in sorted(MEAL_PHOTOS.items())

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
+import { MealThumb } from '../components/MealPhoto.jsx';
 import { addDays, formatDate } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
@@ -238,7 +239,7 @@ function MealPlan() {
             ) : (
               <>
               <div className="meal-pick">
-                {opt.photo ? <img className="thumb" src={opt.photo.thumb} alt="" loading="lazy" decoding="async" /> : null}
+                <MealThumb photo={opt.photo} blank={false} />
                 <div className="grow">
                   <div className="meal-name">{opt.name || mealWhat(opt)}</div>
                   {opt.swapped ? <div className="muted small">{t('meals.planMeal', { name: planMeal.name || mealWhat(planMeal) })}</div> : null}
