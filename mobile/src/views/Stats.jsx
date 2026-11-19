@@ -19,7 +19,7 @@ import { useCatalogue } from '../store/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
-import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from '../lib/statsView.js';
+import { activeDays, badgeGroups, daysSince, firstLoadDates, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from '../lib/statsView.js';
 import { content, useData } from '../store/useData.js';
 import PullRefresh from '../components/PullRefresh.jsx';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
@@ -186,7 +186,7 @@ function WeeklySets({ data, today }) {
         <details key={g.group} className="vol-group">
           <summary>
             <div className="grow">
-              <div className="row between"><strong>{g.group}</strong><span className={`chip${g.state === 'on_track' ? ' accent' : ' warn'}`}>{t(`stats.state.${g.state}`)}</span></div>
+              <div className="row between"><strong>{g.group}</strong><span className={`chip${g.state === 'on_track' ? ' accent' : ' warn'}`}>{t('stats.planChip', { state: t(`stats.state.${g.state}`) })}</span></div>
               <div className="progress" style={{ marginTop: 8 }}><span style={{ transform: `scaleX(${g.planned ? Math.min(1, g.done / g.planned) : g.done ? 1 : 0})` }} /></div>
               <div className="muted small" style={{ marginTop: 4 }}>{t('stats.groupDone', { done: g.done, planned: g.planned })}</div>
             </div>
@@ -272,7 +272,7 @@ function Strength({ data, today }) {
       </section>
     );
   }
-  const rec = recordSummary(D.personalBests(data).values(), today);
+  const rec = recordSummary(D.personalBests(data).values(), today, 30, firstLoadDates(data.workouts));
   const change = seriesChange(series);
   return (
     <>
@@ -395,7 +395,7 @@ function Body({ data, update, today }) {
       </div>
       <section className="card">
         <div className="row between"><strong>Weight</strong>{goalLow ? <span className="muted small">Goal {goalLow}–{goalHigh} kg</span> : null}</div>
-        <WeightChart logs={data.body_logs.slice(-60)} goalLow={goalLow} goalHigh={goalHigh} />
+        <WeightChart logs={data.body_logs.filter((l) => l.weight_kg > 0).slice(-60)} goalLow={goalLow} goalHigh={goalHigh} />
       </section>
       <div className="list">
         <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
