@@ -242,6 +242,15 @@ export function isWorkSet(set) {
   return !!set && !set.is_warmup && set.set_type !== 'warmup';
 }
 
+/** A set whose weight and reps mean load (CHART-1): a work set that isn't a
+ * timed hold or a distance. A hold keeps its seconds in `reps`, so without
+ * this a 60 s plank with 20 kg reads as an 82 kg one-rep max, and adds
+ * 1,200 kg to the lifted total. Only these sets give an e1RM, a record or
+ * tonnage. */
+export function isLoadSet(set) {
+  return isWorkSet(set) && set.track !== 'time' && set.track !== 'distance';
+}
+
 /** Epley estimated one-rep max, with reps counted up to E1RM_MAX_REPS. */
 export function e1rm(weightKg, reps) {
   if (!weightKg || !reps) return 0;
@@ -274,7 +283,7 @@ export function personalBests(data, excludeWorkoutId = null) {
   for (const w of data.workouts) {
     if (w.id === excludeWorkoutId) continue;
     for (const s of w.sets) {
-      if (!isWorkSet(s)) continue;
+      if (!isLoadSet(s)) continue;
       if (!(s.weight_kg > 0) && weighted.has(s.exercise_id)) continue;
       const score = e1rm(s.weight_kg, s.reps);
       const cur = best.get(s.exercise_id);
@@ -288,13 +297,13 @@ export function personalBests(data, excludeWorkoutId = null) {
  * ever logged (nothing to beat yet, so not a best), 'best' when it beats
  * every earlier workout, else null. */
 export function setKind(data, workoutId, set) {
-  if (!isWorkSet(set)) return null;
+  if (!isLoadSet(set)) return null;
   const score = e1rm(set.weight_kg, set.reps);
   if (!(score > 0)) return null;
   const prev = personalBests(data, workoutId).get(set.exercise_id);
   if (!prev) {
     const workout = data.workouts.find((w) => w.id === workoutId);
-    return workout?.sets.some((s) => s.exercise_id === set.exercise_id && isWorkSet(s)) ? null : 'baseline';
+    return workout?.sets.some((s) => s.exercise_id === set.exercise_id && isLoadSet(s)) ? null : 'baseline';
   }
   return score > prev.score ? 'best' : null;
 }

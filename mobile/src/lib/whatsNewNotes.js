@@ -20,6 +20,15 @@ export const WHATS_NEW = [
     ],
   },
   {
+    version: '1.1.6',
+    items: [
+      { icon: 'trophy', text: 'Planks and other timed holds no longer show a made-up one-rep max or count towards records and kg lifted.' },
+      { icon: 'chart', text: 'Strength\'s "New in 30 days" counts only records that beat an earlier best, not first sessions.' },
+      { icon: 'trend', text: 'Weight and strength charts space points by date, so a week without a weigh-in looks like a week.' },
+      { icon: 'chart', text: 'Sessions on Stats counts training days, the same as your streak, and muscle chips say they are about your plan.' },
+    ],
+  },
+  {
     version: '1.1.5',
     items: [
       { icon: 'dumbbell', text: 'A plank, wall sit or other hold swapped into your plan now logs seconds, not reps.' },

@@ -1136,6 +1136,7 @@ export default {
   'stats.groupSets': '{done} / {planned} sets',
   'stats.groupDone': '{done} of {planned} sets done this week',
   'stats.state.low': 'Low',
+  'stats.planChip': 'Plan: {state}',
   'stats.state.on_track': 'On track',
   'stats.state.high': 'High',
   'stats.volSub': 'What your plan gives each muscle group this week. Tap a group to see its muscles.',
