@@ -36,6 +36,7 @@
   --body: #3a3a3c;
   --body-head: #2c2c2e;
   --body-line: #000;
+  --body-skin: #2a2a2d;
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --tabbar: 58px;
@@ -74,6 +75,7 @@
   --body: #d1d1d6;
   --body-head: #c7c7cc;
   --body-line: #fff;
+  --body-skin: #e3e3e8;
   color-scheme: light;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -1059,3 +1061,13 @@ label.field input { transition: box-shadow 300ms ease; }
   .tab-ind, .roll-d, .compact-title, .progress > span { transition: none; }
   .glow::before { display: none; }
 }
+
+/* Body map (BeFit item 16): one figure under the muscles, then fine lines. */
+.body-under path { fill: var(--body-skin); stroke: var(--body-skin); stroke-width: 3.4; stroke-linejoin: round; }
+.body-detail path { fill: none; stroke: var(--body-line); stroke-width: 0.45; stroke-linecap: round; opacity: 0.55; pointer-events: none; }
+/* By muscle (Library): a small map of each group. */
+.by-muscle .muscle-thumb { width: 56px; height: 56px; flex: none; border-radius: 10px; background: var(--surface2); overflow: hidden; display: grid; place-items: center; }
+.by-muscle .muscle-thumb figure, .by-muscle .muscle-thumb svg { width: 56px; height: 56px; }
+.chip-row.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.chip-row.scroll::-webkit-scrollbar { display: none; }
+.chip-row.scroll > * { flex: none; }
