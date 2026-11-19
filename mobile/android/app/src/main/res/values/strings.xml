@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Fitness OS</string>
-    <string name="title_activity_main">Fitness OS</string>
+    <string name="app_name">Tafra</string>
+    <string name="title_activity_main">Tafra</string>
     <string name="package_name">com.usefgamal.fitnessos</string>
     <string name="custom_url_scheme">com.usefgamal.fitnessos</string>
     <string name="widget_description">Today\'s session, your streak and meals</string>

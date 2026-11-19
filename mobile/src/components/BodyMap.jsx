@@ -44,7 +44,9 @@ function Figure({ shapes, dx, lit, groupFill, onPick, region, uid }) {
             fill={own || (tone ? FILL[tone] : muscle === 'head' ? HEAD : BODY)}
             stroke="var(--body-line)"
             strokeWidth={0.4}
-            style={pickable ? { cursor: 'pointer' } : undefined}
+            // MOVE-1: worked muscles light up one after another.
+            className={tone ? 'lit' : undefined}
+            style={{ ...(pickable ? { cursor: 'pointer' } : null), ...(tone ? { '--k': i % 8 } : null) }}
             onClick={pickable ? () => onPick(group) : undefined}
           >
             {group ? <title>{group}</title> : null}

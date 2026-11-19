@@ -45,7 +45,7 @@ export function bugReport({ app, data, errors, device = {}, perf = {}, now = new
   const ms = (v) => (Number.isFinite(v) ? `${v} ms` : '?');
   const kb = data ? Math.round(JSON.stringify(data).length / 1024) : null;
   const lines = [
-    'Fitness OS bug report',
+    'Tafra bug report',
     `Time: ${now.toISOString().slice(0, 16).replace('T', ' ')} UTC`,
     `App: ${app.version} (${app.build})${app.flavor ? ` ${app.flavor} build` : ''}, data schema ${data?.schemaVersion ?? '?'}`,
     `Device: ${device.platform || 'web'}${device.model ? `, ${device.model}` : ''}${device.osVersion ? `, Android ${device.osVersion}` : ''}`,

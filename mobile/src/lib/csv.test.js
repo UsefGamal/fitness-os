@@ -13,7 +13,7 @@ test('export writes one quoted row per set, and reads back', () => {
   assert.match(csv, /^date,workout,exercise,muscle_group,set,weight_kg,reps,rpe\n/);
   assert.match(csv, /2026-11-01,"Push, ""heavy""",Bench Press,Chest,1,60,8,/);
   const back = readWorkoutCsv(csv);
-  assert.equal(back.source, 'Fitness OS');
+  assert.equal(back.source, 'Tafra (and Fitness OS)');
   assert.deepEqual(back.workouts[0].sets[0], { exercise: 'Bench Press', weightKg: 60, reps: 8, rpe: null });
 });
 

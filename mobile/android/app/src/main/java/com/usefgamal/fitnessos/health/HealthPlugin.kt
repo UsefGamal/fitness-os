@@ -175,7 +175,7 @@ class HealthPlugin : Plugin() {
 
                 call.resolve(JSObject().put("days", JSArray(out.values.toList())))
             } catch (e: SecurityException) {
-                call.reject("Fitness OS doesn't have permission to read that data", "PERMISSION", e)
+                call.reject("Tafra doesn't have permission to read that data", "PERMISSION", e)
             } catch (e: Exception) {
                 call.reject(e.message ?: "Could not read daily activity", e)
             }
@@ -203,7 +203,7 @@ class HealthPlugin : Plugin() {
                 } while (token != null)
                 call.resolve(JSObject().put("weights", out))
             } catch (e: SecurityException) {
-                call.reject("Fitness OS doesn't have permission to read weight", "PERMISSION", e)
+                call.reject("Tafra doesn't have permission to read weight", "PERMISSION", e)
             } catch (e: Exception) {
                 call.reject(e.message ?: "Could not read weigh-ins", e)
             }
@@ -243,7 +243,7 @@ class HealthPlugin : Plugin() {
                 if (records.isNotEmpty()) c.insertRecords(records)
                 call.resolve(JSObject().put("written", records.size))
             } catch (e: SecurityException) {
-                call.reject("Fitness OS doesn't have permission to write workouts", "PERMISSION", e)
+                call.reject("Tafra doesn't have permission to write workouts", "PERMISSION", e)
             } catch (e: Exception) {
                 call.reject(e.message ?: "Could not write workouts", e)
             }
@@ -268,7 +268,7 @@ class HealthPlugin : Plugin() {
                 }
                 call.resolve(JSObject().put("deleted", ids.size))
             } catch (e: SecurityException) {
-                call.reject("Fitness OS doesn't have permission to write workouts", "PERMISSION", e)
+                call.reject("Tafra doesn't have permission to write workouts", "PERMISSION", e)
             } catch (e: Exception) {
                 call.reject(e.message ?: "Could not delete workouts", e)
             }

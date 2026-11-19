@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Status-bar icon: the app's bolt, white on transparent. -->
+<!-- Status-bar icon: the Tafra mark, white on transparent. (The file keeps
+     its old name so the notification code needs no change.) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -7,5 +8,6 @@
     android:viewportHeight="24">
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M13,2L3,14h9l-1,8l10,-12h-9z" />
+        android:fillType="evenOdd"
+        android:pathData="M14.71 4.62L18.85 2.75L15.15 11.94L18.06 10.48C20.87 9.78 22.98 11.24 22.98 14.08C23 15.96 21.9 17.39 20.07 17.62L9.18 18.38L1 21.25L8.4 15.85L10.67 15.69ZM13.44 15.52L19.7 15.08C19.96 13.91 19.52 12.94 18.65 12.82L17.84 12.93C16.33 13.66 14.76 14.65 13.44 15.52Z" />
 </vector>

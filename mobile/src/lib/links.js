@@ -31,6 +31,6 @@ export function safeOutside(url) {
   return typeof url === 'string' && OUTSIDE.has(url) ? url : null;
 }
 
-/** What "Share Fitness OS" hands to the share sheet: one fixed sentence
+/** What "Share Tafra" hands to the share sheet: one fixed sentence
  * and the download page. Nothing about the person. */
-export const SHARE_APP_TEXT = `Fitness OS: a free training and meal plan app that keeps your data on your phone. Download: ${RELEASES_URL}`;
+export const SHARE_APP_TEXT = `Tafra: a free training and meal plan app that keeps your data on your phone. Download: ${RELEASES_URL}`;

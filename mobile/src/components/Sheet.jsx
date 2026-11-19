@@ -44,10 +44,20 @@ export default function Sheet({ title, onClose, children }) {
     return () => { if (before && typeof before.focus === 'function' && document.contains(before)) before.focus({ preventScroll: true }); };
   }, []);
 
-  const down = (e) => { start.current = e.clientY; e.currentTarget.setPointerCapture?.(e.pointerId); };
-  const moveP = (e) => { if (start.current != null) setDy(Math.max(0, e.clientY - start.current)); };
+  // MOVE-1: the sheet follows the finger, stretches a little if pulled up,
+  // and a quick flick down closes it even if it moved only a little.
+  const flick = useRef({ y: 0, t: 0, v: 0 });
+  const down = (e) => { start.current = e.clientY; flick.current = { y: e.clientY, t: e.timeStamp, v: 0 }; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const moveP = (e) => {
+    if (start.current == null) return;
+    const raw = e.clientY - start.current;
+    const f = flick.current;
+    const dt = e.timeStamp - f.t;
+    if (dt > 0) flick.current = { y: e.clientY, t: e.timeStamp, v: (e.clientY - f.y) / dt };
+    setDy(raw >= 0 ? raw : -Math.sqrt(-raw) * 2);
+  };
   const up = () => {
-    if (dy > 80) close();
+    if (dy > 80 || (dy > 12 && flick.current.v > 0.6)) close();
     start.current = null;
     setDy(0);
   };

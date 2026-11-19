@@ -51,6 +51,6 @@ export function drawWeekPicture({ title, range, lines, identity, name = '' }) {
   }
   g.fillStyle = '#98989f';
   g.font = `400 34px ${FONT}`;
-  g.fillText('Fitness OS', 120, H - 120);
+  g.fillText('Tafra', 120, H - 120);
   return canvas.toDataURL('image/png');
 }

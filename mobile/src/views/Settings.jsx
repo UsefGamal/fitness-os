@@ -157,7 +157,7 @@ export default function Settings() {
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_FILE_BYTES) {
-      setMsg('That file is too big to be a Fitness OS backup (over 10 MB), so nothing was changed.');
+      setMsg('That file is too big to be a Tafra backup (over 10 MB), so nothing was changed.');
       return;
     }
     let text;
@@ -261,7 +261,7 @@ export default function Settings() {
   const toggleReminders = async () => {
     const on = !data.settings.notifications;
     if (on && !(await enableReminders())) {
-      setMsg('Notifications are blocked. Allow them for Fitness OS in Android settings.');
+      setMsg('Notifications are blocked. Allow them for Tafra in Android settings.');
       return;
     }
     update((d) => ({ ...d, settings: { ...d.settings, notifications: on } }));

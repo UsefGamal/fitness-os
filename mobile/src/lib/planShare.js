@@ -43,5 +43,5 @@ h2 small{color:#555;font-weight:500}.night{margin-left:auto;font-size:12px;color
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:3px 6px;border-bottom:1px solid #ddd;vertical-align:middle}
 th{font-size:11px;color:#555;font-weight:600}td.ph{width:40px;padding:2px}td.ph img{width:40px;height:28px;object-fit:cover;border-radius:3px;display:block}
 .rest h2{color:#555}@media print{body{margin:0}@page{margin:12mm}}
-</style></head><body><h1>${esc(title)}</h1><p class="sub">${tempo ? `Tempo ${esc(tempo)} · ` : ''}Made with Fitness OS</p>${blocks}</body></html>`;
+</style></head><body><h1>${esc(title)}</h1><p class="sub">${tempo ? `Tempo ${esc(tempo)} · ` : ''}Made with Tafra</p>${blocks}</body></html>`;
 }
