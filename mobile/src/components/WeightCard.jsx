@@ -12,8 +12,9 @@ import RollNumber from './RollNumber.jsx';
 const W = 132;
 const H = 56;
 
-/** Home's weight hero (redesign of the E10-S1 goal card): the trend
- * weight, how it moved in two weeks, a small line and the one next step.
+/** Home's weight hero (redesign of the E10-S1 goal card): the latest
+ * weigh-in big (Yusuf's ask, 19 Nov), the smoothed trend under it, how the
+ * trend moved in two weeks, a small line and the one next step.
  * Pace and reach dates stay one tap away on Stats. Never says "behind". */
 export default function WeightCard({ data, today, onLog }) {
   const goal = currentGoal(data);
@@ -44,7 +45,7 @@ export default function WeightCard({ data, today, onLog }) {
       <div className="hero-top">
         <div className="grow">
           <span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span>
-          <div className="hero-value"><span className="num"><RollNumber value={p.trend} /></span><span className="unit">{t('home.kg')}</span></div>
+          <div className="hero-value"><span className="num"><RollNumber value={p.latest} /></span><span className="unit">{t('home.kg')}</span></div>
         </div>
         {spark ? (
           <svg className="spark" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
@@ -80,7 +81,7 @@ export default function WeightCard({ data, today, onLog }) {
         </Link>
       ) : null}
       <div className="row between" style={{ gap: 8, marginTop: 8 }}>
-        <span className="muted small">{t('home.weightLatest', { kg: p.latest, date: formatDate(p.latest_date) })}</span>
+        <span className="muted small">{t('home.weightTrendLine', { kg: p.trend, date: formatDate(p.latest_date) })}</span>
         <button type="button" className="mini-btn hero-log" onClick={onLog}><Icon name="plus" className="icon" /> {t('home.weightLog')}</button>
       </div>
     </section>

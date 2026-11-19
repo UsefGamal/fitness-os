@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.3',
+    items: [
+      { icon: 'home', text: 'The Tafra icon now shows on your home screen, instead of the default Android icon.' },
+      { icon: 'home', text: 'A leaner Tafra mark on the icon, the intro and notifications, and the line "Your next leap." under the name.' },
+      { icon: 'trend', text: 'The weight card on Home shows your latest weigh-in big, with the trend just under it.' },
+      { icon: 'home', text: 'Adding the widget shows a preview of it, and the Other sessions tiles on Home lost their stray white edges.' },
+    ],
+  },
+  {
     version: '1.1.2',
     items: [
       { icon: 'play', text: 'Pages slide like a phone app: the old page moves away as the new one comes in, and tabs switch faster.' },
