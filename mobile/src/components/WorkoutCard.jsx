@@ -11,9 +11,10 @@ const READY = { good: 'home.ready', easy: 'home.easy', caution: 'home.steady' };
 /** Home's main card: today's session (or the next one on a rest day), the
  * muscles it works, the warm-up and the one button that starts it. */
 export default function WorkoutCard({ next, day, hits, groups, time, todays, changed, ready, readyText, starter, onChange, onStart }) {
-  const head = () => (
+  // A specific heading (rule 9): what this card is about right now.
+  const head = (key = 'home.planTitle') => (
     <div className="row between" style={{ alignItems: 'flex-start' }}>
-      <h2 className="section-title" style={{ margin: 0 }}>{t('home.planTitle')}</h2>
+      <h2 className="section-title" style={{ margin: 0 }}>{t(key)}</h2>
       <Link to="/plan" className="see-all">{t('home.viewPlan')} <Icon name="chev" className="icon" /></Link>
     </div>
   );
@@ -24,7 +25,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
   if (!next) {
     return (
       <section className="card workout-card">
-        {head()}
+        {head('home.planNext')}
         <div className="session-row">
           <div className="session-icon rest"><Icon name="moon" /></div>
           <div className="grow"><div className="session-name">{t('week.noSession')}</div><div className="session-sub">{t('week.noSessionNote')}</div></div>
@@ -53,12 +54,12 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
   const label = `${next.label} works ${[...hits.muscles.map((m) => MUSCLE[m]?.label || m), ...groups].join(', ')}`;
   return (
     <section className="card workout-card">
-      {head()}
+      {head('home.planToday')}
       <div className="session-row">
         <div className="session-icon"><Icon name="dumbbell" /></div>
         <div className="grow">
           <div className="session-name">{next.label}</div>
-          <div className="session-sub">{time ? t('home.todayAt', { time }) : t('home.today')}{changed ? ` · ${t('week.changed')}` : ''}</div>
+          <div className="session-sub">{[time, changed ? t('week.changed') : null].filter(Boolean).join(' · ') || t('home.today')}</div>
           {starter && !todays?.finished_at ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
         </div>
         {!todays ? <button type="button" className="btn ghost small" onClick={onChange}>{t('home.change')}</button> : null}

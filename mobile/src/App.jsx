@@ -97,7 +97,9 @@ function Shell() {
       <ScrollRestoration />
       <div key={pathname} {...swipe} className={`route ${TABS.has(pathname) ? tabAnim : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
         <ErrorBoundary key={pathname}>
-          <Suspense fallback={<div className="page" />}>
+          {/* Rule 19: a page that is still loading says so (after a short
+              delay, so a fast open never flashes the skeleton). */}
+          <Suspense fallback={<PageLoading />}>
             <Outlet />
           </Suspense>
         </ErrorBoundary>
@@ -183,6 +185,18 @@ function listenBackButton() {
     if (canGoBack && window.history.length > 1 && window.location.hash !== '#/') window.history.back();
     else CapApp.exitApp();
   });
+}
+
+/** Grey placeholder blocks in the shape of a page, shown while a screen's code loads. */
+function PageLoading() {
+  return (
+    <div className="page page-loading" role="status" aria-live="polite">
+      <span className="sr-only">{t('common.loading')}</span>
+      <div className="skel skel-title" />
+      <div className="skel skel-card" />
+      <div className="skel skel-card short" />
+    </div>
+  );
 }
 
 export default function App() {

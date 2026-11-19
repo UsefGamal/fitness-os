@@ -271,7 +271,10 @@ button.set-n::after { content: ''; position: absolute; inset: -8px; }
 .seg button.on { background: var(--surface3); }
 /* Stats tabs stay pinned under the status bar while the tab scrolls (UX-21). */
 .stats-tabs { position: sticky; top: calc(var(--sat) + 8px); z-index: 5; margin: 4px 0 12px; box-shadow: 0 0 0 8px var(--bg); }
-.stats-tabs button { font-size: calc(13px * var(--ts)); padding: 0 2px; }
+.stats-tabs { overflow-x: auto; scrollbar-width: none; }
+.stats-tabs::-webkit-scrollbar { display: none; }
+/* Each tab as wide as its word, so "Overview" is never cut (rule 16). */
+.stats-tabs button { flex: 1 0 auto; font-size: calc(13px * var(--ts)); padding: 0 6px; white-space: nowrap; }
 
 details.more > summary { list-style: none; color: var(--accent); font-size: calc(15px * var(--ts)); min-height: 44px; display: flex; align-items: center; }
 details.more > summary::-webkit-details-marker { display: none; }
@@ -497,7 +500,7 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .icon.inline { width: 14px; height: 14px; vertical-align: -2px; }
 
 .home-head { margin: 0 4px 16px; }
-.wordmark { font-size: calc(20px * var(--ts)); font-weight: 800; font-style: italic; letter-spacing: -0.03em; }
+.wordmark { font-size: calc(20px * var(--ts)); font-weight: 800; letter-spacing: -0.03em; }
 .wordmark span { color: var(--accent); }
 .greeting { margin: 16px 0 2px; display: flex; flex-direction: column; font-weight: 700; }
 .greet-small { font-size: calc(20px * var(--ts)); font-weight: 500; color: var(--muted); letter-spacing: -0.01em; }
@@ -517,7 +520,8 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .other-sessions { margin-top: 20px; }
 .other-sessions > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 16px; border-radius: var(--radius); background: var(--surface); cursor: pointer; font-weight: 600; }
 .other-sessions > summary::-webkit-details-marker { display: none; }
-.other-sessions > summary .grow { white-space: nowrap; }
+.other-sessions > summary .grow { flex: none; white-space: nowrap; }
+.other-sessions > summary .muted { flex: 1; text-align: end; }
 .other-sessions > summary .muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .other-sessions[open] > summary .chev { transform: rotate(90deg); }
 .other-sessions[open] > summary { margin-bottom: 12px; }
@@ -550,9 +554,9 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .session-icon.rest { background: var(--surface2); color: var(--muted); }
 .session-icon.small { width: 44px; height: 44px; border-radius: 12px; }
 .session-icon.small .icon { width: 22px; height: 22px; }
-.session-name { font-size: calc(18px * var(--ts)); font-weight: 700; letter-spacing: -0.02em; }
+.session-name { font-size: calc(22px * var(--ts)); font-weight: 700; letter-spacing: -0.02em; }
 .session-sub { color: var(--muted); font-size: calc(14px * var(--ts)); }
-.session-warm { font-size: calc(16px * var(--ts)); font-weight: 600; }
+.session-warm { font-size: calc(15px * var(--ts)); font-weight: 500; }
 .session-detail { display: flex; align-items: center; gap: 12px; padding: 12px 0 16px; border-top: var(--hair); }
 
 /* Week strip outside a card: no bleed, a little more room per day. */
@@ -647,7 +651,7 @@ details[open].macro-more > summary .chev, details[open].meal-more > summary .che
 .pick.on { background: var(--accent-dim); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 /* "I ate something else" (UX-20). */
 .ate-else { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-.btn.small.ate-else-btn { padding: 0; margin-top: 4px; font-size: calc(14px * var(--ts)); justify-content: flex-start; }
+.btn.small.ate-else-btn { padding: 0 8px; margin-top: 4px; justify-content: flex-start; }
 .my-food { padding-block: 0; }
 .my-food-pick { min-height: 56px; border: 0; background: none; color: inherit; font: inherit; text-align: start; padding: 8px 0; }
 
@@ -840,3 +844,22 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .st-tick.small { width: 28px; height: 28px; flex: none; }
 .st-tick:active:not(:disabled) { transform: scale(0.92); }
 .st-tick:disabled { opacity: 0.4; }
+
+/* 20-rule design pass (Nov 2026). */
+/* Rule 18: numbers line up in columns (weights, sets, macros, times). Only
+   on the places that hold numbers: on prose it widens hyphens. */
+.meta, .chip, .stat .value, .stat-tile-value, .macro-value, .hero-value, .count-up, .session-sub, .week-day, .set-n, .plate, .metric-value, .progress-label, input { font-variant-numeric: tabular-nums; }
+/* Rule 16: headlines break into even lines, paragraphs never end on one word. */
+h1, h2, h3, .page-title, .section-title, .session-name, .ex-name { text-wrap: balance; }
+p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
+/* The pace word leads the advice line on the weight card (rule 1). */
+.pace { color: var(--text); font-weight: 600; }
+.pace.good { color: var(--accent); }
+/* Rule 19: skeleton while a page's code loads. It appears after 250 ms, so
+   a quick open shows nothing at all. */
+.page-loading { animation: sheet-fade-in 0.2s ease 0.25s both; }
+.skel { background: var(--surface); border-radius: var(--radius); margin-bottom: 12px; animation: live-pulse 1.4s ease-in-out infinite; }
+.skel-title { height: 34px; width: 45%; border-radius: 10px; margin: 8px 4px 20px; }
+.skel-card { height: 180px; }
+.skel-card.short { height: 96px; }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }

@@ -61,7 +61,6 @@ export default function WeightCard({ data, today, onLog }) {
           </span>
         ) : null}
         {change ? <span className="muted small">{t('home.changeNote', { days: change.days })}</span> : null}
-        <span className={`chip${statusGood(p.mode, p.status) ? ' accent' : ''}`} style={{ marginInlineStart: 'auto' }}>{t(`goal.status.${p.status}`)}</span>
       </div>
       {p.target != null ? (
         <>
@@ -71,7 +70,8 @@ export default function WeightCard({ data, today, onLog }) {
           <div className="small">{t(p.mode === 'gain' ? 'goal.soFarGain' : 'goal.soFar', { done: Math.max(0, p.done_kg), left: p.left_kg, target: p.target })}</div>
         </>
       ) : null}
-      <div className="muted small" style={{ marginTop: 4 }}>{t(adviceKey(p.mode, p.status), { n: p.logs_needed })}</div>
+      {/* The pace is the advice's lead-in, not a second badge beside the change (rule 1). */}
+      <div className="muted small" style={{ marginTop: 4 }}><strong className={statusGood(p.mode, p.status) ? 'pace good' : 'pace'}>{t(`goal.status.${p.status}`)}.</strong> {t(adviceKey(p.mode, p.status), { n: p.logs_needed })}</div>
       </Link>
       {lifting ? (
         <Link to="/stats?tab=strength" className={`strength-line${move?.kg > 0 ? ' up' : ''}`} aria-label={`${strengthText}. ${t('home.strengthAria')}`}>

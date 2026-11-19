@@ -169,7 +169,7 @@ function MealPlan() {
         <div className="stat-tile macro">
           <div className="stat-tile-label">{t('meals.kcalEaten')}</div>
           <div className="macro-value"><CountUp value={eaten.kcal} /></div>
-          <div className="stat-tile-label">/ {target.kcal}</div>
+          <div className="stat-tile-label">/ {target.kcal} kcal</div>
           <div className="progress" style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.kcal, target.kcal)})` }} /></div>
         </div>
         <div className="stat-tile macro">
@@ -270,7 +270,7 @@ function MealPlan() {
                 <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
                   {opt.key && N.library?.some((m) => m.key === opt.key) ? <Link to={`/meals/library/${encodeURIComponent(opt.key)}?slot=${meal.slot}&date=${date}`} className="btn ghost small"><Icon name="book" /> {t('meals.recipe')}</Link> : null}
                   {opt.swapped ? <button type="button" className="btn ghost small" onClick={() => update((d) => pickOption(d, date, meal.slot, planMeal))}><Icon name="back" /> {t('meals.backToPlan')}</button> : null}
-                  <button type="button" className="btn ghost small ate-else-btn" onClick={() => setOtherFor(meal.slot)}>{t('other.open')}</button>
+                  <button type="button" className="btn ghost small ate-else-btn" onClick={() => setOtherFor(meal.slot)}><Icon name="plus" /> {t('other.open')}</button>
                 </div>
               </>
             )}
