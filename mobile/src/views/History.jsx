@@ -10,6 +10,7 @@ import { setLabel } from '../lib/sets.js';
 import { t } from '../lib/i18n.js';
 import { starterJustDone, starterProgress, STARTER_SESSIONS } from '../lib/starter.js';
 import { workoutSummary } from '../lib/summary.js';
+import { compareToLast, setsText } from '../lib/lastTime.js';
 import { useData } from '../store/useData.js';
 
 function SetEditor({ set, onSave, onCancel, onDelete }) {
@@ -53,6 +54,8 @@ export default function History() {
   const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) && s.track !== 'time' ? s.weight_kg * s.reps : 0), 0);
 
   const sum = justFinished ? workoutSummary(data, w.id) : null;
+  // Against the last run of the same session (charts step 3).
+  const cmp = w.session_key ? compareToLast(data, w) : null;
   // Starter fortnight: say where a beginner is after this session.
   const starter = justFinished ? starterProgress(data) : null;
   const starterNote = !justFinished ? null
@@ -79,6 +82,7 @@ export default function History() {
             <div><strong>{sum.volumeKg.toLocaleString(LOCALE)}</strong><span>{t('finish.lifted')}</span></div>
           </div>
           {sum.ranLong ? <p className="muted small" style={{ margin: '10px 0 0' }}>{t('finish.ranLong')}</p> : null}
+          {cmp?.last ? <Compare cmp={cmp} data={data} w={w} /> : null}
           {sum.bests.length ? (
             <div className="finish-bests">
               <div className="muted small">{t(sum.bests.length === 1 ? 'finish.bestOne' : 'finish.bests', { n: sum.bests.length })}</div>
@@ -106,6 +110,7 @@ export default function History() {
         <div className="stat"><div className="label">Sets</div><div className="value">{w.sets.length}</div></div>
         <div className="stat"><div className="label">Volume</div><div className="value">{Math.round(volume).toLocaleString(LOCALE)}<span className="unit">kg</span></div></div>
       </div>
+      {!sum && cmp?.last ? <section className="card"><Compare cmp={cmp} data={data} w={w} /></section> : null}
       {w.pain_note ? <div className="card small"><span className="chip warn">Pain note</span> {w.pain_note}</div> : null}
       {groups.map((g) => (
         <section key={g.exercise_id} className="card">
@@ -133,6 +138,37 @@ export default function History() {
       ) : null}
       <button type="button" className="btn danger" onClick={() => setConfirming(true)}><Icon name="trash" /> Delete workout</button>
       {confirming ? <ConfirmSheet title={t('history.deleteTitle')} body={t('history.deleteBody', { n: w.sets.length })} action={t('history.deleteTitle')} onConfirm={remove} onClose={() => setConfirming(false)} /> : null}
+    </div>
+  );
+}
+
+const MARK = { up: '▲', held: '=', down: '▼' };
+
+/** Lifts up / held / down against the last run of this session, then one
+ * row per exercise with its top set (charts step 3). A recovery-week
+ * session says lower is expected, so a dip never reads as a failure. */
+function Compare({ cmp, data, w }) {
+  const name = (id) => data.exercises.find((e) => e.id === id)?.name || 'Exercise';
+  const judged = cmp.counts.up + cmp.counts.held + cmp.counts.down;
+  return (
+    <div className="compare">
+      <div className="muted small" style={{ marginTop: 14 }}>{t('compare.title', { date: formatDate(cmp.last.log_date) })}</div>
+      {judged ? (
+        <div className="movers-counts" role="group" aria-label={t('movers.aria', cmp.counts)}>
+          <div className="up"><strong>{cmp.counts.up}</strong><span>{t('movers.up')}</span></div>
+          <div><strong>{cmp.counts.held}</strong><span>{t('movers.held')}</span></div>
+          <div className="down"><strong>{cmp.counts.down}</strong><span>{t('movers.down')}</span></div>
+        </div>
+      ) : null}
+      {w.is_deload ? <p className="muted small" style={{ margin: '0 0 6px' }}>{t('compare.deload')}</p> : null}
+      <div className="compare-rows">
+        {cmp.rows.map((r) => (
+          <div key={r.exercise_id} className="compare-row">
+            <span className="grow"><span>{name(r.exercise_id)}</span>{r.top ? <span className="meta">{t('compare.top', { text: setsText([r.top]) })}</span> : null}</span>
+            <span className={`chip${r.outcome === 'up' ? ' accent' : ''}`}>{r.outcome ? `${MARK[r.outcome]} ${t(`movers.${r.outcome}`)}` : t('compare.new')}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

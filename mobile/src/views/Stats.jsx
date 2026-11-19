@@ -10,7 +10,8 @@ import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
 import { nextDue } from '../lib/fitnessTest.js';
 import { formatDate, formatNumber } from '../lib/dates.js';
-import { profileOf } from '../lib/macros.js';
+import { currentGoal, profileOf } from '../lib/macros.js';
+import { sparkLine, strengthMovers } from '../lib/movers.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
 import { entryFor } from '../lib/catalogue.js';
@@ -274,12 +275,14 @@ function Strength({ data, today }) {
   }
   const rec = recordSummary(D.personalBests(data).values(), today, 30, firstLoadDates(data.workouts));
   const change = seriesChange(series);
+  const movers = strengthMovers(data, today);
   return (
     <>
       <div className="tile-grid">
         <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.prs')}</div><div className="macro-value">{rec.total}</div></div>
         <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.newPrs')}</div><div className="macro-value" style={{ color: rec.recent ? 'var(--accent)' : undefined }}>{rec.recent}</div></div>
       </div>
+      <Movers movers={movers} onPick={setPick} lifting={['gain', 'recomp'].includes(currentGoal(data)?.direction)} />
       <section className="card stack">
         {change ? (
           <div>
@@ -295,16 +298,55 @@ function Strength({ data, today }) {
         </label>
         <LineChart points={series} label="Estimated one-rep max" />
       </section>
-      <h2 className="section-title">{t('stats.records')}</h2>
-      <div className="list">
-        {bests.map((b) => (
-          <button key={b.exercise_id} type="button" className="list-row" onClick={() => setPick(b.exercise_id)}>
-            <div className="grow"><div>{b.name}</div><div className="meta">{formatDate(b.log_date)} · est. 1RM {Math.round(b.score)} kg</div></div>
-            <strong>{b.weight_kg} × {b.reps}</strong>
-          </button>
-        ))}
-      </div>
+      {/* The full A-Z list is one tap away (charts step 3): the movers above answer "what's changing". */}
+      <details className="records-all">
+        <summary><h2 className="section-title" style={{ margin: 0 }}>{t('movers.allRecords', { n: bests.length })}</h2><Icon name="chev" className="icon chev" /></summary>
+        <div className="list">
+          {bests.map((b) => (
+            <button key={b.exercise_id} type="button" className="list-row" onClick={() => setPick(b.exercise_id)}>
+              <div className="grow"><div>{b.name}</div><div className="meta">{formatDate(b.log_date)} · est. 1RM {Math.round(b.score)} kg</div></div>
+              <strong>{b.weight_kg} × {b.reps}</strong>
+            </button>
+          ))}
+        </div>
+      </details>
     </>
+  );
+}
+
+const OUTCOME_ICON = { up: '▲', held: '=', down: '▼' };
+
+/** Lifts that moved: the last 4 weeks against the 4 before (charts step 3).
+ * On a cut, holding strength is the win, so "held" is said kindly. */
+function Movers({ movers, onPick, lifting }) {
+  const { counts, rows, waiting } = movers;
+  const judged = counts.up + counts.held + counts.down;
+  if (!judged) {
+    return <section className="card"><h2 className="section-title" style={{ margin: 0 }}>{t('movers.title')}</h2><p className="muted small" style={{ margin: '6px 0 0' }}>{t('movers.empty')}</p></section>;
+  }
+  const top = rows.slice(0, 5);
+  return (
+    <section className="card movers">
+      <h2 className="section-title" style={{ margin: 0 }}>{t('movers.title')}</h2>
+      <div className="movers-counts" role="group" aria-label={t('movers.aria', counts)}>
+        <div className="up"><strong>{counts.up}</strong><span>{t('movers.up')}</span></div>
+        <div><strong>{counts.held}</strong><span>{t('movers.held')}</span></div>
+        <div className="down"><strong>{counts.down}</strong><span>{t('movers.down')}</span></div>
+      </div>
+      <p className="muted small" style={{ margin: '0 0 4px' }}>{[lifting ? null : t('movers.cutNote'), waiting ? t('movers.waiting', { n: waiting }) : null].filter(Boolean).join(' ')}</p>
+      <div className="movers-list">
+        {top.map((r) => {
+          const d = sparkLine(r.spark);
+          return (
+            <button key={r.exercise_id} type="button" className="mover-row" onClick={() => onPick(r.exercise_id)} aria-label={t(`movers.rowAria.${r.outcome}`, { name: r.name, kg: Math.abs(r.kg), now: Math.round(r.now) })}>
+              <span className="grow"><span className="mover-name">{r.name}</span><span className="meta">{t('movers.e1rm', { kg: Math.round(r.now) })}</span></span>
+              {d ? <svg className={`mover-spark ${r.outcome}`} width="60" height="20" viewBox="0 0 60 20" aria-hidden="true"><path d={d} fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg> : null}
+              <span className={`chip${r.outcome === 'up' ? ' accent' : r.outcome === 'down' ? ' effort' : ''}`}>{OUTCOME_ICON[r.outcome]} {r.outcome === 'held' ? t('movers.held') : t('movers.kg', { kg: Math.abs(r.kg) })}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

@@ -1130,3 +1130,26 @@ label.field input { transition: box-shadow 300ms ease; }
 .set-chg { flex: none; }
 .st-ghost { display: flex; align-items: center; justify-content: space-between; gap: 8px; grid-column: 1 / -1; padding: 0 8px 6px 58px; margin-top: -4px; color: var(--muted); font-size: calc(12px * var(--ts)); font-variant-numeric: tabular-nums; text-align: start; }
 .st-ghost .chip { font-size: calc(12px * var(--ts)); padding: 1px 7px; }
+
+/* Charts step 3: lift movers on Stats > Strength, the last-time comparison after a workout. */
+.chip.effort { background: var(--caution-dim); color: var(--orange); }
+.movers-counts { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 12px 0 8px; }
+.movers-counts strong { display: block; font-size: calc(28px * var(--ts)); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.movers-counts span { color: var(--muted); font-size: calc(13px * var(--ts)); }
+.movers-counts .up strong { color: var(--accent); }
+.movers-counts .down strong { color: var(--orange); }
+.movers-list { display: flex; flex-direction: column; }
+.mover-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; border: 0; border-top: var(--hair); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.mover-row .grow { min-width: 0; display: flex; flex-direction: column; }
+.mover-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mover-spark { flex: none; stroke: var(--muted); }
+.mover-spark.up { stroke: var(--accent); }
+.mover-spark.down { stroke: var(--orange); }
+.records-all > summary { display: flex; align-items: center; justify-content: space-between; min-height: 48px; cursor: pointer; list-style: none; }
+.records-all > summary::-webkit-details-marker { display: none; }
+.records-all[open] > summary .chev { transform: rotate(90deg); }
+.compare-rows { display: flex; flex-direction: column; margin: 8px 0 4px; }
+.compare-row { display: flex; align-items: center; gap: 8px; min-height: 44px; border-top: var(--hair); }
+.compare-row .grow { min-width: 0; display: flex; flex-direction: column; }
+.mover-row .meta, .compare-row .meta { color: var(--muted); font-size: calc(13px * var(--ts)); }
+.mover-name { font-size: calc(15px * var(--ts)); }
