@@ -246,7 +246,7 @@ test('injury areas swap what loads them, and only with a yes to the injury quest
   const both = applyScreening(adult(), { ...NO, injury: true, injury_areas: ['knee', 'lower_back'] }, TODAY);
   assert.deepEqual(swapLimits(both, TODAY), ['lower_back', 'knee']);
   const two = safeDay(both, day('Back Squat'), TODAY, SWAPS);
-  assert.equal(two.exercises[0].name, 'Leg Curl', 'lower back sends it to Leg Press, which the knee then swaps on');
+  assert.equal(two.exercises[0].name, 'Glute Bridge', 'a swap must be safe for every area: not Leg Press (knee) or Romanian Deadlift (lower back)');
   const fixed = applyScreening(knee, NO, TODAY);
   assert.equal(fixed.safety.injury_areas, undefined, 'answering no again clears the areas');
 });

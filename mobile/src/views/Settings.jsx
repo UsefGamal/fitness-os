@@ -460,6 +460,7 @@ export default function Settings() {
           <div className="muted small" style={{ marginBottom: 6 }}>{t('safety.limitsOn')}</div>
           <ul className="safety-gates">
             {gatesOn(data, todayISO()).map((g) => <li key={g}>{t(`safety.gate.${g}`)}</li>)}
+            {data.safety?.injury_areas?.length ? <li>{t('safety.areasOn', { areas: data.safety.injury_areas.map((x) => t(`safety.area.${x}`)).join(', ') })}</li> : null}
           </ul>
           {isMinorNow(data, todayISO()) ? <div className="muted small" style={{ marginTop: 6 }}>{t('safety.minor')}</div> : null}
         </section>

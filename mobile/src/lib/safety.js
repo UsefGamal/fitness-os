@@ -113,20 +113,19 @@ export function safeDay(data, day, today, swaps) {
   const gentle = gentleDay(data, day, today);
   const limits = swapLimits(data, today);
   if (!gentle || !limits.length || !swaps) return gentle;
+  const tables = limits.map((why) => [why, swaps[why] || {}]);
+  // Unsafe for any limit that's on: a swap must clear all of them.
+  const flagged = (name) => tables.find(([, t]) => t[name]);
   const changes = [];
-  let exercises = gentle.exercises;
-  for (const why of limits) {
-    const table = swaps[why] || {};
-    const out = [];
-    for (const e of exercises) {
-      const options = table[e.name];
-      if (!options) { out.push(e); continue; }
-      const taken = new Set([...out, ...exercises].map((x) => x.name));
-      const to = options.find((o) => !taken.has(o)) || null;
-      changes.push({ from: e.name, to, why });
-      if (to) out.push({ ...e, name: to, safety_swap: e.name });
-    }
-    exercises = out;
+  const exercises = [];
+  for (const e of gentle.exercises) {
+    const hit = flagged(e.name);
+    if (!hit) { exercises.push(e); continue; }
+    const taken = new Set([...exercises, ...gentle.exercises].map((x) => x.name));
+    const options = tables.flatMap(([, t]) => t[e.name] || []);
+    const to = options.find((o) => !taken.has(o) && !flagged(o)) || null;
+    changes.push({ from: e.name, to, why: hit[0] });
+    if (to) exercises.push({ ...e, name: to, safety_swap: e.name });
   }
   return changes.length ? { ...gentle, exercises, safety_changes: changes } : gentle;
 }

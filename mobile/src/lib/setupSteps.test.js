@@ -28,6 +28,14 @@ test('switching from female to male on Back drops the screen', () => {
   assert.ok(her.includes('safety:pregnant') && !him.includes('safety:pregnant'));
 });
 
+test('a yes to the injury question asks where it hurts, right after', () => {
+  const no = setupSteps({ gender: 'male', screening: { injury: false } }, TODAY);
+  assert.ok(!no.includes('injury_areas'));
+  const yes = setupSteps({ gender: 'male', screening: { injury: true } }, TODAY);
+  assert.equal(yes[yes.indexOf('safety:injury') + 1], 'injury_areas');
+  assert.equal(afterSafety(yes), 'goal');
+});
+
 test('skipping the safety check removes every safety screen', () => {
   const steps = setupSteps({ gender: 'female', screening: null }, TODAY);
   assert.deepEqual(safety(steps), []);

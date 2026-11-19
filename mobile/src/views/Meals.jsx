@@ -24,7 +24,7 @@ import { clearCustomMeal, customMeals } from '../lib/myFoods.js';
 import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
-import { kcalHidden } from '../lib/safety.js';
+import { gateOn, kcalHidden } from '../lib/safety.js';
 import { clearAdjustments } from '../lib/targetCheck.js';
 import { announce, mealTickLine } from '../lib/announce.js';
 import { useToday } from '../store/today.js';
@@ -198,6 +198,10 @@ function MealPlan() {
           <button type="button" className="mini-btn" onClick={() => update(clearAdjustments)}>{t('tcheck.undo')}</button>
         </div>
       ) : null}
+      {/* SAFE-2: what the safety check means for food, beside the meals. */}
+      {gateOn(data, 'nursing_extra', today) && !kcalHidden(data) ? <p className="muted small safety-food" role="note">{t('safety.food.nursing')}</p> : null}
+      {gateOn(data, 'protein_cap', today) ? <p className="muted small safety-food" role="note">{t('safety.food.kidney')}</p> : null}
+      {gateOn(data, 'steady_carbs', today) ? <p className="muted small safety-food" role="note">{t('safety.food.diabetes')}</p> : null}
       {fit.state === 'far' ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
       {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
         <div key={r.key} className="warn" role="note">

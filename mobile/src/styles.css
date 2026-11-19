@@ -1243,3 +1243,14 @@ label.field input { transition: box-shadow 300ms ease; }
 }
 /* reduce-motion mirror: Settings > Look > Reduce motion */
 :root[data-motion="reduce"] .tour-spot, :root[data-motion="reduce"] .tour-card { animation: none; transition: none; }
+
+/* SAFE-2: injury areas, and what the safety check changed in a day. */
+.story-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.story-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 18px; border-radius: 24px; border: 2px solid transparent; background: var(--surface); color: var(--text); font-size: calc(16px * var(--ts)); font-weight: 600; }
+.story-chip.on { border-color: var(--accent); background: var(--accent-dim); }
+.story-chip.on .icon { color: var(--accent); }
+.safety-areas { margin: 10px 0 4px; }
+.safety-areas .story-chip { background: var(--surface2); min-height: 44px; }
+.safety-changes ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.safety-changes li { margin: 2px 0; }
+.safety-food { margin: 8px 4px; }

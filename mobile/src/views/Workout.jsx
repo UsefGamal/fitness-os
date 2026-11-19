@@ -36,7 +36,8 @@ import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
 import { announce, setLoggedLine } from '../lib/announce.js';
 import { isShortSession } from '../lib/summary.js';
-import { gateOn, gentleDay } from '../lib/safety.js';
+import { gateOn, safeDay } from '../lib/safety.js';
+import SafetyChanges from '../components/SafetyChanges.jsx';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
 import { readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from '../lib/liveStats.js';
@@ -189,7 +190,7 @@ export default function Workout() {
   const back = comeback(data, today);
   const baseDay = sessionKey ? effectiveDay(sessionKey, T, data) : null;
   // beginner_only (safety check): every set stops 3 reps short of failure.
-  const planDay = gentleDay(data, recovery ? recoveryDay(baseDay) : baseDay, today);
+  const planDay = safeDay(data, recovery ? recoveryDay(baseDay) : baseDay, today, content.training.safety_swaps?.swaps);
   // Today's changes (extra sets, skips, swaps) live on the workout, not the plan.
   const day = planDay && active ? applyTweaks(planDay, active.tweaks) : planDay;
 
@@ -371,6 +372,7 @@ export default function Workout() {
         <h1 className="page-title">{day.label}</h1>
         <p className="page-sub">{day.focus}{day.cardio_after ? `, then ${day.cardio_after.minutes} min cycling` : ''}</p>
         {recovery ? <div className="card small" role="note"><span className="chip warn">{t('recovery.chip')}</span> {t('recovery.banner')}</div> : null}
+        <SafetyChanges changes={day.safety_changes} />
         {prev?.finished_at ? <div className="card muted small">You already finished a session today ({prev.notes}, {prev.sets.length} sets).</div> : null}
         {build && build.some((b) => b.status !== 'keep') ? (
           <section className="card stack">

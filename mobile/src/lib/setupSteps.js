@@ -15,7 +15,13 @@ import { LIMITS, ageIn, isMinor, setupGoalDate } from './setup.js';
  *    and not while the safety check holds calories at maintenance. */
 export function setupSteps(a = {}, today) {
   const steps = ['welcome', 'name', 'sex', 'age', 'height', 'weight'];
-  if (a.screening !== null) for (const q of questionsFor(a.gender ?? null)) steps.push(`safety:${q.key}`);
+  if (a.screening !== null) {
+    for (const q of questionsFor(a.gender ?? null)) {
+      steps.push(`safety:${q.key}`);
+      // A yes to the injury question asks where (SAFE-2).
+      if (q.key === 'injury' && a.screening?.injury === true) steps.push('injury_areas');
+    }
+  }
   steps.push('goal');
   const cut = (a.goal === 'lose' || a.goal === 'recomp') && !(today && isMinor(a, today));
   if (cut && a.weight_kg > 0) {
@@ -43,7 +49,7 @@ export function prevStep(steps, id) {
 
 /** The first screen after the safety questions (for "Skip the check"). */
 export function afterSafety(steps) {
-  return steps.find((s, i) => i > 0 && !s.startsWith('safety:') && steps[i - 1].startsWith('safety:')) || 'goal';
+  return steps.find((s, i) => i > 0 && !s.startsWith('safety:') && s !== 'injury_areas' && (steps[i - 1].startsWith('safety:') || steps[i - 1] === 'injury_areas')) || 'goal';
 }
 
 /** How far along, for the bar: the welcome screen doesn't count. */
