@@ -6,7 +6,7 @@ import { INTRO_MS } from '../lib/intro.js';
 // The Tafra mark (a leaping ط) from the launch screen and launcher icon
 // (res/drawable/ic_launcher_foreground.xml), so the intro picks up exactly
 // where Android's splash leaves off. Its counter is a hole: fill even-odd.
-const MARK = 'M11.72 6.06L15.55 4.55L13.79 10.98L16.97 9.56C20.1 8.99 22.6 10.81 22.83 14.02C23 16.15 21.86 17.68 19.82 17.8L7.54 17.8L1 19.5L6.46 14.87L9.02 14.87ZM12.14 14.9L19.19 14.9C19.39 13.59 18.82 12.45 17.83 12.26L16.92 12.31C15.27 13.02 13.56 14.02 12.14 14.9Z';
+const MARK = 'M14.71 4.62L18.85 2.75L15.15 11.94L18.06 10.48C20.87 9.78 22.98 11.24 22.98 14.08C23 15.96 21.9 17.39 20.07 17.62L9.18 18.38L1 21.25L8.4 15.85L10.67 15.69ZM13.44 15.52L19.7 15.08C19.96 13.91 19.52 12.94 18.65 12.82L17.84 12.93C16.33 13.66 14.76 14.65 13.44 15.52Z';
 
 /**
  * A 1.8 s intro over Home (MOVE-1): the splash mark is drawn as a line, then
@@ -34,7 +34,7 @@ export default function Intro({ line, onDone }) {
       <svg className="intro-mark" viewBox="0 0 160 160" aria-hidden="true">
         <circle className="intro-ring-bg" cx="80" cy="80" r="70" />
         <circle className="intro-ring" cx="80" cy="80" r="70" />
-        <g className="intro-bolt" transform="translate(23 23) scale(4.75)">
+        <g className="intro-bolt" transform="translate(27.2 27.2) scale(4.4)">
           <path className="intro-bolt-line" d={MARK} pathLength="100" />
           <path className="intro-bolt-fill" d={MARK} fillRule="evenodd" />
         </g>
