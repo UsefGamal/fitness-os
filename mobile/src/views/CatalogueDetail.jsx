@@ -4,7 +4,7 @@ import Alternatives from '../components/Alternatives.jsx';
 import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Icon from '../components/Icon.jsx';
-import { capitalize, groupOf } from '../lib/catalogue.js';
+import { capitalize, groupOf, isStretch } from '../lib/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { ANGLES, MUSCLE, angleOf, helpersOf, musclesOf } from '../lib/muscles.js';
 
@@ -24,6 +24,7 @@ export function HowTo({ entry, target = null }) {
   return (
     <>
       <div className="row" style={{ flexWrap: 'wrap', gap: 6, margin: '0 0 12px' }}>
+        {isStretch(entry) ? <span className="chip accent">{t('kind.tag')}</span> : null}
         {entry.level ? <span className="chip">{capitalize(entry.level)}</span> : null}
         {advanced ? <span className="chip warn">{t('levels.advanced')}</span> : null}
         {entry.equipment ? <span className="chip">{capitalize(entry.equipment)}</span> : null}

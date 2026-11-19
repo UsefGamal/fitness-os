@@ -53,3 +53,12 @@ test('a pull-up style move counts once for its group, not per muscle', () => {
   const v = run(d);
   assert.ok(v.groups.back.avg <= 10, String(v.groups.back.avg));
 });
+
+test('stretches count for nothing, and are not unknown', () => {
+  let d = emptyData(content);
+  d = { ...d, exercises: [...d.exercises, { id: 998, name: 'Quad Stretch', muscle_group: 'Legs', custom: true }] };
+  d = logged(d, '2026-11-02', 'Quad Stretch', 4);
+  const v = muscleVolume(d, activePlan(d, content), TODAY, (name) => (name === 'Quad Stretch' ? { category: 'stretching', primaryMuscles: ['quadriceps'] } : null));
+  assert.equal(v.groups.quads.avg, 0);
+  assert.equal(v.unknown, 0);
+});

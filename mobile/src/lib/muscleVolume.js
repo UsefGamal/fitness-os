@@ -3,11 +3,11 @@
 // completed weeks, against the 10-20 guide; this week shows as "so far".
 // A set counts 1 for each of its main groups and 0.5 for helper groups,
 // once per group (a pull-up is one back set, not lats + middle back).
+// Stretches count for nothing.
 // Recovery weeks (any deload session) are left out of the average.
 import { isWorkSet } from './data.js';
 import { addDays, weekStart } from './dates.js';
-import { groupsOfTarget, GROUPS16 } from './muscleGroups.js';
-import { targetFor } from './muscles.js';
+import { GROUPS16, trainedGroups } from './muscleGroups.js';
 import { band, GUIDE, HELPER_SHARE } from './weeklySets.js';
 
 export const AVG_WEEKS = 4;
@@ -22,13 +22,17 @@ export function muscleVolume(data, training, today, entryOf = () => null, n = AV
   const thisWeek = weekStart(today, data);
   const keys = Array.from({ length: n }, (_, i) => addDays(thisWeek, -7 * (i + 1)));
   const from = keys[keys.length - 1];
-  const byId = new Map(data.exercises.map((e) => [e.id, e.name]));
+  const byId = new Map(data.exercises.map((e) => [e.id, e]));
   const seen = new Map();
+  // BeFit's trainedGroups: a stretch trains no group, so it is neither
+  // counted nor "unknown". null = a move with no known muscle.
   const groupsFor = (id) => {
     if (!seen.has(id)) {
-      const name = byId.get(id);
-      const target = name ? targetFor(name, training, entryOf(name)) : null;
-      seen.set(id, target && target.main.length ? groupsOfTarget(target) : null);
+      const ex = byId.get(id);
+      const entry = ex ? entryOf(ex.name) : null;
+      const g = ex ? trainedGroups(ex, training, entry) : null;
+      const stretch = entry?.category === 'stretching' && !training?.exercise_targets?.[ex?.name];
+      seen.set(id, g && (g.main.length || stretch) ? g : null);
     }
     return seen.get(id);
   };

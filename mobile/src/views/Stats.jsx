@@ -19,7 +19,7 @@ import { keptWhileCutting, weeklyDays } from '../lib/overview.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, trackedExercises, weekStreaks, yearGrid } from '../lib/insights.js';
 import { entryFor } from '../lib/catalogue.js';
-import { exerciseGroups, GROUP16, GROUPS16, groupStats, recoveryOf } from '../lib/muscleGroups.js';
+import { trainedGroups, GROUP16, GROUPS16, groupStats, recoveryOf } from '../lib/muscleGroups.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
@@ -295,7 +295,7 @@ function useGroupsOf(data) {
     return (id) => {
       if (!memo.has(id)) {
         const e = byId.get(id);
-        memo.set(id, exerciseGroups(e, content.training, e && catalogue ? entryFor(e.name, content.training, catalogue.byId) : null));
+        memo.set(id, trainedGroups(e, content.training, e && catalogue ? entryFor(e.name, content.training, catalogue.byId) : null));
       }
       return memo.get(id);
     };
