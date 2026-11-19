@@ -63,3 +63,28 @@ test('the reason line names the muscles both work', () => {
   assert.equal(sharedWords('Side Lateral Raise', 'Seated Side Lateral Raise'), 3);
   assert.equal(sharedWords('Barbell Squat', 'Dumbbell Squat'), 1);
 });
+
+test('swap picks: closest or by group, never what the day already has', async () => {
+  const { swapPicks } = await import('./similar.js');
+  const e = (id, name, primary, category = 'strength', extra = {}) => ({ id, name, primary, secondary: [], category, ...extra });
+  const bench = e('bench', 'Barbell Bench Press', ['chest'], 'strength', { force: 'push', mechanic: 'compound' });
+  const list = [
+    bench,
+    e('db', 'Dumbbell Bench Press', ['chest'], 'strength', { force: 'push', mechanic: 'compound' }),
+    e('push', 'Pushups', ['chest'], 'strength', { force: 'push', mechanic: 'compound' }),
+    e('stretch', 'Chest Stretch', ['chest'], 'stretching'),
+    e('row', 'Seated Cable Rows', ['middle back'], 'strength', { force: 'pull' }),
+    e('pd', 'Wide-Grip Lat Pulldown', ['lats'], 'strength', { force: 'pull' }),
+  ];
+  const close = swapPicks(bench, list, { skip: ['Pushups'] }).map((x) => x.id);
+  assert.ok(close.includes('db'));
+  assert.ok(!close.includes('push') && !close.includes('bench') && !close.includes('stretch'));
+  // Another group: training moves for it, no stretches.
+  assert.deepEqual(swapPicks(bench, list, { group: 'back' }).map((x) => x.id), ['row', 'pd']);
+  assert.deepEqual(swapPicks(bench, list, { group: 'back', skip: ['seated cable rows'] }).map((x) => x.id), ['pd']);
+  // A stretch swaps for stretches.
+  assert.deepEqual(swapPicks(list[3], list, { group: 'chest' }).map((x) => x.id), []);
+  // No catalogue entry: a group still lists something; no group lists nothing.
+  assert.deepEqual(swapPicks(null, list, { group: 'chest' }).map((x) => x.id), ['bench', 'db', 'push']);
+  assert.deepEqual(swapPicks(null, list), []);
+});

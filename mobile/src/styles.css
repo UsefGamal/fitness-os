@@ -135,6 +135,8 @@ button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit
 .week-day.rest .s { color: var(--muted); font-weight: 500; }
 .week-day.today { border-color: var(--accent); }
 .week-day.done .s { color: var(--accent); }
+.week-day.picked { background: var(--accent-dim); }
+.week-day.picked .d { color: var(--accent); }
 
 .progress { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
 .progress > span { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left center; transition: transform 320ms cubic-bezier(.2, .8, .2, 1); will-change: transform; }
