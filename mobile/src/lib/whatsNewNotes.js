@@ -5,7 +5,7 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.11',
+    version: '1.1.12',
     items: [
       { icon: 'calendar', text: 'Home shows your week at a glance: days trained, the plan ahead, and work sets so far.' },
       { icon: 'chart', text: 'Stats > Body shows what you burn, measured from your own month of meals and weigh-ins, beside the app\'s estimate.' },
@@ -15,7 +15,7 @@ export const WHATS_NEW = [
     ],
   },
   {
-    version: '1.1.10',
+    version: '1.1.11',
     items: [
       { icon: 'chart', text: 'The weight chart shows your trend line over each weigh-in, with kg and dates, 4 weeks to All, and a table view.' },
       { icon: 'calendar', text: 'Stats > Body adds weekly averages, steadier than any one day.' },
@@ -24,7 +24,7 @@ export const WHATS_NEW = [
     ],
   },
   {
-    version: '1.1.9',
+    version: '1.1.10',
     items: [
       { icon: 'barbell', text: 'Stats > Strength opens on your last 4 weeks against the 4 before: lifts up, held or down, and the biggest movers.' },
       { icon: 'check', text: 'After a workout, each lift shows up, held or down against the last time you did that session.' },
@@ -32,11 +32,18 @@ export const WHATS_NEW = [
     ],
   },
   {
-    version: '1.1.8',
+    version: '1.1.9',
     items: [
       { icon: 'trend', text: 'The weight card shows your pace as a range measured from your weigh-ins, and when you would reach your goal at that pace.' },
       { icon: 'dumbbell', text: 'Today\'s workout card shows what you lifted last time in that session.' },
       { icon: 'check', text: 'In a workout, each set shows last time\'s set under it, and once you tick it, how it compares.' },
+    ],
+  },
+  {
+    version: '1.1.8',
+    items: [
+      { icon: 'calendar', text: 'Plan shows the day you picked as a tab, and the Start button follows it: "Start Push today".' },
+      { icon: 'undo', text: 'Swap lets you pick any of the 16 muscle groups, and no longer offers an exercise already in that day.' },
     ],
   },
   {
