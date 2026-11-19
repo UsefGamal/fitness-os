@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.8',
+    items: [
+      { icon: 'gear', text: 'Settings are simpler: six groups, and a search at the top to find any setting.' },
+      { icon: 'play', text: 'Training settings fold into four parts, with rest times picked from a list.' },
+      { icon: 'download', text: 'Data & backups is grouped, and Export CSV lets you pick workouts, body or meals.' },
+    ],
+  },
+  {
     version: '1.0.7',
     items: [
       { icon: 'timer', text: 'When a rest ends, "Log set & rest" on the notification logs the set it shows and starts your next rest, without opening the app.' },

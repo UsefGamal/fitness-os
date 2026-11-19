@@ -49,6 +49,7 @@ const PATHS = {
   moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
   steps: 'M7 3c2 0 3 2 3 5s-1 5-3 5-3-2-3-5 1-5 3-5zM5 16h4v2a2 2 0 0 1-4 0zM17 7c2 0 3 2 3 5s-1 5-3 5-3-2-3-5 1-5 3-5zM15 20h4v1a2 2 0 0 1-4 0z',
   trend: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16 16l5 5',
 };
 
 export default function Icon({ name, className = 'icon', title }) {
