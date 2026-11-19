@@ -47,6 +47,20 @@ export function setRamadan(data, changes) {
   return { ...data, diet: { ...diet, ramadan: { ...(diet.ramadan || {}), ...changes } } };
 }
 
+/** Change the first or last day of fasting (`which` 'from' | 'to') and keep
+ * the range the right way round: a first day picked after the last day (or
+ * a last day before the first) moves the other end with it, keeping the
+ * number of days. Without this the mode switched itself off with no word,
+ * and its dates vanished from Settings. */
+export function setRamadanDate(data, which, iso) {
+  if (!ISO.test(iso || '')) return data;
+  const r = ramadanOf(data);
+  if (!r.from || !r.to) return setRamadan(data, { [which]: iso });
+  const days = Math.max(0, daysBetween(r.from, r.to));
+  if (which === 'from') return setRamadan(data, iso > r.to ? { from: iso, to: addDays(iso, days) } : { from: iso });
+  return setRamadan(data, iso < r.from ? { from: addDays(iso, -days), to: iso } : { to: iso });
+}
+
 /** On with the suggested dates (or the ones set before), or off. */
 export function switchRamadan(data, on) {
   const now = ramadanOf(data);

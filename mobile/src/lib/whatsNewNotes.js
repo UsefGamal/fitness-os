@@ -5,7 +5,7 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.5',
+    version: '1.1.6',
     items: [
       { icon: 'bolt', text: 'A cleaner look: one set of text sizes, softer white text, and one meaning per colour.' },
       { icon: 'play', text: 'Start buttons are bigger, and finishing a workout shows your best set and when the next session is.' },
@@ -13,6 +13,15 @@ export const WHATS_NEW = [
       { icon: 'trend', text: 'Progress bars, PRs and the goal card carry the Tafra mark\'s rising stroke.' },
       { icon: 'book', text: 'Empty screens show a small drawing and the one thing to do next.' },
       { icon: 'check', text: 'The save bar has a background again in the dark theme.' },
+    ],
+  },
+  {
+    version: '1.1.5',
+    items: [
+      { icon: 'dumbbell', text: 'A plank, wall sit or other hold swapped into your plan now logs seconds, not reps.' },
+      { icon: 'sunrise', text: 'Ramadan dates: a first day after the last one (or the other way round) keeps Ramadan on and moves the other date.' },
+      { icon: 'person', text: 'Profile saves Build muscle or Keep my weight without a goal weight or date, and flags a goal on the wrong side.' },
+      { icon: 'gear', text: 'Quests and Shopping say Monday when your week starts on Monday, and the Meals buttons fit at the biggest text size.' },
     ],
   },
   {

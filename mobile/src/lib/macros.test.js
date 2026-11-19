@@ -55,6 +55,14 @@ test('macro split: protein 2.0 / 1.8 / 1.6 g per kg of goal weight', () => {
 test('goal weights under BMI 18.5 are refused', () => {
   assert.deepEqual(goalIssues({ height_cm: 173, goal_weight_low_kg: 55 }), ['bmi']);
   assert.deepEqual(goalIssues({ height_cm: 173, goal_weight_low_kg: 56 }), []);
+  // The goal has to be on the side the person is heading.
+  const p = { height_cm: 173, goal_weight_low_kg: 75, goal_weight_high_kg: 80 };
+  assert.deepEqual(goalIssues({ ...p, direction: 'gain' }, 95), ['gainBelow']);
+  assert.deepEqual(goalIssues({ ...p, direction: 'gain' }, 70), []);
+  assert.deepEqual(goalIssues({ ...p, direction: 'lose' }, 70), ['loseAbove']);
+  assert.deepEqual(goalIssues({ ...p, direction: 'lose' }, 95), []);
+  assert.deepEqual(goalIssues({ ...p, direction: 'maintain' }, 95), []);
+  assert.deepEqual(goalIssues({ ...p, direction: 'lose' }), []);
   assert.equal(minGoalWeight(173), 55.5);
 });
 

@@ -1,5 +1,5 @@
 {
-  "total": 193,
+  "total": 192,
   "files": {
     "src/views/Catalogue.jsx": 5,
     "src/views/CatalogueDetail.jsx": 7,
@@ -25,7 +25,7 @@
     "src/views/Session.jsx": 12,
     "src/views/Settings.jsx": 29,
     "src/views/Setup.jsx": 0,
-    "src/views/Shopping.jsx": 4,
+    "src/views/Shopping.jsx": 3,
     "src/views/Snapshots.jsx": 0,
     "src/views/Stats.jsx": 9,
     "src/views/Today.jsx": 0,
