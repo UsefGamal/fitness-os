@@ -93,7 +93,7 @@ export default function Session() {
           ))}
         </div>
       ) : null}
-      {type === 'home' ? <div className="card small muted">{home.focus}</div> : null}
+      {type === 'home' ? <p className="muted small" style={{ margin: '0 4px 12px' }}>{home.focus}</p> : null}
       {type === 'cardio' ? (
         <section className="card stack">
           <div className="small">{T.cardio_session.target}</div>

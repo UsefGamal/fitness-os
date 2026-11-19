@@ -28,7 +28,8 @@ export default function HistoryList() {
               <Link key={w.id} to={`/history/${w.id}`} className="list-row">
                 <div className="grow">
                   <div>{w.notes || TYPE[w.workout_type] || w.workout_type}</div>
-                  <div className="meta">{formatDate(w.log_date)} · {w.sets.length ? `${w.sets.length} set${w.sets.length === 1 ? '' : 's'}` : TYPE[w.workout_type]}{w.duration_min ? ` · ${w.duration_min} min` : ''}</div>
+                  {/* The type only when the title isn't already it (rule 2: "Padel · Padel"). */}
+                  <div className="meta">{[formatDate(w.log_date), w.sets.length ? `${w.sets.length} set${w.sets.length === 1 ? '' : 's'}` : ((w.notes || TYPE[w.workout_type]) !== TYPE[w.workout_type] ? TYPE[w.workout_type] : null), w.duration_min ? `${w.duration_min} min` : null].filter(Boolean).join(' · ')}</div>
                 </div>
                 {w.started_at && !w.finished_at ? <span className="chip accent">In progress</span> : null}
                 <Icon name="chev" className="icon chev" />

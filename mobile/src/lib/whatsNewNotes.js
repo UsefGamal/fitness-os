@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.0.9',
+    items: [
+      { icon: 'home', text: "Home is clearer: the card says Today's workout, the session name is bigger, and the pace sits in the advice line." },
+      { icon: 'chart', text: 'Numbers line up in neat columns, headings wrap evenly, and a slow page shows grey boxes while it loads.' },
+      { icon: 'meals', text: 'Small fixes: Stats tabs fit their words, History no longer says Padel twice, and Home counts up when you add water.' },
+    ],
+  },
+  {
     version: '1.0.8',
     items: [
       { icon: 'gear', text: 'Settings are simpler: six groups, and a search at the top to find any setting.' },

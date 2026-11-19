@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 
+import CountUp from './CountUp.jsx';
 import Icon from './Icon.jsx';
 
 /** A quick-stat tile: icon, a number ("0 / 3000 ml") and a label. A link
@@ -10,7 +11,8 @@ export default function StatTile({ to, icon, tone, value, of, label, children, a
     <div className="row" style={{ gap: 12, flexWrap: wide ? 'wrap' : undefined }}>
       <Icon name={icon} className={`icon stat-icon tone-${tone}`} />
       <div className="grow">
-        <div className="stat-tile-value">{value}{of ? <span className="of"> / {of}</span> : null}</div>
+        {/* Rule 20: a tap that adds water or ticks a meal counts the number up. */}
+        <div className="stat-tile-value"><CountUp value={value} />{of ? <span className="of"> / {of}</span> : null}</div>
         <div className="stat-tile-label">{label}</div>
       </div>
       {children}
