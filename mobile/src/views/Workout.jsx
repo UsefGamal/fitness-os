@@ -27,7 +27,7 @@ import { feedback, unlockAudio } from '../store/feedback.js';
 import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
 import { useCatalogue } from '../store/catalogue.js';
-import { shadeLines } from '../lib/restTimer.js';
+import { shadeLines, shadeLogChain } from '../lib/restTimer.js';
 import { useTimer } from '../store/useTimer.js';
 import { howToSteps, showHowTo, starterProgress } from '../lib/starter.js';
 import MoreMenu from '../components/MoreMenu.jsx';
@@ -425,7 +425,16 @@ export default function Workout() {
         // The same exercise again: the load just lifted is the best guess.
         ...(ni === current ? { weightKg: w, reps: r } : nxKg > 0 && warmup.length ? { weightKg: nxKg } : {}),
         workout: day.label, done: after.sets.filter(D.isWorkSet).length, planned: totalTarget, warmup,
-      }));
+      }),
+      // More sets of this lift next (not a superset): "Log set & rest" on
+      // Rest done logs each at this load and starts the same rest again.
+      ni === current && !nx.pair ? {
+        restS: rest,
+        chain: shadeLogChain({
+          workoutId: active.id, exerciseId: exRow.id, logged: nxSets.length, workDone: nxWork, setsPlanned: nx.sets,
+          reps: r, weightKg: w, timed, workout: day.label, done: after.sets.filter(D.isWorkSet).length, planned: totalTarget,
+        }),
+      } : null);
     }
     if (ni !== current) setCurrent(ni);
     // Is it a new best? That reads the exercise's whole history, so it runs

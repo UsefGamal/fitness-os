@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { DONE_GRACE_MS, shadeLines, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
+import { DONE_GRACE_MS, SHADE_LOG_MAX, shadeLines, shadeLogChain, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
 
 const now = 1_000_000;
 const running = { endsAt: now + 60_000, total: 90, label: 'Squat', pausedLeft: null };
@@ -77,4 +77,39 @@ test('shadeLines: the warm-up ramp comes first before a barbell lift', () => {
   const lines = shadeLines({ setNo: 1, setsPlanned: 3, weightKg: 60, reps: 8, workout: 'Lower A', warmup: [{ kg: 20, reps: 8 }, { kg: 40, reps: 5 }, { kg: 50, reps: 3 }] });
   assert.equal(lines.detail, 'Warm up: 20 kg × 8, 40 × 5, 50 × 3 · Set 1 of 3 · 60 kg × 8');
   assert.equal(shadeLines({ setNo: 2, warmup: [] }).detail, 'Set 2');
+});
+
+test('Log set & rest offers the rest of the exercise at the load just lifted', () => {
+  const chain = shadeLogChain({ workoutId: 3, exerciseId: 7, logged: 2, workDone: 1, setsPlanned: 3, reps: 8, weightKg: 60, workout: 'Lower A', done: 5, planned: 18 });
+  assert.equal(chain.length, 2);
+  assert.deepEqual(chain[0].set, { w: 3, e: 7, n: 3, r: 8, kg: 60, s: null });
+  assert.equal(chain[0].detail, 'Set 2 of 3 · 60 kg × 8');
+  assert.equal(chain[0].progress, 'Lower A · 5/18 sets');
+  assert.equal(chain[1].set.n, 4);
+  assert.equal(chain[1].detail, 'Set 3 of 3 · 60 kg × 8');
+  assert.equal(chain[1].progress, 'Lower A · 6/18 sets');
+});
+
+test('a timed hold logs seconds; nothing is offered when done or unknown', () => {
+  const [hold] = shadeLogChain({ workoutId: 1, exerciseId: 2, logged: 0, workDone: 0, setsPlanned: 1, reps: 40, timed: true });
+  assert.deepEqual(hold.set, { w: 1, e: 2, n: 1, r: 40, kg: 0, s: 40 });
+  assert.equal(hold.detail, 'Set 1 of 1 · 40s');
+  assert.deepEqual(shadeLogChain({ workoutId: 1, exerciseId: 2, logged: 3, workDone: 3, setsPlanned: 3, reps: 8 }), []);
+  assert.deepEqual(shadeLogChain({ workoutId: 1, exerciseId: 2, logged: 0, workDone: 0, setsPlanned: 3, reps: 0 }), []);
+  assert.equal(shadeLogChain({ workoutId: 1, exerciseId: 2, logged: 0, workDone: 0, setsPlanned: 50, reps: 5 }).length, SHADE_LOG_MAX);
+});
+
+test('shade logs are added once each, in order, only to the workout under way', () => {
+  const data = { workouts: [{ id: 3, finished_at: null, sets: [{ exercise_id: 7 }, { exercise_id: 7 }] }, { id: 2, finished_at: 99, sets: [] }] };
+  const a = { w: 3, e: 7, n: 3, r: 8, kg: 60, s: null };
+  const b = { w: 3, e: 7, n: 4, r: 8, kg: 60, s: null };
+  assert.deepEqual(shadeLogsToAdd(data, [JSON.stringify(a), b, a, { ...b, n: 9 }]), [
+    { workoutId: 3, exerciseId: 7, reps: 8, weightKg: 60, seconds: null },
+    { workoutId: 3, exerciseId: 7, reps: 8, weightKg: 60, seconds: null },
+  ]);
+  assert.deepEqual(shadeLogsToAdd(data, [{ w: 2, e: 7, n: 1, r: 8, kg: 0 }]), [], 'finished workout');
+  assert.deepEqual(shadeLogsToAdd(data, [{ w: 3, e: 7, n: 2, r: 8, kg: 0 }]), [], 'already logged in the app');
+  assert.deepEqual(shadeLogsToAdd(data, ['{bad', null, { w: 3, e: 7, n: 3, r: -1 }, { w: 3, e: 7, n: 3, r: 5000 }]), []);
+  assert.deepEqual(shadeLogsToAdd(data, [{ w: 3, e: 8, n: 1, r: 40, kg: 0, s: 40 }]), [{ workoutId: 3, exerciseId: 8, reps: 40, weightKg: 0, seconds: 40 }]);
+  assert.deepEqual(shadeLogsToAdd(data, 'nope'), []);
 });

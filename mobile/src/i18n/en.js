@@ -117,6 +117,7 @@ export default {
   'shade.go': 'GO',
   'shade.moreRest': '+30s rest',
   'shade.openWorkout': 'Open workout',
+  'shade.logSet': 'Log set & rest',
   'report.note': 'This is exactly what will be sent. Edit or remove anything, and add what you were doing at the end.',
   'report.length': '{n} of {max} characters',
   'report.send': 'Send',

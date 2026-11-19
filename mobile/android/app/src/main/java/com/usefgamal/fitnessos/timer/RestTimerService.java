@@ -54,6 +54,8 @@ public class RestTimerService extends Service {
     public static final String ACTION_STOP = "com.usefgamal.fitnessos.timer.STOP";
     /** From "Rest done": another 30 s of rest. */
     public static final String ACTION_MORE_REST = "com.usefgamal.fitnessos.timer.MORE_REST";
+    /** "Log set & rest" on Rest done: log the set it shows and start the same rest again. */
+    public static final String ACTION_LOG_SET = "com.usefgamal.fitnessos.timer.LOG_SET";
     public static final String EXTRA_ENDS_AT = "endsAt";
     public static final String EXTRA_PAUSED_LEFT = "pausedLeft";
     public static final String EXTRA_TOTAL = "total";
@@ -63,6 +65,10 @@ public class RestTimerService extends Service {
     public static final String EXTRA_DETAIL = "detail";
     public static final String EXTRA_SECONDS = "seconds";
     public static final String EXTRA_SOUND = "sound";
+    public static final String EXTRA_LOGS = "logs";
+    public static final String EXTRA_LOG_REST = "logRest";
+    /** Sets logged in the shade that the app hasn't added yet (a JSON array). */
+    private static final String PENDING_LOGS = "pending_logs";
 
     // v2: the first channel was "low" importance, which many phones (Xiaomi,
     // Infinix) fold away as a silent notification with no status bar icon,
@@ -82,6 +88,8 @@ public class RestTimerService extends Service {
         /** pausedLeft is 0 while running. */
         void onChanged(long endsAt, long pausedLeft, String label);
         void onStopped(boolean finished);
+        /** A set was logged with "Log set & rest": the app takes it with takeLogs(). */
+        void onLogged();
     }
 
     static volatile Listener listener;
@@ -99,6 +107,10 @@ public class RestTimerService extends Service {
     /** The last rest was ended with Skip in the shade (the app reads it on return). */
     static volatile boolean skipped = false;
     static volatile boolean sound = true;
+    /** What "Log set & rest" can log, in order: [{ set, detail, progress }...] as JSON (from the app). */
+    static volatile String logs = "[]";
+    /** The rest after a set logged from the shade, in ms. */
+    static volatile long logRestMs = 0;
     /** The app is on screen: play the "rest done" chime directly instead of relying on the notification sound. */
     static volatile boolean foreground = false;
 
@@ -142,10 +154,15 @@ public class RestTimerService extends Service {
     private static final long WAKE_SLACK_MS = 10_000L;
 
     public static void start(Context context, long endsAt, long pausedLeft, long totalMs, String label, String workout, String detail, int sets, boolean sound) {
+        start(context, endsAt, pausedLeft, totalMs, label, workout, detail, sets, sound, logs, logRestMs);
+    }
+
+    public static void start(Context context, long endsAt, long pausedLeft, long totalMs, String label, String workout, String detail, int sets, boolean sound,
+                             String logs, long logRestMs) {
         Intent i = new Intent(context, RestTimerService.class).setAction(ACTION_START)
             .putExtra(EXTRA_ENDS_AT, endsAt).putExtra(EXTRA_PAUSED_LEFT, pausedLeft).putExtra(EXTRA_TOTAL, totalMs)
             .putExtra(EXTRA_LABEL, label).putExtra(EXTRA_WORKOUT, workout).putExtra(EXTRA_DETAIL, detail).putExtra(EXTRA_SETS, sets)
-            .putExtra(EXTRA_SOUND, sound);
+            .putExtra(EXTRA_SOUND, sound).putExtra(EXTRA_LOGS, logs).putExtra(EXTRA_LOG_REST, logRestMs);
         androidx.core.content.ContextCompat.startForegroundService(context, i);
     }
 
@@ -176,6 +193,9 @@ public class RestTimerService extends Service {
             detail = orEmpty(intent.getStringExtra(EXTRA_DETAIL));
             sets = intent.getIntExtra(EXTRA_SETS, 0);
             sound = intent.getBooleanExtra(EXTRA_SOUND, true);
+            String l = intent.getStringExtra(EXTRA_LOGS);
+            logs = l != null ? l : "[]";
+            logRestMs = Math.max(0, Math.min(intent.getLongExtra(EXTRA_LOG_REST, 0), MAX_REST_MS));
             skipped = false;
             nm().cancel(ID_DONE);
             save(this);
@@ -213,6 +233,8 @@ public class RestTimerService extends Service {
             save(this);
             show(true);
             changed();
+        } else if (ACTION_LOG_SET.equals(action)) {
+            logFromShade(now);
         } else if (ACTION_STOP.equals(action)) {
             boolean fromShade = intent.getBooleanExtra("fromShade", false);
             if (fromShade) skipped = true;
@@ -230,6 +252,81 @@ public class RestTimerService extends Service {
         // Sticky: if the phone kills the process mid-rest, Android starts the
         // service again and the saved rest comes back (above).
         return START_STICKY;
+    }
+
+    /**
+     * "Log set & rest": queue the set Rest done showed for the app (it adds
+     * it with takeLogs, now if it is running, else when it next opens), then
+     * start the rest before the next one with that set's lines.
+     */
+    private void logFromShade(long now) {
+        if (!active()) restoreLast(this); // a new process after Rest done: the lines are on disk
+        org.json.JSONArray chain = parse(logs);
+        nm().cancel(ID_DONE);
+        org.json.JSONObject head = chain.optJSONObject(0);
+        if (head == null || head.optJSONObject("set") == null) {
+            if (!active()) {
+                startForegroundWith(placeholder()); // started as a foreground service: must post, then go
+                end();
+            }
+            return;
+        }
+        addPending(this, head.optJSONObject("set").toString());
+        chain.remove(0);
+        logs = chain.toString();
+        org.json.JSONObject next = chain.optJSONObject(0);
+        if (next != null && logRestMs > 0) {
+            // The rest before the next set, with that set's lines.
+            detail = next.optString("detail", "");
+            String prog = next.optString("progress", "");
+            if (!prog.isEmpty()) workout = prog;
+            endsAt = now + logRestMs;
+            pausedLeft = 0;
+            totalMs = logRestMs;
+            skipped = false;
+            save(this);
+            show(true);
+            changed();
+        } else {
+            // The last set of this lift: logged, and the app shows what's next.
+            if (!active()) startForegroundWith(placeholder());
+            end();
+        }
+        Listener ls = listener;
+        if (ls != null) ls.onLogged();
+    }
+
+    private static org.json.JSONArray parse(String json) {
+        try {
+            return new org.json.JSONArray(json == null || json.isEmpty() ? "[]" : json);
+        } catch (org.json.JSONException e) {
+            return new org.json.JSONArray();
+        }
+    }
+
+    private static synchronized void addPending(Context c, String set) {
+        try {
+            SharedPreferences p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            org.json.JSONArray a = parse(p.getString(PENDING_LOGS, "[]"));
+            if (a.length() < 50) a.put(set);
+            p.edit().putString(PENDING_LOGS, a.toString()).commit();
+        } catch (RuntimeException ignored) {
+            // No storage: the set isn't kept, and the app shows it wasn't logged.
+        }
+    }
+
+    /** The sets logged in the shade since the last call, as JSON strings, and forget them. */
+    static synchronized java.util.List<String> takePending(Context c) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        try {
+            SharedPreferences p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            org.json.JSONArray a = parse(p.getString(PENDING_LOGS, "[]"));
+            for (int i = 0; i < a.length(); i++) out.add(a.optString(i, ""));
+            if (a.length() > 0) p.edit().remove(PENDING_LOGS).commit();
+        } catch (RuntimeException ignored) {
+            // No storage: nothing was kept.
+        }
+        return out;
     }
 
     private static String orEmpty(String s) {
@@ -386,6 +483,12 @@ public class RestTimerService extends Service {
         dBig.setTextViewText(R.id.d_open, tx("openWorkout", "Open workout"));
         dBig.setOnClickPendingIntent(R.id.d_more, self(ACTION_MORE_REST, 5).let());
         dBig.setOnClickPendingIntent(R.id.d_open, openApp());
+        // "Log set & rest" when the app sent the set to log; the card itself still opens the workout.
+        boolean canLog = parse(logs).optJSONObject(0) != null;
+        dBig.setViewVisibility(R.id.d_log, canLog ? View.VISIBLE : View.GONE);
+        dBig.setViewVisibility(R.id.d_open, canLog ? View.GONE : View.VISIBLE);
+        dBig.setTextViewText(R.id.d_log, tx("logSet", "Log set & rest"));
+        dBig.setOnClickPendingIntent(R.id.d_log, self(ACTION_LOG_SET, 6).let());
         Notification done = new NotificationCompat.Builder(this, sound && !chime ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
@@ -426,7 +529,7 @@ public class RestTimerService extends Service {
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putLong(EXTRA_ENDS_AT, endsAt).putLong(EXTRA_PAUSED_LEFT, pausedLeft).putLong(EXTRA_TOTAL, totalMs)
                 .putString(EXTRA_LABEL, label).putString(EXTRA_WORKOUT, workout).putString(EXTRA_DETAIL, detail).putInt(EXTRA_SETS, sets)
-                .putBoolean(EXTRA_SOUND, sound).apply();
+                .putBoolean(EXTRA_SOUND, sound).putString(EXTRA_LOGS, logs).putLong(EXTRA_LOG_REST, logRestMs).apply();
         } catch (RuntimeException ignored) {
             // No storage: the rest just isn't kept.
         }
@@ -450,9 +553,28 @@ public class RestTimerService extends Service {
             detail = orEmpty(p.getString(EXTRA_DETAIL, ""));
             sets = p.getInt(EXTRA_SETS, 0);
             sound = p.getBoolean(EXTRA_SOUND, true);
+            logs = orEmpty(p.getString(EXTRA_LOGS, "[]"));
+            logRestMs = Math.min(Math.max(0, p.getLong(EXTRA_LOG_REST, 0)), MAX_REST_MS);
             return true;
         } catch (RuntimeException e) {
             return false;
+        }
+    }
+
+    /** The last rest's lines and sets to log, even though it has ended (for "Log set & rest" in a new process). */
+    static void restoreLast(Context c) {
+        try {
+            SharedPreferences p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            totalMs = Math.min(Math.max(0, p.getLong(EXTRA_TOTAL, 0)), MAX_REST_MS);
+            label = orEmpty(p.getString(EXTRA_LABEL, ""));
+            workout = orEmpty(p.getString(EXTRA_WORKOUT, ""));
+            detail = orEmpty(p.getString(EXTRA_DETAIL, ""));
+            sets = p.getInt(EXTRA_SETS, 0);
+            sound = p.getBoolean(EXTRA_SOUND, true);
+            logs = orEmpty(p.getString(EXTRA_LOGS, "[]"));
+            logRestMs = Math.min(Math.max(0, p.getLong(EXTRA_LOG_REST, 0)), MAX_REST_MS);
+        } catch (RuntimeException ignored) {
+            // No storage: nothing to log.
         }
     }
 

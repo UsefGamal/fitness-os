@@ -91,3 +91,67 @@ export function shadeLines({ setNo, setsPlanned, weightKg, reps, targetReps, wor
   if (planned > 0) prog.push(`${Math.max(0, done || 0)}/${planned} sets`);
   return { detail: parts.join(' · '), progress: prog.join(' · ') };
 }
+
+/** The most sets one exercise offers to "Log set & rest" from the shade. */
+export const SHADE_LOG_MAX = 10;
+
+/**
+ * The sets the "Rest done" notification can log with "Log set & rest", in
+ * order: the rest of this exercise's planned sets at the load and reps just
+ * lifted. Each entry is { set, detail, progress }: `set` is what gets logged
+ * ({ w: workout id, e: exercise id, n: its set_number, r: reps, kg, s:
+ * seconds for a timed hold or null }) and `detail`/`progress` the lines the
+ * shade shows while that set is the next one. Empty when nothing is left
+ * to log, or the reps or a needed weight aren't known.
+ * @param {{ workoutId: number, exerciseId: number, logged: number, workDone: number, setsPlanned: number, reps: number, weightKg?: number, timed?: boolean, workout?: string, done?: number, planned?: number }} p
+ */
+export function shadeLogChain({ workoutId, exerciseId, logged, workDone, setsPlanned, reps, weightKg = 0, timed = false, workout = '', done = 0, planned = 0 }) {
+  if (!(workoutId > 0) || !(exerciseId > 0) || !(reps >= 1) || !(setsPlanned > 0)) return [];
+  const kg = Number(weightKg) > 0 ? Number(weightKg) : 0;
+  const out = [];
+  for (let i = 0; workDone + i < setsPlanned && i < SHADE_LOG_MAX; i += 1) {
+    const lines = shadeLines({ setNo: workDone + i + 1, setsPlanned, ...(timed ? {} : { weightKg: kg, reps }), workout, done: done + i, planned });
+    if (timed) lines.detail += ` · ${Math.round(reps)}s`;
+    out.push({ set: { w: workoutId, e: exerciseId, n: logged + i + 1, r: Math.round(reps), kg: timed ? 0 : kg, s: timed ? Math.round(reps) : null }, ...lines });
+  }
+  return out;
+}
+
+/**
+ * The sets to add for what was logged from the shade, in order, as addSet
+ * arguments with the workout id. A set is only taken while its workout is
+ * still under way and it is the very next set of its exercise (n is one past
+ * the sets already there), so a log that arrives twice, or after the set
+ * was logged in the app, is dropped.
+ * @param {{ workouts?: { id: number, finished_at?: number | null, sets?: { exercise_id: number }[] }[] }} data
+ * @param {unknown} logs
+ * @returns {{ workoutId: number, exerciseId: number, reps: number, weightKg: number, seconds: number | null }[]}
+ */
+export function shadeLogsToAdd(data, logs) {
+  if (!Array.isArray(logs)) return [];
+  const count = new Map(); // `${w}:${e}` -> sets so far, counting the ones taken here
+  const out = [];
+  for (const raw of logs.slice(0, 50)) {
+    let l = raw;
+    if (typeof l === 'string') {
+      try {
+        l = JSON.parse(l);
+      } catch {
+        continue;
+      }
+    }
+    if (!l || typeof l !== 'object') continue;
+    const { w, e, n, r, kg, s } = /** @type {Record<string, unknown>} */ (l);
+    if (![w, e, n, r].every((v) => Number.isInteger(v) && Number(v) > 0) || Number(r) > 1000) continue;
+    const wk = (data?.workouts || []).find((x) => x.id === w && !x.finished_at);
+    if (!wk) continue;
+    const key = `${w}:${e}`;
+    const have = count.has(key) ? count.get(key) : (wk.sets || []).filter((x) => x.exercise_id === e).length;
+    if (n !== have + 1) continue;
+    count.set(key, have + 1);
+    const weightKg = Number.isFinite(kg) && Number(kg) >= 0 ? Math.min(Number(kg), 1000) : 0;
+    const seconds = Number.isInteger(s) && Number(s) > 0 ? Math.min(Number(s), 3600) : null;
+    out.push({ workoutId: /** @type {number} */ (w), exerciseId: /** @type {number} */ (e), reps: seconds ?? /** @type {number} */ (r), weightKg, seconds });
+  }
+  return out;
+}
