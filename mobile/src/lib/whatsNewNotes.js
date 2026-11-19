@@ -5,13 +5,28 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.7',
+    version: '1.1.9',
     items: [
       { icon: 'user', text: 'First-time setup is now one question per screen, like a story: a bar on top, Back on every screen, and big cards to tap.' },
       { icon: 'scale', text: 'Pick your age on a wheel and your height and weight on a ruler, and see your goal drawn as a line with its date.' },
       { icon: 'check', text: 'Men are no longer asked about pregnancy or breastfeeding in the safety check.' },
       { icon: 'bulb', text: 'After setup, a short guided tour lights up each part of Home and the tabs. Play it again from Settings > Help.' },
       { icon: 'info', text: 'Every popup now dims the page behind it, including the new-badge card.' },
+    ],
+  },
+  {
+    version: '1.1.8',
+    items: [
+      { icon: 'calendar', text: 'Plan shows the day you picked as a tab, and the Start button follows it: "Start Push today".' },
+      { icon: 'undo', text: 'Swap lets you pick any of the 16 muscle groups, and no longer offers an exercise already in that day.' },
+    ],
+  },
+  {
+    version: '1.1.7',
+    items: [
+      { icon: 'person', text: 'Rotator cuff and hip flexors are muscles of their own, under Shoulders and Quads in the Library.' },
+      { icon: 'search', text: 'Each muscle splits its list into Training and Stretches, and stretches carry a Stretch label.' },
+      { icon: 'trend', text: 'Stretches no longer count toward weekly sets or recovery on Stats.' },
     ],
   },
   {
