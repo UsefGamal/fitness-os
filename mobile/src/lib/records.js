@@ -2,7 +2,7 @@
 // exercise page. Worked out from the logs every time, never stored. Work sets
 // only (isWorkSet, F-00), so warm-ups can never set a record. Pure, tested
 // in records.test.js.
-import { e1rm, E1RM_MAX_REPS, isWorkSet } from './data.js';
+import { e1rm, E1RM_MAX_REPS, isLoadSet } from './data.js';
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -25,7 +25,7 @@ export function records(data, exerciseId) {
   for (const w of data.workouts) {
     let total = 0;
     for (const s of w.sets) {
-      if (s.exercise_id !== exerciseId || !isWorkSet(s) || !(s.weight_kg > 0) || !(s.reps > 0)) continue;
+      if (s.exercise_id !== exerciseId || !isLoadSet(s) || !(s.weight_kg > 0) || !(s.reps > 0)) continue;
       const kg = s.weight_kg;
       total += kg * s.reps;
       if (!heaviest || kg > heaviest.kg || (kg === heaviest.kg && s.reps > heaviest.reps)) heaviest = { kg, reps: s.reps, date: w.log_date };

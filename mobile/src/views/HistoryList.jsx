@@ -6,6 +6,14 @@ import { useData } from '../store/useData.js';
 
 const TYPE = { gym: 'Gym', home: 'Home session', recovery: 'Recovery', cardio: 'Cardio', padel: 'Padel' };
 
+/** A row's title: its label, else the plan session it came from ("Pull"),
+ * else its type (CHART-1: an unlabelled plan session no longer reads "Gym"). */
+function titleOf(w) {
+  if (w.notes) return w.notes;
+  if (w.session_key && w.workout_type === 'gym') return w.session_key[0].toUpperCase() + w.session_key.slice(1).replace(/_/g, ' ');
+  return TYPE[w.workout_type] || w.workout_type;
+}
+
 export default function HistoryList() {
   const data = useData((s) => s.data);
   const workouts = [...data.workouts].sort((a, b) => (a.log_date === b.log_date ? b.id - a.id : a.log_date < b.log_date ? 1 : -1));
@@ -27,9 +35,9 @@ export default function HistoryList() {
             {m.items.map((w) => (
               <Link key={w.id} to={`/history/${w.id}`} className="list-row">
                 <div className="grow">
-                  <div>{w.notes || TYPE[w.workout_type] || w.workout_type}</div>
+                  <div>{titleOf(w)}</div>
                   {/* The type only when the title isn't already it (rule 2: "Padel · Padel"). */}
-                  <div className="meta">{[formatDate(w.log_date), w.sets.length ? `${w.sets.length} set${w.sets.length === 1 ? '' : 's'}` : ((w.notes || TYPE[w.workout_type]) !== TYPE[w.workout_type] ? TYPE[w.workout_type] : null), w.duration_min ? `${w.duration_min} min` : null].filter(Boolean).join(' · ')}</div>
+                  <div className="meta">{[formatDate(w.log_date), w.sets.length ? `${w.sets.length} set${w.sets.length === 1 ? '' : 's'}` : (titleOf(w) !== TYPE[w.workout_type] ? TYPE[w.workout_type] : null), w.duration_min ? `${w.duration_min} min` : null].filter(Boolean).join(' · ')}</div>
                 </div>
                 {w.started_at && !w.finished_at ? <span className="chip accent">In progress</span> : null}
                 <Icon name="chev" className="icon chev" />
