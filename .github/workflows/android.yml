@@ -69,7 +69,12 @@ jobs:
         with:
           path: mobile/public/meal-photos
           key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
-          restore-keys: meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+          # The second key keeps the photos already fetched when
+          # content/meal_photos.py changes; the script refetches only new or
+          # changed ones (titles.json). Without it every edit started from zero.
+          restore-keys: |
+            meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+            meal-photos-
 
       - name: Fetch meal photos
         timeout-minutes: 8
@@ -167,7 +172,12 @@ jobs:
         with:
           path: mobile/public/meal-photos
           key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
-          restore-keys: meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+          # The second key keeps the photos already fetched when
+          # content/meal_photos.py changes; the script refetches only new or
+          # changed ones (titles.json). Without it every edit started from zero.
+          restore-keys: |
+            meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+            meal-photos-
 
       - name: Fetch meal photos
         timeout-minutes: 8
