@@ -12,7 +12,10 @@ import { nextDue } from '../lib/fitnessTest.js';
 import { formatDate, formatNumber } from '../lib/dates.js';
 import { profileOf } from '../lib/macros.js';
 import * as D from '../lib/data.js';
-import { e1rmSeries, GROUPS, lastTrained, recoveryState, setsByGroup, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
+import { e1rmSeries, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
+import { entryFor } from '../lib/catalogue.js';
+import { exerciseGroups, GROUP16, GROUPS16, groupStats, recoveryOf } from '../lib/muscleGroups.js';
+import { useCatalogue } from '../store/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
@@ -97,10 +100,14 @@ function Legend({ mode }) {
 function Muscles({ data, today }) {
   const [mode, setMode] = useState('volume');
   const [group, setGroup] = useState(null);
-  const sets = setsByGroup(data, today, 7);
-  const state = recoveryState(data, today);
-  const last = lastTrained(data, today);
-  const status = Object.fromEntries(GROUPS.map((g) => [g, groupStatus(state[g], last[g])]));
+  // The 16 groups (BeFit item 17), read from every set logged: an
+  // exercise's main muscles count in full, its helpers by half.
+  const groupsOf = useGroupsOf(data);
+  const stats = useMemo(() => groupStats(data, groupsOf, today), [data, groupsOf, today]);
+  const GROUPS = GROUPS16.map((g) => g.key);
+  const sets = Object.fromEntries(GROUPS.map((g) => [g, stats[g].sets]));
+  const last = Object.fromEntries(GROUPS.map((g) => [g, stats[g].last]));
+  const status = Object.fromEntries(GROUPS.map((g) => [g, groupStatus(recoveryOf(last[g], today), last[g])]));
   const fill = Object.fromEntries(GROUPS.map((g) => [g, mode === 'volume' ? VOLUME_FILL[volumeLevel(sets[g])]
     : mode === 'recovery' ? STATUS_FILL[status[g]] : status[g] === 'untrained' || status[g] === 'none' ? STATUS_FILL.untrained : null]));
   const pick = (g) => setGroup(group === g ? null : g);
@@ -111,7 +118,7 @@ function Muscles({ data, today }) {
         <div className="seg" style={{ marginBottom: 12 }}>
           {MODES.map(([k]) => <button key={k} type="button" className={mode === k ? 'on' : ''} onClick={() => setMode(k)}>{t(`stats.mode.${k}`)}</button>)}
         </div>
-        <BodyMap groupFill={fill} label={t(`stats.cap.${mode}`)} onPick={pick} />
+        <BodyMap fine groupFill={fill} label={t(`stats.cap.${mode}`)} onPick={pick} />
         <Legend mode={mode} />
         <p className="muted small" style={{ textAlign: 'center', margin: '8px 0 0' }}>{t(`stats.cap.${mode}`)}</p>
       </section>
@@ -127,13 +134,13 @@ function Muscles({ data, today }) {
               return (
                 <button key={g} type="button" className={`list-row${group === g ? ' on' : ''}`} onClick={() => pick(g)} aria-expanded={group === g}>
                   <span className={`status-dot st-${status[g]}`}><Icon name={STATUS_ICON[status[g]]} className="icon" /></span>
-                  <div className="grow"><div>{g}</div><div className="meta">{t(`stats.st.${status[g]}`)}</div></div>
+                  <div className="grow"><div>{GROUP16[g].label}</div><div className="meta">{t(`stats.st.${status[g]}`)}</div></div>
                   <span className="muted small">{ago == null ? t('stats.never') : ago === 0 ? t('stats.todayShort') : t('stats.daysAgo', { n: ago })}</span>
                 </button>
               );
             })}
           </div>
-          {group ? <GroupExercises data={data} group={group} /> : <p className="muted small" style={{ margin: '10px 4px 0' }}>{t('stats.tapGroup')}</p>}
+          {group ? <GroupExercises data={data} group={group} groupsOf={groupsOf} /> : <p className="muted small" style={{ margin: '10px 4px 0' }}>{t('stats.tapGroup')}</p>}
         </section>
       ) : null}
 
@@ -145,13 +152,13 @@ function Muscles({ data, today }) {
               {untrained.map((g) => (
                 <button key={g} type="button" className="list-row" onClick={() => pick(g)} aria-expanded={group === g}>
                   <span className="status-dot st-untrained"><Icon name="alert" className="icon" /></span>
-                  <div className="grow"><div>{g}</div><div className="meta">{last[g] ? t('stats.lastOn', { date: formatDate(last[g]) }) : t('stats.neverTrained')}</div></div>
+                  <div className="grow"><div>{GROUP16[g].label}</div><div className="meta">{last[g] ? t('stats.lastOn', { date: formatDate(last[g]) }) : t('stats.neverTrained')}</div></div>
                   <Icon name="chev" className="icon chev" />
                 </button>
               ))}
             </div>
           ) : <p className="small" style={{ margin: 0 }}><Icon name="check" className="icon inline" /> {t('stats.allTrained')}</p>}
-          {group && untrained.includes(group) ? <GroupExercises data={data} group={group} /> : null}
+          {group && untrained.includes(group) ? <GroupExercises data={data} group={group} groupsOf={groupsOf} /> : null}
         </section>
       ) : null}
     </>
@@ -214,10 +221,26 @@ function WeeklySets({ data, today }) {
 
 /** A group's exercises, most recently trained first; each opens its page
  * with the same-muscle replacements. */
-function GroupExercises({ data, group }) {
+/** An exercise id -> its main and helper groups, looked up once each. */
+function useGroupsOf(data) {
+  const { catalogue } = useCatalogue();
+  return useMemo(() => {
+    const byId = new Map(data.exercises.map((e) => [e.id, e]));
+    const memo = new Map();
+    return (id) => {
+      if (!memo.has(id)) {
+        const e = byId.get(id);
+        memo.set(id, exerciseGroups(e, content.training, e && catalogue ? entryFor(e.name, content.training, catalogue.byId) : null));
+      }
+      return memo.get(id);
+    };
+  }, [data.exercises, catalogue]);
+}
+
+function GroupExercises({ data, group, groupsOf }) {
   const last = new Map();
   for (const w of data.workouts) for (const st of w.sets) if (!last.has(st.exercise_id) || w.log_date > last.get(st.exercise_id)) last.set(st.exercise_id, w.log_date);
-  const list = data.exercises.filter((e) => e.muscle_group === group)
+  const list = data.exercises.filter((e) => groupsOf(e.id).main.includes(group))
     .sort((a, b) => (last.get(b.id) || '').localeCompare(last.get(a.id) || '') || a.name.localeCompare(b.name)).slice(0, 12);
   return (
     <div className="list" style={{ marginTop: 12, background: 'var(--surface2)' }}>

@@ -1,16 +1,19 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
 import { entryFor, thumbOf } from '../lib/catalogue.js';
+import { exerciseGroups, GROUP16, GROUPS16 } from '../lib/muscleGroups.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 import Catalogue from './Catalogue.jsx';
 
+// The six groups an exercise you add yourself is saved with.
 export const MUSCLES = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
+const LIT = { lit: 'color-mix(in srgb, var(--accent) 85%, transparent)' };
 
 export default function Library() {
   const data = useData((s) => s.data);
@@ -21,11 +24,24 @@ export default function Library() {
   const [tab, setTab] = useState('mine');
   const [showMap, setShowMap] = useState(false);
   const { catalogue } = useCatalogue();
+  // The picked group's chip scrolls into sight (picked from By muscle or the map).
+  const chips = useRef(null);
+  useEffect(() => {
+    const on = chips.current?.querySelector('.chip-btn.on');
+    if (on && chips.current.scrollWidth > chips.current.clientWidth) chips.current.scrollLeft = Math.max(0, on.offsetLeft - chips.current.offsetLeft - 16);
+  }, [muscle]);
   const [newName, setNewName] = useState('');
   const [newMuscle, setNewMuscle] = useState('Chest');
   const bests = useMemo(() => D.personalBests(data), [data]);
+  // Your exercises by the 16 groups: the hand-checked muscles, else the
+  // catalogue's, else the group you saved it with.
+  const mainOf = useMemo(() => {
+    const m = new Map();
+    for (const e of data.exercises) m.set(e.id, exerciseGroups(e, content.training, catalogue ? entryFor(e.name, content.training, catalogue.byId) : null).main);
+    return m;
+  }, [data.exercises, catalogue]);
   const list = data.exercises
-    .filter((e) => (!muscle || e.muscle_group === muscle) && e.name.toLowerCase().includes(query.trim().toLowerCase()))
+    .filter((e) => (!muscle || mainOf.get(e.id)?.includes(muscle)) && e.name.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const add = (e) => {
@@ -43,21 +59,21 @@ export default function Library() {
       </div>
       <input type="text" placeholder="Search exercises" value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('aria.searchExercises')} style={{ marginBottom: 12 }} />
       {/* Search and muscle chips first; the body map opens on request so the list starts on the first screen (UX-25). */}
-      <div className="chip-row" role="group" aria-label={t('library.filter')}>
+      <div ref={chips} className="chip-row scroll" role="group" aria-label={t('library.filter')}>
         <button type="button" className={`chip-btn${!muscle ? ' on' : ''}`} aria-pressed={!muscle} onClick={() => setMuscle(null)}>{t('library.all')}</button>
-        {MUSCLES.map((m) => (
-          <button key={m} type="button" className={`chip-btn${muscle === m ? ' on' : ''}`} aria-pressed={muscle === m} onClick={() => setMuscle(muscle === m ? null : m)}>{m}</button>
+        {GROUPS16.map((g) => (
+          <button key={g.key} type="button" className={`chip-btn${muscle === g.key ? ' on' : ''}`} aria-pressed={muscle === g.key} onClick={() => setMuscle(muscle === g.key ? null : g.key)}>{g.label}</button>
         ))}
       </div>
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 4, marginBottom: 8 }} aria-expanded={showMap} onClick={() => setShowMap(!showMap)}><Icon name="person" /> {t(showMap ? 'library.hideMap' : 'library.showMap')}</button>
       {showMap ? (
         <section className="card">
-          <BodyMap hit={muscle ? new Set([muscle]) : new Set()} onPick={(g) => setMuscle(muscle === g ? null : g)} label={t('library.mapLabel')} />
+          <BodyMap fine groupFill={muscle ? { [muscle]: LIT.lit } : null} onPick={(g) => setMuscle(muscle === g ? null : g)} label={t('library.mapLabel')} />
         </section>
       ) : null}
-      {tab === 'all' ? <Catalogue q={query} muscle={muscle} /> : (
+      {tab === 'all' ? <Catalogue q={query} muscle={muscle} onPick={setMuscle} /> : (
       <>
-      <div className="section-label">{list.length} exercises</div>
+      <div className="section-label">{muscle ? `${GROUP16[muscle].label} · ` : ''}{list.length} exercises</div>
       <div className="list">
         {list.map((e) => {
           const b = bests.get(e.id);

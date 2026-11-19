@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.1',
+    items: [
+      { icon: 'person', text: 'A more lifelike muscle map: smooth muscles on one body, with hands, feet, six-pack lines and outer hips.' },
+      { icon: 'dumbbell', text: '16 muscle groups in Library, Stats and recovery, now with obliques, trapezius, lower back and abductors.' },
+      { icon: 'book', text: 'All with photos in the Library opens on a By muscle list, with a small map and an exercise count.' },
+    ],
+  },
+  {
     version: '1.1.0',
     items: [
       { icon: 'home', text: 'The app is now called Tafra (طفرة, a leap), with a new icon. Your data stays as it was.' },

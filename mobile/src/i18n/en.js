@@ -602,6 +602,8 @@ export default {
 
   'muscles.pick': 'Muscle',
   'muscles.all': 'All {group}',
+  'mg.count': '{n} exercises',
+  'mg.byMuscle': 'By muscle',
   'muscles.angle': 'Angle',
   'muscles.anyAngle': 'Any angle',
   'muscles.count': '{n} exercises with photos',

@@ -105,6 +105,9 @@ export const STATES = [
   { name: 'settings: training all open', route: '/settings/training', act: async (p) => { for (const k of ['set.equipExp', 'set.soundsVib', 'set.advanced']) await p.getByRole('button', { name: en[k] }).click(); } },
   { name: 'sheet: rest time', route: '/settings/training', act: (p) => p.getByRole('button', { name: new RegExp(`^${en['set.restBig']}`) }).click() },
   { name: 'sheet: export CSV', route: '/settings/data', act: (p) => p.getByRole('button', { name: new RegExp(`^${en['set.exportCsv']}`) }).click() },
+  { name: 'library: by muscle', route: '/library', act: (p) => p.getByRole('button', { name: 'All with photos' }).click() },
+  { name: 'library: one group', route: '/library', act: async (p) => { await p.getByRole('button', { name: 'All with photos' }).click(); await p.locator('.by-muscle .list-row').nth(4).click(); } },
+  { name: 'stats: recovery by group', route: '/stats?tab=muscles', act: (p) => p.getByRole('button', { name: 'Recovery' }).click() },
   { name: 'sheet: more menu', route: '/plan', act: (p) => btnNamed(p, en['more.label']).first().click() },
   {
     name: 'sheet: swap similar',
