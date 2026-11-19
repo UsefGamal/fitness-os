@@ -76,7 +76,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
       {todays?.finished_at ? (
         <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> {t('home.doneSets', { n: todays.sets.length })}</Link>
       ) : (
-        <button type="button" className="btn" onClick={onStart}><Icon name="play" /> {t(todays ? 'home.resume' : 'home.start')}</button>
+        <button type="button" className="btn hero" onClick={onStart}><Icon name="play" /> {t(todays ? 'home.resume' : 'home.start')}</button>
       )}
     </section>
   );

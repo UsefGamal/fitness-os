@@ -67,7 +67,7 @@ function Targets() {
       <section className="card">
         <div className="muted small">{t('mealsSimple.proteinLabel')}</div>
         <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 6px' }}>
-          <span style={{ fontSize: 'calc(30px * var(--ts))', fontWeight: 700 }}>{target.protein}</span><span className="muted">{t('mealsSimple.gramsDay')}</span>
+          <span className="hero-num">{target.protein}</span><span className="muted">{t('mealsSimple.gramsDay')}</span>
         </div>
         <div className="small">{t('mealsSimple.perMeal', { g: perMeal, n: S.meals_per_day })}</div>
         {showKcal ? <div className="muted small" style={{ marginTop: 6 }}>{t('mealsSimple.kcal', { kcal: target.kcal })}</div> : null}

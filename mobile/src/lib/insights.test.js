@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { e1rmSeries, lastTrained, monthLabels, recoveryState, setsByGroup, plannedPerWeek, strengthMove, totalVolume, trackedExercises, volumeLevel, weekNeed, weekStreaks, yearGrid } from './insights.js';
+import { e1rmSeries, lastTrained, monthLabels, recoveryState, setsByGroup, plannedPerWeek, strengthMove, totalVolume, weightVs, trackedExercises, volumeLevel, weekNeed, weekStreaks, yearGrid } from './insights.js';
 
 const exercises = [{ id: 1, name: 'Bench', muscle_group: 'Chest' }, { id: 2, name: 'Squat', muscle_group: 'Legs' }];
 const w = (id, log_date, sets) => ({ id, log_date, workout_type: 'gym', sets: sets.map(([exercise_id, weight_kg, reps], i) => ({ id: id * 10 + i, exercise_id, weight_kg, reps })) });
@@ -108,4 +108,13 @@ test('the streak: a week is kept with one planned session missed, by the plan of
   assert.equal(weekStreaks(twice, '2026-10-05').current, 0);
   // A number still asks for that many every week.
   assert.equal(weekStreaks(data, '2026-11-03', 1).current, 5);
+});
+
+test('weightVs compares the latest weigh-in with one about four weeks back', () => {
+  const b = (log_date, weight_kg) => ({ log_date, weight_kg });
+  const data = { body_logs: [b('2026-10-10', 104), b('2026-10-20', 103.4), b('2026-11-05', 102.6), b('2026-11-18', 102)] };
+  assert.deepEqual(weightVs(data, '2026-11-19'), { kg: -1.4, from: 103.4, now: 102, date: '2026-10-20' });
+  assert.equal(weightVs({ body_logs: [b('2026-11-18', 102)] }, '2026-11-19'), null);
+  assert.equal(weightVs({ body_logs: [b('2026-11-01', 103), b('2026-11-18', 102)] }, '2026-11-19'), null, 'nothing four weeks back');
+  assert.equal(weightVs({ body_logs: [b('2026-09-01', 110), b('2026-11-18', 102)] }, '2026-11-19'), null, 'too old to compare');
 });

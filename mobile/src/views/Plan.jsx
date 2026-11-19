@@ -257,7 +257,7 @@ export default function Plan() {
               {day.cardio_after ? <div className="card tip-card small"><Icon name="bulb" /><div className="grow muted">{t('plan.after', { text: day.cooldown[0] })}</div></div> : null}
               {/* Today's Start stays pinned above the tab bar while the list scrolls (UX-08). */}
               {picked.date === today ? (
-                <div className="start-bar"><button type="button" className="btn glow" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button></div>
+                <div className="start-bar"><button type="button" className="btn glow hero" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button></div>
               ) : null}
               <div className="action-stack">
                 {picked.date === today ? null : (

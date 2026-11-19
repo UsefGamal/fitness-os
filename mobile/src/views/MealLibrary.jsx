@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
 import MealRow from '../components/MealRow.jsx';
 import { addDays, formatDate } from '../lib/dates.js';
@@ -106,7 +107,7 @@ function LibraryScreen({ params }) {
             {g.meals.map((m) => <MealRow key={m.key} meal={m} fit={fit} hideKcal={hideKcal} to={detail(m.key)} />)}
           </div>
         </div>
-      )) : <div className="card empty">{t('lib.none')}</div>}
+      )) : <EmptyState art="meals" note={t('lib.none')} />}
     </div>
   );
 }

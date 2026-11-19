@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
 import { entryFor, thumbOf } from '../lib/catalogue.js';
 import { exerciseGroups, GROUP16, GROUPS16 } from '../lib/muscleGroups.js';
@@ -86,7 +87,7 @@ export default function Library() {
             </Link>
           );
         })}
-        {!list.length ? <div className="empty">No exercise matches.</div> : null}
+        {!list.length ? <EmptyState art="search" className="in-list" note={t('empty.search')} /> : null}
       </div>
       <form className="card stack" onSubmit={add}>
         <strong>Add your own exercise</strong>

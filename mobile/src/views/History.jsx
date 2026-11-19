@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
+import LeapMark from '../components/LeapMark.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { formatDate, LOCALE, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
@@ -10,7 +11,9 @@ import { setLabel } from '../lib/sets.js';
 import { t } from '../lib/i18n.js';
 import { starterJustDone, starterProgress, STARTER_SESSIONS } from '../lib/starter.js';
 import { workoutSummary } from '../lib/summary.js';
-import { useData } from '../store/useData.js';
+import { activePlan } from '../lib/plan.js';
+import { nextSessionAfter } from '../lib/schedule.js';
+import { content, useData } from '../store/useData.js';
 
 function SetEditor({ set, onSave, onCancel, onDelete }) {
   const [w, setW] = useState(set.weight_kg);
@@ -53,6 +56,10 @@ export default function History() {
   const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) ? s.weight_kg * s.reps : 0), 0);
 
   const sum = justFinished ? workoutSummary(data, w.id) : null;
+  // The finish is the moment people remember (LF-9): the mark, the one best
+  // number, then what comes next.
+  const comingUp = sum ? nextSessionAfter(w.log_date, activePlan(data, content), data.session_moves || []) : null;
+  const topBest = sum?.bests?.[0] || null;
   // Starter fortnight: say where a beginner is after this session.
   const starter = justFinished ? starterProgress(data) : null;
   const starterNote = !justFinished ? null
@@ -69,10 +76,16 @@ export default function History() {
     <div className="page">
       {sum ? (
         <section className="card finish-card" aria-label={t('finish.title')}>
-          <div className="finish-tick"><Icon name="check" /></div>
+          <div className="finish-tick" aria-hidden="true"><LeapMark size={34} draw /></div>
           <h2 className="finish-title">{t('finish.title')}</h2>
           <p className="muted" style={{ margin: '2px 0 14px' }}>{t(sum.weekSessions === 1 ? 'finish.weekOne' : 'finish.week', { n: sum.weekSessions })}</p>
           {starterNote ? <p className="starter-line" style={{ margin: '-6px 0 14px' }}>{starterNote}</p> : null}
+          {topBest ? (
+            <div className="finish-hero">
+              <span className="muted small">{t('finish.newBest', { name: topBest.name })}</span>
+              <span className="hero-num finish-hero-num">{t('workout.setLine', { kg: topBest.kg, reps: topBest.reps })}</span>
+            </div>
+          ) : null}
           <div className="finish-stats">
             {sum.durationMin ? <div><strong>{sum.durationMin}</strong><span>{t('finish.min')}</span></div> : null}
             <div><strong>{sum.sets}</strong><span>{t('finish.sets')}</span></div>
@@ -85,7 +98,8 @@ export default function History() {
               {sum.bests.map((b) => <div key={b.name} className="row between"><span>{b.name}</span><strong>{t('workout.setLine', { kg: b.kg, reps: b.reps })}</strong></div>)}
             </div>
           ) : null}
-          <button type="button" className="btn" onClick={() => navigate('/', { replace: true })}>{t('finish.done')}</button>
+          {comingUp ? <p className="finish-next small"><Icon name="calendar" className="icon" /> {t('finish.next', { label: comingUp.label, date: formatDate(comingUp.onDate) })}</p> : null}
+          <button type="button" className="btn hero" onClick={() => navigate('/', { replace: true })}>{t('finish.done')}</button>
         </section>
       ) : (
         <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>

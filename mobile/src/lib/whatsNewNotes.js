@@ -5,6 +5,17 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.5',
+    items: [
+      { icon: 'bolt', text: 'A cleaner look: one set of text sizes, softer white text, and one meaning per colour.' },
+      { icon: 'play', text: 'Start buttons are bigger, and finishing a workout shows your best set and when the next session is.' },
+      { icon: 'chart', text: 'Stats compares you with yourself four weeks ago: weight change and the lift that rose most.' },
+      { icon: 'trend', text: 'Progress bars, PRs and the goal card carry the Tafra mark\'s rising stroke.' },
+      { icon: 'book', text: 'Empty screens show a small drawing and the one thing to do next.' },
+      { icon: 'check', text: 'The save bar has a background again in the dark theme.' },
+    ],
+  },
+  {
     version: '1.1.4',
     items: [
       { icon: 'check', text: 'Bodyweight moves like squats, lunges and pike push-ups can be ticked off without typing a weight.' },
