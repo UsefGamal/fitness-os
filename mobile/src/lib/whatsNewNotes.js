@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.1',
+    items: [
+      { icon: 'play', text: 'Pages slide like a phone app: the old page moves away as the new one comes in, and tabs switch faster.' },
+      { icon: 'plus', text: 'Log padel or recovery, see a recipe and change equipment in a sheet, without leaving the page.' },
+      { icon: 'gear', text: 'New in Settings > Look: Reduce motion. Toasts can be swiped away, and Undo shows how long it stays.' },
+    ],
+  },
+  {
     version: '1.1.0',
     items: [
       { icon: 'home', text: 'The app is now called Tafra (طفرة, a leap), with a new icon. Your data stays as it was.' },

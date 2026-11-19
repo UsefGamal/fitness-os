@@ -5,7 +5,9 @@ import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Sheet from '../components/Sheet.jsx';
 import SwipeRow from '../components/SwipeRow.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
+import EquipmentSheet from '../components/EquipmentPicker.jsx';
 import Icon from '../components/Icon.jsx';
+import Toast from '../components/Toast.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { safeVideo } from '../lib/links.js';
@@ -38,6 +40,7 @@ import { gateOn, gentleDay } from '../lib/safety.js';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
 import { readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from '../lib/liveStats.js';
+import { reducedMotion } from '../store/motionFx.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
 const UNDO_MS = 7000;
@@ -197,6 +200,7 @@ export default function Workout() {
   const [reps, setReps] = useState(10);
   const [toast, setToast] = useState('');
   const [finishing, setFinishing] = useState(false);
+  const [equipOpen, setEquipOpen] = useState(false); // MOVE-2: equipment as a sheet
   const [rpe, setRpe] = useState('');
   const [pain, setPain] = useState('');
   const [now, setNow] = useState(Date.now());
@@ -211,11 +215,18 @@ export default function Workout() {
   const [useBuild, setUseBuild] = useState(true);
   useKeepAwake(Boolean(active), { idle: true, restRunning: Boolean(timer.endsAt) });
 
+  // One toast at a time (MOVE-2): a record shows for 2.5 s, and an Undo
+  // waiting behind it starts its own countdown only once it is on screen.
   useEffect(() => {
-    if (!undo) return undefined;
+    if (!toast) return undefined;
+    const id = setTimeout(() => setToast(''), 2500);
+    return () => clearTimeout(id);
+  }, [toast]);
+  useEffect(() => {
+    if (!undo || toast) return undefined;
     const id = setTimeout(() => setUndo(null), UNDO_MS);
     return () => clearTimeout(id);
-  }, [undo]);
+  }, [undo, toast]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 15000);
@@ -284,7 +295,7 @@ export default function Workout() {
     // forces a layout of the whole page.
     return afterPaint(() => {
       const el = document.querySelector('.ex-card.current');
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const reduce = reducedMotion();
       el?.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -363,7 +374,7 @@ export default function Workout() {
         {prev?.finished_at ? <div className="card muted small">You already finished a session today ({prev.notes}, {prev.sets.length} sets).</div> : null}
         {build && build.some((b) => b.status !== 'keep') ? (
           <section className="card stack">
-            <div className="row between"><strong>With your equipment</strong><Link to="/settings/training" className="small">Change</Link></div>
+            <div className="row between"><strong>With your equipment</strong><button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => setEquipOpen(true)}>Change</button></div>
             {build.filter((b) => b.status !== 'keep').map((b) => (
               <div key={b.orig} className="small">
                 {b.status === 'swap' ? <>{b.name} <span className="muted">→</span> <strong>{b.to.name}</strong></> : null}
@@ -393,6 +404,7 @@ export default function Workout() {
         </div>
         {requested ? <button type="button" className="btn ghost" onClick={() => setParams({})}>Back to today's plan</button> : null}
         <IntervalsLink />
+        {equipOpen ? <EquipmentSheet onClose={() => setEquipOpen(false)} /> : null}
       </div>
     );
   }
@@ -461,10 +473,8 @@ export default function Workout() {
       if (kind === 'best') {
         feedback('pr');
         setToast(t('workout.best', { name: ex.name, kg: w, reps: r }));
-        setTimeout(() => setToast(''), 2500);
       } else if (kind === 'baseline') {
         setToast(t('workout.baseline', { name: ex.name, kg: w, reps: r }));
-        setTimeout(() => setToast(''), 2500);
       }
       // The set tick (SA-03) never stacks: a best plays its own sound and
       // the rest-start cue replaces the tick.
@@ -532,12 +542,12 @@ export default function Workout() {
 
   return (
     <div className="page">
-      {toast ? <div className="toast" aria-hidden="true"><span className="pr">PR</span> {toast}</div> : null}
+      {toast ? <Toast hidden onDismiss={() => setToast('')}><span className="pr">PR</span> {toast}</Toast> : null}
       {undo && !toast ? (
-        <div className="toast undo-toast" role="status">
+        <Toast className="undo-toast" role="status" ms={UNDO_MS} onDismiss={() => setUndo(null)}>
           {undo.label}
           <button type="button" className="undo" onClick={() => { update((d) => restoreSet(d, active.id, undo.set)); setUndo(null); }}><Icon name="undo" className="icon" /> {t('workout.undo')}</button>
-        </div>
+        </Toast>
       ) : null}
       {/* One compact header; Pause, Finish and Discard sit in the one menu (UX-13). */}
       <section className="card workout-head">

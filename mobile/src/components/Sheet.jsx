@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { pushOverlay } from '../lib/overlays.js';
+import { feedback } from '../store/feedback.js';
 import { SHEET_CLOSE_MS } from '../lib/sheet.js';
 import { t } from '../lib/i18n.js';
 
@@ -57,7 +58,8 @@ export default function Sheet({ title, onClose, children }) {
     setDy(raw >= 0 ? raw : -Math.sqrt(-raw) * 2);
   };
   const up = () => {
-    if (dy > 80 || (dy > 12 && flick.current.v > 0.6)) close();
+    // MOVE-2: a light tap when a drag sends it away.
+    if (dy > 80 || (dy > 12 && flick.current.v > 0.6)) { feedback('tap'); close(); }
     start.current = null;
     setDy(0);
   };

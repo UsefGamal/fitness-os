@@ -34,7 +34,7 @@ import { starterProgress } from '../lib/starter.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { hasScreenLock, widgetStatus } from '../store/native.js';
-import { SESSIONS } from './Session.jsx';
+import { SESSIONS, SessionSheet } from './Session.jsx';
 import { useToday } from '../store/today.js';
 import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
@@ -93,6 +93,7 @@ export default function Today() {
   const backup = backupDue(data, Date.now(), { screenLock });
   const [picking, setPicking] = useState(false);
   const [weighing, setWeighing] = useState(false);
+  const [logging, setLogging] = useState(null); // a session type, logged in a sheet (MOVE-2)
   const clearanceSeen = () => update(markClearanceSeen);
   // One card under the session at most: doctor note, welcome back, the
   // Sunday wrap-up, the recovery suggestion (lib/homeCard.js).
@@ -296,7 +297,8 @@ export default function Today() {
             return (
               <QuickAction
                 key={key}
-                to={logged ? `/history/${logged.id}` : `/session/${key}`}
+                to={logged ? `/history/${logged.id}` : undefined}
+                onClick={logged ? undefined : () => setLogging(key)}
                 icon={QUICK[key]?.[0] || 'play'}
                 tone={QUICK[key]?.[1]}
                 title={s.label}
@@ -307,6 +309,7 @@ export default function Today() {
           })}
         </div>
       </details>
+      {logging ? <SessionSheet type={logging} onClose={() => setLogging(null)} /> : null}
     </div>
   );
 }

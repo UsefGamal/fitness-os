@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import { entryFor, photoSrc, thumbOf } from '../lib/catalogue.js';
 import { todayISO } from '../lib/dates.js';
@@ -49,6 +50,7 @@ export default function FollowAlong() {
   const [run, setRun] = useState(null); // { startedAt, pausedAt, pausedMs }
   const [now, setNow] = useState(Date.now());
   const [saved, setSaved] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const last = useRef(null);
   useKeepAwake(Boolean(run));
 
@@ -167,7 +169,8 @@ export default function FollowAlong() {
           <button type="button" className="btn secondary" style={{ width: 140 }} onClick={togglePause}><Icon name={run.pausedAt ? 'play' : 'pause'} /> {run.pausedAt ? 'Resume' : 'Pause'}</button>
           <button type="button" className="icon-btn" aria-label={t('aria.next')} onClick={() => jump(at.index + 1)}><Icon name="skip" /></button>
         </div>
-        <button type="button" className="btn ghost" style={{ width: 200 }} onClick={() => window.confirm('Stop following along?') && setRun(null)}><Icon name="x" /> Stop</button>
+        <button type="button" className="btn ghost" style={{ width: 200 }} onClick={() => setStopping(true)}><Icon name="x" /> Stop</button>
+        {stopping ? <ConfirmSheet title={t('follow.stopTitle')} body={t('follow.stopBody')} action={t('follow.stop')} onConfirm={() => setRun(null)} onClose={() => setStopping(false)} /> : null}
       </div>
     );
   }

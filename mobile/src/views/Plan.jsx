@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import DayPicker from '../components/DayPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import ExerciseRow from '../components/ExerciseRow.jsx';
@@ -34,6 +35,7 @@ import { gentleDay } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
 
 function EditList({ day, sessionKey }) {
+  const [resetting, setResetting] = useState(false);
   const data = useData((s) => s.data);
   const update = useData((s) => s.update);
   const T = activePlan(data, content);
@@ -99,8 +101,9 @@ function EditList({ day, sessionKey }) {
         <button type="button" className="btn secondary" disabled={!adding} onClick={() => { update((d) => P.addExercise(d, sessionKey, T, adding)); setAdding(''); }}><Icon name="plus" /> Add to {day.label}</button>
       </div>
       {day.edited ? (
-        <button type="button" className="btn danger" onClick={() => window.confirm(`Put ${day.label} back to the original plan?`) && update((d) => P.resetDay(d, sessionKey))}>Reset {day.label} to the original plan</button>
+        <button type="button" className="btn danger" onClick={() => setResetting(true)}>Reset {day.label} to the original plan</button>
       ) : null}
+      {resetting ? <ConfirmSheet title={t('plan.resetTitle', { day: day.label })} body={t('plan.resetBody')} action={t('plan.reset')} onConfirm={() => update((d) => P.resetDay(d, sessionKey))} onClose={() => setResetting(false)} /> : null}
     </>
   );
 }

@@ -74,6 +74,7 @@ export const SETTINGS_INDEX = [
   { label: 'set.autoBackup', to: '/settings/data', words: 'automatic backup cloud drive folder' },
   { label: 'theme.title', to: '/settings/prefs', words: 'theme dark light look appearance colour' },
   { label: 'theme.textSize', to: '/settings/prefs', words: 'text size font bigger' },
+  { label: 'theme.reduceMotion', to: '/settings/prefs', words: 'reduce motion animations movement dizzy calm' },
   { label: 'settings.modules', to: '/settings/modules', words: 'modules hide show water widget' },
   { label: 'settings.safety', to: '/settings/safety', words: 'safety check hide weight calories' },
   { label: 'settings.health', to: '/settings/health', words: 'health connect watch steps sleep heart' },

@@ -5,6 +5,7 @@ import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
 import Stepper from '../components/Stepper.jsx';
+import Toast from '../components/Toast.jsx';
 import { formatDate } from '../lib/dates.js';
 import { clock, deleteTest, nextDue, saveTest, series, summary, testList, timerAt } from '../lib/fitnessTest.js';
 import { t } from '../lib/i18n.js';
@@ -116,7 +117,7 @@ export default function FitnessTest() {
           onClose={() => setDeleting(null)}
         />
       ) : null}
-      {toast ? <div className="toast" role="status">{toast}</div> : null}
+      {toast ? <Toast role="status" onDismiss={() => setToast('')}>{toast}</Toast> : null}
     </div>
   );
 }

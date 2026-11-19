@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { resolveTheme, setTextSize, setTheme, TEXT_SIZES, textScale, textSize, THEME_BG, themeChoice } from './theme.js';
+import { reduceMotion, resolveTheme, setReduceMotion, setTextSize, setTheme, TEXT_SIZES, textScale, textSize, THEME_BG, themeChoice } from './theme.js';
 
 test('theme: dark by default, light or matching the phone when chosen', () => {
   assert.equal(themeChoice({}), 'dark');
@@ -45,4 +45,22 @@ test('text size: every font size up to 34 px follows --ts', () => {
   const fixed = [...css.matchAll(/font-size: *([0-9.]+)px/g)].map((m) => Number(m[1])).filter((n) => n <= 34);
   assert.deepEqual(fixed, []);
   assert.match(css, /--ts: 1;/);
+});
+
+test('reduce motion (MOVE-2): off by default, on only when set to true', () => {
+  assert.equal(reduceMotion({ settings: {} }), false);
+  assert.equal(reduceMotion(undefined), false);
+  assert.equal(reduceMotion({ settings: { reduce_motion: 'yes' } }), false);
+  const on = setReduceMotion({ settings: { theme: 'light' } }, true);
+  assert.equal(reduceMotion(on), true);
+  assert.equal(on.settings.theme, 'light');
+  assert.equal(reduceMotion(setReduceMotion(on, false)), false);
+});
+
+test('every reduced-motion block in styles.css has its Settings > Look mirror', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const blocks = css.split('@media (prefers-reduced-motion: reduce)').length - 1;
+  const mirrors = css.split('/* reduce-motion mirror').length - 1;
+  assert.ok(blocks > 0);
+  assert.equal(mirrors, blocks);
 });

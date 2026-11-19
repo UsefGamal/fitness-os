@@ -300,18 +300,18 @@ details.more > summary::-webkit-details-marker { display: none; }
 @keyframes tab-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes push-in { from { opacity: 0.4; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes route-back { from { opacity: 0.4; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
-.route.tab-in { animation: tab-in 160ms ease-out; }
-.route.push-in { animation: push-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.route.tab-in { animation: tab-in var(--dur-quick) ease-out; }
+.route.push-in { animation: push-in var(--dur-std) cubic-bezier(0.2, 0.8, 0.2, 1); }
 /* After a swipe the next tab comes in from the side the finger left towards. */
 @keyframes swipe-in-end { from { opacity: 0.4; transform: translate3d(40%, 0, 0); } to { opacity: 1; transform: none; } }
 @keyframes swipe-in-start { from { opacity: 0.4; transform: translate3d(-40%, 0, 0); } to { opacity: 1; transform: none; } }
-.route.swipe-fwd { animation: swipe-in-end 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-.route.swipe-back { animation: swipe-in-start 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.route.swipe-fwd { animation: swipe-in-end var(--dur-std) cubic-bezier(0.2, 0.8, 0.2, 1); }
+.route.swipe-back { animation: swipe-in-start var(--dur-std) cubic-bezier(0.2, 0.8, 0.2, 1); }
 [dir="rtl"] .route.swipe-fwd { animation-name: swipe-in-start; }
 [dir="rtl"] .route.swipe-back { animation-name: swipe-in-end; }
 /* Up/down scrolling stays the browser's; sideways drags reach the swipe. */
 .route { touch-action: pan-y; }
-.route.pop-in { animation: route-back 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.route.pop-in { animation: route-back var(--dur-std) cubic-bezier(0.2, 0.8, 0.2, 1); }
 [dir="rtl"] .route.push-in { animation-name: route-back; }
 [dir="rtl"] .route.pop-in { animation-name: push-in; }
 @media (prefers-reduced-motion: reduce) {
@@ -319,6 +319,10 @@ details.more > summary::-webkit-details-marker { display: none; }
   .check.on.pop, .count-up { animation: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }
+/* reduce-motion mirror: Settings > Look > Reduce motion */
+:root[data-motion="reduce"] .route.tab-in, :root[data-motion="reduce"] .route.push-in, :root[data-motion="reduce"] .route.pop-in, :root[data-motion="reduce"] .route.swipe-fwd, :root[data-motion="reduce"] .route.swipe-back { animation: none; }
+:root[data-motion="reduce"] .check.on.pop, :root[data-motion="reduce"] .count-up { animation: none; }
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { transition-duration: 0.01ms !important; }
 
 /* Bottom sheet */
 .sheet-wrap { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; justify-content: flex-end; }
@@ -330,8 +334,8 @@ details.more > summary::-webkit-details-marker { display: none; }
 .sheet-handle span { width: 40px; height: 5px; border-radius: 3px; background: var(--faint); }
 .sheet:focus { outline: none; }
 .sheet-backdrop { animation: scrim-in 200ms ease-out; }
-.sheet-wrap.closing .sheet { animation: sheet-down 200ms cubic-bezier(0.4, 0, 1, 1) forwards; }
-.sheet-wrap.closing .sheet-backdrop { animation: scrim-out 200ms ease-in forwards; }
+.sheet-wrap.closing .sheet { animation: sheet-down var(--dur-std) cubic-bezier(0.4, 0, 1, 1) forwards; }
+.sheet-wrap.closing .sheet-backdrop { animation: scrim-out var(--dur-std) ease-in forwards; }
 .sheet-wrap.closing { pointer-events: none; }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes sheet-down { from { transform: none; } to { transform: translateY(100%); } }
@@ -344,6 +348,9 @@ details.more > summary::-webkit-details-marker { display: none; }
   .sheet { animation: sheet-fade-in 150ms ease-out; }
   .sheet-wrap.closing .sheet { animation: sheet-fade-out 150ms ease-in forwards; }
 }
+/* reduce-motion mirror: Settings > Look > Reduce motion */
+:root[data-motion="reduce"] .sheet { animation: sheet-fade-in 150ms ease-out; }
+:root[data-motion="reduce"] .sheet-wrap.closing .sheet { animation: sheet-fade-out 150ms ease-in forwards; }
 
 /* Swipe rows */
 .swipe { position: relative; overflow: hidden; border-radius: 10px; }
@@ -402,6 +409,8 @@ details.more > summary::-webkit-details-marker { display: none; }
 .fanfare .medal { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-dim); color: var(--accent); flex: none; }
 @keyframes pop-in { from { transform: translateY(20px) scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .fanfare { animation: none; } }
+/* reduce-motion mirror: Settings > Look > Reduce motion */
+:root[data-motion="reduce"] .fanfare { animation: none; }
 .measure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .preview-list { max-height: 220px; overflow-y: auto; }
 .group-row.on span:first-child { color: var(--accent); font-weight: 600; }
@@ -762,6 +771,8 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 @media (prefers-reduced-motion: reduce) {
   button.chip:active, a.chip:active, .pick:active, .pill-btn:active, .pill-open:active, .tpre:active, .timer-open:active, .check:active, button.week-day:active, .tab:active svg, a.banner:active { transform: none; }
 }
+/* reduce-motion mirror: Settings > Look > Reduce motion */
+:root[data-motion="reduce"] button.chip:active, :root[data-motion="reduce"] a.chip:active, :root[data-motion="reduce"] .pick:active, :root[data-motion="reduce"] .pill-btn:active, :root[data-motion="reduce"] .pill-open:active, :root[data-motion="reduce"] .tpre:active, :root[data-motion="reduce"] .timer-open:active, :root[data-motion="reduce"] .check:active, :root[data-motion="reduce"] button.week-day:active, :root[data-motion="reduce"] .tab:active svg, :root[data-motion="reduce"] a.banner:active { transform: none; }
 
 /* Install and update help (UPD-1): numbered steps with a small drawn phone. */
 .guide-steps { list-style: none; margin: 12px 0 0; padding: 0; background: var(--surface); border-radius: 12px; }
@@ -831,6 +842,7 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .live-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--accent); display: inline-block; }
 .live-dot.off { background: var(--warn); }
 @media (prefers-reduced-motion: no-preference) { .live-dot:not(.off) { animation: live-pulse 2s ease-in-out infinite; } }
+:root[data-motion="reduce"] .live-dot { animation: none; }
 @keyframes live-pulse { 50% { opacity: 0.35; } }
 .ex-line { display: flex; align-items: center; gap: 12px; }
 .ex-thumb { flex: none; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--surface2); border: 0; padding: 0; display: grid; place-items: center; }
@@ -870,6 +882,7 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .fold > div { margin-top: 8px; }
 .icon.chev.open { transform: rotate(90deg); }
 @media (prefers-reduced-motion: no-preference) { .icon.chev { transition: transform 0.15s ease; } }
+:root[data-motion="reduce"] .icon.chev { transition: none; }
 .equip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 4px; }
 .equip-cell { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--surface); color: var(--muted); font-size: calc(14px * var(--ts)); text-align: start; }
 .equip-cell.on { background: var(--accent-dim); color: var(--text); }
@@ -896,12 +909,19 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 .skel-card { height: 180px; }
 .skel-card.short { height: 96px; }
 @media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+/* reduce-motion mirror: Settings > Look > Reduce motion */
+:root[data-motion="reduce"] .skel { animation: none; }
 
 /* ===== MOVE-1: modern motion and colour (Nov 2026) =====
    Springs, a sliding tab highlight, cards that grow into pages, presses that
    glow from the finger, colour that follows progress. Transform, opacity and
    colour only; everything stops under "Remove animations" (bottom block). */
 :root {
+  /* MOVE-2: three speeds. Quick for taps and fades, standard for pages and
+     closing, emphasized for things that arrive (sheets, toasts, rewards). */
+  --dur-quick: 120ms;
+  --dur-std: 220ms;
+  --dur-emph: 340ms;
   --spring: cubic-bezier(.3, 1.35, .5, 1);      /* a small overshoot, then settle */
   --spring-soft: cubic-bezier(.25, 1.15, .5, 1);
   --ease-emph: cubic-bezier(.2, 0, 0, 1);        /* Material 3 emphasized */
@@ -915,9 +935,9 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 :root[data-theme="light"] { --gold: #9a6700; --gold-dim: rgba(255, 204, 0, 0.2); --tab-meals: #a84f00; --tab-library: #006591; --tab-stats: #7d3c9e; }
 
 /* Springs on the things that arrive. */
-.sheet { animation: sheet-up 340ms var(--spring-soft); }
-.toast, .fanfare { animation: pop-in 380ms var(--spring); }
-.timer-pill { animation: pill-in 360ms var(--spring); }
+.sheet { animation: sheet-up var(--dur-emph) var(--spring-soft); }
+.toast, .fanfare { animation: pop-in var(--dur-emph) var(--spring); }
+.timer-pill { animation: pill-in var(--dur-emph) var(--spring); }
 @keyframes pill-in { from { opacity: 0; transform: translate(-50%, 16px) scale(.9); } to { opacity: 1; transform: translateX(-50%); } }
 
 /* Tabs: the page slides in from the side of the tab you came from (the
@@ -927,26 +947,26 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 .tab { position: relative; z-index: 1; transition: color 200ms ease; }
 .tab.active { color: var(--tone, var(--accent)); }
 .tab-ind { --dir: 1; position: absolute; top: 6px; left: 0; width: calc(100% / var(--n)); height: 32px; pointer-events: none; z-index: 0;
-  transform: translateX(calc(100% * var(--i) * var(--dir))); transition: transform 380ms var(--spring); }
+  transform: translateX(calc(100% * var(--i) * var(--dir))); transition: transform var(--dur-emph) var(--spring); }
 [dir="rtl"] .tab-ind { --dir: -1; left: auto; right: 0; }
 .tab-ind::before { content: ''; position: absolute; inset: 0 calc(50% - 30px); border-radius: 16px; background: color-mix(in srgb, var(--tone) 18%, transparent); transition: background-color 300ms ease; }
-.tab.active svg { animation: tab-hop 420ms var(--spring); }
+.tab.active svg { animation: tab-hop var(--dur-emph) var(--spring); }
 @keyframes tab-hop { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-3px) scale(1.12); } 100% { transform: none; } }
 
 /* Cards rise in one after another when a page opens (staggered entrance). */
-.route.tab-in .page > *, .route.push-in .page > *, .route.swipe-fwd .page > *, .route.swipe-back .page > * { animation: rise-in 360ms var(--ease-emph) both; }
-.route .page > :nth-child(2) { animation-delay: 30ms; }
-.route .page > :nth-child(3) { animation-delay: 60ms; }
-.route .page > :nth-child(4) { animation-delay: 90ms; }
-.route .page > :nth-child(5) { animation-delay: 120ms; }
-.route .page > :nth-child(6) { animation-delay: 150ms; }
-.route .page > :nth-child(n+7) { animation-delay: 180ms; }
+.route.rise .page > * { animation: rise-in var(--dur-emph) var(--ease-emph) both; }
+.route.rise .page > :nth-child(2) { animation-delay: 30ms; }
+.route.rise .page > :nth-child(3) { animation-delay: 60ms; }
+.route.rise .page > :nth-child(4) { animation-delay: 90ms; }
+.route.rise .page > :nth-child(5) { animation-delay: 120ms; }
+.route.rise .page > :nth-child(6) { animation-delay: 150ms; }
+.route.rise .page > :nth-child(n+7) { animation-delay: 180ms; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 /* Card grows into the page it opens (View Transitions, store/motionFx.js).
    While it runs the usual page slide stays out of the way. */
 :root.vt-morph .route, :root.vt-morph .route .page > * { animation: none !important; }
-::view-transition-group(hero) { animation-duration: 340ms; animation-timing-function: var(--ease-emph); }
+::view-transition-group(hero) { animation-duration: var(--dur-emph); animation-timing-function: var(--ease-emph); }
 ::view-transition-old(hero), ::view-transition-new(hero) { height: 100%; object-fit: cover; overflow: clip; }
 ::view-transition-old(hero) { animation: vt-out 160ms ease-out both; }
 ::view-transition-new(hero) { animation: vt-in 260ms ease-out 60ms both; }
@@ -954,6 +974,24 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; } }
 .route[style*="view-transition-name"] { border-radius: 0; }
+
+/* MOVE-2: the old page leaving (motionFx.js ghostOut). Pushed pages slide
+   over it; going back, it slides off on top of the page underneath. */
+/* No z-index on .route: a sheet inside it must stay above the tab bar. The
+   pushed-away copy sits under the page instead (z-index -1). */
+.route.push-in, .route.pop-in, .route.tab-in { background: var(--bg); }
+.route-ghost { position: fixed; inset: 0; overflow: hidden; pointer-events: none; background: var(--bg); z-index: -1; will-change: transform, opacity; }
+.route-ghost.pop { z-index: 15; box-shadow: -12px 0 32px var(--deep-shadow); }
+.route-ghost-page { position: absolute; left: 0; right: 0; }
+.route-ghost * { animation: none !important; transition: none !important; }
+
+/* MOVE-2: toasts. Swipe one away; the Undo bar shrinks for as long as it
+   stays. A reward medal moves to the top while a toast holds the bottom. */
+.toast { touch-action: pan-y; overflow: hidden; transition: transform var(--dur-std) var(--ease-emph), opacity var(--dur-std) ease; }
+.toast-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); transform-origin: left; animation: toast-timer var(--ms, 5000ms) linear forwards; }
+[dir="rtl"] .toast-timer { transform-origin: right; }
+@keyframes toast-timer { to { transform: scaleX(0); } }
+:root:has(.toast) .fanfare { bottom: auto; top: calc(env(safe-area-inset-top) + 12px); }
 
 /* Predictive back: the page shrinks as the swipe moves (motionFx.js). */
 .route.backing { overflow: hidden; box-shadow: 0 12px 40px var(--deep-shadow); transform-origin: center 40%; }
@@ -977,11 +1015,11 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 .list-row:has(.check.on.pop), .meal-card:has(.check.on.pop) { animation: done-flash 700ms ease-out; }
 @keyframes done-flash { 0% { background-color: color-mix(in srgb, var(--accent) 30%, var(--surface)); } 100% { background-color: var(--surface); } }
 .check.on { box-shadow: 0 0 0 0 var(--accent); }
-.check.on.pop { animation: tick-pop 360ms var(--spring), tick-ring 600ms ease-out; }
+.check.on.pop { animation: tick-pop var(--dur-emph) var(--spring), tick-ring 600ms ease-out; }
 @keyframes tick-ring { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } to { box-shadow: 0 0 0 12px transparent; } }
 .check.on svg, .st-tick.on svg { stroke-dasharray: 30; animation: tick-draw 320ms var(--ease-emph) 60ms both; }
 @keyframes tick-draw { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
-.st-tick.on { animation: tick-pop 360ms var(--spring), tick-ring 600ms ease-out; }
+.st-tick.on { animation: tick-pop var(--dur-emph) var(--spring), tick-ring 600ms ease-out; }
 .st-row.done { animation: row-done 600ms ease-out; }
 @keyframes row-done { 0% { background-color: color-mix(in srgb, var(--accent) 38%, transparent); transform: scale(1.015); } 100% { background-color: var(--accent-dim); transform: none; } }
 .st-row.open.next { animation: next-in 420ms var(--spring-soft); }
@@ -1059,3 +1097,7 @@ label.field input { transition: box-shadow 300ms ease; }
   .tab-ind, .roll-d, .compact-title, .progress > span { transition: none; }
   .glow::before { display: none; }
 }
+/* reduce-motion mirror: Settings > Look > Reduce motion */
+:root[data-motion="reduce"] .sheet, :root[data-motion="reduce"] .toast, :root[data-motion="reduce"] .fanfare, :root[data-motion="reduce"] .timer-pill, :root[data-motion="reduce"] .tab.active svg, :root[data-motion="reduce"] .route .page > *, :root[data-motion="reduce"] .check.on.pop, :root[data-motion="reduce"] .st-tick.on, :root[data-motion="reduce"] .st-row.done, :root[data-motion="reduce"] .st-row.open.next, :root[data-motion="reduce"] polygon.lit, :root[data-motion="reduce"] .skel::after, :root[data-motion="reduce"] input[aria-invalid="true"], :root[data-motion="reduce"] .shake, :root[data-motion="reduce"] .fanfare .medal, :root[data-motion="reduce"] .ring.done { animation: none !important; }
+:root[data-motion="reduce"] .tab-ind, :root[data-motion="reduce"] .roll-d, :root[data-motion="reduce"] .compact-title, :root[data-motion="reduce"] .progress > span { transition: none; }
+:root[data-motion="reduce"] .glow::before { display: none; }
