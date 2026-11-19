@@ -1197,7 +1197,7 @@ label.field input { transition: box-shadow 300ms ease; }
 .burn-model { position: absolute; inset-block: -4px; width: 3px; margin-inline-start: -1.5px; border-radius: 2px; background: var(--text); }
 
 /* Charts step 5 (DV-13): Meals' last 7 days. Ring = nothing, half = some, full = all; protein is a square so shape tells the rows apart. */
-.mweek-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin: 8px 0 4px; }
+.mweek-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0; margin: 8px -14px 4px; }
 .mweek-day { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 64px; padding: 6px 0; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; }
 .mweek-day.on { background: var(--surface2); color: var(--text); }
 .mweek-letter { font-size: calc(12px * var(--ts)); font-weight: 600; }
@@ -1215,6 +1215,6 @@ label.field input { transition: box-shadow 300ms ease; }
 .ready-list li.done .icon { color: var(--accent); }
 .ready-list li.done .grow { color: var(--muted); }
 .ready-list .meta { color: var(--muted); font-size: calc(13px * var(--ts)); }
-.home-week { padding-bottom: 12px; }
-.home-week .week { margin: 0; }
+.home-week { margin: 4px 0 14px; }
+
 .home-week-line { margin-top: 8px; text-align: center; }

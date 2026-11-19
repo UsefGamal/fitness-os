@@ -251,7 +251,7 @@ export default function Today() {
       ) : null}
 
       {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
-      <section className="card home-week">
+      <section className="home-week" aria-label={t('home.weekAria')}>
         <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
         <div className="muted small home-week-line">{t('home.weekLine', { days: glance.days, need: weeks.week.need, sets: glance.sets })}</div>
       </section>

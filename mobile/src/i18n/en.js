@@ -1234,6 +1234,7 @@ export default {
   'dh.backup.ok': 'Your data has a recent copy',
   'dh.backup.fix': 'Make a backup, this phone holds the only copy',
   'dh.backup.never': 'This phone holds the only copy of your data',
+  'home.weekAria': 'This week',
   'home.weekLine': '{days} of {need} training days this week · {sets} work sets',
   'mvol.title': 'Sets a week',
   'mvol.window': 'Last {n} weeks',
