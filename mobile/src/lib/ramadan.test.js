@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { emptyData } from './data.js';
 import { macroTargets } from './macros.js';
-import { AFTER_EID_DAYS, afterRamadan, dropFastingReminders, deficitShare, effectiveTimes, goalSlipDays, isFasting, LAST_TIME, mealDay, RAMADAN_DEFICIT_SHARE, ramadanActive, ramadanOf, ramadanSet, setRamadan, SUGGESTED_DATES, switchRamadan } from './ramadan.js';
+import { AFTER_EID_DAYS, afterRamadan, dropFastingReminders, deficitShare, effectiveTimes, goalSlipDays, isFasting, LAST_TIME, mealDay, RAMADAN_DEFICIT_SHARE, ramadanActive, ramadanOf, ramadanSet, setRamadan, setRamadanDate, SUGGESTED_DATES, switchRamadan } from './ramadan.js';
 import { plannedReminders } from './reminders.js';
 import { content } from './testContent.js';
 import { weekStats, wrapDue, weekText } from './weekStats.js';
@@ -187,4 +187,18 @@ test('wrap-up in a Ramadan week: due as usual, and Ramadan never named', () => {
   const s = weekStats(d, content, '2027-02-07');
   assert.equal(s.sessions.done, 1);
   assert.ok(!/ramadan|fast|iftar|suhoor/i.test(weekText(s) + JSON.stringify(s)));
+});
+
+test('picking a first day after the last day keeps Ramadan on and moves the last day', () => {
+  const d = setRamadan(emptyData(content), { from: '2027-02-08', to: '2027-03-09' });
+  // A date picked for this year's fast, while the suggested dates are next year's.
+  const a = setRamadanDate(d, 'from', '2027-03-20');
+  assert.equal(ramadanSet(a), true);
+  assert.deepEqual([ramadanOf(a).from, ramadanOf(a).to], ['2027-03-20', '2027-04-18']);
+  const b = setRamadanDate(d, 'to', '2026-12-05');
+  assert.equal(ramadanSet(b), true);
+  assert.deepEqual([ramadanOf(b).from, ramadanOf(b).to], ['2026-11-06', '2026-12-05']);
+  // Inside the range only that end moves.
+  assert.deepEqual([ramadanOf(setRamadanDate(d, 'to', '2027-03-01')).from, ramadanOf(setRamadanDate(d, 'to', '2027-03-01')).to], ['2027-02-08', '2027-03-01']);
+  assert.equal(setRamadanDate(d, 'from', 'soon'), d);
 });

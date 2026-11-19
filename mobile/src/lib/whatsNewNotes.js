@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.4',
+    items: [
+      { icon: 'dumbbell', text: 'A plank, wall sit or other hold swapped into your plan now logs seconds, not reps.' },
+      { icon: 'sunrise', text: 'Ramadan dates: a first day after the last one (or the other way round) keeps Ramadan on and moves the other date.' },
+      { icon: 'person', text: 'Profile saves Build muscle or Keep my weight without a goal weight or date, and flags a goal on the wrong side.' },
+      { icon: 'gear', text: 'Quests and Shopping say Monday when your week starts on Monday, and the Meals buttons fit at the biggest text size.' },
+    ],
+  },
+  {
     version: '1.1.3',
     items: [
       { icon: 'home', text: 'The Tafra icon now shows on your home screen, instead of the default Android icon.' },

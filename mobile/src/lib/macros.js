@@ -146,9 +146,15 @@ export function macroSplit(kcal, refWeightKg, mode = 'lose') {
 
 /** Problems with a goal before it is saved: ['bmi'] when the low goal
  * weight is under BMI 18.5 for this height. */
-export function goalIssues(p) {
+export function goalIssues(p, weightKg = null) {
   const out = [];
   if (p.height_cm && p.goal_weight_low_kg != null && p.goal_weight_low_kg / (p.height_cm / 100) ** 2 < MIN_BMI) out.push('bmi');
+  // The goal and the way there must agree: losing to a weight above where
+  // you are, or gaining to one below it, gives targets that pull the wrong
+  // way (a surplus while the goal is 17 kg lighter).
+  const dir = p.direction || 'lose';
+  if (weightKg > 0 && dir === 'lose' && p.goal_weight_low_kg != null && p.goal_weight_low_kg > weightKg) out.push('loseAbove');
+  if (weightKg > 0 && dir === 'gain' && p.goal_weight_high_kg != null && p.goal_weight_high_kg < weightKg) out.push('gainBelow');
   return out;
 }
 
