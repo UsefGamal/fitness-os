@@ -99,21 +99,34 @@ async function journey(name, browser, fn, opts) {
   console.log(`${error ? 'FAIL' : 'ok  '} ${name}${error ? `\n     ${String(error.message).split('\n').slice(0, 6).join('\n     ')}` : ''}`);
 }
 
-/** Go through first-time setup, answering everything. */
+/** Go through first-time setup, answering everything (one question per
+ * screen since ONB-2: cards move on by themselves when tapped). */
 async function setUp(page) {
+  const card = async (name) => { await page.getByRole('button', { name, exact: typeof name === 'string' }).first().click(); await page.waitForTimeout(400); };
   await btn(page, en['setup.start']).click();
   await page.getByLabel(en['setup.name']).fill('Sam');
-  await btn(page, en['setup.male']).click();
-  await page.getByLabel(en['setup.birthYear']).fill('1996');
-  await page.getByLabel(en['setup.height']).fill('178');
-  await page.getByLabel(en['setup.weight']).fill('82');
   await btn(page, en['setup.next']).click();
-  for (const no of await btn(page, en['safety.no']).all()) await no.click();
+  await card(en['setup.male']);
+  await btn(page, en['setup.next']).click(); // age: the wheel's 30
+  await page.getByLabel(en['setup.height'], { exact: true }).fill('178');
   await btn(page, en['setup.next']).click();
-  await page.getByRole('button', { name: new RegExp(`^${en['setup.goal.lose']}`) }).first().click();
+  await page.getByLabel(en['setup.weight'], { exact: true }).fill('82');
   await btn(page, en['setup.next']).click();
-  await page.getByRole('button', { name: new RegExp(`^${en['setup.expNew']}`) }).click();
-  await btn(page, en['setup.next']).click();
+  let asked = 0;
+  while (await page.locator('.story-eyebrow').count()) {
+    if (await page.getByRole('heading', { name: en['safety.q.pregnant'] }).count()) throw new Error('a man was asked about pregnancy');
+    await card(en['safety.no']);
+    asked += 1;
+  }
+  if (asked !== 6) throw new Error(`a man got ${asked} safety questions, not 6`);
+  await card(new RegExp(`^${en['setup.goal.lose']}`));
+  await btn(page, en['setup.next']).click(); // goal weight
+  await btn(page, en['setup.next']).click(); // the goal chart
+  await card(new RegExp(`^${en['setup.gym']}`));
+  await card(new RegExp(`^${en['setup.expNew']}`));
+  await btn(page, en['setup.next']).click(); // days
+  await card(new RegExp(`^${en['job.desk']}`));
+  await btn(page, en['setup.next']).click(); // time
   await btn(page, en['setup.go']).click();
   await page.locator('.home').first().waitFor({ timeout: 10000 });
 }

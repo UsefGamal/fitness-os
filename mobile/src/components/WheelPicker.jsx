@@ -10,12 +10,14 @@ export default function WheelPicker({ value, onChange, options, unit, label }) {
   const box = useRef(null);
   const busy = useRef(false);
   const last = useRef(value);
+  const ours = useRef(null); // where we scrolled it ourselves
   const index = Math.max(0, options.indexOf(value));
 
   useEffect(() => {
     const el = box.current;
     if (!el || busy.current) return;
-    el.scrollTop = index * ROW;
+    ours.current = index * ROW;
+    el.scrollTop = ours.current;
   }, [index]);
 
   useEffect(() => { last.current = value; }, [value]);
@@ -26,6 +28,8 @@ export default function WheelPicker({ value, onChange, options, unit, label }) {
     let raf = 0;
     let idle = 0;
     const onScroll = () => {
+      if (ours.current != null && Math.abs(el.scrollTop - ours.current) < 2) return;
+      ours.current = null;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const i = Math.min(options.length - 1, Math.max(0, Math.round(el.scrollTop / ROW)));
