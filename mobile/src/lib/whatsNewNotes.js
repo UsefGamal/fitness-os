@@ -5,11 +5,19 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.7',
+    version: '1.1.8',
     items: [
       { icon: 'trend', text: 'The weight card shows your pace as a range measured from your weigh-ins, and when you would reach your goal at that pace.' },
       { icon: 'dumbbell', text: 'Today\'s workout card shows what you lifted last time in that session.' },
       { icon: 'check', text: 'In a workout, each set shows last time\'s set under it, and once you tick it, how it compares.' },
+    ],
+  },
+  {
+    version: '1.1.7',
+    items: [
+      { icon: 'person', text: 'Rotator cuff and hip flexors are muscles of their own, under Shoulders and Quads in the Library.' },
+      { icon: 'search', text: 'Each muscle splits its list into Training and Stretches, and stretches carry a Stretch label.' },
+      { icon: 'trend', text: 'Stretches no longer count toward weekly sets or recovery on Stats.' },
     ],
   },
   {

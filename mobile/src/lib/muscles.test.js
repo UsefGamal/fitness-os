@@ -50,7 +50,7 @@ test('shoulders become a deltoid head; other muscles stay', () => {
 
 test('pressing helpers are front delts, never the main muscle twice', () => {
   assert.deepEqual(helpersOf(ex('Incline Dumbbell Press', ['chest'], ['shoulders', 'triceps'])), ['front delts', 'triceps']);
-  assert.deepEqual(helpersOf(ex('Face Pull', ['shoulders'], ['shoulders', 'middle back'])), ['middle back']);
+  assert.deepEqual(helpersOf(ex('Face Pull', ['shoulders'], ['shoulders', 'middle back'])), ['middle back', 'rotator cuff']);
 });
 
 test('chest angles', () => {
@@ -93,7 +93,7 @@ test('back width and thickness', () => {
 });
 
 test('lists and labels', () => {
-  assert.deepEqual(musclesIn('Shoulders').map((m) => m.key), ['front delts', 'side delts', 'rear delts', 'neck']);
+  assert.deepEqual(musclesIn('Shoulders').map((m) => m.key), ['front delts', 'side delts', 'rear delts', 'neck', 'rotator cuff']);
   assert.deepEqual(musclesIn('Arms').map((m) => m.key), ['biceps', 'triceps', 'forearms']);
   assert.deepEqual(anglesOf('triceps').map((a) => a.key), ['triceps_long', 'triceps_lateral', 'triceps_all']);
   assert.deepEqual(anglesOf('biceps').map((a) => a.key), ['biceps_long', 'biceps_short', 'brachialis']);
@@ -188,4 +188,22 @@ test('the chest is drawn larger than the traps above it, and the back is in four
   assert.ok(area(of(FRONT, 'chest')[0]) > 4 * area(of(FRONT, 'trapezius')[0]));
   assert.ok(area(of(FRONT, 'chest')[0]) > area(of(BACK, 'trapezius')[0]));
   for (const m of ['trapezius', 'trapezius-mid', 'upper-back', 'lats']) assert.equal(of(BACK, m).length, 2, m);
+});
+
+test('rotator cuff and hip flexors come from the exercise name', () => {
+  assert.deepEqual(musclesOf(ex('External Rotation with Band', ['shoulders'])), ['rotator cuff']);
+  assert.deepEqual(musclesOf(ex('Cuban Press', ['shoulders'], ['traps'])), ['rotator cuff']);
+  // A reverse fly with a rotation is still a rear-delt move.
+  assert.deepEqual(musclesOf(ex('Reverse Flyes With External Rotation', ['shoulders'])), ['rear delts']);
+  assert.ok(helpersOf(ex('Reverse Flyes With External Rotation', ['shoulders'])).includes('rotator cuff'));
+  assert.ok(helpersOf(ex('Face Pull', ['shoulders'], ['middle back'])).includes('rotator cuff'));
+  assert.deepEqual(musclesOf(ex('Kneeling Hip Flexor', ['quadriceps'], ['quadriceps'])), ['hip flexors']);
+  assert.deepEqual(musclesOf(ex('Intermediate Hip Flexor and Quad Stretch', ['quadriceps'])), ['hip flexors', 'quadriceps']);
+  assert.deepEqual(musclesOf(ex('Hanging Leg Raise', ['abdominals'])), ['abdominals']);
+  assert.deepEqual(helpersOf(ex('Hanging Leg Raise', ['abdominals'])), ['hip flexors']);
+  assert.ok(!helpersOf(ex('Leg Extensions', ['quadriceps'])).includes('hip flexors'));
+  // Deep muscles are listed but not drawn.
+  assert.equal(MUSCLE['rotator cuff'].group, 'Shoulders');
+  assert.equal(MUSCLE['hip flexors'].group, 'Legs');
+  assert.deepEqual(MUSCLE['hip flexors'].shapes, []);
 });
