@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.3',
+    items: [
+      { icon: 'home', text: 'The Tafra icon now shows on your home screen, instead of the default Android icon.' },
+    ],
+  },
+  {
     version: '1.1.2',
     items: [
       { icon: 'play', text: 'Pages slide like a phone app: the old page moves away as the new one comes in, and tabs switch faster.' },
