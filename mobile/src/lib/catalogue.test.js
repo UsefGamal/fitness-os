@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { entryFor, filterCatalogue, groupOf, groupsOf } from './catalogue.js';
+import { entryFor, filterCatalogue, groupOf, groupsOf, isStretch } from './catalogue.js';
 import { content } from './testContent.js';
 
 const E = (id, name, primary, equipment = 'barbell', secondary = []) => ({ id, name, primary, secondary, equipment, instructions: [], photos: [] });
@@ -46,4 +46,17 @@ test('filters by a finer muscle and an angle, and search finds them', () => {
   assert.deepEqual(filterCatalogue(more, { group: 'Chest', angle: 'upper_chest' }).map((e) => e.id), ['Incline_DB']);
   assert.deepEqual(filterCatalogue(more, { q: 'side delts' }).map((e) => e.id), ['Side_Lateral_Raise']);
   assert.deepEqual(filterCatalogue(more, { q: 'upper chest' }).map((e) => e.id), ['Incline_DB']);
+});
+
+test('stretches are their own kind', () => {
+  const list = [
+    { id: 'a', name: 'Quad Stretch', category: 'stretching', primary: ['quadriceps'], secondary: [] },
+    { id: 'b', name: 'Squat', category: 'strength', primary: ['quadriceps'], secondary: [] },
+    { id: 'c', name: 'Box Jump', category: 'plyometrics', primary: ['quadriceps'], secondary: [] },
+  ];
+  assert.ok(isStretch(list[0]));
+  assert.ok(!isStretch(list[1]));
+  assert.deepEqual(filterCatalogue(list, { kind: 'stretch' }).map((e) => e.id), ['a']);
+  assert.deepEqual(filterCatalogue(list, { kind: 'train' }).map((e) => e.id), ['b', 'c']);
+  assert.equal(filterCatalogue(list).length, 3);
 });

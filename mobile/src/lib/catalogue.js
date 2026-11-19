@@ -28,9 +28,16 @@ const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 /** Search by name, muscle group and equipment. Every word of the query
  * must appear. `group` is one of the six old groups, `group16` one of the
  * 16 (lib/muscleGroups.js), matched on the entry's main muscles. */
-export function filterCatalogue(entries, { q = '', group = null, group16 = null, equipment = null, muscle = null, angle = null } = {}) {
+/** A stretch, not training: the catalogue's own "stretching" category. */
+export function isStretch(entry) {
+  return entry?.category === 'stretching';
+}
+
+/** `kind`: 'stretch' keeps only stretches, 'train' everything else. */
+export function filterCatalogue(entries, { q = '', group = null, group16 = null, equipment = null, muscle = null, angle = null, kind = null } = {}) {
   const words = norm(q).split(' ').filter(Boolean);
   return entries.filter((e) => {
+    if (kind && (kind === 'stretch') !== isStretch(e)) return false;
     if (group && groupOf(e) !== group) return false;
     if (group16 && !musclesOf(e).some((m) => groupOfMuscle(m) === group16)) return false;
     if (equipment && (e.equipment || 'other') !== equipment) return false;

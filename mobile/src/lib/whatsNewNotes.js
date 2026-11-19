@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.7',
+    items: [
+      { icon: 'person', text: 'Rotator cuff and hip flexors are muscles of their own, under Shoulders and Quads in the Library.' },
+      { icon: 'search', text: 'Each muscle splits its list into Training and Stretches, and stretches carry a Stretch label.' },
+      { icon: 'trend', text: 'Stretches no longer count toward weekly sets or recovery on Stats.' },
+    ],
+  },
+  {
     version: '1.1.6',
     items: [
       { icon: 'trophy', text: 'Planks and other timed holds no longer show a made-up one-rep max or count towards records and kg lifted.' },
