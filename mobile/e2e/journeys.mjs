@@ -6,6 +6,7 @@
 //   setup      every setup step answered, then Home
 //   workout    log 3 sets in the set table, leave and return, finish,
 //              summary, History
+//   bodyweight the home routine: a bodyweight move's tick logs with no kg
 //   resume     a reload in the middle of a workout keeps it
 //   weigh-in   save a weight from Home
 //   ate-else   "I ate something else" on Meals, and the food is remembered
@@ -100,8 +101,9 @@ async function journey(name, browser, fn, opts) {
 }
 
 /** Go through first-time setup, answering everything (one question per
- * screen since ONB-2: cards move on by themselves when tapped). */
-async function setUp(page) {
+ * screen since ONB-2: cards move on by themselves when tapped). `where:
+ * 'home'` picks training at home, which gives a no-equipment routine. */
+async function setUp(page, { where = null } = {}) {
   const card = async (name) => { await page.getByRole('button', { name, exact: typeof name === 'string' }).first().click(); await page.waitForTimeout(400); };
   await btn(page, en['setup.start']).click();
   await page.getByLabel(en['setup.name']).fill('Sam');
@@ -122,7 +124,7 @@ async function setUp(page) {
   await card(new RegExp(`^${en['setup.goal.lose']}`));
   await btn(page, en['setup.next']).click(); // goal weight
   await btn(page, en['setup.next']).click(); // the goal chart
-  await card(new RegExp(`^${en['setup.gym']}`));
+  await card(new RegExp(`^${en[`setup.${where || 'gym'}`]}`));
   await card(new RegExp(`^${en['setup.expNew']}`));
   await btn(page, en['setup.next']).click(); // days
   await card(new RegExp(`^${en['job.desk']}`));
@@ -191,6 +193,27 @@ async function workout(page) {
   if (!saved?.finished_at || saved.sets.length !== 3 || !(saved.duration_min >= 1)) throw new Error('the finished workout was not saved with 3 sets and its minutes');
   await page.goto(`${URL0}#/history`);
   await page.getByText(/3 sets/).first().waitFor();
+}
+
+// Bodyweight moves log with no weight typed: the home routine's push-ups
+// and squats are added to the Library as 'Body Only', and their tick was
+// greyed out waiting for a kg that never comes.
+async function bodyweight(page) {
+  await setUp(page, { where: 'home' });
+  await tab(page, 'Start').click();
+  await page.getByRole('button', { name: /^Start / }).first().click();
+  await settle(page, 300);
+  // Push-ups are in the Library already; the squats join it from the routine.
+  await page.locator('.ex-card.collapsed', { hasText: 'Bodyweight Squat' }).click();
+  await settle(page, 300);
+  const tick = btn(page, en['workout.logSet'].replace('{n}', 1));
+  if (await tick.isDisabled()) throw new Error('the tick of a bodyweight move is greyed out until a kg is typed');
+  await tick.click();
+  await settle(page, 300);
+  const d = await read(page);
+  const squat = d.exercises.find((e) => e.name === 'Bodyweight Squat');
+  const open = d.workouts.find((w) => !w.finished_at);
+  if (!open?.sets.some((s) => s.exercise_id === squat?.id)) throw new Error('the squat set was not logged');
 }
 
 async function resume(page) {
@@ -309,7 +332,7 @@ function unscreened() {
   return JSON.stringify({ ...d, safety: { ...d.safety, screen_version: null, screened_on: null, skipped: false } });
 }
 
-const JOURNEYS = { setup, workout, resume, 'weigh-in': weighIn, 'ate-else': ateElse, restore, gate };
+const JOURNEYS = { setup, workout, bodyweight, resume, 'weigh-in': weighIn, 'ate-else': ateElse, restore, gate };
 const STORES = { gate: () => ({ [KEY]: unscreened() }) };
 
 const server = await serve();
