@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { addDays, formatDate, weekStart } from '../lib/dates.js';
+import { addDays, formatDate, startsMonday, weekStart } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { mealStart } from '../lib/meals.js';
@@ -60,7 +60,7 @@ export default function Shopping() {
           </div>
         </div>
       ))}
-      <p className="muted small" style={{ margin: '0 16px' }}>Ticks reset every Sunday.</p>
+      <p className="muted small" style={{ margin: '0 16px' }}>{t('shop.resetNote', { day: t(startsMonday(data) ? 'week.monday' : 'week.sunday') })}</p>
     </div>
   );
 }
