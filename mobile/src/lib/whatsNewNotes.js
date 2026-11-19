@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.7',
+    items: [
+      { icon: 'person', text: 'Rotator cuff and hip flexors are muscles of their own, under Shoulders and Quads in the Library.' },
+      { icon: 'search', text: 'Each muscle splits its list into Training and Stretches, and stretches carry a Stretch label.' },
+      { icon: 'trend', text: 'Stretches no longer count toward weekly sets or recovery on Stats.' },
+    ],
+  },
+  {
     version: '1.1.4',
     items: [
       { icon: 'check', text: 'Bodyweight moves like squats, lunges and pike push-ups can be ticked off without typing a weight.' },

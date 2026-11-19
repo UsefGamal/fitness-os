@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import Icon from '../components/Icon.jsx';
-import { capitalize, filterCatalogue, thumbOf } from '../lib/catalogue.js';
+import { capitalize, filterCatalogue, isStretch, thumbOf } from '../lib/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { countByGroup, GROUP16, GROUPS16, musclesOfGroup } from '../lib/muscleGroups.js';
 import { MUSCLE, anglesOf, musclesOf, targetText } from '../lib/muscles.js';
@@ -19,7 +19,7 @@ export function ByMuscle({ counts, onPick }) {
       {GROUPS16.map((g) => (
         <button key={g.key} type="button" className="list-row" onClick={() => onPick(g.key)}>
           <span className="muscle-thumb" aria-hidden="true"><BodyMap bare zoom primary={g.muscles} size={56} label="" /></span>
-          <div className="grow"><div>{g.label}</div>{counts ? <div className="meta">{t('mg.count', { n: counts[g.key] })}</div> : null}</div>
+          <div className="grow"><div>{g.label}</div>{counts ? <div className="meta">{counts.stretch[g.key] ? t('mg.countStretch', { n: counts.train[g.key], s: counts.stretch[g.key] }) : t('mg.count', { n: counts.train[g.key] })}</div> : null}</div>
           <Icon name="chev" className="icon chev" />
         </button>
       ))}
@@ -36,7 +36,13 @@ export default function Catalogue({ q, muscle, onPick }) {
   const [limit, setLimit] = useState(PAGE);
   const [pickedMuscle, setPickedMuscle] = useState(null);
   const [pickedAngle, setPickedAngle] = useState(null);
-  const counts = useMemo(() => (catalogue ? countByGroup(catalogue.exercises.map((e) => ({ main: musclesOf(e) }))) : null), [catalogue]);
+  // Training first; stretches are their own list (Yusuf, 19 Nov).
+  const [kind, setKind] = useState('train');
+  const counts = useMemo(() => {
+    if (!catalogue) return null;
+    const of = (stretch) => countByGroup(catalogue.exercises.filter((e) => isStretch(e) === stretch).map((e) => ({ main: musclesOf(e) })));
+    return { train: of(false), stretch: of(true) };
+  }, [catalogue]);
   if (error) return <div className="card empty">The exercise photos aren't in this build.</div>;
   if (!catalogue) return <div className="card empty">Loading exercises…</div>;
   if (!muscle && !q.trim() && onPick) return <ByMuscle counts={counts} onPick={onPick} />;
@@ -48,7 +54,11 @@ export default function Catalogue({ q, muscle, onPick }) {
   const fine = only || (pickedMuscle && inGroup.some((m) => m.key === pickedMuscle) ? pickedMuscle : null);
   const angles = fine ? anglesOf(fine) : [];
   const angle = angles.some((a) => a.key === pickedAngle) ? pickedAngle : null;
-  const list = filterCatalogue(catalogue.exercises, { q, group16: muscle, equipment: equipment || null, muscle: fine, angle });
+  const both = filterCatalogue(catalogue.exercises, { q, group16: muscle, equipment: equipment || null, muscle: fine, angle });
+  const stretches = both.filter(isStretch).length;
+  // A muscle with no stretches (or only stretches) shows what it has.
+  const shownKind = kind === 'stretch' ? (stretches ? 'stretch' : 'train') : (both.length - stretches || !stretches ? 'train' : 'stretch');
+  const list = both.filter((e) => (shownKind === 'stretch') === isStretch(e));
   const chip = (on, label, onClick) => (
     <button key={label} type="button" className={`chip-btn${on ? ' on' : ''}`} aria-pressed={on} onClick={() => { onClick(); setLimit(PAGE); }}>{label}</button>
   );
@@ -58,6 +68,11 @@ export default function Catalogue({ q, muscle, onPick }) {
         <option value="">Any equipment</option>
         {kinds.map((k) => <option key={k} value={k}>{capitalize(k)}</option>)}
       </select>
+      <div className="seg" role="group" aria-label={t('kind.label')} style={{ marginBottom: 12 }}>
+        {[['train', both.length - stretches], ['stretch', stretches]].map(([k, n]) => (
+          <button key={k} type="button" className={shownKind === k ? 'on' : ''} aria-pressed={shownKind === k} onClick={() => { setKind(k); setLimit(PAGE); }}>{t(`kind.${k}`, { n })}</button>
+        ))}
+      </div>
       {inGroup.length > 1 ? (
         <div className="chip-row" role="group" aria-label={t('muscles.pick')}>
           {chip(!fine, t('muscles.all', { group: GROUP16[muscle].label }), () => setPickedMuscle(null))}
@@ -75,7 +90,7 @@ export default function Catalogue({ q, muscle, onPick }) {
         {list.slice(0, limit).map((e) => (
           <Link key={e.id} to={`/catalogue/${encodeURIComponent(e.id)}`} className="list-row">
             {thumbOf(e) ? <img className="thumb" src={`exercise-db/${thumbOf(e)}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />}
-            <div className="grow"><div>{e.name}</div><div className="meta">{[targetText(e), e.equipment].filter(Boolean).join(' · ')}</div></div>
+            <div className="grow"><div>{e.name}</div><div className="meta">{[isStretch(e) ? t('kind.tag') : null, targetText(e), e.equipment].filter(Boolean).join(' · ')}</div></div>
             <Icon name="chev" className="icon chev" />
           </Link>
         ))}
