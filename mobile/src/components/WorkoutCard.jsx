@@ -24,7 +24,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
 
   if (!next) {
     return (
-      <section className="card workout-card">
+      <section className="card workout-card" data-tour="workout">
         {head('home.planNext')}
         <div className="session-row">
           <div className="session-icon rest"><Icon name="moon" /></div>
@@ -36,7 +36,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
   }
   if (next.isRestToday) {
     return (
-      <section className="card workout-card">
+      <section className="card workout-card" data-tour="workout">
         {head()}
         <div className="session-row">
           <div className="session-icon rest"><Icon name="moon" /></div>
@@ -53,7 +53,7 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
   }
   const label = `${next.label} works ${[...hits.muscles.map((m) => MUSCLE[m]?.label || m), ...groups].join(', ')}`;
   return (
-    <section className="card workout-card">
+    <section className="card workout-card" data-tour="workout">
       {head('home.planToday')}
       <div className="session-row">
         <div className="session-icon"><Icon name="dumbbell" /></div>
