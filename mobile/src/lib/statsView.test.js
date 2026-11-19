@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { activeDays, badgeGroups, daysSince, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from './statsView.js';
+import { activeDays, badgeGroups, daysSince, firstLoadDates, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from './statsView.js';
 
 const rows = [
   { key: 'chest', group: 'Chest', done: 6, planned: 6 },
@@ -30,7 +30,7 @@ test('daysSince and the 7-day and 6-month counts', () => {
   assert.equal(daysSince('2026-11-08', '2026-11-10'), 2);
   assert.equal(daysSince(null, '2026-11-10'), null);
   const w = [{ log_date: '2026-11-10' }, { log_date: '2026-11-10' }, { log_date: '2026-11-04' }, { log_date: '2026-11-03' }, { log_date: '2026-03-01' }, { log_date: '2026-12-01' }];
-  assert.equal(sessionsLast7(w, '2026-11-10'), 3);
+  assert.equal(sessionsLast7(w, '2026-11-10'), 2); // days, not workouts (CHART-1)
   assert.equal(activeDays(w, '2026-11-10'), 3);
 });
 
@@ -44,6 +44,9 @@ test('latestBadge, recordSummary and seriesChange', () => {
   assert.equal(latestBadge([{ earned: true, date: '2026-10-01', id: 'a' }, { earned: true, date: '2026-11-01', id: 'b' }, { earned: false, id: 'c' }]).id, 'b');
   assert.equal(latestBadge([]), null);
   assert.deepEqual(recordSummary([{ log_date: '2026-11-01' }, { log_date: '2026-08-01' }], '2026-11-10'), { total: 2, recent: 1 });
+  // CHART-1: a best from the exercise's first session isn't new.
+  const first = new Map([[1, '2026-11-01'], [2, '2026-09-01']]);
+  assert.deepEqual(recordSummary([{ exercise_id: 1, log_date: '2026-11-01' }, { exercise_id: 2, log_date: '2026-11-05' }], '2026-11-10', 30, first), { total: 2, recent: 1 });
   assert.deepEqual(seriesChange([{ value: 65 }, { value: 70 }]), { now: 70, change: 5 });
   assert.equal(seriesChange([]), null);
 });
@@ -63,4 +66,12 @@ test('a group reads Low, On track or High from what the plan gives its muscles (
   assert.equal(groupState(m(24, 26, 12)), 'high');
   assert.equal(groupState(m(24, 4, 3)), 'low'); // more under than over
   assert.equal(groupState([]), 'low');
+});
+
+test('firstLoadDates skips warm-ups, holds and unloaded sets (CHART-1)', () => {
+  const w = [
+    { log_date: '2026-11-05', sets: [{ exercise_id: 1, weight_kg: 40, reps: 8 }] },
+    { log_date: '2026-11-01', sets: [{ exercise_id: 1, weight_kg: 20, reps: 10, is_warmup: true }, { exercise_id: 2, weight_kg: 20, reps: 60, track: 'time' }, { exercise_id: 3, weight_kg: 0, reps: 10 }] },
+  ];
+  assert.deepEqual([...firstLoadDates(w)], [[1, '2026-11-05']]);
 });

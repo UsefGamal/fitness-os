@@ -1,7 +1,7 @@
 // What the finish summary shows after a workout is saved (UX-14), and when a
 // session is short enough to say so before saving (UX-15).
 import { addDays, weekStart } from './dates.js';
-import { e1rm, isWorkSet, personalBests } from './data.js';
+import { e1rm, isLoadSet, isWorkSet, personalBests } from './data.js';
 import { ranLong } from './training.js';
 
 /** Under half the planned sets done: the Finish sheet names it a short session. */
@@ -18,7 +18,7 @@ export function workoutSummary(data, workoutId) {
   const work = w.sets.filter(isWorkSet);
   const before = personalBests(data, w.id);
   const top = new Map();
-  for (const s of work) {
+  for (const s of work.filter(isLoadSet)) {
     const score = e1rm(s.weight_kg, s.reps);
     const prev = before.get(s.exercise_id);
     if (!prev || !(score > prev.score)) continue;
@@ -33,7 +33,7 @@ export function workoutSummary(data, workoutId) {
     durationMin: w.duration_min || null,
     ranLong: ranLong(w),
     sets: work.length,
-    volumeKg: Math.round(work.reduce((v, s) => v + s.weight_kg * s.reps, 0)),
+    volumeKg: Math.round(work.filter(isLoadSet).reduce((v, s) => v + (s.weight_kg || 0) * (s.reps || 0), 0)),
     bests,
     weekSessions: days.size,
   };

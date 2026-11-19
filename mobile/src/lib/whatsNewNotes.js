@@ -5,7 +5,7 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.6',
+    version: '1.1.7',
     items: [
       { icon: 'bolt', text: 'A cleaner look: one set of text sizes, softer white text, and one meaning per colour.' },
       { icon: 'play', text: 'Start buttons are bigger, and finishing a workout shows your best set and when the next session is.' },
@@ -13,6 +13,15 @@ export const WHATS_NEW = [
       { icon: 'trend', text: 'Progress bars, PRs and the goal card carry the Tafra mark\'s rising stroke.' },
       { icon: 'book', text: 'Empty screens show a small drawing and the one thing to do next.' },
       { icon: 'check', text: 'The save bar has a background again in the dark theme.' },
+    ],
+  },
+  {
+    version: '1.1.6',
+    items: [
+      { icon: 'trophy', text: 'Planks and other timed holds no longer show a made-up one-rep max or count towards records and kg lifted.' },
+      { icon: 'chart', text: 'Strength\'s "New in 30 days" counts only records that beat an earlier best, not first sessions.' },
+      { icon: 'trend', text: 'Weight and strength charts space points by date, so a week without a weigh-in looks like a week.' },
+      { icon: 'chart', text: 'Sessions on Stats counts training days, the same as your streak, and muscle chips say they are about your plan.' },
     ],
   },
   {
