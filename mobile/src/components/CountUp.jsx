@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { countAt } from '../lib/motion.js';
+import { reducedMotion } from '../store/motionFx.js';
 
-const reduced = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const reduced = reducedMotion;
 
 /** A number that counts from its last value to the new one (SA-05). Effort
  * and food-eaten numbers only: never weight, waist or body fat. With reduced

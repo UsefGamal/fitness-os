@@ -13,7 +13,9 @@
 const PRESS = '.btn, .mini-btn, .chip-btn, .pill-btn, .tbtn, .st-tick, button.chip, .tpre';
 const MORPH = '.ex-row, .ex-card, .list-row, .stat-tile, .quick, .meal-card, .hero-link';
 
-export const reducedMotion = () => Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+// The phone's setting, or the app's own switch (Settings > Look, MOVE-2).
+export const reducedMotion = () => globalThis.document?.documentElement?.dataset?.motion === 'reduce'
+  || Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
 let last = { x: innerWidth / 2, y: innerHeight / 2 };
 
@@ -149,6 +151,41 @@ function predictiveBack(phase, progress = 0, edge = 0) {
     route.style.borderRadius = '';
     setTimeout(() => { route.classList.remove('backing'); route.style.transition = ''; }, 280);
   }
+}
+
+/** MOVE-2: the old page leaves while the new one comes in. React has already
+ * swapped the page by the time anything runs, so a copy of the old one is
+ * taken just before it goes (App.jsx calls this from the route's ref) and
+ * animated away: 'push' slides it a little left under the new page, 'pop'
+ * slides it right off the top, solid (continuing a predictive back swipe). The copy
+ * can't be tapped or read by TalkBack and is removed when it ends. */
+export const GHOST_MS = 220;
+export function ghostOut(node, kind) {
+  if (!node || !kind || reducedMotion() || typeof document === 'undefined') return;
+  if (document.documentElement.classList.contains('vt-morph')) return; // the card morph has it
+  const box = node.getBoundingClientRect();
+  const wrap = document.createElement('div');
+  wrap.className = `route-ghost ${kind}`;
+  wrap.setAttribute('aria-hidden', 'true');
+  wrap.inert = true;
+  const copy = node.cloneNode(true);
+  // Not a .route any more, so nothing looking for the live page finds it.
+  copy.className = [...node.classList].filter((c) => c === 'with-timer' || c === 'with-pill').concat('route-ghost-page').join(' ');
+  copy.removeAttribute('style');
+  copy.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+  copy.style.top = `${box.top}px`;
+  const from = node.classList.contains('backing') ? node.style.transform || 'none' : 'none';
+  wrap.appendChild(copy);
+  document.body.appendChild(wrap);
+  const rtl = document.documentElement.dir === 'rtl' ? -1 : 1;
+  const frames = kind === 'pop'
+    // Solid while it slides away, like a card being pulled off the top.
+    ? [{ transform: from, opacity: 1 }, { transform: `translateX(${rtl * 100}%)`, opacity: 0.9 }]
+    : [{ transform: 'none', opacity: 1 }, { transform: `translateX(${rtl * -18}%)`, opacity: 0 }];
+  const anim = wrap.animate(frames, { duration: GHOST_MS, easing: kind === 'pop' ? 'cubic-bezier(.4, 0, 1, 1)' : 'cubic-bezier(.2, 0, 0, 1)', fill: 'forwards' });
+  const done = () => wrap.remove();
+  anim.onfinish = done;
+  setTimeout(done, GHOST_MS + 200);
 }
 
 let installed = false;

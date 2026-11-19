@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { countAt, easeOut, fillTone, restEnding, restQuiet } from './motion.js';
+import { countAt, easeOut, fillTone, pageMotion, restEnding, restQuiet } from './motion.js';
 
 test('count-up starts at from, lands on to, never overshoots', () => {
   assert.equal(countAt(0, 120, 0), 0);
@@ -35,4 +35,18 @@ test('restEnding: the last 10 seconds of a running rest', () => {
   assert.equal(restEnding(1), true);
   assert.equal(restEnding(0), false);
   assert.equal(restEnding(5, false), false);
+});
+
+test('pageMotion: tab switches slide in, rise only on the first visit, no ghost', () => {
+  assert.deepEqual(pageMotion({ isTab: true, swipe: 'forward' }), { enter: 'swipe-fwd', rise: true, ghost: null });
+  assert.deepEqual(pageMotion({ isTab: true, swipe: 'back', seen: true }), { enter: 'swipe-back', rise: false, ghost: null });
+});
+
+test('pageMotion: opening a page pushes, back pops, and coming back never replays the rise', () => {
+  assert.deepEqual(pageMotion({}), { enter: 'push-in', rise: true, ghost: 'push' });
+  assert.deepEqual(pageMotion({ back: true }), { enter: 'pop-in', rise: false, ghost: 'pop' });
+  assert.deepEqual(pageMotion({ isTab: true, back: true, seen: true }), { enter: 'pop-in', rise: false, ghost: 'pop' });
+  assert.deepEqual(pageMotion({ isTab: true, swipe: 'forward', back: true, seen: true }), { enter: 'pop-in', rise: false, ghost: 'pop' });
+  assert.deepEqual(pageMotion({ isTab: true, seen: true }), { enter: 'tab-in', rise: false, ghost: 'push' });
+  assert.equal(pageMotion({ isTab: true }).rise, true);
 });

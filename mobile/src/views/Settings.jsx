@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
+import { EquipmentPicker } from '../components/EquipmentPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import { pageOf, searchSettings, SETTINGS_GROUPS } from '../lib/settingsPages.js';
 import Sheet from '../components/Sheet.jsx';
@@ -17,7 +18,6 @@ import Stepper from '../components/Stepper.jsx';
 import { HAPTIC_LEVELS, hapticLevel, REWARD_LEVELS } from '../lib/rewards.js';
 import { clock, REST_CHOICES, setTraining, SOUND_SETS, TARGET_CHOICES, trainingSettings, VOLUMES } from '../lib/training.js';
 import { ALL_PLATES, BARS } from '../lib/plates.js';
-import { KINDS, ownedKinds, PRESETS } from '../lib/equipment.js';
 import { LEVELS } from '../lib/levels.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { applyImport, bodyCsv, CSV_MAX_BYTES, mealsCsv, previewImport, readWorkoutCsv, toCsv } from '../lib/csv.js';
@@ -39,7 +39,7 @@ import Screening from './Screening.jsx';
 import RamadanSettings from '../components/RamadanSettings.jsx';
 import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t, t as tr } from '../lib/i18n.js';
-import { setTextSize, setTheme, TEXT_SIZES, textSize, themeChoice, THEMES } from '../lib/theme.js';
+import { reduceMotion, setReduceMotion, setTextSize, setTheme, TEXT_SIZES, textSize, themeChoice, THEMES } from '../lib/theme.js';
 import { APP } from '../lib/version.js';
 import { notesUpTo } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
@@ -411,6 +411,7 @@ export default function Settings() {
       <div className="list">
         <Choice label={tr('theme.label')} value={themeChoice(data)} onChange={(v) => update((d) => setTheme(d, v))} options={THEMES.map((k) => [k, tr(`theme.${k}`)])} />
         <Choice label={tr('theme.textSize')} value={textSize(data)} onChange={(v) => update((d) => setTextSize(d, Number(v)))} options={TEXT_SIZES.map((k) => [k, tr('theme.textPct', { n: k })])} />
+        <Toggle on={reduceMotion(data)} onClick={() => update((d) => setReduceMotion(d, !reduceMotion(d)))} title={tr('theme.reduceMotion')} note={tr('theme.reduceMotionNote')} />
       </div>
       <div className="list" style={{ marginTop: 16 }}>
         {['modules', 'safety', 'health'].map((k) => (
@@ -630,7 +631,6 @@ function TrainingSettings({ data, update }) {
   const rest = REST_CHOICES.map((sec) => [sec, clock(sec)]);
   const [open, setOpen] = useState({ rest: true });
   const fold = (id) => ({ id, open: Boolean(open[id]), onToggle: () => setOpen((o) => ({ ...o, [id]: !o[id] })) });
-  const owned = ownedKinds(t);
   return (
     <div className="folds">
       <Fold title={tr('set.restWorkout')} {...fold('rest')}>
@@ -649,21 +649,7 @@ function TrainingSettings({ data, update }) {
         <div className="seg" role="group" aria-label={tr('levels.title')} style={{ margin: '0 0 8px' }}>
           {LEVELS.map((l) => <button key={l} type="button" className={t.level === l ? 'on' : ''} aria-pressed={t.level === l} onClick={() => set({ level: t.level === l ? null : l })}>{tr(`levels.short.${l}`)}</button>)}
         </div>
-        <div className="section-label">{tr('set.equipment')}</div>
-        <div className="chip-row">
-          {PRESETS.map((p) => {
-            const on = p.kinds === null ? owned === null : owned !== null && owned.length === p.kinds.length && p.kinds.every((k) => owned.includes(k));
-            return <button key={p.key} type="button" className={`chip${on ? ' accent' : ''}`} aria-pressed={on} onClick={() => set({ equipment: p.kinds })}>{p.label}</button>;
-          })}
-        </div>
-        <div className="equip-grid">
-          {KINDS.map((k) => {
-            const on = owned === null || owned.includes(k);
-            const next = on ? (owned || KINDS).filter((x) => x !== k) : [...(owned || []), k];
-            return <button key={k} type="button" className={`equip-cell${on ? ' on' : ''}`} aria-pressed={on} onClick={() => set({ equipment: next.length === KINDS.length ? null : next })}>{on ? <Icon name="check" /> : null}<span>{k}</span></button>;
-          })}
-        </div>
-        <p className="muted small" style={{ margin: '8px 16px 12px' }}>{tr('set.equipNote')}</p>
+        <EquipmentPicker />
       </Fold>
 
       <Fold title={tr('set.soundsVib')} {...fold('sound')}>

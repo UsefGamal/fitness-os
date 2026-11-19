@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import { todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
@@ -8,6 +9,7 @@ import { clock, COUNTDOWN_BEEPS, INTERVAL_PRESETS, intervalSteps, normalizeInter
 import { useKeepAwake } from '../store/awake.js';
 import { feedback, unlockAudio } from '../store/feedback.js';
 import { useData } from '../store/useData.js';
+import { t } from '../lib/i18n.js';
 
 const PHASE = { warmup: 'Warm up', work: 'Work', rest: 'Rest', setrest: 'Set rest', cooldown: 'Cool down' };
 
@@ -31,6 +33,7 @@ export default function Intervals() {
   const [run, setRun] = useState(null); // { startedAt, pausedAt, pausedMs }
   const [now, setNow] = useState(Date.now());
   const [saved, setSaved] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const last = useRef(null);
   useKeepAwake(Boolean(run));
 
@@ -101,7 +104,8 @@ export default function Intervals() {
             <div className="muted small">{clock(Math.max(0, total - Math.floor(elapsedMs / 1000)))} left in total</div>
             <div className="row" style={{ gap: 12 }}>
               <button type="button" className="btn secondary" style={{ width: 140 }} onClick={togglePause}><Icon name={run.pausedAt ? 'play' : 'pause'} /> {run.pausedAt ? 'Resume' : 'Pause'}</button>
-              <button type="button" className="btn ghost" style={{ width: 140 }} onClick={() => window.confirm('Stop this interval session?') && setRun(null)}><Icon name="x" /> Stop</button>
+              <button type="button" className="btn ghost" style={{ width: 140 }} onClick={() => setStopping(true)}><Icon name="x" /> Stop</button>
+              {stopping ? <ConfirmSheet title={t('intervals.stopTitle')} body={t('intervals.stopBody')} action={t('intervals.stop')} onConfirm={() => setRun(null)} onClose={() => setStopping(false)} /> : null}
             </div>
           </>
         )}

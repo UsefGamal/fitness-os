@@ -44,9 +44,10 @@ import Plan from './views/Plan.jsx';
 import Settings from './views/Settings.jsx';
 import Today from './views/Today.jsx';
 import Workout from './views/Workout.jsx';
-import { textScale, textSize, themeChoice } from './lib/theme.js';
+import { reduceMotion, textScale, textSize, themeChoice } from './lib/theme.js';
 import { applyTheme, followPhone } from './store/theme.js';
-import { installMotion, morphLanded } from './store/motionFx.js';
+import { ghostOut, installMotion, morphLanded } from './store/motionFx.js';
+import { pageMotion } from './lib/motion.js';
 import CompactTitle from './components/CompactTitle.jsx';
 
 // Screens you open now and then load on first use, so start-up stays quick.
@@ -79,6 +80,8 @@ const Session = lazy(() => import('./views/Session.jsx'));
 // Detail pages slide in from the right (left in RTL); Back slides the other
 // way; tabs fade (styles.css, .route).
 const TABS = new Set(['/', '/plan', '/workout', '/meals', '/stats']);
+// Pages opened since the app started: a tab's cards rise in only the first time.
+const SEEN = new Set();
 
 function Shell() {
   const { pathname, state } = useLocation();
@@ -92,9 +95,21 @@ function Shell() {
   const gym = useData((s) => inGymMode(s.data, s.activeWorkoutId, pathname));
   useLayoutEffect(() => { document.documentElement.classList.toggle('gym', gym); }, [gym]);
   const swipe = gym ? {} : tabSwipe;
-  const tabAnim = state?.swipe === 'forward' ? 'swipe-fwd' : state?.swipe === 'back' ? 'swipe-back' : 'tab-in';
+  // MOVE-2: how this page comes in and the last one leaves (lib/motion.js).
+  const motion = pageMotion({ isTab: TABS.has(pathname), swipe: state?.swipe || null, back, seen: SEEN.has(pathname) });
+  const motionRef = useRef(motion);
+  // Written during render on purpose: React drops the old page (and calls
+  // setRoute below) before any effect of this render runs.
+  // eslint-disable-next-line react-hooks/refs
+  motionRef.current = motion;
+  useEffect(() => { SEEN.add(pathname); }, [pathname]);
   // MOVE-1: a tapped card grows into this page once it is on screen.
   const routeRef = useRef(null);
+  // The route's ref: when React drops the old page, a copy of it animates out.
+  const setRoute = useCallback((el) => {
+    if (el) routeRef.current = el;
+    else ghostOut(routeRef.current, motionRef.current.ghost);
+  }, []);
   useLayoutEffect(() => { morphLanded(routeRef.current); }, [pathname]);
   // Ticks and done rows only animate when they change, not when a page opens
   // with them already done: the page counts as settled after its entrance.
@@ -106,7 +121,7 @@ function Shell() {
     <>
       {/* New pages open at the top; Back returns to where you were (UX-03). */}
       <ScrollRestoration />
-      <div key={pathname} ref={routeRef} {...swipe} className={`route ${TABS.has(pathname) ? tabAnim : back ? 'pop-in' : 'push-in'}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
+      <div key={pathname} ref={setRoute} {...swipe} className={`route ${motion.enter}${motion.rise ? ' rise' : ''}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
         <ErrorBoundary key={pathname}>
           {/* Rule 19: a page that is still loading says so (after a short
               delay, so a fast open never flashes the skeleton). */}
@@ -173,7 +188,7 @@ installMotion((to) => router.navigate(to));
 /** Decides on each open whether the intro plays, and what it says. */
 function introFor() {
   const { data, activeWorkoutId } = useData.getState();
-  const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = reduceMotion(data) || (typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches));
   if (!data || !shouldPlayIntro({ hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
   const today = todayISO();
   let next;
@@ -229,6 +244,13 @@ export default function App() {
   // Text size (UIUX-2): one variable every font size reads.
   const ts = useData((s) => textScale(textSize(s.data)));
   useLayoutEffect(() => { document.documentElement.style.setProperty('--ts', String(ts)); }, [ts]);
+  // Reduce motion (MOVE-2): the app's own switch, on top of the phone's.
+  const calmMotion = useData((s) => reduceMotion(s.data));
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (calmMotion) root.dataset.motion = 'reduce';
+    else delete root.dataset.motion;
+  }, [calmMotion]);
   const [intro, setIntro] = useState(undefined); // undefined: not decided yet, null: no intro
   const [setup, setSetup] = useState(false);
   const [perms, setPerms] = useState(false);

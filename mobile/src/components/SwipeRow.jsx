@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 
+import { feedback } from '../store/feedback.js';
+
 const LIMIT = 90; // px past which a swipe counts
 
 /** A row you can swipe: left runs onLeft (delete), right runs onRight (copy).
@@ -22,7 +24,13 @@ export default function SwipeRow({ children, onLeft, onRight, leftLabel = 'Delet
     }
     // MOVE-1: past the stop it stretches like rubber instead of halting.
     const rubber = (v, max) => (Math.abs(v) <= max ? v : Math.sign(v) * (max + Math.sqrt(Math.abs(v) - max) * 3));
-    if (s.locked === 'x') setDx(rubber(Math.max(onLeft ? -400 : 0, Math.min(onRight ? 400 : 0, x)), 120));
+    if (s.locked === 'x') {
+      const next = rubber(Math.max(onLeft ? -400 : 0, Math.min(onRight ? 400 : 0, x)), 120);
+      // MOVE-2: a tap the moment the swipe would act, and again if it un-arms.
+      const armed = Math.abs(next) >= LIMIT;
+      if (armed !== Boolean(s.armed)) { s.armed = armed; feedback('tap'); }
+      setDx(next);
+    }
   };
   const up = () => {
     if (dx <= -LIMIT && onLeft) onLeft();

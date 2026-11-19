@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
-import { formatDate } from '../lib/dates.js';
+import Sheet, { useCloseSheet } from '../components/Sheet.jsx';
 import * as D from '../lib/data.js';
 import { syncHealth } from '../store/phoneSync.js';
 import { content, useData } from '../store/useData.js';
@@ -39,10 +39,41 @@ function Checklist({ title, items, ticked, onTick }) {
   );
 }
 
+/** The session page (/session/:type), opened from a reminder or a link. */
 export default function Session() {
   const { type } = useParams();
   const meta = SESSIONS[type];
   const navigate = useNavigate();
+  if (!meta) return <div className="page"><div className="card empty">Unknown session.</div></div>;
+  return (
+    <div className="page">
+      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+      <h1 className="page-title" style={{ marginTop: 4 }}>{meta.label}</h1>
+      <SessionForm type={type} onSaved={() => navigate('/history')} />
+    </div>
+  );
+}
+
+/** The same form as a sheet over Home (MOVE-2): log a padel match or a
+ * recovery walk without leaving the page. */
+export function SessionSheet({ type, onClose }) {
+  const meta = SESSIONS[type];
+  if (!meta) return null;
+  return (
+    <Sheet title={meta.label} onClose={onClose}>
+      <SessionSheetBody type={type} onClose={onClose} />
+    </Sheet>
+  );
+}
+
+function SessionSheetBody({ type, onClose }) {
+  const close = useCloseSheet(onClose);
+  return <SessionForm type={type} onSaved={close} />;
+}
+
+/** Everything you fill in for a session; `onSaved` runs after it is logged. */
+export function SessionForm({ type, onSaved }) {
+  const meta = SESSIONS[type];
   const update = useData((s) => s.update);
   const today = useToday();
   const [date, setDate] = useState(today);
@@ -53,7 +84,6 @@ export default function Session() {
   const [result, setResult] = useState(null);
   const [notes, setNotes] = useState('');
   const [ticked, setTicked] = useState(new Set());
-  if (!meta) return <div className="page"><div className="card empty">Unknown session.</div></div>;
 
   const tick = (name) => setTicked((s) => { const n = new Set(s); if (n.has(name)) n.delete(name); else n.add(name); return n; });
   const home = T.home_program[homeDay];
@@ -77,14 +107,11 @@ export default function Session() {
       checklist: items.map((name) => ({ item_name: name, completed: ticked.has(name) })),
     }));
     syncHealth().catch(() => {});
-    navigate('/history');
+    onSaved();
   };
 
   return (
-    <div className="page">
-      <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
-      <h1 className="page-title" style={{ marginTop: 4 }}>{meta.label}</h1>
-      <p className="page-sub">{date === today ? 'Today' : formatDate(date)}</p>
+    <>
 
       {type === 'home' ? (
         <div className="seg" style={{ marginBottom: 12 }}>
@@ -129,6 +156,6 @@ export default function Session() {
         <label className="field"><span>Notes</span><input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" /></label>
         <button type="button" className="btn" disabled={!valid} onClick={save}><Icon name="check" /> Save session</button>
       </section>
-    </div>
+    </>
   );
 }

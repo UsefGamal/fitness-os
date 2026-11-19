@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import Icon from '../components/Icon.jsx';
+import RecipeSheet from '../components/RecipeSheet.jsx';
 import { MealThumb } from '../components/MealPhoto.jsx';
 import { addDays, formatDate } from '../lib/dates.js';
 import * as D from '../lib/data.js';
@@ -129,6 +130,7 @@ function MealPlan() {
   // Meals where something else was eaten count with their own numbers (UX-20).
   const custom = customMeals(data, date);
   const [otherFor, setOtherFor] = useState(null);
+  const [recipe, setRecipe] = useState(null); // MOVE-2: { key, slot } shown in a quick-look sheet
   // Ticked meals keep the numbers they had when ticked (DA-1).
   const frozen = eatenMeals(data, date);
   const totals = dayTotals(day, picks, null, custom, frozen);
@@ -269,7 +271,7 @@ function MealPlan() {
                 </div>
               </details>
                 <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
-                  {opt.key && N.library?.some((m) => m.key === opt.key) ? <Link to={`/meals/library/${encodeURIComponent(opt.key)}?slot=${meal.slot}&date=${date}`} className="btn ghost small"><Icon name="book" /> {t('meals.recipe')}</Link> : null}
+                  {opt.key && N.library?.some((m) => m.key === opt.key) ? <button type="button" className="btn ghost small" onClick={() => setRecipe({ key: opt.key, slot: meal.slot })}><Icon name="book" /> {t('meals.recipe')}</button> : null}
                   {opt.swapped ? <button type="button" className="btn ghost small" onClick={() => update((d) => pickOption(d, date, meal.slot, planMeal))}><Icon name="back" /> {t('meals.backToPlan')}</button> : null}
                   <button type="button" className="btn ghost small ate-else-btn" onClick={() => setOtherFor(meal.slot)}><Icon name="plus" /> {t('other.open')}</button>
                 </div>
@@ -281,6 +283,7 @@ function MealPlan() {
       })}
       <SwitchView to="targets" />
       {otherFor ? <OtherFoodSheet data={data} update={update} date={date} slot={otherFor} mealName={label(otherFor)} entry={custom[otherFor]} onClose={() => setOtherFor(null)} /> : null}
+      {recipe ? <RecipeSheet mealKey={recipe.key} slot={recipe.slot} date={date} onClose={() => setRecipe(null)} /> : null}
     </div>
   );
 }

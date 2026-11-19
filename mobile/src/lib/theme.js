@@ -38,3 +38,15 @@ export function textScale(size) {
 export function setTextSize(data, size) {
   return TEXT_SIZES.includes(size) ? { ...data, settings: { ...data.settings, text_size: size } } : data;
 }
+
+// Reduce motion (MOVE-2): an in-app switch in Settings > Look, for phones
+// where Android's own "Remove animations" is hard to find. On, the app acts
+// as if the phone asked for reduced motion (store/motionFx.js reducedMotion,
+// and the :root[data-motion="reduce"] rules in styles.css).
+export function reduceMotion(data) {
+  return data?.settings?.reduce_motion === true;
+}
+
+export function setReduceMotion(data, on) {
+  return { ...data, settings: { ...data.settings, reduce_motion: Boolean(on) } };
+}
