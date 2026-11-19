@@ -13,13 +13,13 @@ export const GROUPS16 = [
   { key: 'back', label: 'Back', muscles: ['lats', 'middle back'] },
   { key: 'traps', label: 'Trapezius', muscles: ['traps', 'neck'] },
   { key: 'lower_back', label: 'Lower back', muscles: ['lower back'] },
-  { key: 'shoulders', label: 'Shoulders', muscles: ['front delts', 'side delts', 'rear delts'] },
+  { key: 'shoulders', label: 'Shoulders', muscles: ['front delts', 'side delts', 'rear delts', 'rotator cuff'] },
   { key: 'biceps', label: 'Biceps', muscles: ['biceps'] },
   { key: 'triceps', label: 'Triceps', muscles: ['triceps'] },
   { key: 'forearms', label: 'Forearms', muscles: ['forearms'] },
   { key: 'abs', label: 'Abs', muscles: ['abdominals'] },
   { key: 'obliques', label: 'Obliques', muscles: ['obliques'] },
-  { key: 'quads', label: 'Quads', muscles: ['quadriceps'] },
+  { key: 'quads', label: 'Quads', muscles: ['quadriceps', 'hip flexors'] },
   { key: 'hamstrings', label: 'Hamstrings', muscles: ['hamstrings'] },
   { key: 'glutes', label: 'Glutes', muscles: ['glutes'] },
   { key: 'calves', label: 'Calves', muscles: ['calves', 'shins'] },
@@ -78,6 +78,14 @@ export function exerciseGroups(exercise, training, entry = null) {
   const target = exercise ? targetFor(exercise.name, training, entry) : null;
   if (target && target.main.length) return groupsOfTarget(target);
   return { main: OLD_GROUP[exercise?.muscle_group] || [], helpers: [] };
+}
+
+/** The groups a logged set of this exercise trains: a stretch (by its
+ * catalogue entry, when the hand-checked table doesn't know it) trains
+ * none, so it never counts toward weekly sets or recovery. */
+export function trainedGroups(exercise, training, entry = null) {
+  if (entry?.category === 'stretching' && !training?.exercise_targets?.[exercise?.name]) return { main: [], helpers: [] };
+  return exerciseGroups(exercise, training, entry);
 }
 
 /** Does a catalogue entry (or target) mainly work this group? `muscle`

@@ -14,6 +14,9 @@ export const MUSCLES = [
   { key: 'side delts', label: 'Side delts', group: 'Shoulders', shapes: ['front-deltoids', 'back-deltoids'] },
   { key: 'rear delts', label: 'Rear delts', group: 'Shoulders', shapes: ['back-deltoids'] },
   { key: 'neck', label: 'Neck', group: 'Shoulders', shapes: ['neck'] },
+  // Deep muscles: listed and counted, not drawn (they sit under the delts
+  // and the quads). The catalogue tags neither, so names decide (musclesOf).
+  { key: 'rotator cuff', label: 'Rotator cuff', group: 'Shoulders', shapes: [], deep: true },
   { key: 'biceps', label: 'Biceps', group: 'Arms', shapes: ['biceps-long', 'biceps-short'] },
   { key: 'triceps', label: 'Triceps', group: 'Arms', shapes: ['triceps-lateral', 'triceps-long'] },
   { key: 'forearms', label: 'Forearms', group: 'Arms', shapes: ['forearm'] },
@@ -22,6 +25,7 @@ export const MUSCLES = [
   // them from their name (musclesOf).
   { key: 'obliques', label: 'Obliques', group: 'Core', shapes: ['obliques'] },
   { key: 'quadriceps', label: 'Quads', group: 'Legs', shapes: ['quadriceps'] },
+  { key: 'hip flexors', label: 'Hip flexors', group: 'Legs', shapes: [], deep: true },
   { key: 'hamstrings', label: 'Hamstrings', group: 'Legs', shapes: ['hamstring'] },
   { key: 'glutes', label: 'Glutes', group: 'Legs', shapes: ['gluteal'] },
   { key: 'calves', label: 'Calves', group: 'Legs', shapes: ['calves', 'left-soleus', 'right-soleus'] },
@@ -135,17 +139,42 @@ export function obliqueMove(entry) {
   return /oblique|twist|side plank|side bend|side bridge|wood ?chop|windmill|bicycle|pallof|landmine 180|side jackknife|saxon/.test(name(entry));
 }
 
-const fine = (m, entry) => (m === 'shoulders' ? deltOf(entry) : m === 'abdominals' && obliqueMove(entry) ? 'obliques' : m);
+/** Does a shoulder exercise mainly work the rotator cuff (rotations, Cuban
+ * press, scaption)? */
+export function rotatorMove(entry) {
+  return /external rotation|internal rotation|rotator|shoulder rotation|cuban press|scaption/.test(name(entry)) && !/reverse fl/.test(name(entry));
+}
+
+/** Does a quads-tagged move mainly work the hip flexors (hip flexor
+ * stretches, banded hip flexion)? */
+export function hipFlexorMove(entry) {
+  return /hip flex|psoas/.test(name(entry));
+}
+
+// Moves that lift the legs or drive the knees up, where the hip flexors
+// help; and pulls that rotate the upper arm outward, where the cuff helps.
+const HIP_FLEXOR_HELP = /leg raise|knee raise|leg lift|knee tuck|knee[- ]up|hanging pike|v[- ]?up|flutter|scissor|mountain climb|sit[- ]?up|jackknife|l[- ]sit|high knee/;
+const CUFF_HELP = /face pull|pull apart|external rotation/;
+
+const fine = (m, entry) => {
+  if (m === 'shoulders') return [rotatorMove(entry) ? 'rotator cuff' : deltOf(entry)];
+  if (m === 'abdominals' && obliqueMove(entry)) return ['obliques'];
+  // "Hip flexor and quad stretch" keeps the quads too.
+  if (m === 'quadriceps' && hipFlexorMove(entry)) return /quad/.test(name(entry)) ? ['hip flexors', 'quadriceps'] : ['hip flexors'];
+  return [m];
+};
 
 /** The entry's main muscles, finer than the catalogue's. */
 export function musclesOf(entry) {
-  return [...new Set((entry?.primary || []).map((m) => fine(m, entry)))];
+  return [...new Set((entry?.primary || []).flatMap((m) => fine(m, entry)))];
 }
 
-/** Helper muscles; a deltoid that is already a main muscle is left out. */
+/** Helper muscles; a muscle that is already a main one is left out. */
 export function helpersOf(entry) {
   const main = new Set(musclesOf(entry));
   const out = (entry?.secondary || []).map((m) => (m === 'shoulders' ? (main.has('triceps') || main.has('chest') ? 'front delts' : deltOf(entry)) : m));
+  if (HIP_FLEXOR_HELP.test(name(entry))) out.push('hip flexors');
+  if (CUFF_HELP.test(name(entry))) out.push('rotator cuff');
   return [...new Set(out)].filter((m) => !main.has(m));
 }
 
