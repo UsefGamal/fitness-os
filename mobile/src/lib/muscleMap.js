@@ -18,13 +18,14 @@ export const SHAPES_OF = {
   biceps: ['biceps-long', 'biceps-short'],
   triceps: ['triceps-lateral', 'triceps-long'],
   forearms: ['forearm'],
-  abdominals: ['abs', 'obliques'],
+  abdominals: ['abs'],
+  obliques: ['obliques'],
   quadriceps: ['quadriceps'],
   hamstrings: ['hamstring'],
   glutes: ['gluteal'],
   calves: ['calves', 'left-soleus', 'right-soleus'],
   adductors: ['adductor', 'abductors'],
-  abductors: ['abductors', 'gluteal'],
+  abductors: ['hip-abductor'],
 };
 
 // Outline -> the app's muscle group (Library filter, plan exercises).
@@ -34,7 +35,7 @@ export const GROUP_OF_SHAPE = {
   'front-deltoids': 'Shoulders', 'back-deltoids': 'Shoulders', neck: 'Shoulders',
   'biceps-long': 'Arms', 'biceps-short': 'Arms', 'triceps-lateral': 'Arms', 'triceps-long': 'Arms', forearm: 'Arms',
   abs: 'Core', obliques: 'Core',
-  quadriceps: 'Legs', hamstring: 'Legs', gluteal: 'Legs', calves: 'Legs', 'left-soleus': 'Legs', 'right-soleus': 'Legs', adductor: 'Legs', abductors: 'Legs',
+  quadriceps: 'Legs', hamstring: 'Legs', gluteal: 'Legs', calves: 'Legs', 'left-soleus': 'Legs', 'right-soleus': 'Legs', adductor: 'Legs', abductors: 'Legs', 'hip-abductor': 'Legs',
 };
 
 /** Map outline -> 'primary' | 'secondary'. Main muscles win over helpers;
@@ -87,4 +88,26 @@ export function zoomBox(lit, front, back, { pad = 7, min = 46 } = {}) {
     y: round(Math.max(0, (box.y0 + box.y1) / 2 - size / 2)),
     size: round(size),
   };
+}
+
+/** One outline as a smooth closed curve (an SVG path): a Catmull-Rom
+ * spline through its corners, so the map reads as muscles rather than
+ * cut-out polygons (BeFit item 16). `k` is how far each control point
+ * reaches toward the next corner: 0 gives the polygon back, 1/6 the
+ * classic spline; a little less keeps thin muscles from bulging. */
+export function smoothPath(points, k = 0.14) {
+  const n = String(points).trim().split(/[\s,]+/).map(Number);
+  const p = [];
+  for (let i = 0; i + 1 < n.length; i += 2) p.push([n[i], n[i + 1]]);
+  if (p.length < 3) return '';
+  const r = (v) => Math.round(v * 100) / 100;
+  const at = (i) => p[(i + p.length) % p.length];
+  let d = `M${r(p[0][0])} ${r(p[0][1])}`;
+  for (let i = 0; i < p.length; i += 1) {
+    const [a, b, c, e] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    const c1 = [b[0] + (c[0] - a[0]) * k, b[1] + (c[1] - a[1]) * k];
+    const c2 = [c[0] - (e[0] - b[0]) * k, c[1] - (e[1] - b[1]) * k];
+    d += `C${r(c1[0])} ${r(c1[1])} ${r(c2[0])} ${r(c2[1])} ${r(c[0])} ${r(c[1])}`;
+  }
+  return `${d}Z`;
 }

@@ -42,7 +42,7 @@ EXERCISE_TARGETS = {
     "Tibia Wall": (["shins"], [], None),
     "Dead Bug": (["abdominals"], [], None),
     "TVA": (["abdominals"], [], None),
-    "Pallof Press": (["abdominals"], ["glutes"], None),
+    "Pallof Press": (["obliques"], ["abdominals", "glutes"], None),
     "Bear Plank": (["abdominals"], ["front delts"], None),
     # Warm-ups, backups and swaps in the same plan.
     "Y-Bench": (["traps"], ["rear delts", "middle back"], None),
@@ -90,5 +90,5 @@ EXERCISE_TARGETS = {
     "Decline Push-up": (["chest"], ["front delts", "triceps"], "upper_chest"),
     "Superman Row": (["middle back", "lower back"], ["rear delts"], "back_thickness"),
     "Reverse Snow Angel": (["rear delts", "middle back"], ["traps", "lower back"], None),
-    "Side Plank": (["abdominals"], ["glutes"], None),
+    "Side Plank": (["obliques"], ["abdominals", "glutes"], None),
 }

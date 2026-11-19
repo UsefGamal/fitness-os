@@ -17,13 +17,16 @@ export const MUSCLES = [
   { key: 'biceps', label: 'Biceps', group: 'Arms', shapes: ['biceps-long', 'biceps-short'] },
   { key: 'triceps', label: 'Triceps', group: 'Arms', shapes: ['triceps-lateral', 'triceps-long'] },
   { key: 'forearms', label: 'Forearms', group: 'Arms', shapes: ['forearm'] },
-  { key: 'abdominals', label: 'Abs', group: 'Core', shapes: ['abs', 'obliques'] },
+  { key: 'abdominals', label: 'Abs', group: 'Core', shapes: ['abs'] },
+  // free-exercise-db tags no obliques: twists, side planks and chops get
+  // them from their name (musclesOf).
+  { key: 'obliques', label: 'Obliques', group: 'Core', shapes: ['obliques'] },
   { key: 'quadriceps', label: 'Quads', group: 'Legs', shapes: ['quadriceps'] },
   { key: 'hamstrings', label: 'Hamstrings', group: 'Legs', shapes: ['hamstring'] },
   { key: 'glutes', label: 'Glutes', group: 'Legs', shapes: ['gluteal'] },
   { key: 'calves', label: 'Calves', group: 'Legs', shapes: ['calves', 'left-soleus', 'right-soleus'] },
-  { key: 'adductors', label: 'Inner thighs', group: 'Legs', shapes: ['adductor'] },
-  { key: 'abductors', label: 'Outer thighs', group: 'Legs', shapes: ['abductors', 'gluteal'] },
+  { key: 'adductors', label: 'Inner thighs', group: 'Legs', shapes: ['adductor', 'abductors'] },
+  { key: 'abductors', label: 'Outer thighs', group: 'Legs', shapes: ['hip-abductor'] },
   // No catalogue entry is tagged shins, so it has no Library chip.
   { key: 'shins', label: 'Shins', group: 'Legs', shapes: ['calves'], catalogue: false },
 ];
@@ -127,7 +130,12 @@ export function deltOf(entry) {
   return 'front delts';
 }
 
-const fine = (m, entry) => (m === 'shoulders' ? deltOf(entry) : m);
+/** Does an ab exercise mainly work the obliques (twists, side work, chops)? */
+export function obliqueMove(entry) {
+  return /oblique|twist|side plank|side bend|side bridge|wood ?chop|windmill|bicycle|pallof|landmine 180|side jackknife|saxon/.test(name(entry));
+}
+
+const fine = (m, entry) => (m === 'shoulders' ? deltOf(entry) : m === 'abdominals' && obliqueMove(entry) ? 'obliques' : m);
 
 /** The entry's main muscles, finer than the catalogue's. */
 export function musclesOf(entry) {
