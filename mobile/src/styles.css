@@ -807,3 +807,36 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 :root.gym .tabbar { display: none; }
 :root.gym .log-btn { position: sticky; bottom: calc(var(--sab) + 12px); z-index: 5; box-shadow: 0 6px 20px var(--deep-shadow); }
 :root.gym .with-timer .log-btn { position: static; box-shadow: none; }
+
+/* BeFit ideas B1 + B2: live strip, exercise rows with a thumbnail, set table. */
+.live-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 12px; padding-top: 12px; border-top: var(--hair); text-align: center; }
+.live-val { font-size: calc(22px * var(--ts)); font-weight: 600; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
+.live-label { font-size: calc(12px * var(--ts)); color: var(--muted); margin-top: 2px; }
+.live-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--accent); display: inline-block; }
+.live-dot.off { background: var(--warn); }
+@media (prefers-reduced-motion: no-preference) { .live-dot:not(.off) { animation: live-pulse 2s ease-in-out infinite; } }
+@keyframes live-pulse { 50% { opacity: 0.35; } }
+.ex-line { display: flex; align-items: center; gap: 12px; }
+.ex-thumb { flex: none; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--surface2); border: 0; padding: 0; display: grid; place-items: center; }
+.ex-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ex-thumb.empty { background: var(--surface2); color: var(--faint); }
+.ex-card.current .ex-thumb { width: 64px; height: 64px; }
+.ex-status { color: var(--accent); font-size: calc(15px * var(--ts)); font-weight: 500; margin-top: 2px; }
+.ex-card.collapsed .ex-next { color: var(--muted); margin-top: 2px; }
+.ex-card.collapsed.started .ex-next { color: var(--accent); }
+.set-table { display: flex; flex-direction: column; gap: 6px; }
+.st-row { display: grid; grid-template-columns: 44px 1fr 1fr 48px; align-items: center; gap: 8px; min-height: 52px; padding: 0 6px; border-radius: 14px; text-align: center; font-size: calc(17px * var(--ts)); font-variant-numeric: tabular-nums; }
+.set-table.timed .st-row { grid-template-columns: 44px 1fr 48px; }
+.st-head { min-height: 28px; font-size: calc(12px * var(--ts)); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.st-row.done { background: var(--accent-dim); }
+.st-row.open { background: var(--surface2); color: var(--muted); }
+.st-row.open.next { color: var(--text); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.st-row .set-n { justify-self: center; }
+.st-input { width: 100%; min-height: 44px; font-size: calc(18px * var(--ts)); font-weight: 600; text-align: center; background: var(--surface); color: var(--text); border: 0; border-radius: 10px; padding: 0 4px; font-variant-numeric: tabular-nums; }
+.st-input:focus { outline: 2px solid var(--accent); }
+.st-tick { justify-self: center; width: 44px; height: 44px; border-radius: 22px; border: 0; padding: 0; display: grid; place-items: center; background: var(--surface3); color: var(--muted); }
+.st-tick.next { background: var(--surface); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.st-tick.on { background: var(--accent); color: var(--on-accent); }
+.st-tick.small { width: 28px; height: 28px; flex: none; }
+.st-tick:active:not(:disabled) { transform: scale(0.92); }
+.st-tick:disabled { opacity: 0.4; }

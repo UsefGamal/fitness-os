@@ -90,7 +90,7 @@ const startSession = async (p) => {
   await p.waitForTimeout(500);
   const start = p.getByRole('button', { name: /^Start / }).first();
   if (await start.count()) await start.click();
-  await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).waitFor();
+  await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).waitFor();
 };
 
 /** TEST-1 part B: sheets and states a route alone never shows. Each runs
@@ -116,7 +116,7 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).fill('20');
+      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await btnNamed(p, en['workout.finishWorkout']).click();
       await p.getByRole('button', { name: new RegExp(`^(${en['workout.save']}|${en['workout.saveShort']})$`) }).click();
@@ -140,7 +140,7 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('spinbutton', { name: 'Weight (kg)', exact: true }).fill('20');
+      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await p.getByRole('button', { name: new RegExp(`^1: set 1, ${en['setType.work']}`) }).click();
       await p.getByRole('button', { name: new RegExp(en['setType.drop']) }).click();
@@ -192,8 +192,8 @@ export const STATES = [
   // UIUX-2: the app's own 130% text size (Settings > Look).
   { name: 'text 130%: Home', route: '/', data: bigText },
   { name: 'text 130%: Workout', route: '/workout', data: bigText },
-  // FEEL-1: the steppers keep 48 px buttons at 360 px and 130% text.
-  { name: 'text 130%: logging a set', route: '/workout', data: bigText, act: startSession, floor: { sel: '.stepper button', min: 48 } },
+  // FEEL-1: the set table's tick stays a 44 px target at 360 px and 130% text.
+  { name: 'text 130%: logging a set', route: '/workout', data: bigText, act: startSession, floor: { sel: '.st-tick.next', min: 44 } },
   { name: 'text 130%: Meals', route: '/meals', data: bigText, act: toFullMeals },
 ];
 
