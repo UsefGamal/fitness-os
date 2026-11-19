@@ -7,7 +7,7 @@ export const WHATS_NEW = [
   {
     version: '1.1.8',
     items: [
-      { icon: 'dumbbell', text: 'Pregnant? Your plan swaps moves done lying on your back or belly, crunches and planks for safer ones, and Plan and Workout show what changed.' },
+      { icon: 'dumbbell', text: 'Pregnant? Moves on your back or belly, crunches and planks are swapped for safer ones, and Plan says what changed.' },
       { icon: 'check', text: 'Breastfeeding is its own safety question now, and a yes adds 400 kcal a day to your target.' },
       { icon: 'person', text: 'A yes to the injury question asks where it hurts, then swaps or leaves out moves that load that area.' },
       { icon: 'info', text: 'Kidney or diabetes answers add a short food note on Meals.' },
