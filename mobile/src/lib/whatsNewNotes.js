@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.8',
+    items: [
+      { icon: 'calendar', text: 'Plan shows the day you picked as a tab, and the Start button follows it: "Start Push today".' },
+      { icon: 'undo', text: 'Swap lets you pick any of the 16 muscle groups, and no longer offers an exercise already in that day.' },
+    ],
+  },
+  {
     version: '1.1.7',
     items: [
       { icon: 'person', text: 'Rotator cuff and hip flexors are muscles of their own, under Shoulders and Quads in the Library.' },
