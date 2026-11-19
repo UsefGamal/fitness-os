@@ -40,7 +40,7 @@ const SUNDAY = new Date('2026-11-08T07:00:00Z');
 const AFTERNOON = new Date('2026-11-06T12:00:00Z');
 const PORT = 4179;
 
-export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/about', '/settings/install', '/settings/help', '/settings/privacy', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
+export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout', '/meals', '/stats', '/history', '/library', '/settings', '/settings/data', '/settings/training', '/settings/times', '/settings/prefs', '/settings/about', '/settings/install', '/settings/help', '/settings/privacy', '/shopping', '/quests', '/profile', '/snapshots', '/photos', '/intervals', '/session/home', '/session/recovery'];
 export const WIDTHS = [360, 390, 412];
 export const DIRS = ['ltr', 'rtl'];
 export const MIN_TAP = 44;
@@ -101,6 +101,10 @@ export const STATES = [
   { name: 'sheet: weigh-in', route: '/', act: (p) => btnNamed(p, new RegExp(`${en['home.weightLog']}|${en['home.weightFirst']}`)).first().click() },
   { name: 'sheet: ate something else', route: '/meals', act: async (p) => { await toFullMeals(p); await btnNamed(p, en['other.open']).first().click(); } },
   { name: "sheet: what's new", route: '/settings/about', act: (p) => p.getByRole('button', { name: new RegExp(`^${en['whatsNew.title']}`) }).first().click() },
+  { name: 'settings: search', route: '/settings', act: async (p) => { await p.getByRole('button', { name: en['settings.search'] }).click(); await p.getByRole('searchbox').fill('rest'); } },
+  { name: 'settings: training all open', route: '/settings/training', act: async (p) => { for (const k of ['set.equipExp', 'set.soundsVib', 'set.advanced']) await p.getByRole('button', { name: en[k] }).click(); } },
+  { name: 'sheet: rest time', route: '/settings/training', act: (p) => p.getByRole('button', { name: new RegExp(`^${en['set.restBig']}`) }).click() },
+  { name: 'sheet: export CSV', route: '/settings/data', act: (p) => p.getByRole('button', { name: new RegExp(`^${en['set.exportCsv']}`) }).click() },
   { name: 'sheet: more menu', route: '/plan', act: (p) => btnNamed(p, en['more.label']).first().click() },
   {
     name: 'sheet: swap similar',
