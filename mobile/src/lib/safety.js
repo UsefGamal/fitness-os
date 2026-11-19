@@ -23,7 +23,9 @@ export const GATES = ['no_deficit', 'no_fasting_deficit', 'protein_cap', 'beginn
  * `hides` switches (hide_weight, hide_kcal). The wording is in i18n under
  * safety.q.<key>. */
 export const QUESTIONS = [
-  { key: 'pregnant', gates: ['no_deficit', 'no_fasting_deficit'], hides: [] },
+  // Not asked when the sex is male (a male answer is "no"). Asked when the
+  // sex is female or not given, since then nobody can rule it out.
+  { key: 'pregnant', gates: ['no_deficit', 'no_fasting_deficit'], hides: [], notFor: ['male'] },
   { key: 'eating', gates: ['no_deficit'], hides: ['hide_weight', 'hide_kcal'] },
   { key: 'kidney', gates: ['protein_cap'], hides: [] },
   { key: 'heart', gates: ['needs_clearance', 'beginner_only'], hides: [] },
@@ -34,17 +36,24 @@ export const QUESTIONS = [
 
 const allGates = (on) => Object.fromEntries(GATES.map((g) => [g, on]));
 
-/** Every question answered yes or no? */
-export function answeredAll(answers) {
-  return QUESTIONS.every((q) => typeof answers?.[q.key] === 'boolean');
+/** The questions to ask someone of this sex ('male' | 'female' | null).
+ * Pregnancy and breastfeeding are never asked of a man. */
+export function questionsFor(gender) {
+  return QUESTIONS.filter((q) => !(q.notFor || []).includes(gender));
 }
 
-/** What the answers switch on: { gates, hides }. A question left without
- * an answer counts as "yes" (skipped = gated). */
-export function screeningResult(answers = {}) {
+/** Every question for this sex answered yes or no? */
+export function answeredAll(answers, gender = null) {
+  return questionsFor(gender).every((q) => typeof answers?.[q.key] === 'boolean');
+}
+
+/** What the answers switch on: { gates, hides }. A question asked but left
+ * without an answer counts as "yes" (skipped = gated); a question not asked
+ * of this sex counts as "no". */
+export function screeningResult(answers = {}, gender = null) {
   const gates = allGates(false);
   const hides = [];
-  for (const q of QUESTIONS) {
+  for (const q of questionsFor(gender)) {
     if (answers?.[q.key] === false) continue;
     for (const g of q.gates) gates[g] = true;
     for (const h of q.hides) if (!hides.includes(h)) hides.push(h);
@@ -54,13 +63,23 @@ export function screeningResult(answers = {}) {
 
 /** Save the check. Only flags land in the data. The hide switches are the
  * person's own: the check can turn them on, never off. */
-export function applyScreening(data, answers, today) {
-  const { gates, hides } = screeningResult(answers);
+export function applyScreening(data, answers, today, gender = data?.profile?.gender ?? null) {
+  const { gates, hides } = screeningResult(answers, gender);
   const old = data.safety || {};
   const next = { ...old, screen_version: SCREEN_VERSION, screened_on: today, skipped: false, gates: { ...(old.gates || {}), ...gates } };
+  if (gender === 'male') next.screened_as = 'male'; else delete next.screened_as;
   for (const h of hides) next[h] = true;
   if (!gates.needs_clearance) delete next.clearance_seen;
   return { ...data, safety: next };
+}
+
+/** After the sex in Profile changes from male: the check answered as a man
+ * never asked about pregnancy, so it is asked again on the next open. */
+export function recheckForSex(data) {
+  const s = data?.safety;
+  if (s?.screened_as !== 'male' || data?.profile?.gender === 'male') return data;
+  const { screened_as: _drop, ...rest } = s;
+  return { ...data, safety: { ...rest, screen_version: null } };
 }
 
 /** "Not now": every limit on and calories hidden (kcalHidden), until the

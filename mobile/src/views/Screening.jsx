@@ -11,15 +11,16 @@ import { useData } from '../store/useData.js';
  * Settings. "Not now" keeps every limit on. */
 export default function Screening({ onDone, onCancel }) {
   const update = useData((s) => s.update);
+  const gender = useData((s) => s.data?.profile?.gender ?? null);
   const [answers, setAnswers] = useState({});
-  const ready = answeredAll(answers);
-  const save = () => { update((d) => applyScreening(d, answers, todayISO())); onDone?.(); };
+  const ready = answeredAll(answers, gender);
+  const save = () => { update((d) => applyScreening(d, answers, todayISO(), gender)); onDone?.(); };
   const skip = () => { update((d) => skipScreening(d, todayISO())); onDone?.(); };
   return (
     <div className="page setup screening">
       <h1 className="page-title">{t('safety.title')}</h1>
       <p className="page-sub">{t('safety.sub')}</p>
-      <SafetyQuestions answers={answers} onChange={setAnswers} />
+      <SafetyQuestions answers={answers} onChange={setAnswers} gender={gender} />
       <div className="stack" style={{ marginTop: 16 }}>
         <button type="button" className="btn" disabled={!ready} onClick={save}>{t('safety.save')}</button>
         {onCancel

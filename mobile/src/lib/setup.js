@@ -142,7 +142,7 @@ export function finishSetup(data, content, a, today) {
   d = startRoutine(d, content, routine, today);
   if (goal === 'gain') d = withMainSet(d);
   d = setTraining(d, { level: levelFromSetup(a.experience) });
-  d = a.screening ? applyScreening(d, a.screening, today) : skipScreening(d, today);
+  d = a.screening ? applyScreening(d, a.screening, today, a.gender ?? null) : skipScreening(d, today);
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },

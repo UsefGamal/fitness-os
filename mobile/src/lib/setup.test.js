@@ -174,3 +174,12 @@ test('setup saves the job and its activity level; a desk job eats less than a ma
   assert.equal(skipped.profile.activity_level, 'light');
   assert.equal('job' in skipped.profile, false);
 });
+
+test('a man in setup is not asked about pregnancy, and is not gated by it', () => {
+  const sixNo = { ...ALL_NO };
+  delete sixNo.pregnant;
+  const man = finishSetup(emptyData(content), content, { ...BODY, gender: 'male', goal: 'lose', screening: sixNo }, TODAY);
+  assert.equal(man.safety.gates.no_deficit, false);
+  const woman = finishSetup(emptyData(content), content, { ...BODY, gender: 'female', goal: 'lose', screening: sixNo }, TODAY);
+  assert.equal(woman.safety.gates.no_deficit, true, 'a woman who never answered it is gated');
+});

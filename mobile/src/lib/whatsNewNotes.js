@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.4',
+    items: [
+      { icon: 'user', text: 'First-time setup is now one question per screen, like a story: a bar on top, Back on every screen, and big cards to tap.' },
+      { icon: 'scale', text: 'Pick your age on a wheel and your height and weight on a ruler, and see your goal drawn as a line with its date.' },
+      { icon: 'check', text: 'Men are no longer asked about pregnancy or breastfeeding in the safety check.' },
+    ],
+  },
+  {
     version: '1.1.3',
     items: [
       { icon: 'home', text: 'The Tafra icon now shows on your home screen, instead of the default Android icon.' },
