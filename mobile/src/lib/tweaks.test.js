@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { addExtraSet, applyTweaks, exerciseNote, moveBy, setExerciseNote, skipToEnd, swapFor } from './tweaks.js';
+import { addExtraSet, applyTweaks, exerciseNote, moveBy, pairsFrom, setExerciseNote, skipToEnd, swapFor } from './tweaks.js';
+import { pairWithNext, unpair } from './superset.js';
 
 const day = { key: 'push', exercises: [{ name: 'A', sets: 3, video: 'v' }, { name: 'B', sets: 2 }, { name: 'C', sets: 4 }] };
 const names = (d) => d.exercises.map((e) => e.name).join('');
@@ -42,4 +43,23 @@ test('exercise notes are trimmed and cleared when empty', () => {
   assert.equal(exerciseNote(d, 'Leg Press'), 'seat 5');
   d = setExerciseNote(d, 'Leg Press', ' ');
   assert.equal(exerciseNote(d, 'Leg Press'), '');
+});
+
+test('a superset made for today only, after a reorder, leaves the plan alone', () => {
+  const moved = moveBy(null, 3, 2, -1); // A C B
+  const run = applyTweaks(day, moved);
+  const t = pairsFrom(moved, 3, pairWithNext(run.exercises, 0)); // A + C
+  const d = applyTweaks(day, t);
+  assert.equal(names(d), 'ACB');
+  assert.deepEqual(d.exercises.map((e) => e.pair ?? null), ['A', 'A', null]);
+  assert.equal(day.exercises[0].pair, undefined, 'the plan is untouched');
+  const back = applyTweaks(day, pairsFrom(t, 3, unpair(d.exercises, 1)));
+  assert.deepEqual(back.exercises.map((e) => e.pair ?? null), [null, null, null]);
+});
+
+test('a plan superset can be split for today', () => {
+  const planned = { key: 'arms', exercises: [{ name: 'Curl', sets: 3, pair: 'A', type: 'paired' }, { name: 'Ext', sets: 3, pair: 'A', type: 'paired' }] };
+  const run = applyTweaks(planned, null);
+  const d = applyTweaks(planned, pairsFrom(null, 2, unpair(run.exercises, 0)));
+  assert.ok(d.exercises.every((e) => !e.pair && e.type === 'normal'));
 });

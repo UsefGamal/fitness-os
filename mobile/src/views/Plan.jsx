@@ -20,8 +20,10 @@ import { effectiveTimes } from '../lib/ramadan.js';
 import { sessionAt } from '../lib/times.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
+import { pairedWithNext } from '../lib/superset.js';
 import { activeBlock, activePlan } from '../lib/plan.js';
 import { checkInDue, snoozeCheckIn } from '../lib/checkIn.js';
+import { dismissSplitTip, splitTip } from '../lib/splitFit.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { sessionIcs, sessionMinutes } from '../lib/calendar.js';
 import { MUSCLE, dayMuscles, targetFor } from '../lib/muscles.js';
@@ -91,6 +93,11 @@ function EditList({ day, sessionKey }) {
               </optgroup>
             </select>
           </label>
+          {i < day.exercises.length - 1 ? (
+            pairedWithNext(day.exercises, i)
+              ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} aria-label={t('superset.undoAria', { name: ex.name })} onClick={() => update((d) => P.unpairExercise(d, sessionKey, T, i))}><Icon name="link" /> {t('superset.undo')}</button>
+              : <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} aria-label={t('superset.withNextAria', { name: ex.name })} onClick={() => update((d) => P.pairExerciseWithNext(d, sessionKey, T, i))}><Icon name="link" /> {t('superset.withNext')}</button>
+          ) : null}
         </div>
       ))}
       <div className="card stack">
@@ -189,6 +196,7 @@ export default function Plan() {
   const targetOf = (name) => targetFor(name, T, catalogue ? entryFor(name, T, catalogue.byId) : null);
   // With a routine running, choosing another and the recovery week live in the menu (UX-07, UX-05).
   const block = activeBlock(data);
+  const tip = splitTip(data, content, today);
   const resting = isRecoveryWeek(data, today);
   const options = [
     ...(block ? [{ key: 'routine', icon: 'dumbbell', label: t('routines.open'), note: t('routines.openNote'), onClick: () => navigate('/plan/routines') }] : []),
@@ -218,6 +226,15 @@ export default function Plan() {
             <span><strong>{t('checkin.cardTitle')}</strong> <span className="muted">{t('checkin.cardNote')}</span></span>
           </Link>
           <button type="button" className="mini-btn" onClick={() => update((d) => snoozeCheckIn(d, today))}>{t('checkin.later')}</button>
+        </div>
+      ) : null}
+      {!checkInDue(data, today) && tip ? (
+        <div className="backup-line" role="status">
+          <Link className="grow backup-link" to="/plan/routines">
+            <Icon name="calendar" className="icon tone-accent" />
+            <span><strong>{t('split.tipTitle', { name: tip.name, n: tip.days === 5 ? '5+' : tip.days })}</strong> <span className="muted">{t('split.tipNote')}</span></span>
+          </Link>
+          <button type="button" className="mini-btn" onClick={() => update((d) => dismissSplitTip(d, tip))}>{t('split.notNow')}</button>
         </div>
       ) : null}
       {block ? null : (

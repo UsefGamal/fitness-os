@@ -6,6 +6,7 @@
 import { addCustomExercise, exerciseByName } from './data.js';
 import { activeBlock } from './plan.js';
 import { repsForSwap } from './holds.js';
+import { pairWithNext, unpair } from './superset.js';
 
 export const WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 export const REST_CHOICES = [45, 60, 90, 120, 180];
@@ -122,7 +123,18 @@ export function setExercise(data, key, i, { sets, reps, restSec }) {
 }
 
 export function removeExercise(data, key, i) {
-  return editSession(data, key, (s) => ({ ...s, exercises: s.exercises.filter((_, j) => j !== i) }));
+  // A pair can't be half a pair.
+  return editSession(data, key, (s) => ({ ...s, exercises: unpair(s.exercises, i).filter((_, j) => j !== i) }));
+}
+
+/** Do exercise `i` and the next one as a superset. */
+export function pairWithNextExercise(data, key, i) {
+  return editSession(data, key, (s) => ({ ...s, exercises: pairWithNext(s.exercises, i) }));
+}
+
+/** Take exercise `i` out of its superset. */
+export function unpairExercise(data, key, i) {
+  return editSession(data, key, (s) => ({ ...s, exercises: unpair(s.exercises, i) }));
 }
 
 export function moveExercise(data, key, i, dir) {

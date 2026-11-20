@@ -40,15 +40,30 @@ export function stopwatch(ms) {
 
 /** The rows of the set table for one exercise: the sets logged so far, then
  * one open row per set still planned. The first open row is the one you log
- * next.
+ * next. Rows are numbered by the plan's sets: a warm-up or drop set has no
+ * number (n null) and doesn't use up a planned row.
  * @template S @param {S[]} logged @param {number} planned
- * @returns {Array<{ kind: 'done', set: S, n: number } | { kind: 'open', n: number, next: boolean }>} */
+ * @returns {Array<{ kind: 'done', set: S, n: number | null } | { kind: 'open', n: number, next: boolean }>} */
 export function setRows(logged, planned) {
-  /** @type {Array<{ kind: 'done', set: S, n: number } | { kind: 'open', n: number, next: boolean }>} */
-  const rows = (logged || []).map((set, i) => ({ kind: /** @type {'done'} */ ('done'), set, n: i + 1 }));
-  const open = Math.max(0, (planned || 0) - rows.length);
-  for (let k = 0; k < open; k += 1) rows.push({ kind: 'open', n: rows.length + 1, next: k === 0 });
+  /** @type {Array<{ kind: 'done', set: S, n: number | null } | { kind: 'open', n: number, next: boolean }>} */
+  const rows = [];
+  let n = 0;
+  for (const set of logged || []) {
+    const counts = set && typeof set === 'object' ? plannedSet(/** @type {any} */ (set)) : true;
+    if (counts) n += 1;
+    rows.push({ kind: /** @type {'done'} */ ('done'), set, n: counts ? n : null });
+  }
+  const open = Math.max(0, (planned || 0) - n);
+  for (let k = 0; k < open; k += 1) rows.push({ kind: 'open', n: n + k + 1, next: k === 0 });
   return rows;
+}
+
+/** Does a logged set fill one of the plan's sets? Warm-ups and drop sets
+ * are extras on top of the plan, so they don't (a drop set still counts
+ * half toward weekly sets, lib/data.js hardSetValue).
+ * @param {{ is_warmup?: boolean, set_type?: string }} set */
+export function plannedSet(set) {
+  return isWorkSet(set) && set.set_type !== 'drop';
 }
 
 /** Text typed into a reps or kg box, as a number: commas count as points,

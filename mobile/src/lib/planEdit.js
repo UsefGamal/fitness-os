@@ -6,6 +6,7 @@
 import { planOverrides, withPlanOverrides } from './plan.js';
 import { programDay } from './schedule.js';
 import { repsForSwap } from './holds.js';
+import { pairWithNext, unpair } from './superset.js';
 
 export const DEFAULT_REST = '1.5m';
 
@@ -79,4 +80,14 @@ export function resetDay(data, key) {
   const rest = { ...planOverrides(data) };
   delete rest[key];
   return withPlanOverrides(data, rest);
+}
+
+/** Do the exercise at `index` and the next one as a superset. */
+export function pairExerciseWithNext(data, key, training, index) {
+  return withExercises(data, key, training, (list) => pairWithNext(list, index));
+}
+
+/** Take the exercise at `index` out of its superset. */
+export function unpairExercise(data, key, training, index) {
+  return withExercises(data, key, training, (list) => unpair(list, index));
 }

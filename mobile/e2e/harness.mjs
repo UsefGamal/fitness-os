@@ -160,7 +160,8 @@ export const STATES = [
       await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await p.getByRole('button', { name: new RegExp(`^1: set 1, ${en['setType.work']}`) }).click();
-      await p.getByRole('button', { name: new RegExp(en['setType.drop']) }).click();
+      // In the sheet: the workout's own Drop set button has the same words.
+      await p.getByRole('dialog').getByRole('button', { name: new RegExp(en['setType.drop']) }).click();
       await p.getByRole('button', { name: new RegExp(`^D: set 1, ${en['setType.drop']}`) }).click();
       await p.getByText(en['setType.failureNote']).waitFor({ timeout: 5000 });
     },

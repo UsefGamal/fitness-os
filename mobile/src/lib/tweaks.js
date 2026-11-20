@@ -1,10 +1,11 @@
 // Changes made during one workout that leave the plan alone: an extra set,
 // skipping an exercise to the end, reordering, or swapping in another
 // exercise (machine taken). Stored on the workout as `tweaks`; pure helpers.
-//   tweaks = { order: [original index...], extra: { [orig]: n }, swaps: { [orig]: name } }
+//   tweaks = { order: [original index...], extra: { [orig]: n }, swaps: { [orig]: name },
+//              pairs: { [orig]: letter | '' } }   ('' = not in a superset today)
 
 export function emptyTweaks(n) {
-  return { order: Array.from({ length: n }, (_, i) => i), extra: {}, swaps: {} };
+  return { order: Array.from({ length: n }, (_, i) => i), extra: {}, swaps: {}, pairs: {} };
 }
 
 function norm(tweaks, n) {
@@ -12,7 +13,7 @@ function norm(tweaks, n) {
   // The plan may have changed since: keep known indexes, append new ones.
   const order = t.order.filter((i) => i < n);
   for (let i = 0; i < n; i += 1) if (!order.includes(i)) order.push(i);
-  return { order, extra: t.extra || {}, swaps: t.swaps || {} };
+  return { order, extra: t.extra || {}, swaps: t.swaps || {}, pairs: t.pairs || {} };
 }
 
 /** The day as it runs today: exercises in the tweaked order, swapped names,
@@ -24,14 +25,30 @@ export function applyTweaks(day, tweaks) {
     exercises: t.order.map((i) => {
       const ex = day.exercises[i];
       const swapped = t.swaps[i];
+      const paired = i in t.pairs ? withPair(ex, t.pairs[i]) : ex;
       return {
-        ...ex,
+        ...paired,
         orig: i,
         sets: ex.sets + (t.extra[i] || 0),
         ...(swapped ? { name: swapped, swapped_from: ex.name, video: null, note: null, alternative: null } : {}),
       };
     }),
   };
+}
+
+function withPair(ex, letter) {
+  const { pair, ...rest } = ex;
+  if (letter) return { ...rest, pair: letter, type: 'paired' };
+  return rest.type === 'paired' ? { ...rest, type: 'normal' } : rest;
+}
+
+/** Store today's supersets from `list`, the day as it runs (applyTweaks,
+ * each exercise with its `orig`) after pairWithNext or unpair. */
+export function pairsFrom(tweaks, n, list) {
+  const t = norm(tweaks, n);
+  const pairs = {};
+  for (const e of list) if (Number.isInteger(e.orig)) pairs[e.orig] = e.pair?.[0] || '';
+  return { ...t, pairs };
 }
 
 export function addExtraSet(tweaks, n, orig) {
