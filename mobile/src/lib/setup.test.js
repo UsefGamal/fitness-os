@@ -178,6 +178,7 @@ test('setup saves the job and its activity level; a desk job eats less than a ma
 test('a man in setup is not asked about pregnancy, and is not gated by it', () => {
   const sixNo = { ...ALL_NO };
   delete sixNo.pregnant;
+  delete sixNo.breastfeeding;
   const man = finishSetup(emptyData(content), content, { ...BODY, gender: 'male', goal: 'lose', screening: sixNo }, TODAY);
   assert.equal(man.safety.gates.no_deficit, false);
   const woman = finishSetup(emptyData(content), content, { ...BODY, gender: 'female', goal: 'lose', screening: sixNo }, TODAY);

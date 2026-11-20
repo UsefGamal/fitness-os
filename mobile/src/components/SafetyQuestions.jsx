@@ -1,5 +1,5 @@
 import { t } from '../lib/i18n.js';
-import { questionsFor } from '../lib/safety.js';
+import { INJURY_AREAS, questionsFor } from '../lib/safety.js';
 
 /** The safety check's yes/no questions (SAFE-1). `answers` is
  * { key: true | false }; it lives in the caller's memory only and is never
@@ -16,6 +16,15 @@ export default function SafetyQuestions({ answers, onChange, gender = null }) {
             <button type="button" className={answers[q.key] === true ? 'on' : ''} aria-pressed={answers[q.key] === true} onClick={pick(q.key, true)}>{t('safety.yes')}</button>
             <button type="button" className={answers[q.key] === false ? 'on' : ''} aria-pressed={answers[q.key] === false} onClick={pick(q.key, false)}>{t('safety.no')}</button>
           </div>
+          {q.key === 'injury' && answers.injury === true ? (
+            <div className="story-chips safety-areas" role="group" aria-label={t('story.areasTitle')}>
+              {INJURY_AREAS.map((area) => {
+                const on = (answers.injury_areas || []).includes(area);
+                const flip = () => onChange({ ...answers, injury_areas: INJURY_AREAS.filter((x) => (x === area ? !on : (answers.injury_areas || []).includes(x))) });
+                return <button key={area} type="button" className={`story-chip${on ? ' on' : ''}`} aria-pressed={on} onClick={flip}>{t(`safety.area.${area}`)}</button>;
+              })}
+            </div>
+          ) : null}
         </div>
       ))}
     </div>

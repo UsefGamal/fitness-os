@@ -31,7 +31,8 @@ import { useCatalogue } from '../store/catalogue.js';
 import { saveExport } from '../store/mirror.js';
 import { dataUrlOf, shareFile, shareText, shareTextFile } from '../store/share.js';
 import { content, useData } from '../store/useData.js';
-import { gentleDay } from '../lib/safety.js';
+import { safeDay } from '../lib/safety.js';
+import SafetyChanges from '../components/SafetyChanges.jsx';
 import { useToday } from '../store/today.js';
 
 function EditList({ day, sessionKey }) {
@@ -126,7 +127,7 @@ export default function Plan() {
   // Which options sheet is open: 'move' | 'week' | 'evening' | 'terms'.
   const [opt, setOpt] = useState(null);
   const navigate = useNavigate();
-  const day = picked.key === 'rest' ? null : gentleDay(data, P.effectiveDay(picked.key, T, data), today);
+  const day = picked.key === 'rest' ? null : safeDay(data, P.effectiveDay(picked.key, T, data), today, content.training.safety_swaps?.swaps);
   const dayHits = dayMuscles(day?.exercises, T);
   const moves = data.session_moves || [];
   const movedHere = moves.find((m) => m.to === picked.date && m.from);
@@ -239,6 +240,7 @@ export default function Plan() {
             <p className="muted small grow" style={{ margin: 0 }}>{day.focus}</p>
             <div style={{ width: 64, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={64} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
           </div>
+          <SafetyChanges changes={day.safety_changes} />
           {movedHere ? (
             <button type="button" className="pill-row" style={{ margin: '0 0 12px' }} onClick={() => { update((d) => undoMove(d, picked.date)); pick(movedHere.from); }}>
               <Icon name="undo" /><span className="grow">{t('plan.putBack', { day: longWeekday(movedHere.from) })}</span>

@@ -20,7 +20,7 @@ import {
 } from '../lib/setupSteps.js';
 import { pushOverlay } from '../lib/overlays.js';
 import { finishTour } from '../lib/tour.js';
-import { screeningResult } from '../lib/safety.js';
+import { INJURY_AREAS, screeningResult } from '../lib/safety.js';
 import { content, useData } from '../store/useData.js';
 
 const AGES = ageChoices();
@@ -98,6 +98,7 @@ export default function Setup({ onDone }) {
     goal: () => next({ goal: null, goal_kg: null }),
     goal_weight: () => next({ goal_kg: null }),
     job: () => next({ job: null }),
+    injury_areas: () => next({ screening: { ...(a.screening || {}), injury_areas: [] } }),
   };
   const skipSafety = () => { const after = { ...a, screening: null }; setA(after); go(afterSafety(steps)); };
   const onSkip = safetyKey ? skipSafety : SKIP[id];
@@ -196,6 +197,27 @@ export default function Setup({ onDone }) {
           { v: false, label: t('safety.no'), icon: 'check' },
           { v: true, label: t('safety.yes'), icon: 'alert' },
         ], answers[safetyKey], (v) => pick({ screening: { ...answers, [safetyKey]: v } }))}
+      </>
+    );
+  } else if (id === 'injury_areas') {
+    const answers = a.screening || {};
+    const on = new Set(answers.injury_areas || []);
+    const toggle = (area) => () => {
+      const nextOn = new Set(on);
+      if (nextOn.has(area)) nextOn.delete(area); else nextOn.add(area);
+      set('screening', { ...answers, injury_areas: INJURY_AREAS.filter((x) => nextOn.has(x)) });
+    };
+    body = (
+      <>
+        {title(t('story.areasTitle'), t('story.areasSub'))}
+        <div className="story-chips" role="group" aria-label={t('story.areasTitle')}>
+          {INJURY_AREAS.map((area) => (
+            <button key={area} type="button" className={`story-chip${on.has(area) ? ' on' : ''}`} aria-pressed={on.has(area)} onClick={toggle(area)}>
+              {on.has(area) ? <Icon name="check" /> : null}{t(`safety.area.${area}`)}
+            </button>
+          ))}
+        </div>
+        {nextBtn(() => next())}
       </>
     );
   } else if (id === 'goal') {
