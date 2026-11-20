@@ -4,7 +4,9 @@
 // sleep_min, resting_hr } }, one entry per day, any field may be missing.
 import { addDays } from './dates.js';
 
-export const KEEP_DAYS = 60;
+// 400 days (F9): four numbers a day is about 30 KB a year, and trends and
+// cross-checks need more than two months. Reads still go back 60 days.
+export const KEEP_DAYS = 400;
 // Watches tend to overcount active calories, and eating every one of them
 // back stalls fat loss, so only part of them counts toward the target.
 export const ACTIVE_KCAL_SHARE = 0.75;

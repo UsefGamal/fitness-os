@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-import { longWeekday } from '../lib/dates.js';
+import { formatDate, longWeekday } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { MUSCLE } from '../lib/muscles.js';
 import BodyMap from './BodyMap.jsx';
@@ -10,7 +10,10 @@ const READY = { good: 'home.ready', easy: 'home.easy', caution: 'home.steady' };
 
 /** Home's main card: today's session (or the next one on a rest day), the
  * muscles it works, the warm-up and the one button that starts it. */
-export default function WorkoutCard({ next, day, hits, groups, time, todays, changed, ready, readyText, starter, onChange, onStart }) {
+/** formatDate without the weekday: "12 Nov". */
+const shortDate = (d) => formatDate(d).replace(/^\S+\s/, '');
+
+export default function WorkoutCard({ next, day, hits, groups, time, todays, changed, ready, readyText, starter, last, onChange, onStart }) {
   // A specific heading (rule 9): what this card is about right now.
   const head = (key = 'home.planTitle') => (
     <div className="row between" style={{ alignItems: 'flex-start' }}>
@@ -73,6 +76,13 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
         {readyChip}
       </div>
       {readyText ? <div className="muted small" style={{ marginBottom: 12 }}>{readyText}</div> : null}
+      {last && !todays ? (
+        // Last time, set by set (charts step 2): walk in knowing what to beat.
+        <div className="last-time" aria-label={t('last.aria', { label: next.label, lines: last.lifts.map((l) => `${l.name} ${l.text}`).join('; ') })}>
+          <div className="last-head"><strong>{t('last.title', { label: next.label, date: shortDate(last.date) })}</strong> <span className="muted">· {t(last.minutes ? 'last.metaMin' : 'last.meta', { sets: last.sets, min: last.minutes })}</span></div>
+          {last.lifts.map((l) => <div key={l.exercise_id} className="last-lift"><span className="grow">{l.name}</span><span className="num">{l.text}</span></div>)}
+        </div>
+      ) : null}
       {todays?.finished_at ? (
         <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> {t('home.doneSets', { n: todays.sets.length })}</Link>
       ) : (

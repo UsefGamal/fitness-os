@@ -39,6 +39,7 @@ import MoreMenu from '../components/MoreMenu.jsx';
 import { t } from '../lib/i18n.js';
 import { announce, setLoggedLine } from '../lib/announce.js';
 import { isShortSession } from '../lib/summary.js';
+import { setChange, setsText as lastText } from '../lib/lastTime.js';
 import { gateOn, gentleDay } from '../lib/safety.js';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
@@ -254,6 +255,9 @@ export default function Workout() {
   const ex = day?.exercises[current];
   const exRow = ex ? D.exerciseByName(data, ex.name) : null;
   const entry = ex ? entryOf(ex.name) : null;
+  // Last time's work sets of this exercise, by set number (charts step 2):
+  // the faint "last: 60 × 8" line under each row of the set table.
+  const prevWork = useMemo(() => (exRow ? D.lastSets(data, exRow.id, active?.id) : []), [data, exRow, active?.id]);
   const barbell = ex ? isBarbell(ex.name, entry) : false;
   const barKg = BARS[settings.bar]?.kg ?? 20;
 
@@ -658,6 +662,7 @@ export default function Workout() {
               {target?.kind === 'harder' && sets.length === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
               {/* The set table (B1): one row per set, tap reps or kg to type, the tick logs it. */}
               <div className={`set-table${timed ? ' timed' : ''}`} role="group" aria-label={t('workout.tableAria', { name: x.name })}>
+
                 <div className="st-row st-head" aria-hidden="true">
                   <span>{t('workout.colSet')}</span>
                   <span>{t(timed ? 'workout.colSecs' : 'workout.colReps')}</span>
@@ -678,6 +683,7 @@ export default function Workout() {
                           <span>{isTime ? setLabel(s) : s.reps}</span>
                           {timed ? null : <span>{isTime ? '' : s.weight_kg}</span>}
                           <button type="button" className="st-tick on" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="check" /></button>
+                          <Ghost prev={D.isWorkSet(s) ? prevWork[sets.filter(D.isWorkSet).indexOf(s)] : null} cur={s} />
                         </div>
                       </SwipeRow>
                     );
@@ -694,6 +700,7 @@ export default function Workout() {
                       {r.next
                         ? <button type="button" className="st-tick next" disabled={noWeight(weight)} aria-label={t('workout.logSet', { n: sets.length + 1 })} onClick={() => logSet()}><Icon name="check" /></button>
                         : <span className="st-tick" aria-hidden="true"><Icon name="check" /></span>}
+                      <Ghost prev={prevWork[sets.filter(D.isWorkSet).length + (r.n - sets.length) - 1]} />
                     </div>
                   );
                 })}
@@ -812,6 +819,25 @@ export default function Workout() {
           </label>
         </Sheet>
       ) : null}
+    </div>
+  );
+}
+
+/** The faint line under a set-table row: last time's same set, and once
+ * this one is logged, how it compares ("+1 rep", "same"). Text says the
+ * change too, so it never rests on colour alone. */
+function Ghost({ prev, cur = null }) {
+  if (!prev) return null;
+  const c = cur ? setChange(prev, cur) : null;
+  const sign = (n) => (n > 0 ? '+' : '−');
+  const what = !c || c.kind === 'same' ? null
+    : c.kind === 'kg' ? t('chg.kg', { sign: sign(c.diff), n: Math.abs(c.diff) })
+      : c.kind === 'secs' ? t('chg.secs', { sign: sign(c.diff), n: Math.abs(c.diff) })
+        : t('chg.reps', { sign: sign(c.diff), n: Math.abs(c.diff), s: Math.abs(c.diff) === 1 ? '' : 's' });
+  return (
+    <div className="st-ghost">
+      <span>{t('last.ghost', { text: lastText([prev]) })}</span>
+      {c ? <span className={`chip${c.diff > 0 ? ' accent' : ''}`}>{c.kind === 'same' ? `= ${t('chg.same')}` : `${c.diff > 0 ? '▲' : '▼'} ${what}`}</span> : null}
     </div>
   );
 }
