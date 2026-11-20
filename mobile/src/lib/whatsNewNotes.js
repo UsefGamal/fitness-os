@@ -13,6 +13,12 @@ export const WHATS_NEW = [
     ],
   },
   {
+    version: '1.1.16',
+    items: [
+      { icon: 'bell', text: 'Before Android asks about notifications, Tafra says what its reminders do for you.' },
+    ],
+  },
+  {
     version: '1.1.15',
     items: [
       { icon: 'dumbbell', text: 'Pregnant? Moves on your back or belly, crunches and planks are swapped for safer ones, and Plan says what changed.' },
