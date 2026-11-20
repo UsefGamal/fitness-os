@@ -5,6 +5,7 @@ import { trendChange, sparkPath } from '../lib/home.js';
 import { t } from '../lib/i18n.js';
 import { strengthMove } from '../lib/insights.js';
 import { currentGoal } from '../lib/macros.js';
+import { arrivalWindow, paceRange } from '../lib/pace.js';
 import { adviceKey, changeGood, goalProgress, statusGood } from '../lib/progress.js';
 import Icon from './Icon.jsx';
 import RollNumber from './RollNumber.jsx';
@@ -29,6 +30,12 @@ export default function WeightCard({ data, today, onLog }) {
       </section>
     );
   }
+  // Pace as a measured range (charts step 2): the status word and advice
+  // follow it, so the card never says "good pace" beside a range that isn't.
+  const pr = paceRange(data.body_logs, goal, today);
+  const status = p.status === 'reached' ? 'reached' : pr.ready ? pr.status : 'early';
+  const arrive = pr.ready && p.target != null && p.mode !== 'maintain' && status !== 'reached' ? arrivalWindow(p.trend, p.target, pr, today) : null;
+  const short = (d) => formatDate(d).replace(/^\S+\s/, ''); // "12 Mar", not "Thu 12 Mar"
   const change = trendChange(p.series);
   const spark = sparkPath(p.series, { w: W, h: H, pad: 6 });
   // Gaining and muscle-building are judged by the bar, not the scale: one
@@ -39,12 +46,12 @@ export default function WeightCard({ data, today, onLog }) {
     : move.kg > 0 ? t('home.strengthUp', { name: move.name, kg: move.kg, days: move.days })
       : t('home.strengthHold', { name: move.name, kg: move.now });
   return (
-    <section className={`card hero-card${statusGood(p.mode, p.status) ? '' : ' neutral'}`} data-tour="weight">
+    <section className={`card hero-card${statusGood(p.mode, status) ? '' : ' neutral'}`} data-tour="weight">
       <Link to="/stats?tab=body" className="hero-link">
       <span className="sr-only">{t('home.weightOpen')}</span>
       <div className="hero-top">
         <div className="grow">
-          <span className="hero-label"><Icon name="trend" /> {t('home.weightTitle')}</span>
+          <span className="hero-label"><Icon name="trend" /> {t('home.weightToday')}</span>
           <div className="hero-value"><span className="num"><RollNumber value={p.latest} /></span><span className="unit">{t('home.kg')}</span></div>
         </div>
         {spark ? (
@@ -72,8 +79,19 @@ export default function WeightCard({ data, today, onLog }) {
           <div className="small">{t(p.mode === 'gain' ? 'goal.soFarGain' : 'goal.soFar', { done: Math.max(0, p.done_kg), left: p.left_kg, target: p.target })}</div>
         </>
       ) : null}
+      {pr.ready && status !== 'reached' ? (
+        <div className="pace-range">
+          <span>{t(`pace.range${p.mode[0].toUpperCase()}${p.mode.slice(1)}`, { range: t('pace.range', { low: Math.max(0, pr.low), high: pr.high }) })}</span>
+          {statusGood(p.mode, status) ? <span className="chip accent"><Icon name="check" className="icon" /> {t('pace.inBand')}</span> : null}
+          <span className="muted small pace-n">{t('pace.from', { n: pr.n })}</span>
+        </div>
+      ) : null}
+      {arrive?.early ? <div className="small pace-arrive">{t(p.goal_date ? 'pace.arriveGoal' : 'pace.arrive', { target: p.target, early: short(arrive.early), late: short(arrive.late), goal: p.goal_date ? short(p.goal_date) : '' })}</div> : null}
+      {arrive?.tooEarly ? <div className="muted small pace-arrive">{t('pace.tooEarly')}</div> : null}
       {/* The pace is the advice's lead-in, not a second badge beside the change (rule 1). */}
-      <div className="muted small" style={{ marginTop: 4 }}><strong className={statusGood(p.mode, p.status) ? 'pace good' : 'pace'}>{t(`goal.status.${p.status}`)}.</strong> {t(adviceKey(p.mode, p.status), { n: p.logs_needed })}</div>
+      {pr.reason === 'water' && status === 'early' ? <div className="muted small" style={{ marginTop: 4 }}>{t('pace.water')}</div> : (
+        <div className="muted small" style={{ marginTop: 4 }}><strong className={statusGood(p.mode, status) ? 'pace good' : 'pace'}>{t(`goal.status.${status}`)}.</strong> {t(adviceKey(p.mode, status), { n: pr.need || 1 })}</div>
+      )}
       </Link>
       {lifting ? (
         <Link to="/stats?tab=strength" className={`strength-line${move?.kg > 0 ? ' up' : ''}`} aria-label={`${strengthText}. ${t('home.strengthAria')}`}>

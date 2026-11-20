@@ -75,6 +75,11 @@ export function formatDate(iso, locale = LOCALE) {
   return fromISO(iso).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+/** "12 Nov". */
+export function dayMonth(iso, locale = LOCALE) {
+  return fromISO(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+}
+
 /** "12 Nov 2026". */
 export function longDate(iso, locale = LOCALE) {
   return fromISO(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
