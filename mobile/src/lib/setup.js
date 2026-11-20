@@ -146,7 +146,7 @@ export function finishSetup(data, content, a, today) {
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },
-    setup: { done_on: today, routine, ...(DAY_CHOICES.includes(a.days) ? { days: a.days } : {}), needs_body: !body, skipped: false, ...(minor ? { minor: true } : {}) },
+    setup: { done_on: today, routine, ...(DAY_CHOICES.includes(a.days) ? { days: a.days } : {}), ...(a.experience === 'some' || a.experience === 'new' ? { experience: a.experience } : {}), needs_body: !body, skipped: false, ...(minor ? { minor: true } : {}) },
   };
 }
 

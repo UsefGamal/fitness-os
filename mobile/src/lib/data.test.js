@@ -240,3 +240,26 @@ test('timed holds and distances are not load: no e1RM, record or tonnage (CHART-
   assert.equal(D.personalBests(d).get(2).weight_kg, 50);
   assert.equal(D.setKind(d, 2, { exercise_id: 1, weight_kg: 25, reps: 60, track: 'time' }), null);
 });
+
+test('hardSetValue: warm-up 0, drop half, every other work set 1', () => {
+  assert.equal(D.hardSetValue({ is_warmup: true }), 0);
+  assert.equal(D.hardSetValue({ set_type: 'warmup' }), 0);
+  assert.equal(D.hardSetValue({ set_type: 'drop' }), D.DROP_SHARE);
+  assert.equal(D.hardSetValue({ set_type: 'failure' }), 1);
+  assert.equal(D.hardSetValue({ reps: 8 }), 1);
+  assert.equal(D.hardSetValue(null), 0);
+});
+
+test('suggestSet starts from the last full set, not a warm-up or a drop', () => {
+  let d = D.emptyData(content);
+  const r = D.startWorkout(d, { date: '2026-11-20', sessionKey: null, label: 'x' });
+  d = r.data;
+  const id = D.exerciseByName(d, 'Bench Press').id;
+  d = D.addSet(d, r.workoutId, { exerciseId: id, reps: 10, weightKg: 20 });
+  d = { ...d, workouts: d.workouts.map((w) => ({ ...w, sets: w.sets.map((s) => ({ ...s, is_warmup: true, set_type: 'warmup' })) })) };
+  assert.equal(D.suggestSet(d, r.workoutId, id, 8).weightKg, 0, 'only a warm-up today: not its weight');
+  d = D.addSet(d, r.workoutId, { exerciseId: id, reps: 8, weightKg: 60 });
+  d = D.addSet(d, r.workoutId, { exerciseId: id, reps: 10, weightKg: 47.5 });
+  d = { ...d, workouts: d.workouts.map((w) => ({ ...w, sets: w.sets.map((s, i) => (i === 2 ? { ...s, set_type: 'drop' } : s)) })) };
+  assert.equal(D.suggestSet(d, r.workoutId, id, 8).weightKg, 60);
+});

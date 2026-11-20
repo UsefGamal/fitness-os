@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.24',
+    items: [
+      { icon: 'dumbbell', text: 'Make your own supersets with "Superset with next" in Plan > Edit, My routine, or More during a workout.' },
+      { icon: 'flame', text: 'Warm-up sets for the first lift of each muscle, machines and dumbbells too. One tap logs them; they never count.' },
+      { icon: 'drop', text: 'A Drop set button makes your next set about 20% lighter. A drop set counts as half a set in weekly sets.' },
+      { icon: 'calendar', text: 'Pick your days a week in Routines to see the best fit. 5+ days: the Upper / Lower / Push / Pull / Legs week.' },
+    ],
+  },
+  {
     version: '1.1.22',
     items: [
       { icon: 'star', text: 'The intro shows the logo with its real sharp shape, without a thick outline around it.' },

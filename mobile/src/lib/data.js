@@ -242,6 +242,18 @@ export function isWorkSet(set) {
   return !!set && !set.is_warmup && set.set_type !== 'warmup';
 }
 
+/** A drop set counts as half a hard set toward weekly sets per muscle. */
+export const DROP_SHARE = 0.5;
+
+/** How much a set adds to the weekly hard-set count for a muscle: 0 for a
+ * warm-up, half for a drop set (a short push on the back of the set before
+ * it, not a full set of its own), 1 for any other work set. Volume and
+ * recovery count with this; records and tonnage still use isWorkSet. */
+export function hardSetValue(set) {
+  if (!isWorkSet(set)) return 0;
+  return set.set_type === 'drop' ? DROP_SHARE : 1;
+}
+
 /** A set whose weight and reps mean load (CHART-1): a work set that isn't a
  * timed hold or a distance. A hold keeps its seconds in `reps`, so without
  * this a 60 s plank with 20 kg reads as an 82 kg one-rep max, and adds
@@ -316,7 +328,9 @@ export function isPersonalBest(data, workoutId, set) {
 /** The weight to suggest for the next set of an exercise in a workout. */
 export function suggestSet(data, workoutId, exerciseId, targetReps) {
   const workout = data.workouts.find((w) => w.id === workoutId);
-  const done = workout ? workout.sets.filter((s) => s.exercise_id === exerciseId) : [];
+  // Warm-ups and drop sets are lighter on purpose, so the next set starts
+  // from the last full set, not from them.
+  const done = workout ? workout.sets.filter((s) => s.exercise_id === exerciseId && isWorkSet(s) && s.set_type !== 'drop') : [];
   if (done.length) {
     const last = done[done.length - 1];
     return { weightKg: last.weight_kg, reps: last.reps };

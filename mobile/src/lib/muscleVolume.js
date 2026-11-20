@@ -5,7 +5,7 @@
 // once per group (a pull-up is one back set, not lats + middle back).
 // Stretches count for nothing.
 // Recovery weeks (any deload session) are left out of the average.
-import { isWorkSet } from './data.js';
+import { hardSetValue } from './data.js';
 import { addDays, weekStart } from './dates.js';
 import { GROUPS16, trainedGroups } from './muscleGroups.js';
 import { band, GUIDE, HELPER_SHARE } from './weeklySets.js';
@@ -51,11 +51,12 @@ export function muscleVolume(data, training, today, entryOf = () => null, n = AV
     if (!bucket) continue;
     if (w.is_deload) deload.add(wk);
     for (const s of w.sets || []) {
-      if (!isWorkSet(s)) continue;
+      const v = hardSetValue(s);
+      if (!v) continue;
       const g = groupsFor(s.exercise_id);
       if (!g) { if (wk !== thisWeek) unknown += 1; continue; }
-      for (const k of g.main) bucket[k] = (bucket[k] || 0) + 1;
-      for (const k of g.helpers) bucket[k] = (bucket[k] || 0) + HELPER_SHARE;
+      for (const k of g.main) bucket[k] = (bucket[k] || 0) + v;
+      for (const k of g.helpers) bucket[k] = (bucket[k] || 0) + v * HELPER_SHARE;
     }
   }
   // Only weeks since the person started count, so a new user isn't

@@ -142,3 +142,24 @@ test('a plank added or swapped into your own workout is timed', () => {
   data = M.swapExercise(data, key, 0, { name: 'Bench Press' });
   assert.equal(M.mySession(data, key).exercises[0].reps, '8-12');
 });
+
+test('supersets in my own session and in an edited plan day', () => {
+  let { data, key } = M.createSession(fresh(), 'Arms');
+  for (const name of ['Barbell Curl', 'Triceps Pushdown', 'Lateral Raise']) data = M.addExercise(data, key, { name });
+  data = M.pairWithNextExercise(data, key, 0);
+  assert.deepEqual(M.mySession(data, key).exercises.map((e) => e.pair ?? null), ['A', 'A', null]);
+  const T = activePlan(data, content);
+  assert.deepEqual(P.effectiveDay(key, T, data).exercises.map((e) => e.pair ?? null), ['A', 'A', null], 'the workout sees the pair');
+  assert.deepEqual(M.mySession(M.removeExercise(data, key, 1), key).exercises.map((e) => e.pair ?? null), [null, null], 'no half pairs');
+  assert.deepEqual(M.mySession(M.unpairExercise(data, key, 0), key).exercises.map((e) => e.pair ?? null), [null, null, null]);
+
+  const d0 = fresh();
+  const T0 = activePlan(d0, content);
+  const day = T0.trainer_plan.schedule.find((s) => s.session !== 'rest').session;
+  const paired = P.pairExerciseWithNext(d0, day, T0, 0);
+  const ex = P.effectiveDay(day, T0, paired).exercises;
+  assert.equal(ex[0].pair?.[0], ex[1].pair?.[0]);
+  assert.ok(ex[0].pair);
+  const back = P.effectiveDay(day, T0, P.unpairExercise(paired, day, T0, 0)).exercises;
+  assert.ok(!back[0].pair);
+});
