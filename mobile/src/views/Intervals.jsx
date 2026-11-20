@@ -1,17 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
-import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
-import { todayISO } from '../lib/dates.js';
-import * as D from '../lib/data.js';
-import { clock, COUNTDOWN_BEEPS, INTERVAL_PRESETS, intervalSteps, normalizeIntervals, stepAt, totalSeconds } from '../lib/training.js';
-import { useKeepAwake } from '../store/awake.js';
-import { feedback, unlockAudio } from '../store/feedback.js';
-import { useData } from '../store/useData.js';
+import Sheet, { useCloseSheet } from '../components/Sheet.jsx';
+import { entryFor, photoSrc, thumbOf } from '../lib/catalogue.js';
+import { intervalLines, moveAt, workBefore, MAX_MOVES, movePool, nextMove, PHASE_LABEL, presetMoves, roundsDone, toggleMove } from '../lib/intervals.js';
+import { clock, INTERVAL_PRESETS, intervalSteps, normalizeIntervals, totalSeconds } from '../lib/training.js';
+import { useCatalogue } from '../store/catalogue.js';
+import { unlockAudio } from '../store/feedback.js';
+import { elapsedOf, positionOf, useIntervalRun } from '../store/intervalRun.js';
+import { content } from '../store/useData.js';
 import { t } from '../lib/i18n.js';
 
-const PHASE = { warmup: 'Warm up', work: 'Work', rest: 'Rest', setrest: 'Set rest', cooldown: 'Cool down' };
+const T = content.training;
 
 function Num({ label, value, onChange, unit }) {
   return (
@@ -22,112 +23,76 @@ function Num({ label, value, onChange, unit }) {
   );
 }
 
-/** Interval mode: HIIT, Tabata, EMOM or a custom set, run with the same
- * sounds as the rest timer and saved as a cardio session. */
+/** A move's photo path (catalogue), or null. */
+function usePhotoOf() {
+  const { catalogue } = useCatalogue();
+  return (name, thumb = false) => {
+    const e = name && catalogue ? entryFor(name, T, catalogue.byId) : null;
+    if (!e) return null;
+    return photoSrc(thumb ? thumbOf(e) : e.photos?.[0] || thumbOf(e));
+  };
+}
+
+function MoveThumb({ src }) {
+  if (!src) return <span className="ex-thumb empty" aria-hidden="true"><Icon name="waves" /></span>;
+  return <span className="ex-thumb" aria-hidden="true"><img src={src} alt="" decoding="async" onError={(e) => { e.currentTarget.hidden = true; }} /></span>;
+}
+
+/** Interval mode: HIIT, Tabata, EMOM or a custom set, with a move for each
+ * work round. It runs on in the background (IntervalRunner) and saves
+ * itself to History as a cardio session. */
 export default function Intervals() {
+  const run = useIntervalRun((s) => s.run);
+  return run ? <Running run={run} /> : <SetUp />;
+}
+
+function SetUp() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const update = useData((s) => s.update);
+  const photoOf = usePhotoOf();
   // ?preset=tabata opens with that preset picked (the 8 PM session links here).
   const [config, setConfig] = useState(() => INTERVAL_PRESETS.find((p) => p.key === params.get('preset')) || INTERVAL_PRESETS[0]);
-  const [run, setRun] = useState(null); // { startedAt, pausedAt, pausedMs }
-  const [now, setNow] = useState(Date.now());
-  const [saved, setSaved] = useState(false);
-  const [stopping, setStopping] = useState(false);
-  const last = useRef(null);
-  useKeepAwake(Boolean(run));
-
-  const steps = useMemo(() => intervalSteps(config), [config]);
+  const [moves, setMoves] = useState(() => presetMoves(T, config.key));
+  const [adding, setAdding] = useState(false);
+  const steps = intervalSteps(config);
   const total = totalSeconds(steps);
-  const elapsedMs = run ? (run.pausedAt || now) - run.startedAt - run.pausedMs : 0;
-  const at = run ? stepAt(steps, Math.floor(elapsedMs / 1000)) : null;
-
-  useEffect(() => {
-    if (!run || run.pausedAt || at?.done) return undefined;
-    const id = setInterval(() => setNow(Date.now()), 200);
-    return () => clearInterval(id);
-  }, [run, at?.done]);
-
-  // Sounds: a cue at the start of each step, 3-2-1 before the next one.
-  useEffect(() => {
-    if (!run || run.pausedAt) return;
-    if (at.done) {
-      if (last.current !== 'done') {
-        last.current = 'done';
-        feedback('workoutSaved');
-      }
-      return;
-    }
-    const step = steps[at.index];
-    const key = `${at.index}:${at.left}`;
-    if (last.current === key) return;
-    const first = last.current === null || !last.current.startsWith(`${at.index}:`);
-    last.current = key;
-    if (first) feedback(step.kind === 'work' ? 'work' : 'rest');
-    else if (COUNTDOWN_BEEPS.includes(at.left)) feedback('countdown');
-  });
-
-  const start = () => {
-    unlockAudio();
-    last.current = null;
-    setSaved(false);
-    setRun({ startedAt: Date.now(), pausedAt: null, pausedMs: 0 });
-  };
-  const togglePause = () => setRun((r) => (r.pausedAt ? { ...r, pausedAt: null, pausedMs: r.pausedMs + (Date.now() - r.pausedAt) } : { ...r, pausedAt: Date.now() }));
-  const save = () => {
-    const mins = Math.max(1, Math.round(elapsedMs / 60000));
-    update((d) => D.logSession(d, { date: todayISO(), type: 'cardio', label: config.label || 'Intervals', durationMin: mins }));
-    setSaved(true);
-  };
-
-  if (run) {
-    const step = at.done ? null : steps[at.index];
-    const works = steps.filter((s) => s.kind === 'work').length;
-    const workNo = at.done ? works : steps.slice(0, at.index + 1).filter((s) => s.kind === 'work').length;
-    const next = at.done ? null : steps[at.index + 1];
-    return (
-      <div className="timer-full" role="timer" aria-live="polite">
-        <div className="muted">{config.label}</div>
-        {at.done ? (
-          <>
-            <div className="interval-phase work">Done</div>
-            <div className="big-next">{clock(total)} · {works} rounds</div>
-            {saved ? <div className="muted">Saved to History as a cardio session.</div> : <button type="button" className="btn" style={{ width: 240 }} onClick={save}><Icon name="check" /> Save to History</button>}
-            <button type="button" className="btn ghost" style={{ width: 240 }} onClick={() => setRun(null)}>Close</button>
-          </>
-        ) : (
-          <>
-            <div className={`interval-phase ${step.kind}`}>{PHASE[step.kind]}</div>
-            <div style={{ fontSize: 96, fontWeight: 800, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock(at.left)}</div>
-            <div className="big-next">{step.kind === 'warmup' ? 'Get ready' : step.kind === 'cooldown' ? 'Nice work, ease off' : `Round ${workNo} of ${works}${config.sets > 1 ? ` · set ${step.set} of ${config.sets}` : ''}`}</div>
-            <div className="muted">{next ? `Next: ${PHASE[next.kind]} ${clock(next.seconds)}` : 'Last one'}</div>
-            <div className="muted small">{clock(Math.max(0, total - Math.floor(elapsedMs / 1000)))} left in total</div>
-            <div className="row" style={{ gap: 12 }}>
-              <button type="button" className="btn secondary" style={{ width: 140 }} onClick={togglePause}><Icon name={run.pausedAt ? 'play' : 'pause'} /> {run.pausedAt ? 'Resume' : 'Pause'}</button>
-              <button type="button" className="btn ghost" style={{ width: 140 }} onClick={() => setStopping(true)}><Icon name="x" /> Stop</button>
-              {stopping ? <ConfirmSheet title={t('intervals.stopTitle')} body={t('intervals.stopBody')} action={t('intervals.stop')} onConfirm={() => setRun(null)} onClose={() => setStopping(false)} /> : null}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
+  const pickPreset = (p) => { setConfig(p); setMoves(presetMoves(T, p.key)); };
   const custom = (field) => (v) => setConfig((c) => ({ ...c, key: 'custom', label: 'Custom intervals', note: '', [field]: v }));
   const clean = normalizeIntervals(config);
+  const start = () => {
+    unlockAudio();
+    useIntervalRun.getState().start(clean, moves);
+  };
   return (
     <div className="page">
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       <h1 className="page-title" style={{ marginTop: 4 }}>Intervals</h1>
-      <p className="page-sub">Pick a preset or set your own. Sounds follow Settings → Training.</p>
+      <p className="page-sub">{t('intervals.sub')}</p>
       <div className="list">
         {INTERVAL_PRESETS.map((p) => (
-          <button key={p.key} type="button" className="list-row" aria-pressed={config.key === p.key} onClick={() => setConfig(p)}>
+          <button key={p.key} type="button" className="list-row" aria-pressed={config.key === p.key} onClick={() => pickPreset(p)}>
             <div className="grow"><div>{p.label}</div><div className="meta">{p.note} · {clock(totalSeconds(intervalSteps(p)))}</div></div>
             <span className={`check${config.key === p.key ? ' on' : ''}`}>{config.key === p.key ? <Icon name="check" /> : null}</span>
           </button>
         ))}
       </div>
+
+      <div className="section-label">{t('intervals.moves')}</div>
+      <div className="list">
+        {moves.map((m, i) => (
+          <div key={m} className="list-row">
+            <MoveThumb src={photoOf(m, true)} />
+            <div className="grow"><div>{m}</div><div className="meta">{t('intervals.roundsOf', { list: roundsList(steps, moves, i) })}</div></div>
+            <button type="button" className="icon-btn" aria-label={t('intervals.removeMove', { name: m })} onClick={() => setMoves((ms) => ms.filter((x) => x !== m))}><Icon name="x" /></button>
+          </div>
+        ))}
+        <button type="button" className="list-row" onClick={() => setAdding(true)} disabled={moves.length >= MAX_MOVES}>
+          <Icon name="plus" />
+          <div className="grow"><div>{t('intervals.addMove')}</div><div className="meta">{moves.length ? t('intervals.addMeta') : t('intervals.noMoves')}</div></div>
+        </button>
+      </div>
+      {adding ? <MovesSheet moves={moves} photoOf={photoOf} onToggle={(m) => setMoves((ms) => toggleMove(ms, m))} onClose={() => setAdding(false)} /> : null}
+
       <div className="section-label">Adjust</div>
       <section className="card stack">
         <div className="row"><Num label="Work" unit="s" value={config.work} onChange={custom('work')} /><Num label="Rest" unit="s" value={config.rest} onChange={custom('rest')} /><Num label="Rounds" value={config.rounds} onChange={custom('rounds')} /></div>
@@ -135,7 +100,139 @@ export default function Intervals() {
         <div className="row"><Num label="Warm-up" unit="s" value={config.warmup} onChange={custom('warmup')} /><Num label="Cool-down" unit="s" value={config.cooldown} onChange={custom('cooldown')} /></div>
         <div className="muted small">{clean.sets > 1 ? `${clean.sets} sets of ` : ''}{clean.rounds} × {clean.work} s work{clean.rest ? ` / ${clean.rest} s rest` : ''} · {clock(total)} in total</div>
       </section>
+      <p className="muted small" style={{ margin: '0 4px 12px' }}>{t('intervals.savedNote')}</p>
       <button type="button" className="btn" onClick={start}><Icon name="play" /> Start {clock(total)}</button>
     </div>
+  );
+}
+
+/** "1, 5, 9" style: the rounds a move plays, for the moves list. */
+function roundsList(steps, moves, i) {
+  const out = [];
+  let n = 0;
+  for (let s = 0; s < steps.length; s += 1) {
+    if (steps[s].kind !== 'work') continue;
+    n += 1;
+    if (moveAt(steps, s, moves) === moves[i]) out.push(n);
+  }
+  return out.length > 4 ? `${out.slice(0, 3).join(', ')} … ${out[out.length - 1]}` : out.join(', ') || '–';
+}
+
+function MovesSheet({ moves, photoOf, onToggle, onClose }) {
+  return (
+    <Sheet title={t('intervals.addMove')} onClose={onClose}>
+      <MovesList moves={moves} photoOf={photoOf} onToggle={onToggle} onClose={onClose} />
+    </Sheet>
+  );
+}
+
+function MovesList({ moves, photoOf, onToggle, onClose }) {
+  const close = useCloseSheet(onClose);
+  return (
+    <>
+      <div className="list">
+        {movePool(T).map((m) => {
+          const on = moves.includes(m);
+          return (
+            <button key={m} type="button" className="list-row" aria-pressed={on} onClick={() => onToggle(m)}>
+              <MoveThumb src={photoOf(m, true)} />
+              <div className="grow">{m}</div>
+              <span className={`check${on ? ' on' : ''}`}>{on ? <Icon name="check" /> : null}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button type="button" className="btn" style={{ marginTop: 12 }} onClick={close}>{t('common.done')}</button>
+    </>
+  );
+}
+
+function Running({ run }) {
+  const navigate = useNavigate();
+  const photoOf = usePhotoOf();
+  const { togglePause, jump, clear, save } = useIntervalRun.getState();
+  const [stopping, setStopping] = useState(false);
+  // The clock is kept by IntervalRunner; this page re-reads it each frame.
+  const [, setNow] = useState(0);
+  useEffect(() => {
+    if (run.pausedAt) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [run.pausedAt]);
+  const { steps, at } = positionOf(run);
+  const total = totalSeconds(steps);
+  const elapsedS = Math.floor(elapsedOf(run) / 1000);
+  const label = run.config.label || 'Intervals';
+
+  if (at.done) {
+    const { rounds, byMove } = roundsDone(steps, elapsedS, run.moves);
+    return (
+      <div className="page interval-run">
+        <div className="muted">{label}</div>
+        <div className="interval-phase work">{t('intervals.done')}</div>
+        <div className="big-next">{clock(total)} · {t('intervals.rounds', { n: rounds })}</div>
+        {byMove.length ? <div className="list inset">{byMove.map(([m, n]) => <div key={m} className="list-row"><MoveThumb src={photoOf(m, true)} /><div className="grow">{m}</div><span className="muted small">{t('intervals.rounds', { n })}</span></div>)}</div> : null}
+        <p className="muted small" style={{ margin: 0 }}>{run.saved ? t('intervals.saved') : null}</p>
+        <div className="stack" style={{ width: '100%' }}>
+          <button type="button" className="btn" onClick={() => { clear(); navigate('/history'); }}><Icon name="calendar" /> {t('intervals.seeHistory')}</button>
+          <button type="button" className="btn secondary" onClick={clear}>{t('pill.close')}</button>
+        </div>
+      </div>
+    );
+  }
+
+  const step = steps[at.index];
+  const lines = intervalLines(steps, at.index, run.moves, { sets: run.config.sets });
+  const move = moveAt(steps, at.index, run.moves);
+  const shown = move || nextMove(steps, at.index, run.moves);
+  const img = photoOf(shown);
+  return (
+    <div className="page interval-run" role="timer" aria-live="polite">
+      <div className="row between" style={{ width: '100%' }}>
+        <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
+        <span className="muted small">{label}</span>
+      </div>
+      <div className={`interval-phase ${step.kind}`}>{PHASE_LABEL[step.kind]}</div>
+      {img ? (
+        <figure className={`interval-photo${move ? '' : ' next'}`}>
+          <img key={img} src={img} alt="" onError={(e) => { e.currentTarget.parentElement.hidden = true; }} />
+          {move ? null : <figcaption>{t('intervals.nextUp')}</figcaption>}
+        </figure>
+      ) : null}
+      <div className="follow-name">{move || (shown ? t('intervals.nextIs', { name: shown }) : lines.title)}</div>
+      <div className="interval-clock">{clock(at.left)}</div>
+      <div className="muted">{move || !shown ? lines.detail : t('intervals.roundNext', { n: workBefore(steps, at.index) + 1, of: steps.filter((x) => x.kind === 'work').length })}</div>
+      <div className="muted small">{t('intervals.left', { time: clock(Math.max(0, total - elapsedS)) })}</div>
+      <div className="row" style={{ gap: 12, justifyContent: 'center' }}>
+        <button type="button" className="icon-btn" aria-label={t('aria.backOne')} disabled={at.index === 0} onClick={() => jump(at.index - 1)}><Icon name="back" /></button>
+        <button type="button" className="btn secondary" style={{ minWidth: 140 }} onClick={togglePause}><Icon name={run.pausedAt ? 'play' : 'pause'} /> {run.pausedAt ? 'Resume' : 'Pause'}</button>
+        <button type="button" className="icon-btn" aria-label={t('aria.next')} onClick={() => jump(at.index + 1)}><Icon name="skip" /></button>
+      </div>
+      <button type="button" className="btn ghost" onClick={() => setStopping(true)}><Icon name="x" /> {t('intervals.stop')}</button>
+      {stopping ? <StopSheet rounds={roundsDone(steps, elapsedS, run.moves).rounds} minutes={Math.max(1, Math.round(elapsedS / 60))} onSave={() => { save(); clear(); }} onDiscard={clear} onClose={() => setStopping(false)} /> : null}
+    </div>
+  );
+}
+
+/** Stop early: save the rounds done so far, or drop them. */
+function StopSheet({ rounds, minutes, onSave, onDiscard, onClose }) {
+  return (
+    <Sheet title={t('intervals.stopTitle')} onClose={onClose}>
+      <StopButtons rounds={rounds} minutes={minutes} onSave={onSave} onDiscard={onDiscard} onClose={onClose} />
+    </Sheet>
+  );
+}
+
+function StopButtons({ rounds, minutes, onSave, onDiscard, onClose }) {
+  const close = useCloseSheet(onClose);
+  return (
+    <>
+      <p style={{ margin: '0 4px 16px' }}>{rounds ? t('intervals.stopBody', { n: rounds, min: minutes }) : t('intervals.stopNothing')}</p>
+      <div className="stack">
+        {rounds ? <button type="button" className="btn" onClick={() => { onSave(); close(); }}><Icon name="check" /> {t('intervals.stopSave', { min: minutes })}</button> : null}
+        <button type="button" className="btn danger-fill" onClick={() => { onDiscard(); close(); }}>{t('intervals.stopDiscard')}</button>
+        <button type="button" className="btn secondary" onClick={close}>{t('common.cancel')}</button>
+      </div>
+    </>
   );
 }

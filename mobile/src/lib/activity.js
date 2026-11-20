@@ -87,6 +87,13 @@ export function readiness(daily, today) {
   return { level, reasons, sleep_min: t.sleep_min ?? null, resting_hr: t.resting_hr ?? null, sleep_base: sleepBase, hr_base: hrBase };
 }
 
+/** Extra days muscles count as recovering after a poor night: one when
+ * sleep was short or resting heart rate is up (readiness above), else 0.
+ * No watch data that day means no change. */
+export function recoveryExtraDays(ready) {
+  return ready && (ready.level === 'caution' || ready.level === 'easy') ? 1 : 0;
+}
+
 export const READINESS_TEXT = {
   good: 'Well recovered. Train as planned.',
   caution: 'A bit under-recovered. Train, but leave an extra rep in the tank.',
@@ -99,4 +106,30 @@ export function hm(minutes) {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
   return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
+}
+
+export const TREND_DAYS = 30;
+const MIN_POINTS = 3;
+
+/** The watch's last `days` days as chart lines, only days it has a number
+ * for: { steps, sleep (hours), rhr }, each { points: [{ date, value }],
+ * avg } or null when fewer than three days have one. A watch worn now and
+ * then just gives shorter lines. */
+export function watchTrends(daily, today, days = TREND_DAYS) {
+  const pick = (field, scale = (v) => v) => {
+    const points = [];
+    for (let i = days - 1; i >= 0; i -= 1) {
+      const date = addDays(today, -i);
+      const v = daily?.[date]?.[field];
+      if (field === 'steps' ? v >= WORN_STEPS : v != null && v > 0) points.push({ date, value: scale(v) });
+    }
+    if (points.length < MIN_POINTS) return null;
+    const avg = points.reduce((n, p) => n + p.value, 0) / points.length;
+    return { points, avg };
+  };
+  return {
+    steps: pick('steps'),
+    sleep: pick('sleep_min', (m) => Math.round((m / 60) * 10) / 10),
+    rhr: pick('resting_hr'),
+  };
 }

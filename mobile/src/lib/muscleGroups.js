@@ -110,19 +110,28 @@ export const HELPER_SHARE = 0.5;
 /**
  * Per group: work sets in the `days` days up to `today` (a helper set
  * counts half) and the last day it was a main muscle. Every set ever
- * logged counts, read through `groupsOf(exerciseId)`.
+ * logged counts, read through `groupsOf(exerciseId)`. `loadsOf(workout)`
+ * adds sessions without sets (intervals, home, cardio, padel) as
+ * [{ groups: { main, helpers }, sets }]; such a session marks a group as
+ * worked only from `worked` light sets.
  * @param {{ workouts: any[] }} data
  * @param {(exerciseId: number) => { main: string[], helpers: string[] }} groupsOf
  * @param {string} today
+ * @param {number} [days]
+ * @param {(w: any) => { groups: { main: string[], helpers: string[] }, sets: number }[]} [loadsOf]
+ * @param {number} [worked]
  * @returns {Record<string, { sets: number, last: string | null }>}
  */
-export function groupStats(data, groupsOf, today, days = 7) {
+export function groupStats(data, groupsOf, today, days = 7, loadsOf = () => [], worked = 1.5) {
   const from = addDays(today, -(days - 1));
   const out = Object.fromEntries(GROUPS16.map((g) => [g.key, { sets: 0, last: null }]));
   const seen = new Map();
   const of = (id) => {
     if (!seen.has(id)) seen.set(id, groupsOf(id));
     return seen.get(id);
+  };
+  const mark = (k, date) => {
+    if (!out[k].last || date > out[k].last) out[k].last = date;
   };
   for (const w of data.workouts) {
     if (w.log_date > today) continue;
@@ -133,20 +142,30 @@ export function groupStats(data, groupsOf, today, days = 7) {
       for (const k of g.main) {
         if (!out[k]) continue;
         if (recent) out[k].sets += 1;
-        if (!out[k].last || w.log_date > out[k].last) out[k].last = w.log_date;
+        mark(k, w.log_date);
       }
       if (recent) for (const k of g.helpers) if (out[k]) out[k].sets += HELPER_SHARE;
+    }
+    // A session can list the same group for two moves: add them up first.
+    const load = {};
+    for (const l of loadsOf(w)) {
+      for (const k of l.groups.main) if (out[k]) load[k] = (load[k] || 0) + l.sets;
+      if (recent) for (const k of l.groups.helpers) if (out[k]) out[k].sets += l.sets * HELPER_SHARE;
+    }
+    for (const [k, sets] of Object.entries(load)) {
+      if (recent) out[k].sets += sets;
+      if (sets >= worked) mark(k, w.log_date);
     }
   }
   return out;
 }
 
-/** 'recovering' (main muscle in the last 48 h), 'ready', or 'untrained'
- * (a week or more, or never). */
-export function recoveryOf(last, today) {
+/** 'recovering' (main muscle in the last 48 h, or `extraDays` more after a
+ * poor night), 'ready', or 'untrained' (a week or more, or never). */
+export function recoveryOf(last, today, extraDays = 0) {
   if (!last) return 'untrained';
   const ago = daysBetween(last, today);
-  return ago < RECOVER_DAYS ? 'recovering' : ago >= UNTRAINED_DAYS ? 'untrained' : 'ready';
+  return ago < RECOVER_DAYS + extraDays ? 'recovering' : ago >= UNTRAINED_DAYS ? 'untrained' : 'ready';
 }
 
 /** The finer muscles of a group that have their own label, for chips. */

@@ -101,3 +101,25 @@ test('deep muscles sit in Shoulders and Quads; stretches train no group', () => 
   const T = { exercise_targets: { 'Quad Stretch': { main: ['quadriceps'], helpers: [] } } };
   assert.deepEqual(trainedGroups({ name: 'Quad Stretch' }, T, stretch).main, ['quads']);
 });
+
+test('sessions without sets add light sets, and mark a group worked from enough load', () => {
+  const data = { workouts: [
+    { log_date: '2026-11-18', workout_type: 'padel', sets: [] },
+    { log_date: '2026-11-17', workout_type: 'cardio', sets: [] },
+  ] };
+  const loadsOf = (w) => (w.workout_type === 'padel'
+    ? [{ groups: { main: ['quads', 'calves'], helpers: ['forearms'] }, sets: 3 }]
+    : [{ groups: { main: ['quads'], helpers: [] }, sets: 1 }]);
+  const s = groupStats(data, () => ({ main: [], helpers: [] }), '2026-11-19', 7, loadsOf, 1.5);
+  assert.deepEqual(s.quads, { sets: 4, last: '2026-11-18' });
+  assert.deepEqual(s.forearms, { sets: 1.5, last: null });
+  // A light session alone doesn't mark the group worked.
+  const light = groupStats({ workouts: [data.workouts[1]] }, () => ({ main: [], helpers: [] }), '2026-11-19', 7, loadsOf, 1.5);
+  assert.deepEqual(light.quads, { sets: 1, last: null });
+});
+
+test('a poor night keeps muscles recovering a day longer', () => {
+  assert.equal(recoveryOf('2026-11-17', '2026-11-19'), 'ready');
+  assert.equal(recoveryOf('2026-11-17', '2026-11-19', 1), 'recovering');
+  assert.equal(recoveryOf('2026-11-16', '2026-11-19', 1), 'ready');
+});

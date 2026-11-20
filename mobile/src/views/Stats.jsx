@@ -12,7 +12,7 @@ import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
 import { nextDue } from '../lib/fitnessTest.js';
-import { dayMonth, formatDate, formatNumber } from '../lib/dates.js';
+import { addDays, dayMonth, formatDate, formatNumber, weekStart } from '../lib/dates.js';
 import { currentGoal, macroTargets, profileOf } from '../lib/macros.js';
 import { measuredBurn } from '../lib/measuredBurn.js';
 import { sparkLine, strengthMovers } from '../lib/movers.js';
@@ -22,7 +22,9 @@ import { keptWhileCutting, weeklyDays } from '../lib/overview.js';
 import * as D from '../lib/data.js';
 import { e1rmSeries, trackedExercises, weekStreaks, weightVs, yearGrid } from '../lib/insights.js';
 import { entryFor } from '../lib/catalogue.js';
-import { trainedGroups, GROUP16, GROUPS16, groupStats, recoveryOf } from '../lib/muscleGroups.js';
+import { trainedGroups, GROUP16, GROUPS16, groupsOfTarget, groupStats, recoveryOf } from '../lib/muscleGroups.js';
+import { CARDIO_GUIDE_MIN, cardioMinutes, sessionLoads, WORKED_LOAD } from '../lib/sessionLoad.js';
+import { readiness, recoveryExtraDays, TREND_DAYS, watchTrends } from '../lib/activity.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
@@ -129,15 +131,25 @@ function Muscles({ data, today }) {
   // The 16 groups (BeFit item 17), read from every set logged: an
   // exercise's main muscles count in full, its helpers by half.
   const groupsOf = useGroupsOf(data);
-  const stats = useMemo(() => groupStats(data, groupsOf, today), [data, groupsOf, today]);
   const { catalogue } = useCatalogue();
+  // Intervals, home workouts, cardio and padel count as light sets (sessionLoad.js).
+  const stats = useMemo(() => {
+    const T = activePlan(data, content);
+    const entryOf = catalogue ? (name) => entryFor(name, T, catalogue.byId) : undefined;
+    const loadsOf = (w) => sessionLoads(w, T, entryOf).map((l) => ({ groups: groupsOfTarget(l.target), sets: l.sets }));
+    return groupStats(data, groupsOf, today, 7, loadsOf, WORKED_LOAD);
+  }, [data, groupsOf, today, catalogue]);
+  // A short night or a raised resting heart rate (watch, when worn) keeps
+  // muscles recovering a day longer.
+  const ready = data.settings?.health?.enabled ? readiness(data.health_daily, today) : null;
+  const extra = recoveryExtraDays(ready);
   const vol = useMemo(() => {
     const T = activePlan(data, content);
     return muscleVolume(data, T, today, catalogue ? (name) => entryFor(name, T, catalogue.byId) : undefined);
   }, [data, today, catalogue]);
   const GROUPS = GROUPS16.map((g) => g.key);
   const last = Object.fromEntries(GROUPS.map((g) => [g, stats[g].last]));
-  const status = Object.fromEntries(GROUPS.map((g) => [g, groupStatus(recoveryOf(last[g], today), last[g])]));
+  const status = Object.fromEntries(GROUPS.map((g) => [g, groupStatus(recoveryOf(last[g], today, extra), last[g])]));
   const fill = Object.fromEntries(GROUPS.map((g) => [g, mode === 'volume' ? BAND_FILL[vol.groups[g].band]
     : mode === 'recovery' ? STATUS_FILL[status[g]] : status[g] === 'untrained' || status[g] === 'none' ? STATUS_FILL.untrained : null]));
   const pick = (g) => setGroup(group === g ? null : g);
@@ -153,11 +165,12 @@ function Muscles({ data, today }) {
         <p className="muted small" style={{ textAlign: 'center', margin: '8px 0 0' }}>{t(`stats.cap.${mode}`)}</p>
       </section>
 
-      {mode === 'volume' ? <><MuscleWeeks vol={vol} group={group} onPick={pick} />{group ? <section className="card"><GroupExercises data={data} group={group} groupsOf={groupsOf} /></section> : null}<WeeklySets data={data} today={today} /></> : null}
+      {mode === 'volume' ? <><MuscleWeeks vol={vol} group={group} onPick={pick} /><CardioWeek data={data} today={today} />{group ? <section className="card"><GroupExercises data={data} group={group} groupsOf={groupsOf} /></section> : null}<WeeklySets data={data} today={today} /></> : null}
 
       {mode === 'recovery' ? (
         <section className="card">
           <h2 className="section-title" style={{ margin: '0 0 8px' }}>{t('stats.recoveryTitle')}</h2>
+          {extra ? <p className="small" style={{ margin: '0 0 8px' }}><Icon name="moon" className="icon inline" /> {t('stats.recoveryLonger', { why: ready.reasons.join(' and ') })}</p> : null}
           <div className="list inset">
             {GROUPS.map((g) => {
               const ago = daysSince(last[g], today);
@@ -192,6 +205,26 @@ function Muscles({ data, today }) {
         </section>
       ) : null}
     </>
+  );
+}
+
+/** Cardio and sport minutes this week (cardio, padel, intervals) against
+ * the 150-minute guide. They also count on the map as light sets. */
+function CardioWeek({ data, today }) {
+  const from = weekStart(today, data);
+  const mins = cardioMinutes(data.workouts, from, today);
+  const last = cardioMinutes(data.workouts, addDays(from, -7), addDays(from, -1));
+  if (!mins && !last) return null;
+  return (
+    <section className="card">
+      <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('cardio.title')}</h2><span className="muted small" style={{ whiteSpace: 'nowrap' }}>{t('stats.thisWeek')}</span></div>
+      <div className="row between" style={{ alignItems: 'baseline', marginTop: 6 }}>
+        <span className="macro-value" style={{ fontSize: 'calc(var(--fs-t1) * var(--ts))' }}>{t('cardio.min', { n: mins })}</span>
+        <span className="muted small">{t('cardio.guide', { n: CARDIO_GUIDE_MIN })}</span>
+      </div>
+      <div className="progress" style={{ marginTop: 8 }} role="img" aria-label={t('cardio.aria', { n: mins, guide: CARDIO_GUIDE_MIN })}><span style={{ transform: `scaleX(${Math.min(1, mins / CARDIO_GUIDE_MIN)})` }} /></div>
+      <p className="muted small" style={{ margin: '6px 0 0' }}>{t('cardio.note', { last })}</p>
+    </section>
   );
 }
 
@@ -534,6 +567,31 @@ function WeeklyAverages({ data, today }) {
   );
 }
 
+/** Steps, sleep and resting heart rate from the watch (Health Connect),
+ * only on days it sent them, so a watch worn now and then is fine. */
+function WatchTrends({ data, today }) {
+  if (!data.settings?.health?.enabled) return null;
+  const tr = watchTrends(data.health_daily, today);
+  const rows = [
+    ['steps', tr.steps, t('watch.steps'), 'steps', (v) => formatNumber(Math.round(v))],
+    ['sleep', tr.sleep, t('watch.sleep'), 'h', (v) => v.toFixed(1)],
+    ['rhr', tr.rhr, t('watch.rhr'), 'bpm', (v) => String(Math.round(v))],
+  ].filter((r) => r[1]);
+  if (!rows.length) return null;
+  return (
+    <section className="card">
+      <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('watch.title')}</h2><span className="muted small">{t('watch.window', { n: TREND_DAYS })}</span></div>
+      {rows.map(([k, s, label, unit, fmt]) => (
+        <div key={k} style={{ marginTop: 12 }}>
+          <div className="row between"><strong className="small">{label}</strong><span className="muted small">{t('watch.avg', { v: fmt(s.avg), unit, n: s.points.length })}</span></div>
+          <LineChart points={s.points} unit={unit} label={label} summary={t('watch.days', { n: s.points.length })} />
+        </div>
+      ))}
+      <p className="muted small" style={{ margin: '8px 0 0' }}>{t('watch.note')}</p>
+    </section>
+  );
+}
+
 function Body({ data, update, today }) {
   const latest = D.latestWeight(data);
   const [form, setForm] = useState({ weight: latest ? String(latest.weight_kg) : '' });
@@ -585,6 +643,7 @@ function Body({ data, update, today }) {
       </section>
       <WeeklyAverages data={data} today={today} />
       <BurnCard data={data} today={today} />
+      <WatchTrends data={data} today={today} />
       <div className="list">
         <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
       </div>

@@ -91,4 +91,14 @@ EXERCISE_TARGETS = {
     "Superman Row": (["middle back", "lower back"], ["rear delts"], "back_thickness"),
     "Reverse Snow Angel": (["rear delts", "middle back"], ["traps", "lower back"], None),
     "Side Plank": (["obliques"], ["abdominals", "glutes"], None),
+    # ── Interval moves (content/interval_program.py) ─────────────────────
+    "Jump Squat": (["quadriceps", "glutes"], ["calves", "hamstrings"], None),
+    "Mountain Climbers": (["abdominals"], ["front delts", "quadriceps", "hip flexors"], None),
+    "Star Jump": (["quadriceps", "calves"], ["glutes", "side delts"], None),
+    "Split Jump": (["quadriceps", "glutes"], ["hamstrings", "calves"], None),
+    "Butt Kicks": (["hamstrings"], ["calves", "quadriceps"], None),
+    "Tuck Jump": (["quadriceps"], ["glutes", "calves", "abdominals"], None),
+    "Jump Rope": (["calves"], ["quadriceps", "forearms"], None),
+    "Battle Ropes": (["front delts"], ["forearms", "abdominals", "biceps"], None),
+    "Kettlebell Swing": (["glutes", "hamstrings"], ["lower back", "forearms"], None),
 }

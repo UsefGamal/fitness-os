@@ -7,6 +7,7 @@ import { isWorkSet } from './data.js';
 import { weekStart } from './dates.js';
 import { MUSCLE, MUSCLES, targetFor } from './muscles.js';
 import { effectiveDay } from './planEdit.js';
+import { sessionLoads } from './sessionLoad.js';
 import { weekView } from './schedule.js';
 
 export const GUIDE = { low: 10, high: 20 };
@@ -20,7 +21,7 @@ function add(out, target, sets) {
 }
 
 /** Sets done this week (Sunday to `today`): { muscles: {key: sets}, unknown }.
- * Warm-up sets don't count. `entryOf(name)` finds a catalogue entry for an
+ * Warm-up sets don't count; sessions without sets add light sets (sessionLoad.js). `entryOf(name)` finds a catalogue entry for an
  * exercise without a hand-checked target (optional).
  * @param {import('../types').Data} data
  * @param {any} training
@@ -40,6 +41,8 @@ export function doneThisWeek(data, training, today, entryOf = () => null) {
       if (target) add(muscles, target, 1);
       else unknown += 1;
     }
+    // Interval rounds, a ticked home workout, cardio and padel (light sets).
+    for (const l of sessionLoads(w, training, entryOf)) add(muscles, l.target, l.sets);
   }
   return { muscles, unknown };
 }

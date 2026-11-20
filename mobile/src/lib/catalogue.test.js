@@ -36,6 +36,7 @@ test('our exercises find their photos through the curated mapping, then by name'
 test('every plan exercise with a mapping points at a real name in our content', () => {
   const ours = new Set(content.training.exercise_library.map((x) => x[1]));
   JSON.stringify(content.training, (k, v) => { if (k === 'name' && typeof v === 'string') ours.add(v); return v; });
+  for (const m of content.training.intervals.moves) ours.add(m); // interval moves
   const stray = Object.keys(content.training.exercise_photos).filter((n) => !ours.has(n));
   assert.deepEqual(stray, []);
 });

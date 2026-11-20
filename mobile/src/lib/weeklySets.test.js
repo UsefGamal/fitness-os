@@ -73,3 +73,16 @@ test('rows list the ~15 muscles in body order, quiet ones only when hit', () => 
   assert.ok(rows.length >= 15);
   assert.ok(muscleRows({ neck: 2 }, {}).some((r) => r.key === 'neck'));
 });
+
+test('padel and interval rounds add light sets to the week', async () => {
+  const { logSession } = await import('./data.js');
+  let d = emptyData(content);
+  d = logSession(d, { date: '2026-11-10', type: 'padel', label: 'Padel', durationMin: 90 });
+  d = logSession(d, { date: '2026-11-10', type: 'cardio', label: 'Tabata', durationMin: 6, intervals: { preset: 'tabata', rounds: 4 },
+    checklist: [{ item_name: 'Push-up', completed: true, reps_achieved: 4 }] });
+  const { muscles, unknown } = doneThisWeek(d, activePlan(d, content), TODAY);
+  assert.equal(muscles.quadriceps, 3);
+  assert.equal(muscles.chest, 2);
+  assert.equal(muscles.forearms, 1.5);
+  assert.equal(unknown, 0);
+});
