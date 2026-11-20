@@ -13,6 +13,7 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { availableParallelism } from 'node:os';
 
 import { chromium } from 'playwright';
 
@@ -24,10 +25,7 @@ import { addExercise, createSession } from '../src/lib/myRoutine.js';
 const require = createRequire(import.meta.url);
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const HERE = new URL('.', import.meta.url);
-// P14-02: each APK has its own counts. FITNESS_OS_FLAVOR=friends checks the
-// build the friends install, against e2e/baseline-friends.json.
-const FLAVOR = process.env.FITNESS_OS_FLAVOR === 'friends' ? 'friends' : 'yusuf';
-const BASELINE = new URL(FLAVOR === 'friends' ? './baseline-friends.json' : './baseline.json', HERE);
+const BASELINE = new URL('./baseline.json', HERE);
 // TEST-1 part B: today's data shape (saved foods, water goal, safety, a
 // week of meals), built from the v1 fixture through the real upgrade.
 const FIXTURE = harnessPerson();
@@ -85,7 +83,7 @@ const toFullMeals = async (page) => {
 
 /** Start today's session on /workout (or the first one on a rest day). */
 const startSession = async (p) => {
-  // A rest day (the friends plan on this Friday) asks for a session first.
+  // A rest day (the starting plan rests on this Friday) asks for a session first.
   if (!(await p.getByRole('button', { name: /^Start / }).count())) await p.locator('.list').last().locator('a, button').first().click();
   await p.waitForTimeout(500);
   const start = p.getByRole('button', { name: /^Start / }).first();
@@ -144,9 +142,9 @@ export const STATES = [
   },
   { name: 'empty week on Plan', route: '/plan', data: restWeek },
   // BACK-1: the last workout 11 days ago; and the session time long gone
-  // (the friends plan rests on Fridays, so a session is put on it).
+  // (the starting plan rests on Fridays, so a session is put on it).
   { name: 'welcome back on Home', route: '/', data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date <= '2026-10-26') }), check: (p) => p.getByText(en['back.title']).waitFor() },
-  { name: 'still time today on Home', route: '/', now: AFTERNOON, data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-06'), session_moves: FLAVOR === 'friends' ? [{ from: null, to: '2026-11-06', key: 'full_a' }] : [] }), check: (p) => p.getByText(en['still.title']).first().waitFor() },
+  { name: 'still time today on Home', route: '/', now: AFTERNOON, data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-06'), session_moves: [{ from: null, to: '2026-11-06', key: 'full_a' }] }), check: (p) => p.getByText(en['still.title']).first().waitFor() },
   // WRAP-1: Sunday, the week that ended on Saturday (trained Friday, so
   // it isn't a welcome back).
   { name: 'wrap-up card on Home', route: '/', now: SUNDAY, data: trainedFriday, check: (p) => p.getByRole('button', { name: new RegExp(en['wrap.open']) }).waitFor() },
@@ -278,7 +276,7 @@ async function measure(page, errors, key, shot, floor) {
   }
   if (shot) {
     mkdirSync(new URL('./out/', HERE), { recursive: true });
-    await page.screenshot({ path: new URL(`./out/${FLAVOR}-${shot}.png`, HERE).pathname, fullPage: true });
+    await page.screenshot({ path: new URL(`./out/${shot}.png`, HERE).pathname, fullPage: true });
   }
   return {
     axe: axe.reduce((n, v) => n + v.nodes, 0),
@@ -289,19 +287,40 @@ async function measure(page, errors, key, shot, floor) {
   };
 }
 
+/** Run jobs a few at a time; results come back in job order. */
+async function pool(jobs, size) {
+  const out = new Array(jobs.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const i = next;
+      next += 1;
+      out[i] = await jobs[i]();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(size, jobs.length) }, worker));
+  return out;
+}
+
+// Screens run in parallel browser contexts (CI: 4 at a time on a 4-core
+// runner). Each context has its own fixed clock and storage, so the counts
+// don't depend on the order. E2E_WORKERS=1 runs one at a time.
+const WORKERS = Math.max(1, Number(process.env.E2E_WORKERS) || Math.min(4, availableParallelism()));
+
 export async function run({ shots = false } = {}) {
   const server = await serve();
   const browser = await chromium.launch();
-  const report = {};
-  try {
-    // E2E_STATES_ONLY=1 skips the routes, for working on the states.
-    for (const dir of process.env.E2E_STATES_ONLY ? [] : DIRS) {
-      const raw = structuredClone(FIXTURE);
-      raw.profile = { ...(raw.profile || {}), locale: dir === 'rtl' ? 'ar' : 'en' };
-      // The fixture person has answered the safety check with no limits
-      // (SAFE-1), so the screens under test are the app, not the check.
-      raw.safety = SCREENED;
-      for (const width of WIDTHS) {
+  const jobs = [];
+  // E2E_STATES_ONLY=1 skips the routes, for working on the states.
+  for (const dir of process.env.E2E_STATES_ONLY ? [] : DIRS) {
+    for (const width of WIDTHS) {
+      jobs.push(async () => {
+        const rows = {};
+        const raw = structuredClone(FIXTURE);
+        raw.profile = { ...(raw.profile || {}), locale: dir === 'rtl' ? 'ar' : 'en' };
+        // The fixture person has answered the safety check with no limits
+        // (SAFE-1), so the screens under test are the app, not the check.
+        raw.safety = SCREENED;
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
         await ctx.clock.setFixedTime(NOW);
         await ctx.addInitScript(([k, d]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, d); } catch { /* fresh */ } }, [KEY, JSON.stringify(raw)]);
@@ -315,13 +334,16 @@ export async function run({ shots = false } = {}) {
           // the direction itself, so the layout is tested both ways now.
           if (dir === 'rtl') await page.evaluate(() => { document.documentElement.dir = 'rtl'; document.documentElement.lang = 'ar'; });
           const key = `${route} ${width} ${dir}`;
-          report[key] = await measure(page, errors, key, shots && `${route.replace(/\W+/g, '_') || 'home'}-${width}-${dir}`);
+          rows[key] = await measure(page, errors, key, shots && `${route.replace(/\W+/g, '_') || 'home'}-${width}-${dir}`);
         }
         await ctx.close();
-      }
+        return rows;
+      });
     }
-    for (const state of STATES) {
-      for (const width of STATE_WIDTHS) {
+  }
+  for (const state of STATES) {
+    for (const width of STATE_WIDTHS) {
+      jobs.push(async () => {
         const raw = structuredClone(FIXTURE);
         const data = state.data ? state.data(raw) : raw;
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
@@ -352,15 +374,18 @@ export async function run({ shots = false } = {}) {
           // A state that can't be reached counts as an error, not a crash of the run.
           errors.push(`could not open: ${err.message.split('\n')[0]}`);
         }
-        report[key] = await measure(page, errors, key, shots && `state-${state.name.replace(/\W+/g, '_')}-${width}`, state.floor);
+        const row = await measure(page, errors, key, shots && `state-${state.name.replace(/\W+/g, '_')}-${width}`, state.floor);
         await ctx.close();
-      }
+        return { [key]: row };
+      });
     }
+  }
+  try {
+    return Object.assign({}, ...(await pool(jobs, WORKERS)));
   } finally {
     await browser.close();
     stop(server);
   }
-  return report;
 }
 
 const CHECKS = ['axe', 'taps', 'overflow', 'errors'];

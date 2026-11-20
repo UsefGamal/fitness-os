@@ -7,7 +7,7 @@ import { betterRoutine, CHECKIN_SESSIONS, checkInDue, checkInExercises, finishCh
 import { activeBlock } from './plan.js';
 import { routineById, startRoutine } from './routines.js';
 import { finishSetup, withMainSet } from './setup.js';
-import { content } from './testContent.js';
+import { ulPplContent as content } from './testContent.js';
 
 const START = '2026-09-06';
 const on = (id, extra = {}) => {

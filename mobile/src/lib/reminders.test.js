@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as D from './data.js';
 import { setEvening } from './evening.js';
 import { plannedReminders } from './reminders.js';
-import { content } from './testContent.js';
+import { ulPplContent as content } from './testContent.js';
 
 test('workout reminder 30 min before the session on training days only, plus meal times', async () => {
   const { defaultTimes } = await import('./times.js');

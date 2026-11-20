@@ -1,35 +1,36 @@
-# The gym program. Yusuf's build uses his Upper / Lower / Push / Pull / Leg plan,
-# on a fixed weekday schedule (Sunday-start week, 7 AM sessions), the way
-# openGym plans a routine per weekday. The plan itself lives in
-# content/trainer_plan.json, transcribed from the trainer's PDF: exercises,
-# warm-ups with their weight ramps, RIR targets ("Pre*"), paired sets, rest,
-# tempo, notes and form-video links. JSON so the phone app (phase 3) can read
-# the very same file. Exercise names must match content/gym_exercises.py.
+# The gym program. Every install starts on the general full-body plan in
+# content/starter_plan.json, on a fixed weekday schedule (Sunday-start week,
+# 7 AM sessions), the way openGym plans a routine per weekday. Other plans,
+# including the Upper / Lower / Push / Pull / Leg plan in
+# content/trainer_plan.json, are ready-made routines (content/routines.py).
+# Plan files hold exercises, warm-ups with their weight ramps, RIR targets
+# ("Pre*"), paired sets, rest, tempo, notes and form-video links. JSON so the
+# phone app can read the very same file. Exercise names must match
+# content/gym_exercises.py.
 
 import json
-import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
 
-# Which plan a build carries (E4-S2). Yusuf's plan came from his trainer's
-# PDF and stays in his build only; the friends build (FITNESS_OS_FLAVOR=
-# friends) gets the general content/starter_plan.json instead.
-FLAVOR = os.environ.get("FITNESS_OS_FLAVOR", "yusuf")
-PLAN_FILES = {"yusuf": "trainer_plan.json", "friends": "starter_plan.json"}
-if FLAVOR not in PLAN_FILES:
-    raise ValueError(f"Unknown FITNESS_OS_FLAVOR {FLAVOR!r}; use one of {sorted(PLAN_FILES)}")
-_PLAN_PATH = Path(__file__).with_name(PLAN_FILES[FLAVOR])
-TRAINER_PLAN: dict = json.loads(_PLAN_PATH.read_text(encoding="utf-8"))
-TRAINER_PLAN.setdefault("id", "ul-ppl")
 
-SESSION_TIME: str = TRAINER_PLAN["session_time"]
-TEMPO: str = TRAINER_PLAN["tempo"]
-TEMPO_NOTE: str = TRAINER_PLAN["tempo_note"]
-GLOSSARY: dict = TRAINER_PLAN["glossary"]
+def load_plan(file_name: str) -> dict:
+    """A plan file next to this one (trainer_plan.json shape)."""
+    return json.loads(Path(__file__).with_name(file_name).read_text(encoding="utf-8"))
 
-SESSION_LABELS = TRAINER_PLAN.get("labels") or {"upper": "Upper", "lower": "Lower", "push": "Push", "pull": "Pull", "leg": "Leg"}
-SESSION_FOCUS = TRAINER_PLAN.get("focus") or {
+
+# One app for everyone (Nov 2026): no build-specific plan any more. The
+# exported key stays "trainer_plan" so the app and saved data don't change.
+DEFAULT_PLAN: dict = load_plan("starter_plan.json")
+
+SESSION_TIME: str = DEFAULT_PLAN["session_time"]
+TEMPO: str = DEFAULT_PLAN["tempo"]
+TEMPO_NOTE: str = DEFAULT_PLAN["tempo_note"]
+GLOSSARY: dict = DEFAULT_PLAN["glossary"]
+
+# Labels and focus for plan files that have none (trainer_plan.json).
+SESSION_LABELS = {"upper": "Upper", "lower": "Lower", "push": "Push", "pull": "Pull", "leg": "Leg"}
+SESSION_FOCUS = {
     "upper": "Incline press, lat pulldown, lateral raises, arms",
     "lower": "Leg press, quads and hamstrings, glutes, calves, core",
     "push": "Shoulders, incline press, chest, triceps",
@@ -62,7 +63,7 @@ def _warmup_lines(session: dict) -> list[str]:
 
 
 def _build_day(key: str, plan: dict | None = None) -> dict:
-    plan = plan or TRAINER_PLAN
+    plan = plan or DEFAULT_PLAN
     session = plan["sessions"][key]
     exercises = []
     warmup_items = []
@@ -98,9 +99,9 @@ def build_program(plan: dict) -> list[dict]:
     return [_build_day(key, plan) for key in (plan.get("labels") or SESSION_LABELS)]
 
 
-PROGRAM = build_program(TRAINER_PLAN)
+PROGRAM = build_program(DEFAULT_PLAN)
 _PROGRAM_BY_KEY = {day["key"]: day for day in PROGRAM}
-_SCHEDULE_BY_WEEKDAY = {entry["day"]: entry["session"] for entry in TRAINER_PLAN["schedule"]}
+_SCHEDULE_BY_WEEKDAY = {entry["day"]: entry["session"] for entry in DEFAULT_PLAN["schedule"]}
 
 PROGRESSION_NOTE = (
     "Work in the rep range at the Pre* target: stop with that many reps left "
@@ -142,7 +143,7 @@ def week_view(day: date) -> list[dict]:
                 "date": d,
                 "short": WEEKDAY_NAMES[d.weekday()][:3].title(),
                 "key": key,
-                "label": "Rest" if key == "rest" else SESSION_LABELS[key],
+                "label": "Rest" if key == "rest" else _PROGRAM_BY_KEY[key]["label"],
                 "is_today": d == day,
             }
         )

@@ -312,11 +312,11 @@
   "activity_level": "very_active",
   "goal_date": "2027-01-24",
   "out": {
-   "kcal": 1864,
+   "kcal": 2148,
    "protein": 154,
-   "carbs": 172,
+   "carbs": 244,
    "fat": 62,
-   "fiber": 26,
+   "fiber": 30,
    "mode": "lose",
    "reasons": [
     "capped"
@@ -374,11 +374,11 @@
   "activity_level": "sedentary",
   "goal_date": "2027-03-21",
   "out": {
-   "kcal": 1844,
+   "kcal": 2133,
    "protein": 228,
-   "carbs": 28,
+   "carbs": 100,
    "fat": 91,
-   "fiber": 26,
+   "fiber": 30,
    "mode": "lose",
    "reasons": [
     "capped"

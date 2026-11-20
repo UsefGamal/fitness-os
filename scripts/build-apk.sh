@@ -26,22 +26,13 @@
 #   keytool -genkeypair -v -keystore fitness-os.jks -alias fitnessos \
 #     -keyalg RSA -keysize 2048 -validity 10000
 #
-# FITNESS_OS_FLAVOR picks which APK (P14-02): "yusuf" (the default, his own
-# plan) or "friends" (the starter plan, no trace of his). Both use the same
-# app ID and key; the friends file is named fitness-os-<mode>-friends.apk.
+# There is one app for everyone (Nov 2026): no build flavors.
 #
 # APK_VERSION_CODE (an integer that must go up each build) and
 # APK_VERSION_NAME are optional; CI sets them from the run number.
 set -euo pipefail
 
 mode="${1:-debug}"
-flavor="${FITNESS_OS_FLAVOR:-yusuf}"
-case "$flavor" in
-  yusuf) suffix="" ;;
-  friends) suffix="-friends" ;;
-  *) echo "FITNESS_OS_FLAVOR must be yusuf or friends, not $flavor" >&2; exit 2 ;;
-esac
-export FITNESS_OS_FLAVOR="$flavor"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 app="$root/mobile"
 out="$root/dist"
@@ -66,8 +57,7 @@ esac
 
 cd "$app"
 npm ci --no-audit --no-fund
-# The unit tests are written against Yusuf's content, whichever APK this is.
-FITNESS_OS_FLAVOR=yusuf npm test
+npm test
 npm run build:mobile
 
 cd android
@@ -75,5 +65,5 @@ chmod +x gradlew
 ./gradlew --no-daemon "$task"
 
 mkdir -p "$out"
-cp "$built" "$out/fitness-os-$mode$suffix.apk"
-echo "Built $out/fitness-os-$mode$suffix.apk ($flavor)"
+cp "$built" "$out/fitness-os-$mode.apk"
+echo "Built $out/fitness-os-$mode.apk"

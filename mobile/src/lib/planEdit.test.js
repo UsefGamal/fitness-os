@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import * as P from './planEdit.js';
 import { emptyData } from './data.js';
-import { content } from './testContent.js';
+import { ulPplContent as content } from './testContent.js';
 
 const T = content.training;
 const fresh = () => emptyData(content);

@@ -251,8 +251,7 @@ async function weighIn(page) {
 async function ateElse(page) {
   await setUp(page);
   await tab(page, 'Meals').click();
-  // The friends build opens Meals on the simple view; the meal plan is
-  // one tap away.
+  // Meals opens on the simple view; the meal plan is one tap away.
   const toPlan = btn(page, en['mealsSimple.toPlan']);
   await page.getByRole('heading', { name: 'Meals', exact: true }).waitFor();
   if (await toPlan.count()) await toPlan.click();

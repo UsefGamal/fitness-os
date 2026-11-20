@@ -27,6 +27,12 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR cancels that PR's older build. Pushes to main and tags
+# each run in full (a release is never cancelled).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   apk:
     if: ${{ !startsWith(github.ref, 'refs/tags/v') && !inputs.update_test_tag }}
@@ -104,19 +110,6 @@ jobs:
 
       - name: Check debug APK installs beside the real app
         run: scripts/check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug
-
-      # P14-02: the friends APK is built and checked on every PR too, so a
-      # change that leaks Yusuf's plan into it fails here, not at release.
-      - name: Build friends debug APK
-        env:
-          MEAL_PHOTOS_SKIP: "1"
-          FITNESS_OS_FLAVOR: friends
-          APK_VERSION_CODE: ${{ github.run_number }}
-          APK_VERSION_NAME: 0.4.${{ github.run_number }}
-        run: scripts/build-apk.sh debug
-
-      - name: Friends debug APK has no trace of Yusuf's plan
-        run: python scripts/check_friends_build.py --apk dist/fitness-os-debug-friends.apk
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -210,10 +203,7 @@ jobs:
       - name: Build unsigned release APKs
         env:
           MEAL_PHOTOS_SKIP: "1"
-        run: |
-          # P14-02: one tag, two APKs: Yusuf's and the friends one.
-          FITNESS_OS_FLAVOR=yusuf scripts/build-apk.sh unsigned
-          FITNESS_OS_FLAVOR=friends scripts/build-apk.sh unsigned
+        run: scripts/build-apk.sh unsigned
 
       - name: Sign the release APKs
         env:
@@ -226,9 +216,7 @@ jobs:
             echo "::error::A release needs the FITNESS_OS_KEYSTORE_BASE64 and FITNESS_OS_KEYSTORE_PASSWORD secrets (see mobile/README.md, Releases)."
             exit 1
           fi
-          scripts/sign-apk.sh \
-            dist/fitness-os-unsigned.apk dist/fitness-os-release.apk \
-            dist/fitness-os-unsigned-friends.apk dist/fitness-os-release-friends.apk
+          scripts/sign-apk.sh dist/fitness-os-unsigned.apk dist/fitness-os-release.apk
           rm -f dist/fitness-os-unsigned*.apk
 
       - name: Check release ID, version and signing key
@@ -240,10 +228,8 @@ jobs:
             exit 1
           fi
           scripts/check-apk.sh dist/fitness-os-release.apk com.usefgamal.fitnessos "$CERT_SHA256" "$APK_VERSION_CODE"
-          scripts/check-apk.sh dist/fitness-os-release-friends.apk com.usefgamal.fitnessos "$CERT_SHA256" "$APK_VERSION_CODE"
-          python scripts/check_friends_build.py --apk dist/fitness-os-release-friends.apk
-          mv dist/fitness-os-release.apk "dist/fitness-os-${APK_VERSION_NAME}-yusuf.apk"
-          mv dist/fitness-os-release-friends.apk "dist/fitness-os-${APK_VERSION_NAME}-friends.apk"
+          # One app for everyone (Nov 2026): one APK per version.
+          mv dist/fitness-os-release.apk "dist/fitness-os-${APK_VERSION_NAME}.apk"
 
       # P14-08: the notes list each APK's SHA-256, the certificate's and the
       # signing code About shows, so a friend can check what they installed.

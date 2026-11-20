@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { moveSession, moveTargets, nextSessionAfter, programDayFor, restSeconds, sessionKeyOn, tileLabel, undoMove, weekView } from './schedule.js';
-import { content } from './testContent.js';
+import { ulPplContent as content } from './testContent.js';
 
 const T = content.training;
 const WEEK = [

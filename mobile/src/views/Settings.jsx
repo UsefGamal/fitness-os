@@ -42,6 +42,7 @@ import ReminderCheck from '../components/ReminderCheck.jsx';
 import { t, t as tr } from '../lib/i18n.js';
 import { reduceMotion, setReduceMotion, setTextSize, setTheme, TEXT_SIZES, textSize, themeChoice, THEMES } from '../lib/theme.js';
 import { APP } from '../lib/version.js';
+import { activePlan } from '../lib/plan.js';
 import { notesUpTo } from '../lib/whatsNew.js';
 import { WHATS_NEW } from '../lib/whatsNewNotes.js';
 import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
@@ -484,10 +485,10 @@ export default function Settings() {
       </div>
       <div className="section-label">{t('set.groupUpdates')}</div>
       <div className="list">
-        <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t(`about.flavor.${APP.flavor}`)} · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
+        <div className="list-row"><div className="grow"><div>Version</div><div className="meta">{APP.version} ({APP.build}) · {t('about.data', { schema: data.schemaVersion })}</div></div></div>
         <a className="list-row" href={safeOutside(RELEASES_URL)} target="_blank" rel="noreferrer"><Icon name="upload" /><div className="grow"><div>{t('about.update')}</div><div className="meta">{t('about.updateNote')} {t('about.updateHave', { version: APP.version })}</div></div><Icon name="chev" className="icon chev" /></a>
         {notesUpTo(APP.version, WHATS_NEW).length ? <button type="button" className="list-row" onClick={() => setNews(true)}><Icon name="star" /><div className="grow"><div>{t('whatsNew.title')}</div><div className="meta">{t('whatsNew.note')}</div></div><Icon name="chev" className="icon chev" /></button> : null}
-        <div className="list-row"><div className="grow">Plan</div><span className="meta">{content.training.trainer_plan.name}</span></div>
+        <div className="list-row"><div className="grow">Plan</div><span className="meta">{activePlan(data, content).trainer_plan.name}</span></div>
         <div className="list-row"><div className="grow"><div>{t('about.signing')}</div><div className="meta">{t('about.signingNote')} {t('about.signingSame')}</div></div><span className="meta" style={{ fontFamily: 'ui-monospace, monospace' }}>{signing || '-'}</span></div>
         <div className="list-row"><div className="grow"><div>{t('about.check')}</div><div className="meta">{t('about.checkNote')}</div><div className="meta" data-testid="data-check" aria-label={t('about.checkAria', { line: checkLine(data) })} style={{ fontFamily: 'ui-monospace, monospace', marginTop: 4 }}>{checkLine(data).split(' · ').map((part, i) => <span key={i}>{i ? ' · ' : ''}<span style={{ whiteSpace: 'nowrap' }}>{part}</span></span>)}</div></div></div>
       </div>

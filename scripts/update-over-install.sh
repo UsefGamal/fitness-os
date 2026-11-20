@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# P14-17 + PROOF-1: on each tag, for both APKs (Yusuf's and the friends
-# one), install the previous release on an Android emulator, open it, then
-# install this release over it (adb install -r) and open it again.
+# P14-17 + PROOF-1: on each tag, install the previous release on an Android
+# emulator, open it, then install this release over it (adb install -r) and
+# open it again. Since Nov 2026 a release has one APK for everyone; a
+# release from before that had two (-yusuf.apk and -friends.apk), and each
+# of those is updated to the one new APK, the way both kinds of phone will.
 #
 # Fails if the update is refused (a key or version mistake that would make
 # friends uninstall and lose their data), if Android treats it as a fresh
@@ -37,12 +39,19 @@ if [ -z "$PREV" ]; then
 fi
 echo "Updating $PREV -> $TAG"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-FLAVORS="${UPDATE_FLAVORS:-yusuf friends}"
-for f in $FLAVORS; do
-  mkdir -p "$WORK/old-$f" "$WORK/new-$f"
-  gh release download "$PREV" --pattern "*-$f.apk" --dir "$WORK/old-$f" || true
-  gh release download "$TAG" --pattern "*-$f.apk" --dir "$WORK/new-$f" || true
-done
+mkdir -p "$WORK/old-all" "$WORK/new-all"
+gh release download "$PREV" --pattern "*.apk" --dir "$WORK/old-all" || true
+gh release download "$TAG" --pattern "*.apk" --dir "$WORK/new-all" || true
+# The APK for a kind of phone in a release folder: its own file (an older
+# two-APK release), else the release's one APK.
+apk_for() {
+  local dir="$1" f="$2" own
+  own=$(ls "$dir"/*-"$f".apk 2>/dev/null | head -n 1 || true)
+  if [ -n "$own" ]; then echo "$own"; return; fi
+  ls "$dir"/*.apk 2>/dev/null | grep -v -e '-yusuf\.apk$' -e '-friends\.apk$' | head -n 1 || true
+}
+if ls "$WORK/old-all"/*-friends.apk >/dev/null 2>&1; then DEFAULT_FLAVORS="yusuf friends"; else DEFAULT_FLAVORS="app"; fi
+FLAVORS="${UPDATE_FLAVORS:-$DEFAULT_FLAVORS}"
 
 SDK="${ANDROID_HOME:?ANDROID_HOME is not set}"
 SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
@@ -143,8 +152,8 @@ field() { "$ADB" shell dumpsys package "$PKG" | grep -m1 "$1" | sed "s/.*$1=\([^
 FAILED=""
 TESTED=""
 for f in $FLAVORS; do
-  OLD_APK=$(ls "$WORK/old-$f"/*.apk 2>/dev/null | head -n 1 || true)
-  NEW_APK=$(ls "$WORK/new-$f"/*.apk 2>/dev/null | head -n 1 || true)
+  OLD_APK=$(apk_for "$WORK/old-all" "$f")
+  NEW_APK=$(apk_for "$WORK/new-all" "$f")
   if [ -z "$NEW_APK" ]; then
     echo "::error::$TAG has no $f APK."
     FAILED="$FAILED $f"

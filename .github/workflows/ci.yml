@@ -10,7 +10,35 @@ on:
 permissions:
   contents: read
 
+# A new push to a PR cancels that PR's older run; pushes to main each run
+# in full.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Does this PR touch what the phone checks look at? A PR that only changes
+  # notes, docs, Python tests or the native Android code skips them (the
+  # Android APK workflow builds those). Pushes to main always run them.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.diff.outputs.app }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then echo "app=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git fetch --no-tags --depth=1 origin "$BASE"
+          git diff --name-only "$BASE" HEAD | tee "$RUNNER_TEMP/changed.txt"
+          python3 scripts/ci_changes.py < "$RUNNER_TEMP/changed.txt" >> "$GITHUB_OUTPUT"
+
   # The phone app's logic: every lib test with the coverage gate, run in
   # UTC and in Cairo so date maths can't pass by luck of the runner's zone.
   js:
@@ -59,8 +87,11 @@ jobs:
 
   # Every screen at 360/390/412 px, left-to-right and right-to-left:
   # accessibility (axe, contrast), 44px taps, sideways scroll, page errors.
-  # Counts may only go down (mobile/e2e/baseline.json), E6-S8.
-  phone:
+  # Counts may only go down (mobile/e2e/baseline.json), E6-S8. The harness
+  # checks 4 screens at a time.
+  screens:
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
     runs-on: ubuntu-latest
     env:
       TZ: Africa/Cairo
@@ -82,43 +113,22 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
-      - run: npx playwright install --with-deps chromium
+      # The browser is kept between runs (about 150 MB, keyed on the
+      # Playwright version); only its system libraries install each time.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('mobile/package-lock.json') }}
+
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Phone harness
         timeout-minutes: 15
-        run: npm run e2e -- --shots
-
-      # P14-17: the friends APK's screens have their own baseline.
-      - name: Phone harness, friends build
-        timeout-minutes: 15
-        env:
-          FITNESS_OS_FLAVOR: friends
-        run: npm run e2e -- --shots
-
-      # P14-17: setup states, 3 years of data at 6x slower CPU, midnight,
-      # and the file mirror against a fake file system.
-      - name: Device tests
-        timeout-minutes: 10
-        run: npm run e2e:device
-
-      # TEST-1: the app tapped through like a person would (setup, a
-      # workout, a reload mid-workout, weigh-in, another food, export and
-      # restore, the safety check), on both builds.
-      - name: Journeys
-        timeout-minutes: 10
-        run: npm run e2e:journeys
-
-      - name: Journeys, friends build
-        timeout-minutes: 10
-        env:
-          FITNESS_OS_FLAVOR: friends
-        run: npm run e2e:journeys
-
-      # P14-02: and the build the friends install (its own baseline).
-      - name: Phone harness, friends build
-        timeout-minutes: 15
-        env:
-          FITNESS_OS_FLAVOR: friends
         run: npm run e2e -- --shots
 
       - name: Keep the screenshots
@@ -128,6 +138,58 @@ jobs:
           name: phone-screens
           path: mobile/e2e/out/
           retention-days: 7
+
+  # Beside the screens, at the same time.
+  device:
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      TZ: Africa/Cairo
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - run: npm ci --no-audit --no-fund
+
+      # The browser is kept between runs (about 150 MB, keyed on the
+      # Playwright version); only its system libraries install each time.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('mobile/package-lock.json') }}
+
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # P14-17: setup states, 3 years of data at 6x slower CPU, midnight,
+      # and the file mirror against a fake file system.
+      - name: Device tests
+        timeout-minutes: 10
+        run: npm run e2e:device
+
+      # TEST-1: the app tapped through like a person would (setup, a
+      # workout, a reload mid-workout, weigh-in, another food, export and
+      # restore, the safety check).
+      - name: Journeys
+        timeout-minutes: 10
+        run: npm run e2e:journeys
 
   # content/ and the export scripts.
   python:
@@ -148,6 +210,3 @@ jobs:
 
       - name: Tests (pytest)
         run: pytest
-
-      - name: Friends build has no trainer plan (E4-S2)
-        run: python scripts/check_friends_build.py

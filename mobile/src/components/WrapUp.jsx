@@ -5,7 +5,6 @@ import { checkLine } from '../lib/dataCheck.js';
 import { fromISO, LOCALE } from '../lib/dates.js';
 import { firstName } from '../lib/home.js';
 import { t } from '../lib/i18n.js';
-import { APP } from '../lib/version.js';
 import { identityLine, pictureLines, summaryLine, weekStats, weekText } from '../lib/weekStats.js';
 import { shareImage, shareText } from '../store/share.js';
 import { drawWeekPicture } from '../store/weekPicture.js';
@@ -84,17 +83,15 @@ export function WrapSheet({ data, content, week, onClose }) {
       ) : null}
       <button type="button" className="btn secondary" onClick={sharePicture}><Icon name="upload" /> {t('wrap.share')}</button>
 
-      {APP.flavor === 'friends' ? (
-        <section className="stack" style={{ marginTop: 16 }}>
-          <strong>{t('wrap.sendTitle')}</strong>
-          <label className="field">
-            <span>{t('wrap.feel')}</span>
-            <input type="text" maxLength={200} value={feel} onChange={(e) => setFeel(e.target.value)} />
-          </label>
-          <button type="button" className="btn" onClick={sendWeek}><Icon name="upload" /> {t('wrap.send')}</button>
-          <p className="muted small" style={{ margin: 0 }}>{t('wrap.sendNote')}</p>
-        </section>
-      ) : null}
+      <section className="stack" style={{ marginTop: 16 }}>
+        <strong>{t('wrap.sendTitle')}</strong>
+        <label className="field">
+          <span>{t('wrap.feel')}</span>
+          <input type="text" maxLength={200} value={feel} onChange={(e) => setFeel(e.target.value)} />
+        </label>
+        <button type="button" className="btn" onClick={sendWeek}><Icon name="upload" /> {t('wrap.send')}</button>
+        <p className="muted small" style={{ margin: 0 }}>{t('wrap.sendNote')}</p>
+      </section>
       {msg ? <p className="muted small" role="status">{msg}</p> : null}
     </Sheet>
   );

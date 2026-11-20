@@ -21,7 +21,7 @@ import { effectiveDay } from './planEdit.js';
 import { plannedReminders } from './reminders.js';
 import { defaultTimes } from './times.js';
 import { programDayFor, sessionKeyOn, weekView } from './schedule.js';
-import { content } from './testContent.js';
+import { ulPplContent as content } from './testContent.js';
 import { widgetDays } from './widget.js';
 
 const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
