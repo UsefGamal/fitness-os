@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.22',
+    items: [
+      { icon: 'star', text: 'The intro shows the logo with its real sharp shape, without a thick outline around it.' },
+    ],
+  },
+  {
     version: '1.1.21',
     items: [
       { icon: 'star', text: 'A new, sharper Tafra logo on the app icon, the launch screen, the intro and notifications.' },
