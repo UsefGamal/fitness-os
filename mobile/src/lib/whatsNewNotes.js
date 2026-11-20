@@ -5,7 +5,7 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.26',
+    version: '1.1.27',
     items: [
       { icon: 'check', text: 'Swiping between pages no longer buzzes. Taps on the tab bar still do.' },
     ],
