@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.18',
+    items: [
+      { icon: 'calendar', text: 'The last setup screen shows your coming week, day by day, so you see the plan before you start.' },
+    ],
+  },
+  {
     version: '1.1.17',
     items: [
       { icon: 'bulb', text: 'The full-screen rest timer shows a short tip for the break, like setting up the next set.' },
