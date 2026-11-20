@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.10',
+    items: [
+      { icon: 'barbell', text: 'Stats > Strength opens on your last 4 weeks against the 4 before: lifts up, held or down, and the biggest movers.' },
+      { icon: 'check', text: 'After a workout, each lift shows up, held or down against the last time you did that session.' },
+      { icon: 'trophy', text: 'The full records list is still there, one tap away under All records.' },
+    ],
+  },
+  {
     version: '1.1.9',
     items: [
       { icon: 'trend', text: 'The weight card shows your pace as a range measured from your weigh-ins, and when you would reach your goal at that pace.' },
