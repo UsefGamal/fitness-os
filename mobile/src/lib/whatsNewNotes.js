@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.17',
+    items: [
+      { icon: 'person', text: 'The first-time setup and the guided tour use the same text sizes as the rest of the app.' },
+    ],
+  },
+  {
     version: '1.1.15',
     items: [
       { icon: 'dumbbell', text: 'Pregnant? Moves on your back or belly, crunches and planks are swapped for safer ones, and Plan says what changed.' },
