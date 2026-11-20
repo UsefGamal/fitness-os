@@ -1,8 +1,8 @@
 {
-  "total": 191,
+  "total": 190,
   "files": {
     "src/views/Catalogue.jsx": 5,
-    "src/views/CatalogueDetail.jsx": 7,
+    "src/views/CatalogueDetail.jsx": 6,
     "src/views/CheckIn.jsx": 0,
     "src/views/ExerciseDetail.jsx": 9,
     "src/views/FitnessTest.jsx": 0,
@@ -48,6 +48,7 @@
     "src/components/Fanfare.jsx": 0,
     "src/components/FirstWeekCard.jsx": 0,
     "src/components/GoalReachedCard.jsx": 0,
+    "src/components/GuidedTour.jsx": 0,
     "src/components/HelpPage.jsx": 0,
     "src/components/Icon.jsx": 0,
     "src/components/InstallGuide.jsx": 0,
@@ -74,6 +75,8 @@
     "src/components/ReportSheet.jsx": 0,
     "src/components/RestTimer.jsx": 4,
     "src/components/RollNumber.jsx": 0,
+    "src/components/RulerPicker.jsx": 0,
+    "src/components/SafetyChanges.jsx": 0,
     "src/components/SafetyQuestions.jsx": 0,
     "src/components/SaveBar.jsx": 0,
     "src/components/Sheet.jsx": 1,
@@ -88,6 +91,7 @@
     "src/components/WeightCard.jsx": 0,
     "src/components/WeightChart.jsx": 0,
     "src/components/WhatsNewSheet.jsx": 0,
+    "src/components/WheelPicker.jsx": 0,
     "src/components/WorkoutCard.jsx": 0,
     "src/components/WrapUp.jsx": 0,
     "src/components/YearHeatmap.jsx": 0

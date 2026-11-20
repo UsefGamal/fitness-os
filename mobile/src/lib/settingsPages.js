@@ -61,7 +61,7 @@ export const SETTINGS_INDEX = [
   { label: 'set.barPlates', to: '/settings/training', words: 'bar plates barbell warm-up' },
   { label: 'week.startsOn', to: '/settings/times', words: 'week start sunday monday' },
   { label: 'set.sessionTimes', to: '/settings/times', words: 'morning evening session time workout' },
-  { label: 'set.reminders', to: '/settings/times', words: 'reminders notifications alerts' },
+  { label: 'set.reminders', to: '/settings/times', words: 'reminders notifications alerts each day per day different time' },
   { label: 'set.mealTimes', to: '/settings/times', words: 'meal times breakfast lunch dinner' },
   { label: 'settings.quests', to: '/quests', words: 'quests badges points' },
   { label: 'ramadan.title', to: '/settings/times', words: 'ramadan fasting suhoor iftar' },
