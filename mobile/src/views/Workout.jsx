@@ -7,6 +7,7 @@ import SwipeRow from '../components/SwipeRow.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import EquipmentSheet from '../components/EquipmentPicker.jsx';
 import Icon from '../components/Icon.jsx';
+import LeapMark from '../components/LeapMark.jsx';
 import Toast from '../components/Toast.jsx';
 import { entryFor, groupOf } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
@@ -408,7 +409,7 @@ export default function Workout() {
             ) : null}
           </section>
         ) : null}
-        <button type="button" className="btn" onClick={start}><Icon name="play" /> Start {day.label}</button>
+        <button type="button" className="btn hero" onClick={start}><Icon name="play" /> Start {day.label}</button>
         <div className="card" style={{ marginTop: 12 }}>
           <div className="row between"><strong>Warm up first</strong><Link to={`/follow?src=warmup:${day.key}`} className="small" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 44 }}><Icon name="play" /> Follow along</Link></div>
           <div className="stack small muted" style={{ marginTop: 8 }}>{day.warmup.map((l) => <div key={l}>{l}</div>)}</div>
@@ -560,7 +561,7 @@ export default function Workout() {
 
   return (
     <div className="page">
-      {toast ? <Toast hidden onDismiss={() => setToast('')}><span className="pr">PR</span> {toast}</Toast> : null}
+      {toast ? <Toast hidden onDismiss={() => setToast('')}><LeapMark size={18} /> <span className="pr">PR</span> {toast}</Toast> : null}
       {undo && !toast ? (
         <Toast className="undo-toast" role="status" ms={UNDO_MS} onDismiss={() => setUndo(null)}>
           {undo.label}

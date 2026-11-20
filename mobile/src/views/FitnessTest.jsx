@@ -256,7 +256,7 @@ function TestTimer({ timer, onStop }) {
 
   return (
     <div className="row between" style={{ alignItems: 'center' }}>
-      <span className="macro-value" style={{ fontSize: 'calc(32px * var(--ts))', fontVariantNumeric: 'tabular-nums' }} aria-live="polite">{at?.done ? t('ftest.timerDone') : clock(shown)}</span>
+      <span className="macro-value" style={{ fontSize: 'calc(var(--fs-display) * var(--ts))', fontVariantNumeric: 'tabular-nums' }} aria-live="polite">{at?.done ? t('ftest.timerDone') : clock(shown)}</span>
       {button}
     </div>
   );

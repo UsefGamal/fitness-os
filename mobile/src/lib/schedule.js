@@ -35,6 +35,11 @@ export function programDayFor(iso, training, moves = []) {
   return null;
 }
 
+/** The first session after `iso` (LF-9: the finish screen says what's next). */
+export function nextSessionAfter(iso, training, moves = []) {
+  return programDayFor(addDays(iso, 1), training, moves);
+}
+
 /** The 7 days of the week holding `iso`; `data` sets the week start. */
 export function weekView(iso, training, moves = [], data = null) {
   const start = weekStart(iso, data);

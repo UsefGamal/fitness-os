@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { moveSession, moveTargets, programDayFor, restSeconds, sessionKeyOn, tileLabel, undoMove, weekView } from './schedule.js';
+import { moveSession, moveTargets, nextSessionAfter, programDayFor, restSeconds, sessionKeyOn, tileLabel, undoMove, weekView } from './schedule.js';
 import { content } from './testContent.js';
 
 const T = content.training;
@@ -35,6 +35,13 @@ test('a rest day points at the next session', () => {
   const sat = programDayFor('2026-11-07', T);
   assert.equal(sat.label, 'Upper');
   assert.equal(sat.onDate, '2026-11-08');
+});
+
+test('the next session after a day skips that day and any rest days', () => {
+  const next = nextSessionAfter('2026-11-03', T);
+  assert.equal(next.label, 'Push');
+  assert.equal(next.onDate, '2026-11-04');
+  assert.notEqual(nextSessionAfter('2026-11-04', T).onDate, '2026-11-04');
 });
 
 test('week view starts on Sunday and marks today', () => {

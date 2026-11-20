@@ -84,7 +84,7 @@ export default function Profile() {
       <section className="card">
         <div className="muted small">Daily target{preview.source === 'plan' ? ' (the plan\'s default until your profile is filled in and you log a weigh-in)' : ''}</div>
         <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 8px' }}>
-          <span style={{ fontSize: 'calc(30px * var(--ts))', fontWeight: 700 }}>{preview.kcal}</span><span className="muted">kcal</span>
+          <span className="hero-num">{preview.kcal}</span><span className="muted">kcal</span>
         </div>
         <div className="muted small">Protein {preview.protein} g · carbs {preview.carbs} g · fat {preview.fat} g · fiber {preview.fiber} g</div>
         {preview.gated?.length ? <div className="small safety-note">{preview.gated.map((g) => t(`safety.gate.${g}`)).join(' ')}</div> : null}

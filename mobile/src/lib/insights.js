@@ -202,6 +202,20 @@ export function strengthMove(data, today, days = 28) {
   return best;
 }
 
+/** Weight now against about four weeks ago (LF-11): compare with yourself,
+ * never with others. The older weigh-in is the latest one at least `days`
+ * back, and no more than a fortnight older than that; else null.
+ * @returns {{ kg: number, from: number, now: number, date: string } | null} */
+export function weightVs(data, today, days = 28) {
+  const logs = (data.body_logs || []).filter((b) => b.weight_kg > 0 && b.log_date <= today);
+  if (logs.length < 2) return null;
+  const now = logs[logs.length - 1];
+  const cut = addDays(today, -days);
+  const then = [...logs].reverse().find((b) => b.log_date <= cut);
+  if (!then || daysBetween(then.log_date, cut) > 14) return null;
+  return { kg: Math.round((now.weight_kg - then.weight_kg) * 10) / 10, from: then.weight_kg, now: now.weight_kg, date: then.log_date };
+}
+
 /** Total kg lifted (weight x reps) across every work set.
  * @param {import('../types').Data} data */
 export function totalVolume(data) {
