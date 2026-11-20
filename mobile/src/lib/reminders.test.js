@@ -109,3 +109,19 @@ test('reminders become notifications on the channel, with the route to open', as
   assert.deepEqual(out, [{ id: 7, title: 'Upper', body: 'At 7:00', channelId: 'reminders', extra: { route: '/workout' }, schedule: { at, allowWhileIdle: true } }]);
   assert.deepEqual(toNotifications([], 'reminders'), []);
 });
+
+test('BeFit 7: a day with its own time, a day turned off, and days set while the time varies', async () => {
+  const { defaultTimes } = await import('./times.js');
+  const now = new Date(2026, 10, 3, 5, 0); // Tue 3 Nov
+  const base = defaultTimes(content);
+  // Wednesday 4 Nov (Push) at 18:30, Thursday 5 Nov (Pull) off.
+  const r = plannedReminders('2026-11-03', content, now, [], {}, { ...base, day_times: { wednesday: '18:30', thursday: 'off' } }).filter((x) => x.id < 2000);
+  const wed = r.find((x) => x.at.getDate() === 4);
+  assert.equal(wed.title, 'Push at 18:30');
+  assert.equal(wed.at.getHours(), 18);
+  assert.ok(!r.some((x) => x.at.getDate() === 5));
+  assert.ok(r.some((x) => x.at.getDate() === 6 && x.title.endsWith('07:00')));
+  // "It varies": only days given their own time are reminded.
+  const v = plannedReminders('2026-11-03', content, now, [], {}, { ...base, session_varies: true, day_times: { wednesday: '18:30' } }).filter((x) => x.id < 2000);
+  assert.deepEqual(v.map((x) => x.at.getDate()), [4, 11]);
+});

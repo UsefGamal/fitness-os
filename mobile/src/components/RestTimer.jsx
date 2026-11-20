@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { clock, COUNTDOWN_BEEPS } from '../lib/training.js';
 import { restEnding } from '../lib/motion.js';
+import { restTip } from '../lib/restTips.js';
 import { feedback } from '../store/feedback.js';
 import { useTimer } from '../store/useTimer.js';
 import Icon from './Icon.jsx';
@@ -24,6 +25,9 @@ export default function RestTimer({ compact = false }) {
   const { endsAt, total, label, pausedLeft, shadeBlocked, allowShade, add, pause, resume, skip, stop, start } = useTimer();
   const [now, setNow] = useState(Date.now());
   const [full, setFull] = useState(false);
+  // One tip per rest; a new rest (or a new length) moves on (BeFit item 4).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const tip = useMemo(() => restTip(Math.floor(Date.now() / 1000)), [label, total]);
   const beeped = useRef(null);
   const ringRef = useRef(null);
   const barRef = useRef(null);
@@ -125,6 +129,7 @@ export default function RestTimer({ compact = false }) {
           <text x="140" y="160" textAnchor="middle" className="ring-t">{done ? 'Go' : clock(left)}</text>
         </svg>
         <div className="big-next">Next: {label}</div>
+        {done ? null : <p className="timer-tip"><Icon name="bulb" /><span>{t(tip)}</span></p>}
         {controls}
         {shadeHint}
         <div className="timer-presets" role="group" aria-label={t('aria.newRest')}>

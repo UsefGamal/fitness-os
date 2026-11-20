@@ -33,7 +33,30 @@ export function timesOf(data, content) {
     // "It varies" (WEEK-1): no set time, so no timed session reminder.
     session_varies: t.session_varies === true,
     meal_times: Object.fromEntries(Object.entries(d.meal_times).map(([s, v]) => [s, ok(t.meal_times?.[s], v)])),
+    // Per-day session times (BeFit item 7): { monday: '18:30' | 'off' }.
+    day_times: Object.fromEntries(Object.entries(t.day_times || {}).filter(([k, v]) => WEEKDAYS.includes(k) && (isTime(v) || v === 'off'))),
   };
+}
+
+export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+/** The session time on one weekday ('monday'), or null for no timed
+ * reminder that day: the day's own time, else the usual time unless the
+ * time varies. 'off' turns that day's reminder off. */
+export function sessionTimeOn(times, weekday) {
+  const own = times?.day_times?.[weekday];
+  if (own === 'off') return null;
+  if (isTime(own)) return own;
+  return times?.session_varies ? null : times?.session_time ?? null;
+}
+
+/** Set one weekday to a time, 'off', or back to the usual time (null). */
+export function setDayTime(data, weekday, value) {
+  const t = data.settings?.times || {};
+  const day = { ...(t.day_times || {}) };
+  if (value == null) delete day[weekday];
+  else day[weekday] = value;
+  return setTimes(data, { day_times: day });
 }
 
 /** The session time to show, or null when it varies. */

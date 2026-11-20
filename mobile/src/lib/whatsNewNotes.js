@@ -5,9 +5,17 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.17',
+    version: '1.1.18',
     items: [
       { icon: 'person', text: 'The first-time setup and the guided tour use the same text sizes as the rest of the app.' },
+    ],
+  },
+  {
+    version: '1.1.17',
+    items: [
+      { icon: 'bulb', text: 'The full-screen rest timer shows a short tip for the break, like setting up the next set.' },
+      { icon: 'book', text: 'Exercise pages have three tabs: Target, How to and Equipment, with other ways to train the same muscles.' },
+      { icon: 'bell', text: 'Session reminders can have a different time on some days, or be off on a day, in Settings > Reminders.' },
     ],
   },
   {

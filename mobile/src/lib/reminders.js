@@ -2,7 +2,7 @@
 // native scheduling itself is in store/notify.js.
 import { addDays, fromISO, weekdayName } from './dates.js';
 import { eveningOption } from './evening.js';
-import { defaultTimes, shiftTime } from './times.js';
+import { defaultTimes, sessionTimeOn, shiftTime } from './times.js';
 import { slotLabel } from './meals.js';
 import { programDayFor, sessionKeyOn } from './schedule.js';
 import { t } from './i18n.js';
@@ -37,13 +37,14 @@ export function plannedReminders(today, content, now = new Date(), moves = [], e
   const when = (time) => (lead ? t('remind.inMin', { time, min: lead }) : t('remind.now', { time }));
   for (let i = 0; i < DAYS_AHEAD; i += 1) {
     const day = addDays(today, i);
-    if (times.remind_workouts !== false && !times.session_varies && sessionKeyOn(day, training, moves) !== 'rest' && !done.workouts?.has(day)) {
+    const sessionTime = sessionTimeOn(times, weekdayName(day));
+    if (times.remind_workouts !== false && sessionTime && sessionKeyOn(day, training, moves) !== 'rest' && !done.workouts?.has(day)) {
       const session = programDayFor(day, training, moves);
       if (session) out.push({
         id: 1000 + i,
-        at: at(day, times.session_time, lead),
-        title: t('remind.at', { what: session.label, time: times.session_time }),
-        body: `${when(times.session_time)} · ${session.focus}`,
+        at: at(day, sessionTime, lead),
+        title: t('remind.at', { what: session.label, time: sessionTime }),
+        body: `${when(sessionTime)} · ${session.focus}`,
         route: '/workout',
       });
     }
