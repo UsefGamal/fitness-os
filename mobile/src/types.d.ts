@@ -106,6 +106,14 @@ export interface FitnessTest {
   results: Record<string, { value: number; move?: string }>;
 }
 
+/** One watch day; any field may be missing. */
+export interface HealthDay {
+  steps?: number;
+  active_kcal?: number;
+  sleep_min?: number;
+  resting_hr?: number;
+}
+
 export interface Data {
   schemaVersion: number;
   saved_at?: string;
@@ -126,7 +134,8 @@ export interface Data {
   settings: Settings;
   my_foods?: any[];
   progress_photos?: any[];
-  health_daily?: any[];
+  /** Watch days from Health Connect, by date (lib/activity.js). */
+  health_daily?: Record<string, HealthDay>;
   /** Fitness test results, oldest first (lib/fitnessTest.js). */
   fitness_tests?: FitnessTest[];
   /** Keys a newer version wrote that this one doesn't know; kept, never dropped. */

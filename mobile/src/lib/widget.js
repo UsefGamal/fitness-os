@@ -26,6 +26,7 @@ import { planFit } from './portions.js';
 import { programDayFor, weekView } from './schedule.js';
 import { effectiveTimes } from './ramadan.js';
 import { sessionAt } from './times.js';
+import { trendSeries } from './progress.js';
 
 export const WIDGET_DAYS = 7;
 
@@ -65,6 +66,8 @@ export function widgetDays(data, content, today) {
   const showWater = D.moduleOn(data, 'water');
   const protein = macroTargets(data, N, today).protein;
   const fit = planFit(data, N, today);
+  // DV-29: the trend weight and its week's change, today only.
+  const trendLine = D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? weekTrend(data.body_logs, today) : '';
 
   const out = [];
   for (let i = 0; i < WIDGET_DAYS; i += 1) {
@@ -86,6 +89,8 @@ export function widgetDays(data, content, today) {
       : [];
     const eaten = Math.round(meals.filter((m) => m.done).reduce((n, m) => n + m.protein, 0));
     const stats = [];
+    // The trend first: the line is one row and the end gets cut.
+    if (i === 0 && trendLine) stats.push(trendLine);
     if (showMeals) stats.push(`Protein ${eaten}/${protein} g`);
     if (showWater) stats.push(`Water ${(D.waterOn(data, date) / 1000).toFixed(1)}/${D.waterGoal(data) / 1000} L`);
 
@@ -118,6 +123,20 @@ export function widgetDays(data, content, today) {
     );
   }
   return out;
+}
+
+/** "94.6 kg ▼0.4": the trend now and its change over 7 days, or '' with
+ * no trend from a week ago. */
+export function weekTrend(logs, today) {
+  const s = trendSeries(logs || []).filter((p) => p.date <= today);
+  if (!s.length) return '';
+  const now = s[s.length - 1];
+  const weekAgo = addDays(today, -7);
+  const before = [...s].reverse().find((p) => p.date <= weekAgo);
+  const kg = `${now.trend.toFixed(1)} kg`;
+  if (!before) return kg;
+  const d = Math.round((now.trend - before.trend) * 10) / 10;
+  return `${kg} ${d === 0 ? '=' : d > 0 ? '▲' : '▼'}${Math.abs(d).toFixed(1)}`;
 }
 
 /** The meal the widget shows at `hhmm`: the first not eaten whose time hasn't

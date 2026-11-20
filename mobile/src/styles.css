@@ -1191,3 +1191,32 @@ label.field input { transition: box-shadow 300ms ease; }
 .key-bar { width: 10px; height: 12px; border-radius: 3px; background: var(--accent); }
 .key-bar.faint { background: color-mix(in srgb, var(--accent) 40%, transparent); }
 .key-bar.hatch { background: repeating-linear-gradient(45deg, var(--blue) 0 2px, color-mix(in srgb, var(--blue) 25%, transparent) 2px 5px); }
+
+/* Charts step 5 (BI-13): measured burn range with the app's estimate as a tick. */
+.burn-num { font-size: calc(22px * var(--ts)); font-weight: 700; margin: 6px 0 10px; font-variant-numeric: tabular-nums; }
+.burn-bar { position: relative; height: 14px; border-radius: 7px; background: var(--surface2); }
+.burn-range { position: absolute; inset-block: 0; border-radius: 7px; background: var(--orange); opacity: 0.85; }
+.burn-model { position: absolute; inset-block: -4px; width: 3px; margin-inline-start: -1.5px; border-radius: 2px; background: var(--text); }
+
+/* Charts step 5 (DV-13): Meals' last 7 days. Ring = nothing, half = some, full = all; protein is a square so shape tells the rows apart. */
+.mweek-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0; margin: 8px -14px 4px; }
+.mweek-day { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 64px; padding: 6px 0; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; }
+.mweek-day.on { background: var(--surface2); color: var(--text); }
+.mweek-letter { font-size: calc(12px * var(--ts)); font-weight: 600; }
+.mdot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--faint); box-sizing: border-box; }
+.mdot.log-full { background: var(--accent); border-color: var(--accent); }
+.mdot.log-part { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
+.mdot.p-hit, .mdot.p-short, .mdot.p-none { border-radius: 3px; }
+.mdot.p-hit { background: var(--accent); border-color: var(--accent); }
+.mdot.p-short { border-color: var(--accent); }
+.mdot.p-none { border-style: dashed; }
+.ready-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.ready-list li { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 0; border-bottom: var(--hair); }
+.ready-list li:last-child { border-bottom: 0; }
+.ready-list li .icon { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.ready-list li.done .icon { color: var(--accent); }
+.ready-list li.done .grow { color: var(--muted); }
+.ready-list .meta { color: var(--muted); font-size: calc(13px * var(--ts)); }
+.home-week { margin: 4px 0 14px; }
+
+.home-week-line { margin-top: 8px; text-align: center; }

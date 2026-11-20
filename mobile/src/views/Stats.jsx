@@ -6,12 +6,14 @@ import WeighInSheet from '../components/WeighInSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
 import { KeptChart, WeeksChart } from '../components/OverviewCharts.jsx';
+import { Readiness } from '../components/DataHealth.jsx';
 import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
 import { nextDue } from '../lib/fitnessTest.js';
 import { dayMonth, formatDate, formatNumber } from '../lib/dates.js';
-import { currentGoal, profileOf } from '../lib/macros.js';
+import { currentGoal, macroTargets, profileOf } from '../lib/macros.js';
+import { measuredBurn } from '../lib/measuredBurn.js';
 import { sparkLine, strengthMovers } from '../lib/movers.js';
 import { THIN_WEEK, weeklyAverages } from '../lib/bodyStats.js';
 import { AVG_WEEKS, muscleVolume } from '../lib/muscleVolume.js';
@@ -66,6 +68,7 @@ function Summary({ data, today }) {
         <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.sessions7')}</div><div className="macro-value">{sessionsLast7(data.workouts, today)}</div></div>
         <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.streak')}</div><div className="macro-value">{t('stats.weeks', { n: weeks.current })}</div></div>
       </div>
+      <Readiness data={data} today={today} />
       <section className="card">
         <div className="row between"><strong>{t('ov.weeksTitle')}</strong><span className="muted small">{t('ov.weeksSub')}</span></div>
         <WeeksChart weeks={byWeek} />
@@ -463,6 +466,45 @@ function changeText(c) {
   return `${arrow} ${c > 0 ? '+' : ''}${c.toFixed(1)}`;
 }
 
+/** Where the app's estimate sits against the measured range. */
+function modelSide(b) {
+  if (b.diff == null || (b.model >= b.low && b.model <= b.high)) return 'in';
+  return Math.sign(b.diff) === 1 ? 'high' : 'low';
+}
+
+/** Measured maintenance (BI-13): what this month's meals and weight say
+ * you burn, as a range, beside the app's own estimate. Hidden with
+ * calories, under 18, with a safety limit on, and in Ramadan. */
+function BurnCard({ data, today }) {
+  const model = macroTargets(data, content.nutrition, today)?.tdee ?? null;
+  const b = measuredBurn(data, content.nutrition.meal_slots, today, model);
+  if (!b.ready && b.reason === 'hidden') return null;
+  if (!b.ready) {
+    return (
+      <section className="card">
+        <div className="row between"><strong>{t('burn.title')}</strong><span className="muted small">{t('burn.window')}</span></div>
+        <p className="muted small" style={{ margin: '4px 0 0' }}>{t(`burn.need.${b.reason}`, { n: b.need })}</p>
+      </section>
+    );
+  }
+  const lo = Math.min(b.low, b.model ?? b.low) - 150;
+  const hi = Math.max(b.high, b.model ?? b.high) + 150;
+  const pos = (v) => `${((v - lo) / (hi - lo)) * 100}%`;
+  const off = modelSide(b);
+  return (
+    <section className="card">
+      <div className="row between"><strong>{t('burn.title')}</strong><span className="muted small">{t('burn.window')}</span></div>
+      <div className="burn-num">{t('burn.range', { low: formatNumber(b.low), high: formatNumber(b.high) })}</div>
+      <div className="burn-bar" role="img" aria-label={t('burn.aria', { low: b.low, high: b.high, model: b.model ?? '' })}>
+        <span className="burn-range" style={{ insetInlineStart: pos(b.low), width: `calc(${pos(b.high)} - ${pos(b.low)})` }} />
+        {b.model ? <span className="burn-model" style={{ insetInlineStart: pos(b.model) }} /> : null}
+      </div>
+      {b.model ? <p className="small" style={{ margin: '6px 0 0' }}>{t(`burn.model.${off}`, { model: formatNumber(b.model), n: formatNumber(Math.abs(b.diff)) })}</p> : null}
+      <p className="muted small" style={{ margin: '6px 0 0' }}>{t('burn.note', { days: b.days, eaten: formatNumber(b.eaten) })}</p>
+    </section>
+  );
+}
+
 /** Weekly averages (BI-21): one number a week, which a salty day can't
  * swing. Thin weeks are faint; this week says "so far". */
 function WeeklyAverages({ data, today }) {
@@ -541,6 +583,7 @@ function Body({ data, update, today }) {
         <WeightChart logs={data.body_logs} today={today} goalLow={goalLow} goalHigh={goalHigh} />
       </section>
       <WeeklyAverages data={data} today={today} />
+      <BurnCard data={data} today={today} />
       <div className="list">
         <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
       </div>
