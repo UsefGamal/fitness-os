@@ -57,7 +57,7 @@ test('full answers: profile, goal, routine from today, kcal shown', () => {
   assert.equal(activeBlock(d).template_id, 'upper-lower-4');
   assert.equal(activeBlock(d).started_on, TODAY);
   assert.equal(d.safety.hide_kcal, false);
-  assert.deepEqual(d.setup, { done_on: TODAY, routine: 'upper-lower-4', days: 4, needs_body: false, skipped: false });
+  assert.deepEqual(d.setup, { done_on: TODAY, routine: 'upper-lower-4', days: 4, experience: 'some', needs_body: false, skipped: false });
   const m = macroTargets(d, content.nutrition, TODAY);
   assert.equal(m.source, 'profile');
   assert.equal(m.mode, 'recomp');

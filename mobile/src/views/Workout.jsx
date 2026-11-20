@@ -20,10 +20,11 @@ import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/pl
 import { holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
 import { neighbours } from '../lib/progressions.js';
 import { exerciseGroups, GROUP16, GROUPS16 } from '../lib/muscleGroups.js';
-import { targetText } from '../lib/muscles.js';
+import { targetFor, targetText } from '../lib/muscles.js';
 import { swapPicks } from '../lib/similar.js';
-import { roundDone, roundRest } from '../lib/superset.js';
-import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
+import { pairedWithNext, pairWithNext, roundDone, roundRest, unpair } from '../lib/superset.js';
+import { firstForMuscles, warmupPlan } from '../lib/warmup.js';
+import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, pairsFrom, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
 import { buildSession, buildSwaps, ownedKinds } from '../lib/equipment.js';
 import { activeMs, clock, pauseWorkout, restFor, restoreSet, resumeWorkout, targetProgress, trainingSettings } from '../lib/training.js';
 import { programDayFor, sessionKeyOn } from '../lib/schedule.js';
@@ -44,7 +45,7 @@ import { gateOn, safeDay } from '../lib/safety.js';
 import SafetyChanges from '../components/SafetyChanges.jsx';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { useToday } from '../store/today.js';
-import { readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from '../lib/liveStats.js';
+import { plannedSet, readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from '../lib/liveStats.js';
 import { reducedMotion } from '../store/motionFx.js';
 
 // Long enough to notice and reach the button (E6-S2: at least 6 s).
@@ -78,7 +79,7 @@ function elapsed(ms) {
 function nextIndex(day, workout, data, current) {
   const doneOf = (ex) => {
     const e = D.exerciseByName(data, ex.name);
-    return e ? workout.sets.filter((s) => s.exercise_id === e.id).length : 0;
+    return e ? workout.sets.filter((s) => s.exercise_id === e.id && plannedSet(s)).length : 0;
   };
   const ex = day.exercises[current];
   if (ex?.pair) {
@@ -214,6 +215,7 @@ export default function Workout() {
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
   const [swapGroup, setSwapGroup] = useState(null); // one of the 16 groups, or null for the closest matches
   const [typing, setTyping] = useState(null); // the logged set whose kind is being picked
+  const [dropFor, setDropFor] = useState(null); // { name, backKg }: the next set of this exercise is a drop set
   const [showPhoto, setShowPhoto] = useState(false); // the big moving photo, opened from the thumbnail
   const openSwap = () => { setSwapGroup(null); setSheet('swap'); };
   const [noteText, setNoteText] = useState('');
@@ -253,6 +255,9 @@ export default function Workout() {
     for (const n of names.split('\n')) if (n) look(n);
     return look;
   }, [catalogue, names]);
+  // Each exercise's muscles in today's order, to tell the first lift of a
+  // muscle (it gets warm-up sets) from the ones after it.
+  const targets = useMemo(() => names.split('\n').filter(Boolean).map((n) => targetFor(n, content.training, entryOf(n))), [names, entryOf]);
   const ex = day?.exercises[current];
   const exRow = ex ? D.exerciseByName(data, ex.name) : null;
   const entry = ex ? entryOf(ex.name) : null;
@@ -278,7 +283,8 @@ export default function Workout() {
   // today, else the progression target, else last time's first set.
   useEffect(() => {
     if (!active || !ex || !exRow) return;
-    const doneToday = active.sets.some((s) => s.exercise_id === exRow.id);
+    // Warm-ups don't count: after them, the work weight still comes from the plan.
+    const doneToday = active.sets.some((s) => s.exercise_id === exRow.id && plannedSet(s));
     const s = D.suggestSet(data, active.id, exRow.id, targetReps(ex.reps));
     if (!doneToday && target?.kind === 'fresh') {
       // Back after 8+ weeks: no weight from last time; the person picks it.
@@ -436,8 +442,17 @@ export default function Workout() {
   const logSet = (w = weight, r = reps) => {
     if (!exRow || r < 1) return;
     if (noWeight(w)) return;
-    const set = { exercise_id: exRow.id, reps: r, weight_kg: w, ...(timed ? { track: 'time', duration_s: r } : {}) };
-    update((d) => D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w, seconds: timed ? r : null }));
+    // A drop set armed with the Drop set button: logged as a drop, then the
+    // weight goes back to the full sets' load for the next one.
+    const drop = dropFor?.name === ex.name;
+    const set = { exercise_id: exRow.id, reps: r, weight_kg: w, ...(timed ? { track: 'time', duration_s: r } : {}), ...(drop ? { set_type: 'drop' } : {}) };
+    update((d) => {
+      const x = D.addSet(d, active.id, { exerciseId: exRow.id, reps: r, weightKg: w, seconds: timed ? r : null });
+      if (!drop) return x;
+      const wk = x.workouts.find((z) => z.id === active.id);
+      return D.replaceSet(x, active.id, withType(wk.sets[wk.sets.length - 1], 'drop'));
+    });
+    if (drop) { setDropFor(null); setWeight(dropFor.backKg); }
     unlockAudio();
     if (active.paused_at) update((d) => resumeWorkout(d, active.id));
     const after = { ...active, sets: [...active.sets, { ...set, id: -1, set_number: 0 }] };
@@ -446,7 +461,7 @@ export default function Workout() {
     // done, for the longest rest in the pair.
     const done = day.exercises.map((x) => {
       const e = D.exerciseByName(data, x.name);
-      return e ? after.sets.filter((s) => s.exercise_id === e.id).length : 0;
+      return e ? after.sets.filter((s) => s.exercise_id === e.id && plannedSet(s)).length : 0;
     });
     const restOf = (j) => {
       const x = day.exercises[j];
@@ -504,6 +519,36 @@ export default function Workout() {
   };
 
   const tweak = (fn) => update((d) => setTweaks(d, active.id, fn(active.tweaks, planDay.exercises.length)));
+
+  // One tap logs the suggested warm-ups as W sets: no rest timer, and
+  // they never count toward sets, volume or records.
+  const logWarmups = (list) => {
+    if (!exRow || !list.length) return;
+    update((d) => {
+      let x = d;
+      for (const w of list) {
+        x = D.addSet(x, active.id, { exerciseId: exRow.id, reps: w.reps, weightKg: w.kg });
+        const wk = x.workouts.find((z) => z.id === active.id);
+        x = D.replaceSet(x, active.id, withType(wk.sets[wk.sets.length - 1], 'warmup'));
+      }
+      return active.paused_at ? resumeWorkout(x, active.id) : x;
+    });
+    unlockAudio();
+    feedback('set');
+    announce(t('warm.logged'));
+  };
+
+  // Drop set: the next set about 20% lighter, straight away (the rest
+  // timer stops). Tap again to cancel and get the weight back.
+  const toggleDrop = () => {
+    if (!ex) return;
+    if (dropFor?.name === ex.name) { setWeight(dropFor.backKg); setDropFor(null); return; }
+    const step = stepFor(entry, { barbell });
+    const kg = Math.max(0, Math.round((weight * 0.8) / step) * step);
+    if (timer.endsAt) timer.stop();
+    setDropFor({ name: ex.name, backKg: weight });
+    setWeight(+kg.toFixed(2));
+  };
   const swapTo = (alt) => {
     // Catalogue exercises join the Library so their sets can be logged.
     update((d) => setTweaks(
@@ -554,7 +599,7 @@ export default function Workout() {
   };
 
   const totalTarget = day.exercises.reduce((n, x) => n + x.sets, 0);
-  const totalDone = Object.values(doneSets).reduce((n, s) => n + s.length, 0);
+  const totalDone = Object.values(doneSets).reduce((n, s) => n + s.filter(plannedSet).length, 0);
   const short = isShortSession(totalDone, totalTarget);
   const ms = activeMs(active, now);
   const lengthTarget = targetProgress(ms, settings.target_min);
@@ -614,6 +659,8 @@ export default function Workout() {
 
       {day.exercises.map((x, i) => {
         const sets = doneSets[x.name] || [];
+        // Sets that fill the plan's rows: warm-ups and drop sets are extras.
+        const work = sets.filter(plannedSet).length;
         const isCurrent = i === current;
         const restText = x.pair ? t('workout.restAfterRound', { rest: x.rest }) : x.rest ? t('plan.rest', { rest: x.rest }) : null;
         const meta = [`${x.sets} × ${x.reps}`, restText, x.rir ? t('workout.rir', { rir: x.rir }) : null].filter(Boolean).join(' · ');
@@ -621,24 +668,29 @@ export default function Workout() {
         // "1/4 logged · 10 kg" once a set is in, else the plan and last time (B2).
         const lastSet = sets[sets.length - 1];
         const status = sets.length
-          ? (lastSet && setFields(lastSet).track !== 'time' && lastSet.weight_kg ? t('workout.loggedKg', { done: sets.length, all: x.sets, kg: lastSet.weight_kg }) : t('workout.logged', { done: sets.length, all: x.sets }))
+          ? (lastSet && setFields(lastSet).track !== 'time' && lastSet.weight_kg ? t('workout.loggedKg', { done: work, all: x.sets, kg: lastSet.weight_kg }) : t('workout.logged', { done: work, all: x.sets }))
           : upcoming(x);
         if (!isCurrent) {
           return (
-            <button key={`${x.name}-${i}`} type="button" className={`ex-card collapsed${sets.length >= x.sets ? ' finished' : ''}${sets.length ? ' started' : ''}`} onClick={() => setCurrent(i)} aria-expanded={false}>
+            <button key={`${x.name}-${i}`} type="button" className={`ex-card collapsed${work >= x.sets ? ' finished' : ''}${sets.length ? ' started' : ''}`} onClick={() => setCurrent(i)} aria-expanded={false}>
               <div className="ex-line">
                 <Thumb entry={xEntry} />
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div className="ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
                   <div className="small ex-next">{status}</div>
                 </div>
-                {x.sets <= sets.length ? <span className="st-tick on small" aria-hidden="true"><Icon name="check" /></span> : null}
+                {x.sets <= work ? <span className="st-tick on small" aria-hidden="true"><Icon name="check" /></span> : null}
               </div>
             </button>
           );
         }
         // First time a beginner meets this exercise: the how-to is open (starter fortnight).
         const howToEntry = showHowTo(data, x.name) ? xEntry : null;
+        // Warm-ups for the first lift of a muscle today, before any set of it.
+        const warm = !sets.length && !timed && weight > 0 && !noWeight(weight) && firstForMuscles(targets, i)
+          ? warmupPlan({ workKg: weight, barbell, barKg, plates: settings.plates, step: stepFor(entry, { barbell }) })
+          : [];
+        const dropOn = dropFor?.name === x.name;
         const howTo = howToSteps(howToEntry);
         return (
           <div key={`${x.name}-${i}`} className="ex-card current">
@@ -660,8 +712,18 @@ export default function Workout() {
               ) : null}
               {x.note ? <div className="ex-note"><Icon name="info" className="icon" /> {x.note}</div> : null}
               {exerciseNote(data, x.name) ? <div className="ex-note"><Icon name="info" className="icon" /> {t('workout.yourNote', { note: exerciseNote(data, x.name) })}</div> : null}
-              {target && sets.length === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
-              {target?.kind === 'harder' && sets.length === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
+              {target && work === 0 ? <div className={`reason ${target.kind}`}>{target.reason}</div> : null}
+              {target?.kind === 'harder' && work === 0 ? <button type="button" className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={openSwap}>{t('workout.harder')}</button> : null}
+              {warm.length ? (
+                <div className="warm-card" role="group" aria-label={t('warm.title')}>
+                  <div className="grow">
+                    <div><strong>{t('warm.title')}</strong></div>
+                    <div className="warm-sets">{warm.map((w) => `${w.kg}\u00a0kg\u00a0×\u00a0${w.reps}`).join(' · ')}</div>
+                    <div className="muted small">{t('warm.note')}</div>
+                  </div>
+                  <button type="button" className="btn secondary small" aria-label={t('warm.logAria', { n: warm.length, name: x.name })} onClick={() => logWarmups(warm)}>{t('warm.log')}</button>
+                </div>
+              ) : null}
               {/* The set table (B1): one row per set, tap reps or kg to type, the tick logs it. */}
               <div className={`set-table${timed ? ' timed' : ''}`} role="group" aria-label={t('workout.tableAria', { name: x.name })}>
 
@@ -679,13 +741,13 @@ export default function Workout() {
                     return (
                       <SwipeRow key={s.id} onLeft={() => removeSet(s)} onRight={() => logSet(s.weight_kg, s.reps)}>
                         <div className="st-row done">
-                          <button type="button" className={`set-n${type === 'work' ? '' : ` t-${type}`}`} aria-label={t('setType.aria', { shown: TYPE_LETTER[type] || s.set_number, n: s.set_number, type: t(`setType.${type}`) })} onClick={() => setTyping(s)}>
-                            {TYPE_LETTER[type] || s.set_number}
+                          <button type="button" className={`set-n${type === 'work' ? '' : ` t-${type}`}`} aria-label={t('setType.aria', { shown: TYPE_LETTER[type] || r.n || s.set_number, n: r.n || s.set_number, type: t(`setType.${type}`) })} onClick={() => setTyping(s)}>
+                            {TYPE_LETTER[type] || r.n || s.set_number}
                           </button>
                           <span>{isTime ? setLabel(s) : s.reps}</span>
                           {timed ? null : <span>{isTime ? '' : s.weight_kg}</span>}
                           <button type="button" className="st-tick on" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="check" /></button>
-                          <Ghost prev={D.isWorkSet(s) ? prevWork[sets.filter(D.isWorkSet).indexOf(s)] : null} cur={s} />
+                          <Ghost prev={r.n ? prevWork[r.n - 1] : null} cur={s} />
                         </div>
                       </SwipeRow>
                     );
@@ -700,19 +762,21 @@ export default function Workout() {
                         ? <NumBox value={weight} onChange={setWeight} max={500} label={t('workout.editKg', { n: r.n })} />
                         : <span>{weight}</span>}
                       {r.next
-                        ? <button type="button" className="st-tick next" disabled={noWeight(weight)} aria-label={t('workout.logSet', { n: sets.length + 1 })} onClick={() => logSet()}><Icon name="check" /></button>
+                        ? <button type="button" className="st-tick next" disabled={noWeight(weight)} aria-label={t('workout.logSet', { n: r.n })} onClick={() => logSet()}><Icon name="check" /></button>
                         : <span className="st-tick" aria-hidden="true"><Icon name="check" /></span>}
-                      <Ghost prev={prevWork[sets.filter(D.isWorkSet).length + (r.n - sets.length) - 1]} />
+                      <Ghost prev={prevWork[r.n - 1]} />
                     </div>
                   );
                 })}
               </div>
               {barbell && weight > barKg ? <div className="plate-line">{t('workout.perSide', { plates: plateText(platesPerSide(weight, barKg, settings.plates).plates) })}{platesPerSide(weight, barKg, settings.plates).exact ? '' : ` (${t('workout.makes', { kg: platesPerSide(weight, barKg, settings.plates).loaded })})`}</div> : null}
               {noWeight(weight) ? <div className="muted small" style={{ textAlign: 'center' }}>{t('workout.needWeight')}</div> : null}
-              {settings.auto_rest && !noWeight(weight) && sets.length < x.sets ? <div className="muted small" style={{ textAlign: 'center' }}>{t('workout.autoRestTick')}</div> : null}
+              {dropOn ? <div className="small drop-note" role="status">{t('drop.armed', { kg: weight })}</div> : null}
+              {settings.auto_rest && !noWeight(weight) && work < x.sets ? <div className="muted small" style={{ textAlign: 'center' }}>{t('workout.autoRestTick')}</div> : null}
               <div className="tool-row">
                 <button type="button" className="tbtn" aria-label={t('workout.restAria')} onClick={() => { unlockAudio(); timer.start(restFor(ex, settings, { mechanic: entry?.mechanic, override: restOverride[ex.name] }) || settings.rest_compound, ex.name, shadeLines({ setNo: sets.filter(D.isWorkSet).length + 1, setsPlanned: x.sets, weightKg: weight, reps, workout: day.label, done: totalDone, planned: totalTarget, warmup: barbell && !sets.some(D.isWorkSet) ? warmupSets(weight, barKg, settings.plates) : [] })); }}><Icon name="timer" /> {t('workout.rest')}</button>
                 <button type="button" className="tbtn" onClick={() => tweak((tw, n) => addExtraSet(tw, n, x.orig))}><Icon name="plus" /> {t('workout.addSet')}</button>
+                {work > 0 && !timed && weight > 0 ? <button type="button" className={`tbtn${dropOn ? ' on' : ''}`} aria-pressed={dropOn} aria-label={dropOn ? t('drop.cancel') : t('drop.aria')} onClick={toggleDrop}><Icon name="drop" /> {t('drop.button')}</button> : null}
                 <button type="button" className="tbtn" aria-haspopup="dialog" onClick={() => setSheet('exmore')}><span className="more-dots" aria-hidden="true">⋯</span> {t('workout.moreShort')}</button>
               </div>
             </div>
@@ -748,6 +812,12 @@ export default function Workout() {
             <button type="button" className="list-row" disabled={current === day.exercises.length - 1} onClick={() => { tweak((tw, n) => skipToEnd(tw, n, current)); setSheet(null); }}><Icon name="skip" /><div className="grow">{t('workout.skip')}</div></button>
             <button type="button" className="list-row" disabled={current === 0} onClick={() => { tweak((tw, n) => moveBy(tw, n, current, -1)); setCurrent(current - 1); setSheet(null); }}><span className="rot-up"><Icon name="chev" /></span><div className="grow">{t('workout.moveUp')}</div></button>
             <button type="button" className="list-row" disabled={current === day.exercises.length - 1} onClick={() => { tweak((tw, n) => moveBy(tw, n, current, 1)); setCurrent(current + 1); setSheet(null); }}><span className="rot-down"><Icon name="chev" /></span><div className="grow">{t('workout.moveDown')}</div></button>
+            {current < day.exercises.length - 1 && !pairedWithNext(day.exercises, current) ? (
+              <button type="button" className="list-row" onClick={() => { tweak((tw, n) => pairsFrom(tw, n, pairWithNext(day.exercises, current))); setSheet(null); }}><Icon name="link" /><div className="grow"><div>{t('superset.withNext')}</div><div className="meta">{t('superset.todayNote')}</div></div></button>
+            ) : null}
+            {ex.pair ? (
+              <button type="button" className="list-row" onClick={() => { tweak((tw, n) => pairsFrom(tw, n, unpair(day.exercises, current))); setSheet(null); }}><Icon name="link" /><div className="grow"><div>{t('superset.undo')}</div><div className="meta">{t('superset.todayNote')}</div></div></button>
+            ) : null}
             {safeVideo(ex.video) ? <a className="list-row" href={safeVideo(ex.video)} target="_blank" rel="noreferrer"><Icon name="video" /><div className="grow">{t('workout.video')}</div><Icon name="chev" className="icon chev" /></a> : null}
           </div>
           <label className="field" style={{ marginTop: 12 }}>
@@ -774,7 +844,7 @@ export default function Workout() {
               ))}
             </div>
           ) : <div className="card empty">Set a working weight above the empty bar first.</div>}
-          <p className="muted small">Warm-ups aren't logged, so they don't count toward volume or records.</p>
+          <p className="muted small">{t('warm.setsNote')}</p>
         </Sheet>
       ) : null}
       {sheet === 'swap' && ex ? (

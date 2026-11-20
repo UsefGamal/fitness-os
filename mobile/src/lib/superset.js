@@ -25,3 +25,46 @@ export function roundDone(exercises, done, i) {
 export function roundRest(exercises, i, restOf) {
   return Math.max(0, ...groupOf(exercises, i).map((j) => restOf(j) || 0));
 }
+
+// ── Making your own supersets ─────────────────────────────────────────
+// A plan list (or today's workout) links two neighbours with one letter.
+// Both editors (Plan > Edit, My routine) and the workout's More sheet use
+// these, so a pair is stored the same way as the built-in plan's pairs.
+
+export const PAIR_LETTERS = 'ABCDEFGH';
+
+function single(e) {
+  const { pair, ...rest } = e;
+  return rest.type === 'paired' ? { ...rest, type: 'normal' } : rest;
+}
+
+/** `list` with exercise `i` out of its superset. A partner left on its
+ * own is no longer a superset either. Returns `list` when `i` isn't paired. */
+export function unpair(list, i) {
+  const letter = list[i]?.pair?.[0];
+  if (!letter) return list;
+  let out = list.map((e, j) => (j === i ? single(e) : e));
+  if (out.filter((e) => e.pair?.[0] === letter).length === 1) out = out.map((e) => (e.pair?.[0] === letter ? single(e) : e));
+  return out;
+}
+
+/** `list` with exercise `i` and the one after it done as a superset. When
+ * `i` is already in one, the next exercise joins it (a tri-set); the next
+ * one leaves any superset it was in. Returns `list` when there is no next
+ * exercise, they are already together, or all eight letters are taken. */
+export function pairWithNext(list, i) {
+  if (i < 0 || i + 1 >= list.length) return list;
+  const a = list[i]?.pair?.[0];
+  if (a && list[i + 1].pair?.[0] === a) return list;
+  const out = unpair(list, i + 1);
+  const used = new Set(out.map((e) => e.pair?.[0]).filter(Boolean));
+  const letter = out[i].pair?.[0] || [...PAIR_LETTERS].find((l) => !used.has(l));
+  if (!letter) return list;
+  return out.map((e, j) => (j === i || j === i + 1 ? { ...e, pair: letter, type: 'paired' } : e));
+}
+
+/** Is exercise `i` in a superset with the exercise after it? */
+export function pairedWithNext(list, i) {
+  const a = list[i]?.pair?.[0];
+  return Boolean(a) && list[i + 1]?.pair?.[0] === a;
+}

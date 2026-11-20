@@ -4,7 +4,7 @@
 // under Shoulders, lats and middle back under Back), so an exercise's
 // main muscles and helpers, and every set already logged, fold into these
 // groups when they are read: nothing stored changes. Pure helpers.
-import { isWorkSet } from './data.js';
+import { hardSetValue } from './data.js';
 import { addDays, daysBetween } from './dates.js';
 import { MUSCLE, targetFor } from './muscles.js';
 
@@ -128,14 +128,15 @@ export function groupStats(data, groupsOf, today, days = 7) {
     if (w.log_date > today) continue;
     const recent = w.log_date >= from;
     for (const s of w.sets || []) {
-      if (!isWorkSet(s)) continue;
+      const v = hardSetValue(s);
+      if (!v) continue;
       const g = of(s.exercise_id);
       for (const k of g.main) {
         if (!out[k]) continue;
-        if (recent) out[k].sets += 1;
+        if (recent) out[k].sets += v;
         if (!out[k].last || w.log_date > out[k].last) out[k].last = w.log_date;
       }
-      if (recent) for (const k of g.helpers) if (out[k]) out[k].sets += HELPER_SHARE;
+      if (recent) for (const k of g.helpers) if (out[k]) out[k].sets += v * HELPER_SHARE;
     }
   }
   return out;

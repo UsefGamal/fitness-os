@@ -13,6 +13,7 @@ import { dayGroups } from '../lib/insights.js';
 import { isAdvanced, swapOptions } from '../lib/levels.js';
 import { musclesIn } from '../lib/muscles.js';
 import * as M from '../lib/myRoutine.js';
+import { pairedWithNext } from '../lib/superset.js';
 import { activePlan } from '../lib/plan.js';
 import { trainingSettings } from '../lib/training.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -126,7 +127,7 @@ function Editor({ sessionKey }) {
         {session.exercises.map((x, i) => (
           <section key={`${x.name}-${i}`} className="card">
             <div className="row between" style={{ alignItems: 'center' }}>
-              <strong className="grow">{x.name}</strong>
+              <strong className="grow">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</strong>
               <button type="button" className="btn ghost small" style={{ width: 'auto' }} aria-label={t('my.swapAria', { name: x.name })} onClick={() => setSwapping(i)}>{t('my.swap')}</button>
               <button type="button" className="icon-btn" aria-label={t('my.up', { name: x.name })} disabled={i === 0} onClick={() => update((d) => M.moveExercise(d, sessionKey, i, -1))}><span style={{ display: 'inline-flex', transform: 'rotate(90deg)' }}><Icon name="back" /></span></button>
               <button type="button" className="icon-btn" aria-label={t('my.down', { name: x.name })} disabled={i === session.exercises.length - 1} onClick={() => update((d) => M.moveExercise(d, sessionKey, i, 1))}><span style={{ display: 'inline-flex', transform: 'rotate(-90deg)' }}><Icon name="back" /></span></button>
@@ -145,6 +146,11 @@ function Editor({ sessionKey }) {
                 {[...new Set([...M.REST_CHOICES, x.rest_sec])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s < 60 ? t('my.secs', { n: s }) : t('my.mins', { n: s / 60 })}</option>)}
               </select>
             </label>
+            {i < session.exercises.length - 1 ? (
+              pairedWithNext(session.exercises, i)
+                ? <button type="button" className="btn ghost small" style={{ width: 'auto', alignSelf: 'flex-start' }} aria-label={t('superset.undoAria', { name: x.name })} onClick={() => update((d) => M.unpairExercise(d, sessionKey, i))}><Icon name="link" /> {t('superset.undo')}</button>
+                : <button type="button" className="btn ghost small" style={{ width: 'auto', alignSelf: 'flex-start' }} aria-label={t('superset.withNextAria', { name: x.name })} onClick={() => update((d) => M.pairWithNextExercise(d, sessionKey, i))}><Icon name="link" /> {t('superset.withNext')}</button>
+            ) : null}
           </section>
         ))}
       </div>
