@@ -21,6 +21,7 @@ import { firstName, partOfDay, watchTiles } from '../lib/home.js';
 import { mealDayFor, mealStart } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, questsOn } from '../lib/quests.js';
+import { lastTimePreview } from '../lib/lastTime.js';
 import { isChangedOn, moveSession, moveTargets, programDayFor, sessionKeyOn } from '../lib/schedule.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
@@ -180,6 +181,7 @@ export default function Today() {
         ready={readyLevel}
         readyText={readyText}
         starter={starterProgress(data)}
+        last={next && !next.isRestToday ? lastTimePreview(data, next.key, today) : null}
         onChange={() => setPicking(true)}
         onStart={() => navigate('/workout')}
       />
