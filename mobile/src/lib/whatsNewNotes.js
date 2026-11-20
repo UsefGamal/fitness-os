@@ -5,7 +5,7 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.10',
+    version: '1.1.14',
     items: [
       { icon: 'dumbbell', text: 'Pregnant? Moves on your back or belly, crunches and planks are swapped for safer ones, and Plan says what changed.' },
       { icon: 'check', text: 'Breastfeeding is its own safety question now, and a yes adds 400 kcal a day to your target.' },
@@ -14,13 +14,48 @@ export const WHATS_NEW = [
     ],
   },
   {
-    version: '1.1.9',
+    version: '1.1.13',
     items: [
       { icon: 'user', text: 'First-time setup is now one question per screen, like a story: a bar on top, Back on every screen, and big cards to tap.' },
       { icon: 'scale', text: 'Pick your age on a wheel and your height and weight on a ruler, and see your goal drawn as a line with its date.' },
       { icon: 'check', text: 'Men are no longer asked about pregnancy or breastfeeding in the safety check.' },
       { icon: 'bulb', text: 'After setup, a short guided tour lights up each part of Home and the tabs. Play it again from Settings > Help.' },
       { icon: 'info', text: 'Every popup now dims the page behind it, including the new-badge card.' },
+    ],
+  },
+  {
+    version: '1.1.12',
+    items: [
+      { icon: 'calendar', text: 'Home shows your week at a glance: days trained, the plan ahead, and work sets so far.' },
+      { icon: 'chart', text: 'Stats > Body shows what you burn, measured from your own month of meals and weigh-ins, beside the app\'s estimate.' },
+      { icon: 'check', text: 'Meals shows the last 7 days: how much you logged and the days protein hit 90%.' },
+      { icon: 'lock', text: 'Stats lists what unlocks next, and Settings > Data has a data health check.' },
+      { icon: 'trend', text: 'The widget shows your trend weight and its change this week, and watch data is kept for 400 days.' },
+    ],
+  },
+  {
+    version: '1.1.11',
+    items: [
+      { icon: 'chart', text: 'The weight chart shows your trend line over each weigh-in, with kg and dates, 4 weeks to All, and a table view.' },
+      { icon: 'calendar', text: 'Stats > Body adds weekly averages, steadier than any one day.' },
+      { icon: 'user', text: 'Muscles shows hard sets a week over your last 4 weeks against the 10-20 range.' },
+      { icon: 'barbell', text: 'Overview adds training days for 12 weeks and, on a cut, whether your lifts held up.' },
+    ],
+  },
+  {
+    version: '1.1.10',
+    items: [
+      { icon: 'barbell', text: 'Stats > Strength opens on your last 4 weeks against the 4 before: lifts up, held or down, and the biggest movers.' },
+      { icon: 'check', text: 'After a workout, each lift shows up, held or down against the last time you did that session.' },
+      { icon: 'trophy', text: 'The full records list is still there, one tap away under All records.' },
+    ],
+  },
+  {
+    version: '1.1.9',
+    items: [
+      { icon: 'trend', text: 'The weight card shows your pace as a range measured from your weigh-ins, and when you would reach your goal at that pace.' },
+      { icon: 'dumbbell', text: 'Today\'s workout card shows what you lifted last time in that session.' },
+      { icon: 'check', text: 'In a workout, each set shows last time\'s set under it, and once you tick it, how it compares.' },
     ],
   },
   {

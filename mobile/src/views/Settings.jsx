@@ -10,6 +10,7 @@ import InstallGuide from '../components/InstallGuide.jsx';
 import HelpPage from '../components/HelpPage.jsx';
 import PrivacyPage from '../components/PrivacyPage.jsx';
 import AutoBackup from '../components/AutoBackup.jsx';
+import { DataHealth } from '../components/DataHealth.jsx';
 import { dateRange } from '../lib/autoBackup.js';
 import { longDate, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
@@ -290,6 +291,7 @@ export default function Settings() {
         <strong>{t('set.summary', { workouts: n(s.workouts, 'workout'), weighIns: n(s.weighIns, 'weigh-in') })}</strong>
         <div className="meta"><Icon name="lock" /> {t('set.stored')}</div>
       </section>
+      <DataHealth data={data} today={todayISO()} />
       <div className="section-label">{t('set.groupBackup')}</div>
       <div className="list">
         <button type="button" className="list-row" onClick={exportNow}><Icon name="download" /><div className="grow"><div>{t('set.exportBackup')}</div><div className="meta">{lastBackupText(data)}</div></div><Icon name="chev" className="icon chev" /></button>

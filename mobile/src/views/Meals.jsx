@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router';
 import Icon from '../components/Icon.jsx';
 import RecipeSheet from '../components/RecipeSheet.jsx';
 import { MealThumb } from '../components/MealPhoto.jsx';
-import { addDays, formatDate } from '../lib/dates.js';
+import { addDays, formatDate, fromISO, LOCALE } from '../lib/dates.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
 import { macroTargets } from '../lib/macros.js';
@@ -25,6 +25,7 @@ import { mealTickEvent } from '../lib/rewards.js';
 import { feedback } from '../store/feedback.js';
 import { content, useData } from '../store/useData.js';
 import { gateOn, kcalHidden } from '../lib/safety.js';
+import { mealWeek } from '../lib/mealWeek.js';
 import { clearAdjustments } from '../lib/targetCheck.js';
 import { announce, mealTickLine } from '../lib/announce.js';
 import { useToday } from '../store/today.js';
@@ -102,6 +103,37 @@ function Targets() {
       </section>
       <SwitchView to="plan" />
     </div>
+  );
+}
+
+const dayLetter = (iso) => fromISO(iso).toLocaleDateString(LOCALE, { weekday: 'narrow' });
+
+/** The last 7 days (DV-13 + BI-11): how much of each day was logged, and
+ * protein at 90% of the target on logged days. No calorie dots: ticked
+ * meals copy the plan, so they'd be on target by construction. Each day
+ * opens that day. */
+function MealWeek({ data, today, protein, date, onPick }) {
+  const w = mealWeek(data, N.meal_slots, today, protein);
+  return (
+    <section className="card meal-week">
+      <div className="row between"><strong>{t('mweek.title')}</strong><span className="muted small">{t('mweek.logged', { n: w.full })}</span></div>
+      <div className="mweek-grid" role="list">
+        {w.days.map((d) => (
+          <button key={d.date} type="button" role="listitem" className={`mweek-day${d.date === date ? ' on' : ''}`} onClick={() => onPick(d.date)}
+            aria-label={t('mweek.dayAria', { date: formatDate(d.date), logged: t(`mweek.l.${d.logged}`), protein: w.showProtein && d.hit != null ? t(d.hit ? 'mweek.p.hit' : 'mweek.p.short', { g: d.protein }) : '' })}>
+            <span className="mweek-letter" aria-hidden="true">{dayLetter(d.date)}</span>
+            <span className={`mdot log-${d.logged}`} aria-hidden="true" />
+            {w.showProtein ? <span className={`mdot p-${d.hit == null ? 'none' : d.hit ? 'hit' : 'short'}`} aria-hidden="true" /> : null}
+          </button>
+        ))}
+      </div>
+      <div className="chart-key" style={{ marginBottom: 0 }}>
+        <span><i className="mdot log-full" aria-hidden="true" />{t('mweek.keyFull')}</span>
+        <span><i className="mdot log-part" aria-hidden="true" />{t('mweek.keyPart')}</span>
+        {w.showProtein ? <span><i className="mdot p-hit" aria-hidden="true" />{t('mweek.keyProtein')}</span> : null}
+      </div>
+      {w.showProtein && w.proteinDays ? <p className="small" style={{ margin: '6px 0 0' }}>{t('mweek.proteinLine', { hit: w.proteinHit, n: w.proteinDays })}</p> : null}
+    </section>
   );
 }
 
@@ -191,6 +223,7 @@ function MealPlan() {
           {t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
         </div>
       </details>
+      <MealWeek data={data} today={today} protein={target.protein} date={date} onPick={setDate} />
       {target.reverse && !target.reverse.done && !kcalHidden(data) ? <p className="muted small" role="note">{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</p> : null}
       {target.adjust && !kcalHidden(data) ? (
         <div className="row muted small" role="note" style={{ gap: 8, margin: '0 0 12px' }}>
