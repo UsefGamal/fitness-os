@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.20',
+    items: [
+      { icon: 'person', text: 'The first-time setup and the guided tour use the same text sizes as the rest of the app.' },
+      { icon: 'star', text: 'The intro on your very first open ends on the slogan, without a second line under it.' },
+    ],
+  },
+  {
     version: '1.1.19',
     items: [
       { icon: 'dumbbell', text: 'One app for everyone. The Upper / Lower / Push / Pull / Leg plan is a routine anyone can pick; your current plan stays.' },

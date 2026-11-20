@@ -30,13 +30,13 @@ export function isNewOpen(awayMs) {
 }
 
 /**
- * The line under the name: today's session and time, the next session on a
- * rest day, or a welcome before anything is logged.
+ * The line under the slogan: today's session and time, or the next session
+ * on a rest day. Nothing on the first open (the slogan says enough).
  * `next` is schedule.programDayFor(); `doneToday` is true once today's
  * session is finished.
  */
 export function introLine({ next, time, doneToday = false, firstRun = false }) {
-  if (firstRun) return "Let's build your week";
+  if (firstRun) return '';
   if (!next) return '';
   if (next.isRestToday) return `Rest day · next: ${next.label}`;
   if (doneToday) return `${next.label} done today. Nice work`;

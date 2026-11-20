@@ -23,7 +23,7 @@ test('the intro line names today, the next session, or a welcome', () => {
   assert.equal(introLine({ next: push, time: '07:00' }), 'Push today at 07:00');
   assert.equal(introLine({ next: push, time: '07:00', doneToday: true }), 'Push done today. Nice work');
   assert.equal(introLine({ next: { label: 'Pull', isRestToday: true }, time: '07:00' }), 'Rest day · next: Pull');
-  assert.equal(introLine({ next: push, time: '07:00', firstRun: true }), "Let's build your week");
+  assert.equal(introLine({ next: push, time: '07:00', firstRun: true }), '');
   assert.equal(introLine({ next: null, time: '07:00' }), '');
 });
 
