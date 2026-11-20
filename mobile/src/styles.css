@@ -468,7 +468,7 @@ details.more > summary::-webkit-details-marker { display: none; }
 .intro-ring-bg { fill: none; stroke: var(--accent-dim); stroke-width: 6; opacity: 0; animation: intro-fade 0.3s ease-out 0.1s forwards; }
 .intro-ring { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transform: rotate(-90deg); transform-origin: 80px 80px; animation: intro-ring 0.7s cubic-bezier(.3, 1.2, .4, 1) 0.3s forwards; }
 .intro-bolt { transform-box: fill-box; }
-.intro-bolt-line { fill: none; stroke: var(--accent); stroke-width: 0.9; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: intro-draw 0.45s ease-in-out forwards; }
+.intro-bolt-line { fill: none; stroke: var(--accent); stroke-width: 0.9; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: intro-draw 0.45s ease-in-out forwards, intro-line-out 0.2s ease-out 0.75s forwards; }
 .intro-bolt-fill { fill: var(--accent); opacity: 0; transform-origin: 12px 12px; animation: intro-fill 0.5s var(--spring) 0.42s forwards; }
 .intro-text { position: absolute; left: 0; right: 0; top: calc(50% + 100px); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 24px; }
 .intro-name { display: flex; font-size: calc(var(--fs-display) * var(--ts)); font-weight: 800; letter-spacing: -0.03em; }
@@ -477,6 +477,8 @@ details.more > summary::-webkit-details-marker { display: none; }
 .intro-slogan { margin-top: -2px; font-size: calc(var(--fs-foot) * var(--ts)); font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); opacity: 0; animation: intro-up 0.4s ease-out 0.9s forwards; }
 .intro-line { margin-top: 10px; font-size: calc(var(--fs-body) * var(--ts)); color: var(--text); opacity: 0; animation: intro-up 0.4s ease-out 1.15s forwards; }
 @keyframes intro-draw { to { stroke-dashoffset: 0; } }
+/* Once the mark is filled the outline goes, so it never thickens the blades or closes the slit. */
+@keyframes intro-line-out { to { opacity: 0; } }
 @keyframes intro-fill { 0% { opacity: 0; transform: scale(.7); } 100% { opacity: 1; transform: none; } }
 @keyframes intro-glow { 0% { opacity: 0; transform: scale(.4); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: .7; transform: scale(1); } }
 @keyframes intro-ring { to { stroke-dashoffset: 0; } }
@@ -1290,7 +1292,7 @@ label.field input { transition: box-shadow 300ms ease; }
 :dir(rtl) .progress > span, [dir="rtl"] .progress > span { clip-path: polygon(0 0, 100% 0, 100% 100%, 5px 100%); }
 .leap-mark { display: inline-block; vertical-align: -0.2em; flex: none; }
 .leap-fill { fill: var(--accent); }
-.leap-line { fill: none; stroke: var(--accent); stroke-width: 1.2; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: intro-draw 0.5s ease-in-out 0.15s forwards; }
+.leap-line { fill: none; stroke: var(--accent); stroke-width: 1.2; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: intro-draw 0.5s ease-in-out 0.15s forwards, intro-line-out 0.2s ease-out 0.95s forwards; }
 .leap-mark.draw .leap-fill { opacity: 0; animation: leap-fill 0.35s ease-out 0.6s forwards; }
 @keyframes leap-fill { to { opacity: 1; } }
 .goal-card .leap-badge { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--accent-dim); flex: none; }
