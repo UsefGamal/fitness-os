@@ -54,31 +54,15 @@ def _plain(value):
     return value
 
 
-def _trainer_only_names() -> set[str]:
-    """Exercise names that only Yusuf's own plan uses (P14-02). The friends
-    build leaves their photo and muscle entries out, so his plan's exercise
-    list doesn't ship in the friends APK. Names in the library, the starter
-    plan or the ready-made routines are general and stay."""
-    if gym_program.FLAVOR != "friends":
-        return set()
-    root = Path(__file__).resolve().parent.parent / "content"
-    own = json.loads((root / "trainer_plan.json").read_text(encoding="utf-8"))
-    names = {i["name"] for s in own["sessions"].values() for b in s["blocks"] for i in b.get("items", [])}
-    general = {name for _g, name, _k in gym_exercises.SEED_EXERCISES}
-    general |= {i["name"] for s in gym_program.TRAINER_PLAN["sessions"].values() for b in s["blocks"] for i in b.get("items", [])}
-    general |= {e["name"] for r in routines.ROUTINES for d in r["program"] for e in d["exercises"]}
-    return names - general
-
-
 def build_content() -> dict:
-    hide = _trainer_only_names()
     LIB_FOODS, LIB_NAMES, LIB_CATEGORIES = meal_library.item_foods()
     return _plain(
         {
             "format": CONTENT_FORMAT,
             "version": CONTENT_VERSION,
             "training": {
-                "trainer_plan": gym_program.TRAINER_PLAN,
+                # The plan a new install starts on (key name kept from v1).
+                "trainer_plan": gym_program.DEFAULT_PLAN,
                 "program": gym_program.PROGRAM,
                 "routines": routines.ROUTINES,
                 "session_time": gym_program.SESSION_TIME,
@@ -91,23 +75,11 @@ def build_content() -> dict:
                 "cardio_alternatives": cardio_program.ALTERNATIVES,
                 "progressions": progressions.LADDERS,
                 "fitness_test": {"every_days": fitness_test.EVERY_DAYS, "items": fitness_test.ITEMS, "guide": fitness_test.GUIDE},
-                "exercise_photos": {k: v for k, v in exercise_photos.EXERCISE_PHOTOS.items() if k not in hide},
-                # Swaps from or to a trainer-only move go when those moves are hidden.
-                "safety_swaps": {
-                    "areas": safety_swaps.AREAS,
-                    "swaps": {
-                        limit: {
-                            name: [o for o in options if o not in hide]
-                            for name, options in table.items()
-                            if name not in hide
-                        }
-                        for limit, table in safety_swaps.SWAPS.items()
-                    },
-                },
+                "exercise_photos": exercise_photos.EXERCISE_PHOTOS,
+                "safety_swaps": {"areas": safety_swaps.AREAS, "swaps": safety_swaps.SWAPS},
                 "exercise_targets": {
                     name: {"main": main, "helpers": helpers, "angle": angle}
                     for name, (main, helpers, angle) in exercise_targets.EXERCISE_TARGETS.items()
-                    if name not in hide
                 },
             },
             "nutrition": {
@@ -116,17 +88,17 @@ def build_content() -> dict:
                 "meal_slot_windows": meal_plan.MEAL_SLOT_WINDOWS,
                 "pre_workout_note": meal_plan.PRE_WORKOUT_NOTE,
                 "macro_targets": meal_plan.MACRO_TARGETS,
-                # E3-S9: friends open Meals on targets and guidance; Yusuf's
-                # build keeps the full 14-day plan. Either can switch.
-                "meals_default": "targets" if gym_program.FLAVOR == "friends" else "plan",
+                # E3-S9: Meals opens on targets and guidance; the full 14-day
+                # plan is one tap away and the choice is kept.
+                "meals_default": "targets",
                 "simple": {
                     "protein_foods": simple_meals.PROTEIN_FOODS,
                     "plate_guide": simple_meals.PLATE_GUIDE,
                     "meals_per_day": simple_meals.MEALS_PER_DAY,
                 },
-                # Rule A (E3-S13): the 25%-of-TDEE deficit cap is on for the
-                # friends build and off (1) for Yusuf's, who chose it off.
-                "max_deficit_share": 0.25 if gym_program.FLAVOR == "friends" else 1,
+                # Rule A (E3-S13): a deficit is at most 25% of TDEE, for
+                # everyone (Yusuf chose one limit for all, 20 Nov 2026).
+                "max_deficit_share": 0.25,
                 "drink_options": meal_plan.DRINK_OPTIONS,
                 "drinks": food_items.DRINKS,
                 "days": [meal_plan.get_day(n) for n in range(1, MEAL_CYCLE_DAYS + 1)],

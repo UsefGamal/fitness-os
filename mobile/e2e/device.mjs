@@ -109,9 +109,15 @@ async function speed(browser) {
   await ctx.close();
 }
 
+// 2026-11-06 is a Friday, a rest day on the starting plan: put a session on
+// it, the way a person picks one, so the workout screen has a Start button.
+const sessionToday = (d) => ({ ...d, session_moves: [{ from: null, to: '2026-11-06', key: 'full_a' }] });
+
 async function setLog(browser) {
-  const base = bigFixture('2026-11-06', 3);
-  const data = JSON.stringify({ ...base, settings: { ...base.settings, training: { ...base.settings?.training, haptics: 'strong' } } });
+  // Auto rest off: the set alone is measured, and its tick is not replaced
+  // by the rest-start cue (the first move of the plan is not a superset).
+  const base = sessionToday(bigFixture('2026-11-06', 3));
+  const data = JSON.stringify({ ...base, settings: { ...base.settings, training: { ...base.settings?.training, haptics: 'strong', auto_rest: false } } });
   const { ctx, page, errors } = await context(browser, { store: { [KEY]: data } });
   // The browser build buzzes through navigator.vibrate: record the calls.
   await ctx.addInitScript(() => {
@@ -199,7 +205,7 @@ async function wrapUp(browser) {
 }
 
 async function comebackDay(browser) {
-  const base = bigFixture('2026-11-06', 0.3);
+  const base = sessionToday(bigFixture('2026-11-06', 0.3));
   // Today's first exercise, so the last session (20 days ago) has its loads.
   const peek = await context(browser, { store: { [KEY]: JSON.stringify(base) } });
   await peek.page.goto(`${URL0}#/workout`);

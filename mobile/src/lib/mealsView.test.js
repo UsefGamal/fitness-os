@@ -6,12 +6,12 @@ import { emptyData } from './data.js';
 import { mealsView, proteinPerMeal, servingsFor, setMealsView } from './mealsView.js';
 import { content } from './testContent.js';
 
-test("the build decides the first view; the person's choice wins after", () => {
+test("the content decides the first view; the person's choice wins after", () => {
   const d = emptyData(content);
   assert.equal(mealsView(d, { meals_default: 'targets' }), 'targets');
   assert.equal(mealsView(d, { meals_default: 'plan' }), 'plan');
   assert.equal(mealsView(d, {}), 'plan');
-  assert.equal(mealsView(d, content.nutrition), 'plan', "Yusuf's build keeps the full plan");
+  assert.equal(mealsView(d, content.nutrition), 'targets', 'the app opens Meals on targets');
   const chose = setMealsView(d, 'plan');
   assert.equal(mealsView(chose, { meals_default: 'targets' }), 'plan');
   assert.equal(setMealsView(d, 'nope'), d);

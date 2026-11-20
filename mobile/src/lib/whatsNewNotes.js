@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.19',
+    items: [
+      { icon: 'dumbbell', text: 'One app for everyone. The Upper / Lower / Push / Pull / Leg plan is a routine anyone can pick; your current plan stays.' },
+      { icon: 'info', text: 'A calorie deficit is at most a quarter of what you burn a day. If yours was bigger, your target goes up a little.' },
+      { icon: 'upload', text: 'Your weekly wrap-up can be sent to any friend.' },
+    ],
+  },
+  {
     version: '1.1.18',
     items: [
       { icon: 'calendar', text: 'The last setup screen shows your coming week, day by day, so you see the plan before you start.' },
