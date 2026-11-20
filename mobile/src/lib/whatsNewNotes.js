@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.17',
+    items: [
+      { icon: 'bulb', text: 'The full-screen rest timer shows a short tip for the break, like setting up the next set.' },
+      { icon: 'book', text: 'Exercise pages have three tabs: Target, How to and Equipment, with other ways to train the same muscles.' },
+      { icon: 'bell', text: 'Session reminders can have a different time on some days, or be off on a day, in Settings > Reminders.' },
+    ],
+  },
+  {
     version: '1.1.15',
     items: [
       { icon: 'dumbbell', text: 'Pregnant? Moves on your back or belly, crunches and planks are swapped for safer ones, and Plan says what changed.' },

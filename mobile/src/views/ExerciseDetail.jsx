@@ -19,7 +19,7 @@ import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 import { t } from '../lib/i18n.js';
 import { targetFor } from '../lib/muscles.js';
-import { HowTo, labels } from './CatalogueDetail.jsx';
+import { ExerciseTabs, labels } from './CatalogueDetail.jsx';
 
 export default function ExerciseDetail() {
   const { id } = useParams();
@@ -49,7 +49,12 @@ export default function ExerciseDetail() {
           {photo.name.toLowerCase() !== ex.name.toLowerCase() ? <p className="muted small" style={{ margin: '-6px 4px 12px' }}>Photos show {photo.name}, the closest match.</p> : null}
         </>
       ) : null}
-      <section className="card">{target ? <BodyMap primary={target.main} secondary={target.helpers} focus={target.angle} label={t('muscles.mapLabel', { muscles: labels(target.main) })} /> : <BodyMap hit={new Set([ex.muscle_group])} label={t('muscles.mapLabel', { muscles: ex.muscle_group })} />}</section>
+      <ExerciseTabs
+        entry={photo}
+        target={target}
+        map={target ? <BodyMap primary={target.main} secondary={target.helpers} focus={target.angle} label={t('muscles.mapLabel', { muscles: labels(target.main) })} /> : <BodyMap hit={new Set([ex.muscle_group])} label={t('muscles.mapLabel', { muscles: ex.muscle_group })} />}
+        others={<Alternatives key={ex.id} entry={photo} group={ex.muscle_group} catalogue={catalogue} />}
+      />
       <div className="stat-grid">
         <div className="stat"><div className="label">Best set</div><div className="value">{best ? `${best.weight_kg}×${best.reps}` : '–'}</div></div>
         <div className="stat"><div className="label">Est. 1RM</div><div className="value">{best ? Math.round(best.score) : '–'}<span className="unit">kg</span></div></div>
@@ -63,9 +68,7 @@ export default function ExerciseDetail() {
           {video ? <a href={video} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 8 }}><Icon name="video" className="icon" /> Form video</a> : null}
         </div>
       ) : null}
-      {photo ? <HowTo entry={photo} target={target} /> : null}
       <Ladder name={ex.name} ladders={content.training.progressions} exercises={data.exercises} />
-      <Alternatives key={ex.id} entry={photo} group={ex.muscle_group} catalogue={catalogue} />
       <div className="section-label">History</div>
       {history.length ? (
         <div className="list">

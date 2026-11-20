@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { defaultTimes, isTime, setTimes, shiftTime, timesOf } from './times.js';
+import { defaultTimes, isTime, sessionTimeOn, setDayTime, setTimes, shiftTime, timesOf } from './times.js';
 import { content } from './testContent.js';
 
 test('defaults come from the plan and the meal windows', () => {
@@ -32,4 +32,21 @@ test('shifting a time wraps around midnight', () => {
   assert.deepEqual(shiftTime('07:00', -30), { time: '06:30', dayShift: 0 });
   assert.deepEqual(shiftTime('00:10', -30), { time: '23:40', dayShift: -1 });
   assert.deepEqual(shiftTime('23:50', 20), { time: '00:10', dayShift: 1 });
+});
+
+test('per-day session times: own time, off, back to the usual (BeFit 7)', () => {
+  let d = { settings: {} };
+  d = setDayTime(d, 'monday', '18:30');
+  d = setDayTime(d, 'friday', 'off');
+  d = setTimes(d, { day_times: { ...d.settings.times.day_times, nonsense: '10:00', tuesday: '25:00' } });
+  const t = timesOf(d, content);
+  assert.deepEqual(t.day_times, { monday: '18:30', friday: 'off' });
+  assert.equal(sessionTimeOn(t, 'monday'), '18:30');
+  assert.equal(sessionTimeOn(t, 'friday'), null);
+  assert.equal(sessionTimeOn(t, 'sunday'), t.session_time);
+  assert.equal(sessionTimeOn({ ...t, session_varies: true }, 'sunday'), null);
+  assert.equal(sessionTimeOn({ ...t, session_varies: true }, 'monday'), '18:30');
+  d = setDayTime(d, 'monday', null);
+  assert.equal(timesOf(d, content).day_times.monday, undefined);
+  assert.equal(sessionTimeOn(null, 'monday'), null);
 });
