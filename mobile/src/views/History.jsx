@@ -147,7 +147,7 @@ export default function History() {
       ))}
       {w.checklist_items.length ? (
         <section className="card">
-          {w.checklist_items.map((c) => <div key={c.id} className="row small"><Icon name={c.completed ? 'check' : 'x'} /> {c.item_name}{c.reps_achieved ? ` · ${c.reps_achieved} reps` : ''}</div>)}
+          {w.checklist_items.map((c) => <div key={c.id} className="row small"><Icon name={c.completed ? 'check' : 'x'} /> {c.item_name}{c.reps_achieved ? ` · ${c.reps_achieved} ${w.intervals ? 'rounds' : 'reps'}` : ''}</div>)}
         </section>
       ) : null}
       <button type="button" className="btn danger" onClick={() => setConfirming(true)}><Icon name="trash" /> Delete workout</button>

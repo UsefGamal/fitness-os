@@ -3,11 +3,13 @@
 // completed weeks, against the 10-20 guide; this week shows as "so far".
 // A set counts 1 for each of its main groups and 0.5 for helper groups,
 // once per group (a pull-up is one back set, not lats + middle back).
-// Stretches count for nothing.
+// Stretches count for nothing. Sessions without sets (intervals, home,
+// cardio, padel) add light sets through sessionLoad.js.
 // Recovery weeks (any deload session) are left out of the average.
 import { hardSetValue } from './data.js';
 import { addDays, weekStart } from './dates.js';
-import { GROUPS16, trainedGroups } from './muscleGroups.js';
+import { GROUPS16, groupsOfTarget, trainedGroups } from './muscleGroups.js';
+import { sessionLoads } from './sessionLoad.js';
 import { band, GUIDE, HELPER_SHARE } from './weeklySets.js';
 
 export const AVG_WEEKS = 4;
@@ -57,6 +59,12 @@ export function muscleVolume(data, training, today, entryOf = () => null, n = AV
       if (!g) { if (wk !== thisWeek) unknown += 1; continue; }
       for (const k of g.main) bucket[k] = (bucket[k] || 0) + v;
       for (const k of g.helpers) bucket[k] = (bucket[k] || 0) + v * HELPER_SHARE;
+    }
+    // Interval rounds, a ticked home workout, cardio and padel (light sets).
+    for (const l of sessionLoads(w, training, entryOf)) {
+      const g = groupsOfTarget(l.target);
+      for (const k of g.main) bucket[k] = (bucket[k] || 0) + l.sets;
+      for (const k of g.helpers) bucket[k] = (bucket[k] || 0) + l.sets * HELPER_SHARE;
     }
   }
   // Only weeks since the person started count, so a new user isn't

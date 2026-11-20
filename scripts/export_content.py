@@ -26,6 +26,7 @@ from content import (  # noqa: E402
     gym_program,
     home_program,
     ingredients,
+    interval_program,
     maintenance_plan,
     meal_library,
     meal_plan,
@@ -73,6 +74,14 @@ def build_content() -> dict:
                 "recovery_checklist": recovery_program.RECOVERY_CHECKLIST,
                 "cardio_session": cardio_program.CARDIO_SESSION,
                 "cardio_alternatives": cardio_program.ALTERNATIVES,
+                "intervals": {
+                    "moves": interval_program.INTERVAL_MOVES,
+                    "preset_moves": interval_program.PRESET_MOVES,
+                },
+                "session_muscles": [
+                    {"words": words, "main": main, "helpers": helpers}
+                    for words, main, helpers in interval_program.SESSION_MUSCLES
+                ],
                 "progressions": progressions.LADDERS,
                 "fitness_test": {"every_days": fitness_test.EVERY_DAYS, "items": fitness_test.ITEMS, "guide": fitness_test.GUIDE},
                 "exercise_photos": exercise_photos.EXERCISE_PHOTOS,

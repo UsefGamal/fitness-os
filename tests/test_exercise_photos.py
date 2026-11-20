@@ -30,6 +30,9 @@ def _our_names() -> set[str]:
     from content import home_program
 
     walk(home_program.PROGRAM)
+    from content import interval_program
+
+    names.update(interval_program.INTERVAL_MOVES)
     return names
 
 

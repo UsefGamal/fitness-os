@@ -154,7 +154,9 @@ class HealthPlugin : Plugin() {
                 if (sleepPerm in granted) {
                     // Start the evening before the first day so its night is included.
                     val since = first.minusDays(1).atTime(12, 0).atZone(zone).toInstant()
-                    val minutes = mutableMapOf<LocalDate, Long>()
+                    // Per night and per app (phone, watch, another app): when two of
+                    // them log the same night, the longest one counts, not both added up.
+                    val minutes = mutableMapOf<LocalDate, MutableMap<String, Long>>()
                     var token: String? = null
                     do {
                         val response = c.readRecords(
@@ -166,11 +168,15 @@ class HealthPlugin : Plugin() {
                                 .sumOf { Duration.between(it.startTime, it.endTime).toMinutes() }
                             val total = Duration.between(r.startTime, r.endTime).toMinutes() - awake
                             val date = r.endTime.atZone(zone).toLocalDate()
-                            if (total > 0 && !date.isBefore(first)) minutes[date] = (minutes[date] ?: 0) + total
+                            if (total > 0 && !date.isBefore(first)) {
+                                val byApp = minutes.getOrPut(date) { mutableMapOf() }
+                                val app = r.metadata.dataOrigin.packageName
+                                byApp[app] = (byApp[app] ?: 0) + total
+                            }
                         }
                         token = response.pageToken
                     } while (token != null)
-                    for ((date, m) in minutes) day(date).put("sleep_min", m)
+                    for ((date, byApp) in minutes) day(date).put("sleep_min", byApp.values.maxOrNull() ?: 0L)
                 }
 
                 call.resolve(JSObject().put("days", JSArray(out.values.toList())))

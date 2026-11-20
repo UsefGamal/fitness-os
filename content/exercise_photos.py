@@ -81,4 +81,14 @@ EXERCISE_PHOTOS = {
     "Walking Lunge": "Bodyweight_Walking_Lunge",
     "World's Greatest Stretch": "Worlds_Greatest_Stretch",
     "Y Cable Lateral Raise": "Cable_Seated_Lateral_Raise",
+    # Interval moves (content/interval_program.py).
+    "Jump Squat": "Freehand_Jump_Squat",
+    "Mountain Climbers": "Mountain_Climbers",
+    "Star Jump": "Star_Jump",
+    "Split Jump": "Split_Jump",
+    "Butt Kicks": "Single_Leg_Butt_Kick",
+    "Tuck Jump": "Knee_Tuck_Jump",
+    "Jump Rope": "Rope_Jumping",
+    "Battle Ropes": "Battling_Ropes",
+    "Kettlebell Swing": "One-Arm_Kettlebell_Swings",
 }

@@ -189,7 +189,7 @@ const MAX_PENDING_DELETES = 200;
  * Recovery, Cardio and Padel pages). */
 export const SESSION_TYPES = ['home', 'recovery', 'cardio', 'padel'];
 
-export function logSession(data, { date, type, label, durationMin = null, sessionRpe = null, result = null, notes = null, checklist = [], now = Date.now() }) {
+export function logSession(data, { date, type, label, durationMin = null, sessionRpe = null, result = null, notes = null, checklist = [], intervals = null, now = Date.now() }) {
   const id = nextWorkoutId(data);
   let itemId = nextId(data.workouts.flatMap((w) => w.checklist_items || []));
   const workout = {
@@ -207,6 +207,8 @@ export function logSession(data, { date, type, label, durationMin = null, sessio
     finished_at: now,
     sets: [],
     checklist_items: checklist.map((c) => ({ id: itemId++, workout_id: id, item_name: c.item_name, completed: !!c.completed, reps_achieved: c.reps_achieved ?? null })),
+    // An interval run: its preset and rounds (the checklist holds rounds per move).
+    ...(intervals ? { intervals } : {}),
   };
   return { ...data, workouts: [...data.workouts, workout] };
 }

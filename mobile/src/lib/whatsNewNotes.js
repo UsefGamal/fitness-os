@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.25',
+    items: [
+      { icon: 'waves', text: 'Intervals show a move with its photo each round, run in the notification and keep going when you leave the page.' },
+      { icon: 'check', text: 'Interval sessions save to History by themselves. Stop early and you can keep the rounds you did.' },
+      { icon: 'chart', text: 'Intervals, cardio, padel and home workouts now count on the muscle map and weekly sets.' },
+      { icon: 'heart', text: 'After a short night your muscles stay recovering a day longer, and Body charts steps, sleep and heart rate from phone or watch.' },
+    ],
+  },
+  {
     version: '1.1.24',
     items: [
       { icon: 'dumbbell', text: 'Make your own supersets with "Superset with next" in Plan > Edit, My routine, or More during a workout.' },
