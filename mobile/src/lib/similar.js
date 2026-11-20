@@ -3,6 +3,8 @@
 // they need. Pure helpers; no React, no catalogue loading.
 
 import { MUSCLE_GROUP } from './catalogue.js';
+import { groupOfMuscle } from './muscleGroups.js';
+import { musclesOf } from './muscles.js';
 
 const PRIMARY = 3;
 const SECONDARY = 1;
@@ -114,4 +116,24 @@ export function sharedMuscles(a, b) {
   const main = (a.primary || []).filter((m) => (b.primary || []).includes(m));
   const helpers = (a.secondary || []).filter((m) => [...(b.primary || []), ...(b.secondary || [])].includes(m));
   return [...main, ...helpers.filter((m) => !main.includes(m))];
+}
+
+const LEVEL = { beginner: 0, intermediate: 1, expert: 2 };
+
+/** The swap list (BeFit item 10). With no `group`: the closest matches to
+ * `entry`. With one of the 16 groups: exercises that mainly work it, the
+ * same kind of work as `entry` (training or stretch), closest first, then
+ * simplest, by name. Exercises named in `skip` (the rest of the day) are left out. */
+export function swapPicks(entry, entries, { group = null, skip = [], limit = 8 } = {}) {
+  const taken = new Set(skip.map((n) => String(n).toLowerCase()));
+  const free = (e) => e.id !== entry?.id && !taken.has(String(e.name).toLowerCase());
+  if (!group) return entry ? alternatives(entry, entries).filter((r) => free(r.entry)).slice(0, limit).map((r) => r.entry) : [];
+  const want = entry ? kind(entry) : 'strength';
+  return entries
+    .filter((e) => free(e) && kind(e) === want && musclesOf(e).some((m) => groupOfMuscle(m) === group))
+    .map((e) => ({ e, score: entry ? similarity(entry, e) : 0 }))
+    // Then simplest first, as forGroup does.
+    .sort((a, b) => b.score - a.score || (LEVEL[a.e.level] ?? 1) - (LEVEL[b.e.level] ?? 1) || a.e.name.localeCompare(b.e.name))
+    .slice(0, limit)
+    .map((r) => r.e);
 }

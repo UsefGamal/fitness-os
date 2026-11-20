@@ -19,7 +19,9 @@ import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
 import { neighbours } from '../lib/progressions.js';
-import { alternatives } from '../lib/similar.js';
+import { exerciseGroups, GROUP16, GROUPS16 } from '../lib/muscleGroups.js';
+import { targetText } from '../lib/muscles.js';
+import { swapPicks } from '../lib/similar.js';
 import { roundDone, roundRest } from '../lib/superset.js';
 import { addExtraSet, applyTweaks, emptyTweaks, exerciseNote, moveBy, setExerciseNote, setTweaks, skipToEnd, swapFor } from '../lib/tweaks.js';
 import { buildSession, buildSwaps, ownedKinds } from '../lib/equipment.js';
@@ -208,9 +210,10 @@ export default function Workout() {
   const [restOverride, setRestOverride] = useState({}); // exercise name -> seconds for this session
   const [undo, setUndo] = useState(null); // { set, label } after a delete
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
+  const [swapGroup, setSwapGroup] = useState(null); // one of the 16 groups, or null for the closest matches
   const [typing, setTyping] = useState(null); // the logged set whose kind is being picked
   const [showPhoto, setShowPhoto] = useState(false); // the big moving photo, opened from the thumbnail
-  const openSwap = () => setSheet('swap');
+  const openSwap = () => { setSwapGroup(null); setSheet('swap'); };
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
   const [useBuild, setUseBuild] = useState(true);
@@ -328,7 +331,18 @@ export default function Workout() {
   }, [active?.id, dayNames, data.workouts.length, data.exercises]);
   // Easier and harder versions of a bodyweight move (content/progressions.py).
   const ladderSteps = ex ? neighbours(ex.name, content.training.progressions) : null;
-  const swapOptions = useMemo(() => (entry && catalogue ? alternatives(entry, catalogue.exercises, { limit: 8 }).map((r) => r.entry) : []), [entry, catalogue]);
+  // Swap (BeFit item 10): the closest matches, or any of the 16 groups,
+  // never an exercise already in today's session.
+  const swapOptions = useMemo(() => {
+    if (!catalogue || (!entry && !swapGroup)) return [];
+    const skip = (day?.exercises || []).map((x) => x.name);
+    return swapPicks(entry, catalogue.exercises, { group: swapGroup, skip, limit: swapGroup ? 12 : 8 });
+  }, [entry, catalogue, swapGroup, day]);
+  // Its own groups lead the chips.
+  const swapGroups = useMemo(() => {
+    const own = ex ? exerciseGroups({ name: ex.swapped_from || ex.name, muscle_group: exRow?.muscle_group }, content.training, entry).main : [];
+    return [...own, ...GROUPS16.map((g) => g.key).filter((k) => !own.includes(k))];
+  }, [ex, exRow, entry]);
 
   if (!day) {
     return (
@@ -719,7 +733,7 @@ export default function Workout() {
       {sheet === 'exmore' && ex ? (
         <Sheet title={ex.name} onClose={() => setSheet(null)}>
           <div className="list">
-            <button type="button" className="list-row" onClick={() => setSheet('swap')}><Icon name="undo" /><div className="grow"><div>{t('workout.swap')}</div>{ex.alternative ? <div className="meta">{t('plan.taken', { alt: ex.alternative })}</div> : null}</div><Icon name="chev" className="icon chev" /></button>
+            <button type="button" className="list-row" onClick={openSwap}><Icon name="undo" /><div className="grow"><div>{t('workout.swap')}</div>{ex.alternative ? <div className="meta">{t('plan.taken', { alt: ex.alternative })}</div> : null}</div><Icon name="chev" className="icon chev" /></button>
             {barbell ? <button type="button" className="list-row" onClick={() => setSheet('warmups')}><Icon name="barbell" /><div className="grow">{t('workout.warmups')}</div><Icon name="chev" className="icon chev" /></button> : null}
             <button type="button" className="list-row" onClick={() => { setNoteText(exerciseNote(data, ex.name)); setSheet('note'); }}><Icon name="book" /><div className="grow">{t('workout.note')}</div><Icon name="chev" className="icon chev" /></button>
             <button type="button" className="list-row" disabled={current === day.exercises.length - 1} onClick={() => { tweak((tw, n) => skipToEnd(tw, n, current)); setSheet(null); }}><Icon name="skip" /><div className="grow">{t('workout.skip')}</div></button>
@@ -757,6 +771,12 @@ export default function Workout() {
       {sheet === 'swap' && ex ? (
         <Sheet title={`Swap ${ex.swapped_from || ex.name}`} onClose={() => setSheet(null)}>
           <p className="muted small" style={{ marginTop: 0 }}>For today only; your plan stays the same.</p>
+          <div className="chip-row scroll" role="group" aria-label={t('swap.byMuscle')}>
+            <button type="button" className={`chip-btn${!swapGroup ? ' on' : ''}`} aria-pressed={!swapGroup} onClick={() => setSwapGroup(null)}>{t('swap.similar')}</button>
+            {swapGroups.map((k) => (
+              <button key={k} type="button" className={`chip-btn${swapGroup === k ? ' on' : ''}`} aria-pressed={swapGroup === k} onClick={() => setSwapGroup(k)}>{GROUP16[k].label}</button>
+            ))}
+          </div>
           <div className="list">
             {ex.swapped_from ? <button type="button" className="list-row" onClick={() => swapTo(null)}><div className="grow">Back to {ex.swapped_from}</div></button> : null}
             {[['easier', 'ladder.swapEasier', 'ladder.down'], ['harder', 'ladder.swapHarder', 'ladder.up']].map(([side, label, dir]) => {
@@ -777,7 +797,7 @@ export default function Workout() {
             ) : null}
             {swapOptions.map((o) => (
               <button key={o.id} type="button" className="list-row" onClick={() => swapTo(o)}>
-                <div className="grow"><div>{o.name}</div><div className="meta">{o.equipment || 'body only'}</div></div>
+                <div className="grow"><div>{o.name}</div><div className="meta">{swapGroup ? `${targetText(o)} · ${o.equipment || 'body only'}` : o.equipment || 'body only'}</div></div>
                 <Icon name="chev" className="icon chev" />
               </button>
             ))}
