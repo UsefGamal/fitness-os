@@ -8,6 +8,7 @@ export const WHATS_NEW = [
     version: '1.1.20',
     items: [
       { icon: 'person', text: 'The first-time setup and the guided tour use the same text sizes as the rest of the app.' },
+      { icon: 'star', text: 'The intro on your very first open ends on the slogan, without a second line under it.' },
     ],
   },
   {
