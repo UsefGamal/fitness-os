@@ -254,6 +254,8 @@ button.set-n::after { content: ''; position: absolute; inset: -8px; }
 .tpre.on { background: var(--accent-dim); color: var(--accent); }
 .timer-close { position: absolute; top: calc(var(--sat) + 12px); inset-inline-start: 12px; transform: rotate(90deg); }
 .big-next { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 600; }
+.timer-tip { display: flex; gap: 8px; align-items: flex-start; max-width: 320px; margin: 4px auto 0; color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); text-align: start; }
+.timer-tip .icon { flex: none; color: var(--accent); margin-top: 2px; }
 .with-timer .page { padding-bottom: calc(var(--tabbar) + var(--sab) + 190px); }
 .with-pill .page { padding-bottom: calc(var(--tabbar) + var(--sab) + 76px); }
 .rest-now { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
@@ -1433,3 +1435,4 @@ label.field input { transition: box-shadow 300ms ease; }
 .home-week { margin: 4px 0 14px; }
 
 .home-week-line { margin-top: 8px; text-align: center; }
+.day-times summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer; }

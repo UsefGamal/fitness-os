@@ -30,7 +30,7 @@ import { UnlockSheet } from '../components/PassphraseSheets.jsx';
 import { ImportError, keepSafety, loosenedGates, MAX_FILE_BYTES, parseDataFile, summarize, toDataFile, toShareCopy } from '../lib/dataFile.js';
 import { saveExport } from '../store/mirror.js';
 import { slotLabel } from '../lib/meals.js';
-import { isTime, leadText, REMIND_CHOICES, setTimes, timesOf } from '../lib/times.js';
+import { isTime, leadText, REMIND_CHOICES, sessionTimeOn, setDayTime, setTimes, timesOf, WEEKDAYS } from '../lib/times.js';
 import { Health, isNative, signingCode } from '../store/native.js';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { enableReminders, scheduleReminders } from '../store/notify.js';
@@ -700,6 +700,36 @@ function TimeRow({ label, value, onChange, note }) {
   );
 }
 
+/** Each weekday's session time (BeFit item 7): the usual time, its own
+ * time, or no reminder that day. Setting the usual time again clears the
+ * day's own time. */
+function DayTimes({ t, update }) {
+  const set = (day, v) => update((d) => setDayTime(d, day, v));
+  return (
+    <details className="card small day-times">
+      <summary>{tr('times.perDay')}</summary>
+      <div className="list" style={{ marginTop: 8 }}>
+        {WEEKDAYS.map((day) => {
+          const own = t.day_times?.[day];
+          const time = sessionTimeOn(t, day);
+          const name = tr(`times.day.${day}`);
+          return (
+            <div key={day} className="list-row">
+              <div className="grow"><div>{name}</div><div className="meta">{tr(own === 'off' ? 'times.dayOff' : own ? 'times.dayOwn' : 'times.dayUsual')}</div></div>
+              {own === 'off' ? null : (
+                <input type="time" step="300" aria-label={tr('times.dayAria', { day: name })} style={{ width: 'auto', minWidth: 112 }} value={time || t.session_time} onChange={(e) => isTime(e.target.value) && set(day, e.target.value === t.session_time && !t.session_varies ? null : e.target.value)} />
+              )}
+              <button type="button" className="mini-btn" aria-pressed={own === 'off'} aria-label={tr(own === 'off' ? 'times.dayOnAria' : 'times.dayOffAria', { day: name })} onClick={() => set(day, own === 'off' ? null : 'off')}>
+                <Icon name={own === 'off' ? 'bell' : 'x'} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
+
 /** Settings → Times and reminders: when you train and eat, and how early
  * the reminders come. Reminders reschedule themselves after a change. */
 function TimesSettings({ data, update, toggleReminders }) {
@@ -719,6 +749,7 @@ function TimesSettings({ data, update, toggleReminders }) {
         {t.session_varies ? null : <TimeRow label="Morning session" note="Every training day in the plan" value={t.session_time} onChange={(v) => set({ session_time: v })} />}
         <TimeRow label="Evening session" note="The optional slot you fill on Plan" value={t.evening_time} onChange={(v) => set({ evening_time: v })} />
       </div>
+      <DayTimes t={t} update={update} />
 
       <div className="section-label">Reminders</div>
       <div className="list">
@@ -726,7 +757,7 @@ function TimesSettings({ data, update, toggleReminders }) {
         {on ? (
           <>
             <Choice label="Before a session" value={t.remind_before} onChange={(v) => set({ remind_before: Number(v) })} options={REMIND_CHOICES.map((m) => [m, m ? `${m} min` : 'At start time'])} />
-            {t.session_varies ? null : <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={`${leadText(t.remind_before)} ${t.session_time} on training days`} />}
+            {t.session_varies && !Object.values(t.day_times).some(isTime) ? null : <Toggle on={t.remind_workouts !== false} onClick={() => set({ remind_workouts: t.remind_workouts === false })} title="Morning session" note={Object.keys(t.day_times).length ? tr('times.remindPerDay', { lead: leadText(t.remind_before) }) : `${leadText(t.remind_before)} ${t.session_time} on training days`} />}
             <Toggle on={t.remind_evening !== false} onClick={() => set({ remind_evening: t.remind_evening === false })} title="Evening session" note={`${leadText(t.remind_before)} ${t.evening_time} when one is planned`} />
             <Toggle on={t.remind_meals === true} onClick={() => set({ remind_meals: t.remind_meals !== true })} title="Meals" note="At each meal time below" />
             <ReminderCheck />
