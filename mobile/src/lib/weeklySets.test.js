@@ -74,6 +74,13 @@ test('rows list the ~15 muscles in body order, quiet ones only when hit', () => 
   assert.ok(muscleRows({ neck: 2 }, {}).some((r) => r.key === 'neck'));
 });
 
+test('a drop set counts half a hard set; to-failure counts in full', () => {
+  let d = emptyData(content);
+  d = logged(d, '2026-11-09', 'Bench Press', 4);
+  d = { ...d, workouts: d.workouts.map((w) => ({ ...w, sets: w.sets.map((s, i) => (i === 3 ? { ...s, set_type: 'drop' } : i === 2 ? { ...s, set_type: 'failure' } : s)) })) };
+  assert.deepEqual(doneThisWeek(d, activePlan(d, content), TODAY).muscles, { chest: 3.5, 'front delts': 1.75, triceps: 1.75 });
+});
+
 test('padel and interval rounds add light sets to the week', async () => {
   const { logSession } = await import('./data.js');
   let d = emptyData(content);

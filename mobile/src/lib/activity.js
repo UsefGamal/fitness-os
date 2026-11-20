@@ -111,7 +111,7 @@ export function hm(minutes) {
 export const TREND_DAYS = 30;
 const MIN_POINTS = 3;
 
-/** The watch's last `days` days as chart lines, only days it has a number
+/** Health Connect's last `days` days (phone, watch or any app) as chart lines, only days with a number
  * for: { steps, sleep (hours), rhr }, each { points: [{ date, value }],
  * avg } or null when fewer than three days have one. A watch worn now and
  * then just gives shorter lines. */

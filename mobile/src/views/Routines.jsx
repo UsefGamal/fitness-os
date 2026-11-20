@@ -7,6 +7,8 @@ import { todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { activeBlock } from '../lib/plan.js';
 import { routinesOf, startRoutine, trainingDays } from '../lib/routines.js';
+import { DAY_CHOICES } from '../lib/setup.js';
+import { bestFit, daysAWeek, isBestFit, isExperienced, setTrainingDays } from '../lib/splitFit.js';
 import { content, useData } from '../store/useData.js';
 
 const SHORT = { sunday: 'short.sun', monday: 'short.mon', tuesday: 'short.tue', wednesday: 'short.wed', thursday: 'short.thu', friday: 'short.fri', saturday: 'short.sat' };
@@ -20,6 +22,9 @@ export default function Routines() {
   const [confirm, setConfirm] = useState(null);
   const running = activeBlock(data)?.template_id;
   const list = routinesOf(content);
+  const today = todayISO();
+  const days = daysAWeek(data, content);
+  const best = bestFit(data, content, today, days);
   const use = (r) => {
     update((d) => startRoutine(d, content, r.id, todayISO()));
     navigate('/plan');
@@ -30,15 +35,25 @@ export default function Routines() {
       <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate('/plan')}><Icon name="back" /> {t('routines.back')}</button>
       <h1 className="page-title">{t('routines.title')}</h1>
       <p className="page-sub">{t('routines.sub')}</p>
+      <div className="section-label">{t('split.daysLabel')}</div>
+      <div className="chip-row" role="group" aria-label={t('split.daysLabel')} style={{ flexWrap: 'wrap', marginBottom: 8 }}>
+        {DAY_CHOICES.map((n) => (
+          <button key={n} type="button" className={`chip-btn${days === n ? ' on' : ''}`} aria-pressed={days === n} onClick={() => update((d) => setTrainingDays(d, n))}>
+            {n === DAY_CHOICES[DAY_CHOICES.length - 1] ? t('split.daysValueMax') : t('split.daysValue', { n })}
+          </button>
+        ))}
+      </div>
+      {isExperienced(data, today) ? null : <p className="muted small" style={{ margin: '0 4px 12px' }}>{t('split.newNote')}</p>}
       <div className="stack" style={{ gap: 10 }}>
         {list.map((r) => {
           const isOpen = open === r.id;
-          const days = trainingDays(r);
+          const weekDays = trainingDays(r);
+          const fits = isBestFit(r.id, best);
           return (
             <section key={r.id} className="list" style={{ margin: 0 }}>
               <button type="button" className="list-row" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : r.id)}>
                 <div className="grow">
-                  <div>{r.name}{r.id === running ? <span className="chip small" style={{ marginInlineStart: 8 }}>{t('routines.running')}</span> : null}</div>
+                  <div>{r.name}{r.id === running ? <span className="chip small" style={{ marginInlineStart: 8 }}>{t('routines.running')}</span> : null}{fits ? <span className="chip accent small" style={{ marginInlineStart: 8 }}>{t('split.best')}</span> : null}</div>
                   <div className="meta small">
                     {t('routines.days', { n: r.days })}
                     {r.place === 'home' ? ` · ${t('routines.home')}` : ` · ${t('routines.gym')}`}
@@ -50,7 +65,7 @@ export default function Routines() {
               {isOpen ? (
                 <div style={{ padding: '4px 16px 14px' }}>
                   {r.about ? <p className="small" style={{ margin: '0 0 8px' }}>{r.about}</p> : null}
-                  <p className="muted small" style={{ margin: '0 0 8px' }}>{days.map((d) => t(SHORT[d])).join(' · ')}</p>
+                  <p className="muted small" style={{ margin: '0 0 8px' }}>{weekDays.map((d) => t(SHORT[d])).join(' · ')}</p>
                   <ul className="small" style={{ margin: '0 0 12px', paddingInlineStart: 18 }}>
                     {r.program.map((s) => (
                       <li key={s.key}><strong>{s.label}</strong>: {s.focus} {t('routines.moves', { n: s.exercises.length })}</li>

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from './liveStats.js';
+import { plannedSet, readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from './liveStats.js';
 
 test('volume counts work sets only', () => {
   const sets = [
@@ -43,4 +43,13 @@ test('typed numbers', () => {
   assert.equal(readNumber('abc'), null);
   assert.equal(readNumber('-3'), null);
   assert.equal(readNumber('900', { max: 500 }), 500);
+});
+
+test('warm-ups and drop sets are extras: they never use up a planned row', () => {
+  const sets = [{ set_type: 'warmup', is_warmup: true }, { reps: 8 }, { set_type: 'drop' }, { set_type: 'failure' }];
+  const rows = setRows(sets, 3);
+  assert.deepEqual(rows.map((r) => [r.kind, r.n]), [['done', null], ['done', 1], ['done', null], ['done', 2], ['open', 3]]);
+  assert.ok(rows[4].kind === 'open' && rows[4].next);
+  assert.deepEqual(sets.map(plannedSet), [false, true, false, true]);
+  assert.equal(plannedSet({ is_warmup: true }), false, 'an old warm-up without set_type');
 });

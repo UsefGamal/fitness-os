@@ -567,8 +567,9 @@ function WeeklyAverages({ data, today }) {
   );
 }
 
-/** Steps, sleep and resting heart rate from the watch (Health Connect),
- * only on days it sent them, so a watch worn now and then is fine. */
+/** Steps, sleep and resting heart rate from Health Connect, one line each
+ * whatever sent them (phone, watch, another app); days with nothing are
+ * left out, so a watch worn now and then is fine. */
 function WatchTrends({ data, today }) {
   if (!data.settings?.health?.enabled) return null;
   const tr = watchTrends(data.health_daily, today);

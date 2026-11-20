@@ -3,7 +3,7 @@
 // for its helpers (content/exercise_targets.py, else the catalogue's tags).
 // The guide is 10-20 hard sets a week per muscle. Pure helpers; tests in
 // weeklySets.test.js.
-import { isWorkSet } from './data.js';
+import { hardSetValue } from './data.js';
 import { weekStart } from './dates.js';
 import { MUSCLE, MUSCLES, targetFor } from './muscles.js';
 import { effectiveDay } from './planEdit.js';
@@ -21,7 +21,7 @@ function add(out, target, sets) {
 }
 
 /** Sets done this week (Sunday to `today`): { muscles: {key: sets}, unknown }.
- * Warm-up sets don't count; sessions without sets add light sets (sessionLoad.js). `entryOf(name)` finds a catalogue entry for an
+ * Warm-up sets don't count; a drop set counts half (hardSetValue); sessions without sets add light sets (sessionLoad.js). `entryOf(name)` finds a catalogue entry for an
  * exercise without a hand-checked target (optional).
  * @param {import('../types').Data} data
  * @param {any} training
@@ -35,11 +35,12 @@ export function doneThisWeek(data, training, today, entryOf = () => null) {
   for (const w of data.workouts) {
     if (w.log_date < from || w.log_date > today) continue;
     for (const s of w.sets || []) {
-      if (!isWorkSet(s)) continue;
+      const v = hardSetValue(s);
+      if (!v) continue;
       const name = byId.get(s.exercise_id);
       const target = name ? targetFor(name, training, entryOf(name)) : null;
-      if (target) add(muscles, target, 1);
-      else unknown += 1;
+      if (target) add(muscles, target, v);
+      else unknown += v;
     }
     // Interval rounds, a ticked home workout, cardio and padel (light sets).
     for (const l of sessionLoads(w, training, entryOf)) add(muscles, l.target, l.sets);

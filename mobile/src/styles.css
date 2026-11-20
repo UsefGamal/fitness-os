@@ -681,7 +681,13 @@ a.ex-row:active { transform: scale(0.99); background: var(--surface2); }
 .set-dots i.on { background: var(--accent); }
 .done-sets { background: var(--surface2); border-radius: 12px; padding: 0 12px; }
 .log-btn { min-height: 56px; font-size: calc(var(--fs-t3) * var(--ts)); }
-.tool-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tool-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.tool-row .tbtn.on { background: var(--accent-dim); color: var(--accent); }
+/* Warm-up sets for the first lift of a muscle (set kinds round 2). */
+.warm-card { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--surface2); }
+.warm-card .btn { min-height: 44px; }
+.warm-sets { color: var(--muted); font-variant-numeric: tabular-nums; }
+.drop-note { text-align: center; color: var(--accent); }
 .tool-row .tbtn { min-height: 64px; }
 .more-dots { font-size: calc(var(--fs-t2) * var(--ts)); line-height: 0.6; }
 .rot-up { display: inline-flex; transform: rotate(-90deg); }

@@ -7,6 +7,8 @@
 //   workout    log 3 sets in the set table, leave and return, finish,
 //              summary, History
 //   bodyweight the home routine: a bodyweight move's tick logs with no kg
+//   setkinds   warm-ups logged with one tap fill no planned row, a drop set
+//              goes in lighter and counts as a drop, a superset for today
 //   resume     a reload in the middle of a workout keeps it
 //   weigh-in   save a weight from Home
 //   ate-else   "I ate something else" on Meals, and the food is remembered
@@ -335,7 +337,59 @@ function unscreened() {
   return JSON.stringify({ ...d, safety: { ...d.safety, screen_version: null, screened_on: null, skipped: false } });
 }
 
-const JOURNEYS = { setup, workout, bodyweight, resume, 'weigh-in': weighIn, 'ate-else': ateElse, restore, gate };
+async function setkinds(page) {
+  await setUp(page);
+  await tab(page, 'Start').click();
+  await page.getByRole('button', { name: /^Start / }).first().click();
+  const weight = page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ });
+  await weight.fill('40');
+  await weight.blur();
+  // The day's first lift: warm-up sets, logged with one tap.
+  await page.locator('.warm-card').waitFor({ timeout: 3000 });
+  if (process.env.E2E_SHOTS) await page.screenshot({ path: new URL('setkinds-1-warmup.png', OUT).pathname });
+  await page.locator('.warm-card button').click();
+  await settle(page);
+  let d = await read(page);
+  // Stored sparsely: a warm-up is is_warmup with no set_type (lib/sets.js).
+  const warm = d.workouts[0].sets.filter((s) => s.is_warmup);
+  if (!warm.length || warm.length !== d.workouts[0].sets.length) throw new Error(`expected only warm-ups, got ${JSON.stringify(d.workouts[0].sets)}`);
+  if (await page.locator('.warm-card').count()) throw new Error('the warm-up card stayed after logging');
+  // Warm-ups fill no planned row: the next tick is still set 1, at 40 kg.
+  await btn(page, en['workout.logSet'].replace('{n}', 1)).click();
+  await settle(page);
+  // A drop set: about 20% lighter, logged as a drop, then back to 40 kg.
+  await page.getByRole('button', { name: en['drop.aria'] }).click();
+  await page.locator('.drop-note').waitFor();
+  await page.waitForTimeout(100);
+  const dropped = Number(await weight.inputValue());
+  if (!(dropped < 40 && dropped >= 30)) throw new Error(`drop weight ${dropped}`);
+  if (process.env.E2E_SHOTS) await page.screenshot({ path: new URL('setkinds-2-drop.png', OUT).pathname, fullPage: true });
+  await btn(page, en['workout.logSet'].replace('{n}', 2)).click();
+  await settle(page);
+  d = await read(page);
+  const last = d.workouts[0].sets.at(-1);
+  if (last.set_type !== 'drop' || last.weight_kg !== dropped) throw new Error(`the drop set was saved as ${JSON.stringify(last)}`);
+  if (Number(await weight.inputValue()) !== 40) throw new Error('the weight did not go back after the drop set');
+  await btn(page, en['workout.logSet'].replace('{n}', 2)).waitFor();
+  // A superset with the next exercise, for today only.
+  await page.locator('.ex-card.current .tool-row').getByRole('button', { name: new RegExp(en['workout.moreShort']) }).click();
+  await btn(page, new RegExp(`^${en['superset.withNext']}`)).click();
+  await settle(page);
+  d = await read(page);
+  const pairs = Object.values(d.workouts[0].tweaks?.pairs || {}).filter(Boolean);
+  if (pairs.length !== 2 || pairs[0] !== pairs[1]) throw new Error(`today's superset: ${JSON.stringify(d.workouts[0].tweaks)}`);
+  if (process.env.E2E_SHOTS) await page.screenshot({ path: new URL('setkinds-3-superset.png', OUT).pathname, fullPage: true });
+  // Routines: the days a week are saved and the best fit is marked.
+  await page.goto(`${URL0}#/plan/routines`);
+  await btn(page, en['split.daysValueMax']).click();
+  await settle(page);
+  d = await read(page);
+  if (d.setup?.days !== 5) throw new Error(`days a week saved as ${d.setup?.days}`);
+  if ((await page.locator('.chip.accent', { hasText: en['split.best'] }).count()) !== 1) throw new Error('expected one best-fit plan');
+  if (process.env.E2E_SHOTS) await page.screenshot({ path: new URL('setkinds-4-routines.png', OUT).pathname });
+}
+
+const JOURNEYS = { setup, workout, bodyweight, setkinds, resume, 'weigh-in': weighIn, 'ate-else': ateElse, restore, gate };
 const STORES = { gate: () => ({ [KEY]: unscreened() }) };
 
 const server = await serve();
