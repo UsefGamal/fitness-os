@@ -18,10 +18,11 @@ test('after the wait the date has moved on', () => {
 });
 
 test('dates and numbers are written in the app\'s language, not the phone\'s (TEST-1)', async () => {
-  const { dateTime, formatDate, formatNumber, LOCALE, longDate, monthLabel } = await import('./dates.js');
+  const { dateTime, dayMonth, formatDate, formatNumber, LOCALE, longDate, monthLabel } = await import('./dates.js');
   assert.equal(LOCALE, 'en-GB');
   assert.equal(formatDate('2026-11-12'), 'Thu 12 Nov');
   assert.equal(longDate('2026-11-12'), '12 Nov 2026');
+  assert.equal(dayMonth('2026-11-12'), '12 Nov');
   assert.equal(monthLabel('2026-11'), 'November 2026');
   assert.equal(formatNumber(12345), '12,345');
   assert.match(dateTime(new Date(2026, 10, 12, 8, 14).getTime()), /^Thu 12 Nov,? 08:14$/);

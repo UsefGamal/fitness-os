@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.11',
+    items: [
+      { icon: 'chart', text: 'The weight chart shows your trend line over each weigh-in, with kg and dates, 4 weeks to All, and a table view.' },
+      { icon: 'calendar', text: 'Stats > Body adds weekly averages, steadier than any one day.' },
+      { icon: 'user', text: 'Muscles shows hard sets a week over your last 4 weeks against the 10-20 range.' },
+      { icon: 'barbell', text: 'Overview adds training days for 12 weeks and, on a cut, whether your lifts held up.' },
+    ],
+  },
+  {
     version: '1.1.10',
     items: [
       { icon: 'barbell', text: 'Stats > Strength opens on your last 4 weeks against the 4 before: lifts up, held or down, and the biggest movers.' },

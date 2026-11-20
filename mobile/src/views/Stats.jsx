@@ -5,15 +5,19 @@ import BodyMap from '../components/BodyMap.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
+import { KeptChart, WeeksChart } from '../components/OverviewCharts.jsx';
 import WeightChart from '../components/WeightChart.jsx';
 import YearHeatmap from '../components/YearHeatmap.jsx';
 import { badges } from '../lib/achievements.js';
 import { nextDue } from '../lib/fitnessTest.js';
-import { formatDate, formatNumber } from '../lib/dates.js';
+import { dayMonth, formatDate, formatNumber } from '../lib/dates.js';
 import { currentGoal, profileOf } from '../lib/macros.js';
 import { sparkLine, strengthMovers } from '../lib/movers.js';
+import { THIN_WEEK, weeklyAverages } from '../lib/bodyStats.js';
+import { AVG_WEEKS, muscleVolume } from '../lib/muscleVolume.js';
+import { keptWhileCutting, weeklyDays } from '../lib/overview.js';
 import * as D from '../lib/data.js';
-import { e1rmSeries, trackedExercises, volumeLevel, weekStreaks, yearGrid } from '../lib/insights.js';
+import { e1rmSeries, trackedExercises, weekStreaks, yearGrid } from '../lib/insights.js';
 import { entryFor } from '../lib/catalogue.js';
 import { trainedGroups, GROUP16, GROUPS16, groupStats, recoveryOf } from '../lib/muscleGroups.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -30,7 +34,9 @@ import { useToday } from '../store/today.js';
 const MEASURES = [
   ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
 ];
-const VOLUME_FILL = [null, 'color-mix(in srgb, var(--accent) 35%, transparent)', 'color-mix(in srgb, var(--accent) 65%, transparent)', 'var(--accent)'];
+// Body map volume shades, matched to the 10-20 guide (BI-17): fainter is
+// fewer sets; the legend names each step, so shade is never the only cue.
+const BAND_FILL = { none: null, low: 'color-mix(in srgb, var(--accent) 30%, transparent)', good: 'color-mix(in srgb, var(--accent) 65%, transparent)', high: 'var(--accent)' };
 const MODES = [['volume', 'Volume'], ['recovery', 'Recovery'], ['untrained', 'Untrained']];
 
 /** The fitness test's row: when the next one is due (lib/fitnessTest.js). */
@@ -52,12 +58,26 @@ function Summary({ data, today }) {
   const grid = useMemo(() => yearGrid(data, today), [data, today]);
   const weeks = weekStreaks(data, today);
   const days = activeDays(data.workouts, today);
+  const byWeek = useMemo(() => weeklyDays(data, today), [data, today]);
+  const kept = useMemo(() => keptWhileCutting(data, today), [data, today]);
   return (
     <>
       <div className="tile-grid">
         <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.sessions7')}</div><div className="macro-value">{sessionsLast7(data.workouts, today)}</div></div>
         <div className="stat-tile macro"><div className="stat-tile-label">{t('stats.streak')}</div><div className="macro-value">{t('stats.weeks', { n: weeks.current })}</div></div>
       </div>
+      <section className="card">
+        <div className="row between"><strong>{t('ov.weeksTitle')}</strong><span className="muted small">{t('ov.weeksSub')}</span></div>
+        <WeeksChart weeks={byWeek} />
+      </section>
+      {kept ? (
+        <section className="card">
+          <div className="row between"><strong>{t('ov.keptTitle')}</strong><span className="muted small">{t('ov.keptSub')}</span></div>
+          <p className="small" style={{ margin: '4px 0 8px' }}>{t('ov.keptLine', { kg: kept.weight.change, up: kept.counts.up, held: kept.counts.held, down: kept.counts.down })}</p>
+          <KeptChart kept={kept} />
+          <p className="muted small" style={{ margin: '6px 0 0' }}>{t('ov.keptNote')}</p>
+        </section>
+      ) : null}
       <details className="card consistency">
         <summary>
           <div className="grow">
@@ -82,7 +102,7 @@ function Summary({ data, today }) {
 
 const STATUS_FILL = { recovering: 'var(--orange)', ready: 'var(--accent)', untrained: 'var(--danger)', none: null };
 const LEGEND = {
-  volume: [['v3', VOLUME_FILL[3], 'stats.lg.full'], ['v2', VOLUME_FILL[2], 'stats.lg.some'], ['v1', VOLUME_FILL[1], 'stats.lg.little'], ['v0', null, 'stats.lg.none']],
+  volume: [['high', BAND_FILL.high, 'mvol.lg.high'], ['good', BAND_FILL.good, 'mvol.lg.good'], ['low', BAND_FILL.low, 'mvol.lg.low'], ['none', null, 'stats.lg.none']],
   recovery: [['ready', STATUS_FILL.ready, 'stats.st.ready'], ['recovering', STATUS_FILL.recovering, 'stats.st.recovering'], ['untrained', STATUS_FILL.untrained, 'stats.st.untrained'], ['none', null, 'stats.st.none']],
   untrained: [['untrained', STATUS_FILL.untrained, 'stats.st.untrained'], ['ok', null, 'stats.lg.trained']],
 };
@@ -105,11 +125,15 @@ function Muscles({ data, today }) {
   // exercise's main muscles count in full, its helpers by half.
   const groupsOf = useGroupsOf(data);
   const stats = useMemo(() => groupStats(data, groupsOf, today), [data, groupsOf, today]);
+  const { catalogue } = useCatalogue();
+  const vol = useMemo(() => {
+    const T = activePlan(data, content);
+    return muscleVolume(data, T, today, catalogue ? (name) => entryFor(name, T, catalogue.byId) : undefined);
+  }, [data, today, catalogue]);
   const GROUPS = GROUPS16.map((g) => g.key);
-  const sets = Object.fromEntries(GROUPS.map((g) => [g, stats[g].sets]));
   const last = Object.fromEntries(GROUPS.map((g) => [g, stats[g].last]));
   const status = Object.fromEntries(GROUPS.map((g) => [g, groupStatus(recoveryOf(last[g], today), last[g])]));
-  const fill = Object.fromEntries(GROUPS.map((g) => [g, mode === 'volume' ? VOLUME_FILL[volumeLevel(sets[g])]
+  const fill = Object.fromEntries(GROUPS.map((g) => [g, mode === 'volume' ? BAND_FILL[vol.groups[g].band]
     : mode === 'recovery' ? STATUS_FILL[status[g]] : status[g] === 'untrained' || status[g] === 'none' ? STATUS_FILL.untrained : null]));
   const pick = (g) => setGroup(group === g ? null : g);
   const untrained = GROUPS.filter((g) => status[g] === 'untrained' || status[g] === 'none');
@@ -124,7 +148,7 @@ function Muscles({ data, today }) {
         <p className="muted small" style={{ textAlign: 'center', margin: '8px 0 0' }}>{t(`stats.cap.${mode}`)}</p>
       </section>
 
-      {mode === 'volume' ? <WeeklySets data={data} today={today} /> : null}
+      {mode === 'volume' ? <><MuscleWeeks vol={vol} group={group} onPick={pick} />{group ? <section className="card"><GroupExercises data={data} group={group} groupsOf={groupsOf} /></section> : null}<WeeklySets data={data} today={today} /></> : null}
 
       {mode === 'recovery' ? (
         <section className="card">
@@ -163,6 +187,46 @@ function Muscles({ data, today }) {
         </section>
       ) : null}
     </>
+  );
+}
+
+const VOL_SCALE = 25; // the bar's full width, in sets a week
+
+/** Sets a week per group (BI-17): the 4-week average as the bar, this
+ * week so far as a hollow tick, the 10-20 guide as the shaded band. */
+function MuscleWeeks({ vol, group, onPick }) {
+  const rows = GROUPS16.filter((g) => vol.groups[g.key].avg || vol.groups[g.key].soFar);
+  const idle = GROUPS16.filter((g) => !vol.groups[g.key].avg && !vol.groups[g.key].soFar);
+  const pct = (n) => `${Math.min(100, (n / VOL_SCALE) * 100)}%`;
+  return (
+    <section className="card">
+      <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('mvol.title')}</h2><span className="muted small" style={{ whiteSpace: 'nowrap' }}>{t('mvol.window', { n: vol.weeks || AVG_WEEKS })}</span></div>
+      <p className="muted small" style={{ margin: '4px 0 10px' }}>{vol.ready ? t('mvol.sub', { low: GUIDE.low, high: GUIDE.high }) : t('mvol.notReady')}</p>
+      <div className="mvol-list">
+        {rows.map((g) => {
+          const v = vol.groups[g.key];
+          return (
+            <button key={g.key} type="button" className={`mvol-row${group === g.key ? ' on' : ''}`} onClick={() => onPick(g.key)}
+              aria-label={t('mvol.rowAria', { group: g.label, avg: v.avg, now: v.soFar, state: t(`mvol.band.${v.band}`) })}>
+              <span className="mvol-name">{g.label}</span>
+              <span className="mvol-bar" aria-hidden="true">
+                <span className="wset-guide" style={{ insetInlineStart: pct(GUIDE.low), width: `${((GUIDE.high - GUIDE.low) / VOL_SCALE) * 100}%` }} />
+                {vol.ready ? <span className={`mvol-avg b-${v.band}`} style={{ width: pct(v.avg) }} /> : null}
+                {v.soFar ? <span className="mvol-now" style={{ insetInlineStart: `calc(${pct(v.soFar)} - 1px)` }} /> : null}
+              </span>
+              <span className="mvol-num" aria-hidden="true">{vol.ready ? v.avg : t('wavg.dash')}<small>{t(`mvol.band.${v.band}`)}</small></span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="chart-key" style={{ marginTop: 8 }}>
+        <span><i className="key-line" aria-hidden="true" />{t('mvol.keyAvg')}</span>
+        <span><i className="key-tick" aria-hidden="true" />{t('mvol.keyNow')}</span>
+        <span><i className="key-band" aria-hidden="true" />{t('mvol.keyGuide', { low: GUIDE.low, high: GUIDE.high })}</span>
+      </div>
+      {idle.length ? <p className="muted small" style={{ margin: '6px 0 0' }}>{t('mvol.idle', { list: idle.map((g) => g.label).join(', ') })}</p> : null}
+      {vol.skipped ? <p className="muted small" style={{ margin: '6px 0 0' }}>{t('mvol.skipped', { n: vol.skipped })}</p> : null}
+    </section>
   );
 }
 
@@ -392,6 +456,43 @@ function Badges({ data, today }) {
   );
 }
 
+const flat = (c) => Math.abs(c) < 0.05;
+/** "▼ -0.4": an arrow and a sign, so the colour is never the only cue. */
+function changeText(c) {
+  const arrow = flat(c) ? '=' : c > 0 ? '▲' : '▼';
+  return `${arrow} ${c > 0 ? '+' : ''}${c.toFixed(1)}`;
+}
+
+/** Weekly averages (BI-21): one number a week, which a salty day can't
+ * swing. Thin weeks are faint; this week says "so far". */
+function WeeklyAverages({ data, today }) {
+  const weeks = weeklyAverages(data.body_logs, today, data);
+  if (weeks.length < 2) return null;
+  const dir = currentGoal(data)?.direction || 'lose';
+  const sign = { gain: 1, lose: -1 }[dir] || 0;
+  const good = (c) => !flat(c) && Math.sign(c) === sign;
+  return (
+    <section className="card">
+      <div className="row between"><strong>{t('wavg.title')}</strong><span className="muted small">{t('wavg.sub')}</span></div>
+      <div className="wavg-list">
+        {weeks.map((w) => (
+          <div key={w.week} className={`wavg-row${w.thin ? ' thin' : ''}`}>
+            <div className="grow">
+              <div>{t('wavg.week', { date: dayMonth(w.week) })}</div>
+              <div className="meta">{t(w.current ? 'wavg.soFar' : 'wavg.count', { n: w.n })}</div>
+            </div>
+            <strong className="wavg-kg">{t('wchart.kg', { kg: w.avg.toFixed(1) })}</strong>
+            {w.change == null ? <span className="chip wavg-chg" aria-label={t('wavg.noChange')}>{t('wavg.dash')}</span> : (
+              <span className={`chip wavg-chg${good(w.change) ? ' accent' : flat(w.change) ? '' : ' effort'}`}>{changeText(w.change)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+      {weeks.some((w) => w.thin) ? <p className="muted small" style={{ margin: '8px 0 0' }}>{t('wavg.thinNote', { n: THIN_WEEK })}</p> : null}
+    </section>
+  );
+}
+
 function Body({ data, update, today }) {
   const latest = D.latestWeight(data);
   const [form, setForm] = useState({ weight: latest ? String(latest.weight_kg) : '' });
@@ -437,8 +538,9 @@ function Body({ data, update, today }) {
       </div>
       <section className="card">
         <div className="row between"><strong>Weight</strong>{goalLow ? <span className="muted small">Goal {goalLow}–{goalHigh} kg</span> : null}</div>
-        <WeightChart logs={data.body_logs.filter((l) => l.weight_kg > 0).slice(-60)} goalLow={goalLow} goalHigh={goalHigh} />
+        <WeightChart logs={data.body_logs} today={today} goalLow={goalLow} goalHigh={goalHigh} />
       </section>
+      <WeeklyAverages data={data} today={today} />
       <div className="list">
         <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
       </div>
