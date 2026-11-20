@@ -11,7 +11,7 @@
 import json
 from pathlib import Path
 
-from content.gym_program import build_program
+from content.gym_program import SESSION_FOCUS, SESSION_LABELS, build_program, load_plan
 
 DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 
@@ -324,7 +324,23 @@ STARTER_2 = {
     "days": 2,
 }
 
-TEMPLATES = [FULL_BODY, STARTER_2, FULL_BODY_3, FULL_BODY_2, UPPER_LOWER, PPL, UL_PPL, BODY_PART, HOME]
+# The Upper / Lower / Push / Pull / Leg plan from content/trainer_plan.json:
+# slow tempo, warm-up ramps and 10 min cycling after four of the sessions.
+# Its id stays "ul-ppl" so plans already started from it still find it.
+_ULPPL_FILE = load_plan("trainer_plan.json")
+UL_PPL_TEMPO = {
+    **_ULPPL_FILE,
+    "id": "ul-ppl",
+    "name": "Upper / lower / push / pull / leg, 5 days, slow tempo",
+    "about": "Upper and lower body early in the week, then push, pull and legs, at a slow 3-0-1-0 tempo with warm-up sets and 10 min cycling after most sessions. For people who have trained for a few months.",
+    "level": "intermediate",
+    "place": "gym",
+    "labels": SESSION_LABELS,
+    "focus": SESSION_FOCUS,
+    "days": sum(1 for d in _ULPPL_FILE["schedule"] if d["session"] != "rest"),
+}
+
+TEMPLATES = [FULL_BODY, STARTER_2, FULL_BODY_3, FULL_BODY_2, UPPER_LOWER, PPL, UL_PPL, UL_PPL_TEMPO, BODY_PART, HOME]
 
 
 def _built(plan: dict) -> dict:
@@ -337,6 +353,10 @@ def _built(plan: dict) -> dict:
         "days": plan["days"],
         "schedule": plan["schedule"],
         "program": build_program(plan),
+        # The plan's own tempo and words, so Plan and Workout show them
+        # while it runs (not the starting plan's).
+        "tempo": plan.get("tempo"),
+        "glossary": plan.get("glossary"),
     }
 
 

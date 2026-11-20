@@ -5,9 +5,17 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.19',
+    version: '1.1.20',
     items: [
       { icon: 'person', text: 'The first-time setup and the guided tour use the same text sizes as the rest of the app.' },
+    ],
+  },
+  {
+    version: '1.1.19',
+    items: [
+      { icon: 'dumbbell', text: 'One app for everyone. The Upper / Lower / Push / Pull / Leg plan is a routine anyone can pick; your current plan stays.' },
+      { icon: 'info', text: 'A calorie deficit is at most a quarter of what you burn a day. If yours was bigger, your target goes up a little.' },
+      { icon: 'upload', text: 'Your weekly wrap-up can be sent to any friend.' },
     ],
   },
   {

@@ -18,10 +18,19 @@ export function activePlan(data, content) {
   const T = content.training;
   const block = activeBlock(data);
   if (!block) return T;
+  // The ready-made routine the block came from gives its name, tempo and
+  // glossary (one app for everyone: the starting plan's would be wrong).
+  const routine = block.template_id && block.template_id !== T.trainer_plan.id ? (T.routines || []).find((r) => r.id === block.template_id) : null;
   return {
     ...T,
     program: block.sessions || T.program,
-    trainer_plan: { ...T.trainer_plan, name: block.name || T.trainer_plan.name, schedule: block.schedule || T.trainer_plan.schedule },
+    trainer_plan: {
+      ...T.trainer_plan,
+      name: block.name || routine?.name || T.trainer_plan.name,
+      tempo: routine?.tempo ?? T.trainer_plan.tempo,
+      glossary: routine?.glossary || T.trainer_plan.glossary,
+      schedule: block.schedule || T.trainer_plan.schedule,
+    },
   };
 }
 

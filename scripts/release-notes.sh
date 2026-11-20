@@ -14,8 +14,6 @@ fi
 code="${hex:0:4}-${hex:4:4}"
 echo "Fitness OS $version"
 echo
-echo "Friends: install the file ending in **-friends.apk**. Yusuf: the one ending in **-yusuf.apk**."
-echo
 echo "**Signing code: \`$code\`.** After installing, open Settings > About on the phone. It must show the same code. If it doesn't, delete that file and message Yusuf."
 echo
 echo "If Android says **App not installed** when you update, **don't uninstall** (that deletes your data on the phone). Message Yusuf."

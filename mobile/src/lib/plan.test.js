@@ -6,7 +6,7 @@ import { emptyData } from './data.js';
 import { activeBlock, activePlan, planOverrides, withPlanOverrides } from './plan.js';
 import * as P from './planEdit.js';
 import { sessionKeyOn } from './schedule.js';
-import { content } from './testContent.js';
+import { content as appContent, ulPplContent as content } from './testContent.js';
 
 test('a new install runs a copy of the content plan', () => {
   const d = emptyData(content);
@@ -101,4 +101,17 @@ test('My week resets to the routine the block started from, not the build plan',
   assert.equal(isWeekEdited(d, content), false);
   assert.equal(activeBlock(d).schedule.find((e) => e.day === 'monday').session, 'rest');
   assert.equal(activeBlock(d).schedule.find((e) => e.day === 'tuesday').session, 'pull');
+});
+
+test('one app: a plan started from the Upper / Lower / Push / Pull / Leg plan keeps its days, name and tempo', () => {
+  // Yusuf's phone: a block from his old build (template ul-ppl, no name of its own).
+  const block = { id: 'b1', template_id: 'ul-ppl', template_version: 1, started_on: '2026-11-01', ended_on: null, schedule: content.training.trainer_plan.schedule, sessions: content.training.program, overrides: {}, deload_weeks: [] };
+  const d = { ...emptyData(appContent), program: { active_block: 'b1', blocks: [block] } };
+  const T = activePlan(d, appContent);
+  assert.notEqual(appContent.training.trainer_plan.id, 'ul-ppl', 'new installs start on the full-body plan');
+  assert.equal(sessionKeyOn('2026-11-08', T), 'upper');
+  assert.equal(sessionKeyOn('2026-11-11', T), 'push');
+  assert.equal(T.trainer_plan.tempo, '3010');
+  assert.match(T.trainer_plan.name, /Upper \/ lower \/ push \/ pull \/ leg/);
+  assert.ok(T.trainer_plan.glossary);
 });

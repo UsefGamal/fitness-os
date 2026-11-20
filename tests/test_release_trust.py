@@ -49,7 +49,7 @@ def test_the_keystore_artifact_is_encrypted():
 
 
 def test_release_notes_list_hashes_and_the_signing_code(tmp_path):
-    apk = tmp_path / "fitness-os-0.6.0-friends.apk"
+    apk = tmp_path / "fitness-os-0.6.0.apk"
     apk.write_bytes(b"apk")
     cert = ":".join(["AB", "CD", "EF", "01"] * 8)
     out = subprocess.run(
@@ -59,7 +59,7 @@ def test_release_notes_list_hashes_and_the_signing_code(tmp_path):
         text=True,
     ).stdout
     assert "Signing code: `ABCD-EF01`" in out
-    assert "fitness-os-0.6.0-friends.apk | `" in out
+    assert "fitness-os-0.6.0.apk | `" in out
     assert "dd37c2d7274f7ea982cb83390c36918fee9ce8889073c44b68cdc00bdb8c3e04" in out  # sha256 of b"apk"
     assert "don't uninstall" in out
     bad = subprocess.run([str(ROOT / "scripts" / "release-notes.sh"), "0.6.0", "nope", str(apk)], capture_output=True)
