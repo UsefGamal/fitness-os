@@ -1,6 +1,8 @@
 import { Link } from 'react-router';
 
+import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
+import { t } from '../lib/i18n.js';
 import { formatDate, monthLabel } from '../lib/dates.js';
 import { useData } from '../store/useData.js';
 
@@ -45,7 +47,11 @@ export default function HistoryList() {
             ))}
           </div>
         </div>
-      )) : <div className="card empty">No workouts yet. Start one from the Start tab.</div>}
+      )) : (
+        <EmptyState art="history" title={t('empty.historyTitle')} note={t('empty.historyNote')}>
+          <Link to="/workout" className="btn"><Icon name="play" /> {t('empty.historyCta')}</Link>
+        </EmptyState>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import Alternatives from '../components/Alternatives.jsx';
 import BodyMap from '../components/BodyMap.jsx';
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
 import Ladder from '../components/Ladder.jsx';
 import LineChart from '../components/LineChart.jsx';
@@ -75,7 +76,7 @@ export default function ExerciseDetail() {
             </Link>
           ))}
         </div>
-      ) : <div className="card empty">Not logged yet.</div>}
+      ) : <EmptyState art="chart" title={t('empty.notLogged')} note={t('empty.notLoggedNote')} />}
     </div>
   );
 }

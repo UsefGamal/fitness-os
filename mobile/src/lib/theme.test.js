@@ -21,9 +21,9 @@ test('theme: every dark colour token has a light value', () => {
   const names = (b) => new Set([...b.matchAll(/(--[a-z0-9-]+):\s*(?![^;]*env\()/g)].map((m) => m[1]));
   const dark = names(block(':root {'));
   const light = names(block(':root[data-theme="light"] {'));
-  // Sizes, safe areas and the text size are the same in both themes.
+  // Sizes, safe areas, the text size and the type scale (--fs-*) are the same in both themes.
   const layout = new Set(['--radius', '--radius-lg', '--gutter', '--tabbar', '--ts']);
-  for (const n of dark) if (!layout.has(n)) assert.ok(light.has(n), `${n} has no light value`);
+  for (const n of dark) if (!layout.has(n) && !n.startsWith('--fs-')) assert.ok(light.has(n), `${n} has no light value`);
   assert.equal(THEME_BG.light, '#f2f2f7');
   assert.ok(block(':root[data-theme="light"] {').includes(`--bg: ${THEME_BG.light}`));
 });
@@ -63,4 +63,15 @@ test('every reduced-motion block in styles.css has its Settings > Look mirror', 
   const mirrors = css.split('/* reduce-motion mirror').length - 1;
   assert.ok(blocks > 0);
   assert.equal(mirrors, blocks);
+});
+
+test('Arabic type: the whole scale grows and letter spacing is off (LF-12)', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const scale = (block) => Object.fromEntries([...block.matchAll(/--fs-([a-z0-9]+):\s*([\d.]+)px/g)].map((m) => [m[1], Number(m[2])]));
+  const base = scale(css.slice(css.indexOf(':root {'), css.indexOf('}', css.indexOf(':root {'))));
+  const start = css.indexOf(':root:lang(ar) {');
+  const ar = scale(css.slice(start, css.indexOf('}', start)));
+  assert.equal(Object.keys(base).length, 9, 'nine steps in the type scale (LF-2)');
+  for (const k of Object.keys(ar)) assert.ok(ar[k] > base[k], `Arabic ${k} is larger`);
+  assert.match(css, /:root:lang\(ar\) \* \{ letter-spacing: 0 !important;/);
 });

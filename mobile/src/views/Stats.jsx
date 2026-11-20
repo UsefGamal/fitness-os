@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
 import { KeptChart, WeeksChart } from '../components/OverviewCharts.jsx';
@@ -19,7 +20,7 @@ import { THIN_WEEK, weeklyAverages } from '../lib/bodyStats.js';
 import { AVG_WEEKS, muscleVolume } from '../lib/muscleVolume.js';
 import { keptWhileCutting, weeklyDays } from '../lib/overview.js';
 import * as D from '../lib/data.js';
-import { e1rmSeries, trackedExercises, weekStreaks, yearGrid } from '../lib/insights.js';
+import { e1rmSeries, trackedExercises, weekStreaks, weightVs, yearGrid } from '../lib/insights.js';
 import { entryFor } from '../lib/catalogue.js';
 import { trainedGroups, GROUP16, GROUPS16, groupStats, recoveryOf } from '../lib/muscleGroups.js';
 import { useCatalogue } from '../store/catalogue.js';
@@ -86,7 +87,7 @@ function Summary({ data, today }) {
           <div className="grow">
             <div className="row between"><strong>{t('stats.consistency')}</strong><span className="muted small">{t('stats.last6')}</span></div>
             <div className="row between" style={{ alignItems: 'baseline', marginTop: 4 }}>
-              <span className="macro-value" style={{ fontSize: 'calc(28px * var(--ts))' }}>{t('stats.days', { n: days })}</span>
+              <span className="macro-value" style={{ fontSize: 'calc(var(--fs-t1) * var(--ts))' }}>{t('stats.days', { n: days })}</span>
               <span className="muted small">{t('stats.best', { n: weeks.longest })}</span>
             </div>
             <div className="small" style={{ color: 'var(--accent)', marginTop: 2 }}>{t('stats.showCalendar')} <Icon name="chev" className="icon inline chev" /></div>
@@ -103,7 +104,8 @@ function Summary({ data, today }) {
   );
 }
 
-const STATUS_FILL = { recovering: 'var(--orange)', ready: 'var(--accent)', untrained: 'var(--danger)', none: null };
+// Colour roles (LF-3, LF-6): blue = recovering, green = ready, amber = needs work; never red, so ready and untrained don't hinge on red-green vision.
+const STATUS_FILL = { recovering: 'var(--blue)', ready: 'var(--accent)', untrained: 'var(--orange)', none: null };
 const LEGEND = {
   volume: [['high', BAND_FILL.high, 'mvol.lg.high'], ['good', BAND_FILL.good, 'mvol.lg.good'], ['low', BAND_FILL.low, 'mvol.lg.low'], ['none', null, 'stats.lg.none']],
   recovery: [['ready', STATUS_FILL.ready, 'stats.st.ready'], ['recovering', STATUS_FILL.recovering, 'stats.st.recovering'], ['untrained', STATUS_FILL.untrained, 'stats.st.untrained'], ['none', null, 'stats.st.none']],
@@ -332,12 +334,9 @@ function Strength({ data, today }) {
     .sort((a, b) => a.name.localeCompare(b.name));
   if (!tracked.length) {
     return (
-      <section className="card empty-cta">
-        <Icon name="barbell" className="icon big-icon" />
-        <h2 className="section-title" style={{ margin: '8px 0 4px' }}>{t('stats.strEmptyTitle')}</h2>
-        <p className="muted small" style={{ margin: '0 0 16px' }}>{t('stats.strEmptyNote')}</p>
+      <EmptyState art="strength" title={t('stats.strEmptyTitle')} note={t('stats.strEmptyNote')}>
         <Link to="/workout" className="btn"><Icon name="play" /> {t('stats.strEmptyCta')}</Link>
-      </section>
+      </EmptyState>
     );
   }
   const rec = recordSummary(D.personalBests(data).values(), today, 30, firstLoadDates(data.workouts));
@@ -433,7 +432,7 @@ function Badges({ data, today }) {
   return (
     <>
       <section className="card">
-        <div className="row between" style={{ alignItems: 'baseline' }}><h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2><span className="macro-value" style={{ fontSize: 'calc(28px * var(--ts))' }}>{earned} / {all.length}</span></div>
+        <div className="row between" style={{ alignItems: 'baseline' }}><h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2><span className="macro-value" style={{ fontSize: 'calc(var(--fs-t1) * var(--ts))' }}>{earned} / {all.length}</span></div>
         <div className="progress" style={{ margin: '12px 0 8px' }} role="progressbar" aria-label={t('stats.achievements')} aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={earned}><span style={{ transform: `scaleX(${all.length ? earned / all.length : 0})` }} /></div>
         <div className="muted small">{latest ? t('stats.latestBadge', { name: latest.label, date: formatDate(latest.date) }) : t('stats.noBadge')}</div>
       </section>
@@ -559,8 +558,10 @@ function Body({ data, update, today }) {
     setForm({ weight: String(kg) });
   };
 
+  const vs = weightVs(data, today);
   return (
     <>
+      {vs ? <p className="vs-line"><Icon name="trend" className="icon" /> {t(vs.kg < 0 ? 'stats.vsWeightDown' : vs.kg > 0 ? 'stats.vsWeightUp' : 'stats.vsWeightSame', { kg: Math.abs(vs.kg), date: formatDate(vs.date), from: vs.from, now: vs.now })}</p> : null}
       <form className="card stack" onSubmit={save}>
         <div className="row between"><strong>{t('stats.logToday')}</strong>{latest ? <span className="muted small">{t('stats.lastLog', { kg: latest.weight_kg, date: formatDate(latest.log_date) })}</span> : null}</div>
         <div className="measure-grid">
