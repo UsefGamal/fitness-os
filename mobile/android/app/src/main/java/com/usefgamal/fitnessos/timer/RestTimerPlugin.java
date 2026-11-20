@@ -66,7 +66,8 @@ public class RestTimerPlugin extends Plugin {
         RestTimerService.start(getContext(), ends, pausedMs, totalMs, call.getString("label", ""),
             // The workout line: "Lower A · 7/18 sets" from the app, else the workout's name.
             call.getString("progress", call.getString("workout", "")), call.getString("detail", ""),
-            sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true), logsJson, logRestMs);
+            sets == null ? 0 : sets.intValue(), call.getBoolean("sound", true), logsJson, logRestMs,
+            RestTimerService.safePhoto(call.getString("photo", "")));
         call.resolve();
     }
 

@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.27',
+    items: [
+      { icon: 'bell', text: 'Open the "Rest done" notification to see the exercise photo and the set, change the weight with − and +, then tap Start set.' },
+      { icon: 'timer', text: 'While a set is going the notification counts up. Tap Done set to log it and start your rest, all without opening the app.' },
+    ],
+  },
+  {
     version: '1.1.25',
     items: [
       { icon: 'waves', text: 'Intervals show a move with its photo each round, run in the notification and keep going when you leave the page.' },
