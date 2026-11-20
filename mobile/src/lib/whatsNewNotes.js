@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.23',
+    items: [
+      { icon: 'bell', text: 'Reminders show the same small green Tafra mark as the rest timer, instead of the full app icon.' },
+    ],
+  },
+  {
     version: '1.1.22',
     items: [
       { icon: 'star', text: 'The intro shows the logo with its real sharp shape, without a thick outline around it.' },
