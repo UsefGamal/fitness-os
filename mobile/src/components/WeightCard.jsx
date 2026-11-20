@@ -46,7 +46,7 @@ export default function WeightCard({ data, today, onLog }) {
     : move.kg > 0 ? t('home.strengthUp', { name: move.name, kg: move.kg, days: move.days })
       : t('home.strengthHold', { name: move.name, kg: move.now });
   return (
-    <section className={`card hero-card${statusGood(p.mode, status) ? '' : ' neutral'}`}>
+    <section className={`card hero-card${statusGood(p.mode, status) ? '' : ' neutral'}`} data-tour="weight">
       <Link to="/stats?tab=body" className="hero-link">
       <span className="sr-only">{t('home.weightOpen')}</span>
       <div className="hero-top">

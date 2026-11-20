@@ -142,7 +142,7 @@ export default function Today() {
       <header className="home-head">
         <div className="row between">
           <div className="wordmark" aria-hidden="true">{t('home.wordmark')}<span>{t('home.wordmarkOs')}</span></div>
-          <Link to="/settings" className="icon-btn round" aria-label={t('home.settings')}><Icon name="gear" /></Link>
+          <Link to="/settings" className="icon-btn round" data-tour="settings" aria-label={t('home.settings')}><Icon name="gear" /></Link>
         </div>
         <h1 className="greeting">
           {name ? <><span className="greet-small">{t('home.greetName', { greet })}</span><span className="greet-name">{name} <span aria-hidden="true">👋</span></span></> : <span className="greet-name">{greet}</span>}
@@ -276,7 +276,7 @@ export default function Today() {
         <h2 className="section-title">{t('home.quickStats')}</h2>
         {streak > 0 && !back ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
       </div>
-      <div className="tile-grid">
+      <div className="tile-grid" data-tour="today">
         {D.moduleOn(data, 'water') ? (
           <StatTile wide icon="drop" tone="water" value={water} of={`${D.waterGoal(data)} ml`} label={t('home.water')}>
             <div className="row" style={{ gap: 6 }}>

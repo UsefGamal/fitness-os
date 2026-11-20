@@ -51,7 +51,7 @@ const restWeek = (d) => ({ ...d, program: { ...d.program, blocks: d.program.bloc
 const fasting = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-11-01', to: '2026-11-29', iftar: '17:00', suhoor: '04:30' } } });
 const afterEid = (d) => ({ ...d, diet: { ...d.diet, ramadan: { from: '2026-10-05', to: '2026-11-03', iftar: '17:00', suhoor: '04:30' } } });
 // FIRST-1: set up two days ago, no workout finished, nothing backed up.
-const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11-04' }, workouts: d.workouts.filter((w) => !w.finished_at), settings: { ...d.settings, last_backup_at: null, auto_backup: undefined, first_week: undefined } });
+const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11-04' }, workouts: d.workouts.filter((w) => !w.finished_at), settings: { ...d.settings, last_backup_at: null, auto_backup: undefined, first_week: undefined, tour: { done_on: '2026-11-04' } } });
 // UIUX-2: the biggest text size.
 const bigText = (d) => ({ ...d, settings: { ...d.settings, text_size: 130 } });
 // UIUX-4: gym mode switched on.

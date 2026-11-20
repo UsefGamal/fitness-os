@@ -8,6 +8,7 @@ import { ACTIVITY, DIRECTIONS, GAIN_SURPLUS, PROTEIN_G_PER_KG, goalIssues, macro
 import { activePlan } from '../lib/plan.js';
 import { weekView } from '../lib/schedule.js';
 import { JOBS, activityFor, settleSetup } from '../lib/setup.js';
+import { recheckForSex } from '../lib/safety.js';
 import { content, useData } from '../store/useData.js';
 import { useToday } from '../store/today.js';
 
@@ -71,7 +72,7 @@ export default function Profile() {
   const save = (e) => {
     e.preventDefault();
     if (errors.length) return;
-    update((d) => settleSetup(saveProfile(d, clean, today)));
+    update((d) => recheckForSex(settleSetup(saveProfile(d, clean, today))));
     setSaved(true);
   };
 

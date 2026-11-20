@@ -6,7 +6,7 @@ import { macroTargets, saveProfile } from './macros.js';
 import {
   GATES, PROTEIN_CAP_G_PER_KG, QUESTIONS, SCREEN_VERSION, allowedDirections, answeredAll, applyScreening, capProtein,
   celebratesWeightLoss, gateOn, gentleDay, gentleRir, gatesOn, isMinorNow, kcalHidden, markClearanceSeen, needsScreening, safeMode,
-  screeningResult, screeningState, setHide, showClearance, skipScreening,
+  questionsFor, recheckForSex, screeningResult, screeningState, setHide, showClearance, skipScreening,
 } from './safety.js';
 import { content } from './testContent.js';
 
@@ -47,6 +47,38 @@ test('all no: nothing on; a yes switches on its gates; no answer counts as yes',
   assert.ok(Object.values(screeningResult({}).gates).every(Boolean), 'no answers at all: everything on');
 });
 
+test('pregnancy and breastfeeding are never asked of a man', () => {
+  const keys = (g) => questionsFor(g).map((q) => q.key);
+  assert.ok(!keys('male').includes('pregnant'));
+  assert.ok(keys('female').includes('pregnant'));
+  assert.ok(keys(null).includes('pregnant'), 'sex not given: still asked');
+  assert.equal(keys('male').length, QUESTIONS.length - 1);
+  const man = { ...NO };
+  delete man.pregnant;
+  assert.equal(answeredAll(man, 'male'), true, 'a man answering the six others is done');
+  assert.equal(answeredAll(man, 'female'), false);
+  assert.equal(answeredAll(man), false);
+  assert.equal(screeningResult(man, 'male').gates.no_deficit, false, 'not asked counts as no');
+  assert.equal(screeningResult(man, 'female').gates.no_deficit, true, 'asked and unanswered counts as yes');
+  assert.equal(screeningResult({ ...NO, pregnant: true }, 'male').gates.no_deficit, false, 'a stray answer from a man is ignored');
+});
+
+test('the check uses the profile sex, and a switch away from male asks again', () => {
+  const man = { ...NO };
+  delete man.pregnant;
+  const d = applyScreening(adult(), man, TODAY);
+  assert.equal(gateOn(d, 'no_deficit', TODAY), false);
+  assert.equal(d.safety.screened_as, 'male');
+  const woman = adult({ profile: { ...adult().profile, gender: 'female' } });
+  assert.equal(applyScreening(woman, man, TODAY).safety.gates.no_deficit, true, 'a woman who left it out is gated');
+  assert.equal(applyScreening(woman, NO, TODAY).safety.screened_as, undefined);
+  assert.equal(recheckForSex(d), d, 'still male: nothing changes');
+  const switched = recheckForSex({ ...d, profile: { ...d.profile, gender: 'female' } });
+  assert.equal(needsScreening(switched), true);
+  assert.equal(switched.safety.screened_as, undefined);
+  assert.equal(switched.safety.gates.no_deficit, false, 'limits stay until answered again');
+});
+
 test('only flags are stored, never the answers', () => {
   const d = applyScreening(adult(), { ...NO, kidney: true, eating: true }, TODAY);
   assert.equal(d.safety.screen_version, SCREEN_VERSION);
@@ -84,12 +116,12 @@ test('skipped is gated: every limit on and kcal hidden, until the check is done'
 });
 
 test('no_deficit: a cut becomes maintenance in the calorie maths', () => {
-  const open = applyScreening(adult(), NO, TODAY);
+  const open = applyScreening(adult({ profile: { ...adult().profile, gender: 'female' } }), NO, TODAY);
   const cut = macroTargets(open, content.nutrition, TODAY);
   assert.equal(cut.mode, 'lose');
   assert.ok(cut.deficit > 0);
   assert.equal(cut.gated, undefined);
-  const gated = macroTargets(applyScreening(adult(), { ...NO, pregnant: true }, TODAY), content.nutrition, TODAY);
+  const gated = macroTargets(applyScreening(adult({ profile: { ...adult().profile, gender: 'female' } }), { ...NO, pregnant: true }, TODAY), content.nutrition, TODAY);
   assert.equal(gated.mode, 'maintain');
   assert.equal(gated.deficit, 0);
   assert.equal(gated.kcal, cut.tdee);
@@ -143,7 +175,7 @@ test('weight loss is not cheered while weight is hidden or a cut is off', () => 
   const open = applyScreening(adult(), NO, TODAY);
   assert.equal(celebratesWeightLoss(open, TODAY), true);
   assert.equal(celebratesWeightLoss(setHide(open, 'hide_weight', true), TODAY), false);
-  assert.equal(celebratesWeightLoss(applyScreening(adult(), { ...NO, pregnant: true }, TODAY), TODAY), false);
+  assert.equal(celebratesWeightLoss(applyScreening(adult({ profile: { ...adult().profile, gender: 'female' } }), { ...NO, pregnant: true }, TODAY), TODAY), false);
 });
 
 test('the doctor note shows until the person says they have checked', () => {

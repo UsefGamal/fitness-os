@@ -25,12 +25,14 @@ import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
 import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
+import { tourDue } from './lib/tour.js';
 import { backAction, inGymMode } from './lib/gymMode.js';
 import { pauseWorkout } from './lib/training.js';
 import { announce } from './lib/announce.js';
 import { needsScreening } from './lib/safety.js';
 import Screening from './views/Screening.jsx';
 import Setup from './views/Setup.jsx';
+import GuidedTour from './components/GuidedTour.jsx';
 import { programDayFor } from './lib/schedule.js';
 import { activePlan } from './lib/plan.js';
 import { effectiveTimes } from './lib/ramadan.js';
@@ -238,6 +240,8 @@ export default function App() {
   const loadError = useData((s) => s.loadError);
   const startError = useData((s) => s.startError);
   const screening = useData((s) => needsScreening(s.data));
+  // ONB-3: the guided tour, once, after setup (and when Help asks again).
+  const tour = useData((s) => tourDue(s.data, { workoutActive: Boolean(s.activeWorkoutId) }));
   // Light theme (THEME-1): before paint, so there is no dark flash.
   const theme = useData((s) => themeChoice(s.data));
   useLayoutEffect(() => { applyTheme(theme); return followPhone(theme); }, [theme]);
@@ -316,6 +320,7 @@ export default function App() {
       <SaveBar />
       {perms && intro === null ? <PermissionsSheet onDone={() => setPerms(false)} /> : null}
       {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
+      {tour && !perms && intro === null ? <GuidedTour /> : null}
     </>
   );
 }
