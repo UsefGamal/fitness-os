@@ -1633,6 +1633,7 @@ export default {
   'story.jobNote.manual': 'Building, lifting or farm work.',
   'story.doneTitleName': 'All set, {name}',
   'story.doneSub': 'Here is your plan. Tap Start to begin.',
+  'story.doneWeek': 'Your week',
   'story.doneGoal': 'Goal: {kg} kg',
   'story.doneGoalDate': 'Around {date} at a steady pace',
   'story.doneSafetySkipped': 'Safety check skipped',

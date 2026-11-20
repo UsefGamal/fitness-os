@@ -6,7 +6,7 @@ import { MARK } from '../lib/brand.js';
 import RulerPicker from '../components/RulerPicker.jsx';
 import Sheet from '../components/Sheet.jsx';
 import WheelPicker from '../components/WheelPicker.jsx';
-import { formatDate, todayISO } from '../lib/dates.js';
+import { addDays, formatDate, todayISO } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 import { APP } from '../lib/version.js';
 import { markSeen } from '../lib/whatsNew.js';
@@ -14,6 +14,9 @@ import { isTime } from '../lib/times.js';
 import { macroTargets } from '../lib/macros.js';
 import { routineById } from '../lib/routines.js';
 import { DAY_CHOICES, GOALS, JOBS, LIMITS, bodyComplete, finishSetup, isMinor, pickRoutine, setupGoalDate, skipSetup } from '../lib/setup.js';
+import { activePlan } from '../lib/plan.js';
+import { weekView } from '../lib/schedule.js';
+import WeekStrip from '../components/WeekStrip.jsx';
 import {
   afterSafety, ageChoices, ageFor, birthYearFor, goalChange, goalStart, nextStep, pickerStart, prevStep, progressOf,
   projectionPoints, setupSteps,
@@ -84,6 +87,15 @@ export default function Setup({ onDone }) {
   const routine = routineById(content, pickRoutine(a));
   const goalDate = (a.goal === 'lose' || a.goal === 'recomp') && !noCut ? setupGoalDate(a.weight_kg, a.goal_kg, today) : null;
   const preview = id === 'done' && bodyComplete(a, today) ? macroTargets(finishSetup(data, content, a, today), content.nutrition, today) : null;
+  // "Your plan is ready" (BeFit item 12): the coming week the answers make.
+  const doneWeek = id === 'done' ? (() => {
+    try {
+      const after = finishSetup(data, content, a, today);
+      const T = activePlan(after, content);
+      // The next seven days, from today.
+      return [...weekView(today, T, [], after), ...weekView(addDays(today, 7), T, [], after)].filter((d) => d.date >= today).slice(0, 7);
+    } catch { return null; }
+  })() : null;
   const { at, of } = progressOf(steps, id);
   const safetyKey = id.startsWith('safety:') ? id.slice(7) : null;
   const safetyKeys = steps.filter((s) => s.startsWith('safety:'));
@@ -317,7 +329,13 @@ export default function Setup({ onDone }) {
     body = (
       <>
         {title(a.name?.trim() ? t('story.doneTitleName', { name: a.name.trim() }) : t('setup.doneTitle'), t('story.doneSub'))}
-        <div className="list">
+        {doneWeek ? (
+          <>
+            <div className="section-label">{t('story.doneWeek')}</div>
+            <WeekStrip week={doneWeek} />
+          </>
+        ) : null}
+        <div className="list" style={doneWeek ? { marginTop: 12 } : undefined}>
           <div className="list-row"><Icon name="dumbbell" /><div className="grow"><div>{routine?.name}</div><div className="meta small">{t('setup.daysAWeek', { n: routine?.days })}</div></div></div>
           {preview ? (
             <div className="list-row"><Icon name="meals" /><div className="grow"><div>{t('setup.protein', { g: preview.protein })}</div><div className="meta small">{t('setup.kcal', { kcal: preview.kcal })}</div></div></div>

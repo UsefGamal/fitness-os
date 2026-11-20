@@ -5,9 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.18',
+    version: '1.1.19',
     items: [
       { icon: 'person', text: 'The first-time setup and the guided tour use the same text sizes as the rest of the app.' },
+    ],
+  },
+  {
+    version: '1.1.18',
+    items: [
+      { icon: 'calendar', text: 'The last setup screen shows your coming week, day by day, so you see the plan before you start.' },
     ],
   },
   {
