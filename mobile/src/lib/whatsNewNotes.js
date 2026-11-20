@@ -5,7 +5,7 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.14',
+    version: '1.1.15',
     items: [
       { icon: 'dumbbell', text: 'Pregnant? Moves on your back or belly, crunches and planks are swapped for safer ones, and Plan says what changed.' },
       { icon: 'check', text: 'Breastfeeding is its own safety question now, and a yes adds 400 kcal a day to your target.' },
@@ -14,13 +14,24 @@ export const WHATS_NEW = [
     ],
   },
   {
-    version: '1.1.13',
+    version: '1.1.14',
     items: [
       { icon: 'user', text: 'First-time setup is now one question per screen, like a story: a bar on top, Back on every screen, and big cards to tap.' },
       { icon: 'scale', text: 'Pick your age on a wheel and your height and weight on a ruler, and see your goal drawn as a line with its date.' },
       { icon: 'check', text: 'Men are no longer asked about pregnancy or breastfeeding in the safety check.' },
       { icon: 'bulb', text: 'After setup, a short guided tour lights up each part of Home and the tabs. Play it again from Settings > Help.' },
       { icon: 'info', text: 'Every popup now dims the page behind it, including the new-badge card.' },
+    ],
+  },
+  {
+    version: '1.1.13',
+    items: [
+      { icon: 'bolt', text: 'A cleaner look: one set of text sizes, softer white text, and one meaning per colour.' },
+      { icon: 'play', text: 'Start buttons are bigger, and finishing a workout shows your best set and when the next session is.' },
+      { icon: 'chart', text: 'Stats > Body compares your weight with four weeks ago.' },
+      { icon: 'trend', text: 'Progress bars, PRs and the goal card carry the Tafra mark\'s rising stroke.' },
+      { icon: 'book', text: 'Empty screens show a small drawing and the one thing to do next.' },
+      { icon: 'check', text: 'The save bar has a background again in the dark theme.' },
     ],
   },
   {

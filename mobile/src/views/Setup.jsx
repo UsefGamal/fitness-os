@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import Icon from '../components/Icon.jsx';
 import InstallGuide from '../components/InstallGuide.jsx';
-import { MARK } from '../components/Intro.jsx';
+import { MARK } from '../lib/brand.js';
 import RulerPicker from '../components/RulerPicker.jsx';
 import Sheet from '../components/Sheet.jsx';
 import WheelPicker from '../components/WheelPicker.jsx';

@@ -1,4 +1,5 @@
 import Icon from './Icon.jsx';
+import LeapMark from './LeapMark.jsx';
 import { t } from '../lib/i18n.js';
 import { reversePlan } from '../lib/maintenance.js';
 
@@ -13,7 +14,7 @@ export default function GoalReachedCard({ targets, showKcal, onStart, onLater })
     <section className="card goal-card" role="status">
       <div className="row between">
         <div className="row grow" style={{ gap: 10, minWidth: 0 }}>
-          <span className="session-icon small" style={{ flex: 'none' }} aria-hidden="true"><Icon name="trophy" /></span>
+          <span className="leap-badge" aria-hidden="true"><LeapMark size={26} draw /></span>
           <strong>{t('maint.title')}</strong>
         </div>
         <button type="button" className="icon-btn" style={{ flex: 'none' }} aria-label={t('maint.later')} onClick={onLater}><Icon name="x" /></button>

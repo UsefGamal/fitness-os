@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
 import { capitalize, filterCatalogue, isStretch, thumbOf } from '../lib/catalogue.js';
 import { t } from '../lib/i18n.js';
@@ -94,7 +95,7 @@ export default function Catalogue({ q, muscle, onPick }) {
             <Icon name="chev" className="icon chev" />
           </Link>
         ))}
-        {!list.length ? <div className="empty">No exercise matches.</div> : null}
+        {!list.length ? <EmptyState art="search" className="in-list" note={t('empty.search')} /> : null}
       </div>
       {list.length > limit ? <button type="button" className="btn secondary" onClick={() => setLimit(limit + PAGE)}>Show more ({list.length - limit} left)</button> : null}
       <p className="muted small" style={{ margin: '12px 16px' }}>Photos and instructions: free-exercise-db, public domain.</p>
