@@ -5,10 +5,17 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.29',
+    version: '1.1.30',
     items: [
       { icon: 'bolt', text: 'New intro: the ط leaps along its slit and lands beside Tafra on Home. Full leap once a day, a quick jump after.' },
       { icon: 'check', text: 'With Reduce motion on, the intro is a short fade instead of nothing.' },
+    ],
+  },
+  {
+    version: '1.1.29',
+    items: [
+      { icon: 'bell', text: 'Open the "Rest done" notification to see the exercise photo and the set, change the weight with − and +, then tap Start set.' },
+      { icon: 'timer', text: 'While a set is going the notification counts up. Tap Done set to log it and start your rest, all without opening the app.' },
     ],
   },
   {
