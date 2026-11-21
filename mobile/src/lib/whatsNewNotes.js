@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.28',
+    items: [
+      { icon: 'bolt', text: 'New intro: the ط leaps along its slit and lands beside Tafra on Home. Full leap once a day, a quick jump after.' },
+      { icon: 'check', text: 'With Reduce motion on, the intro is a short fade instead of nothing.' },
+    ],
+  },
+  {
     version: '1.1.25',
     items: [
       { icon: 'waves', text: 'Intervals show a move with its photo each round, run in the notification and keep going when you leave the page.' },

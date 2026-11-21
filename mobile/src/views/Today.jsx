@@ -53,6 +53,7 @@ import { keepTarget, lowerTarget, targetCheckDue } from '../lib/targetCheck.js';
 import { goalProgress } from '../lib/progress.js';
 import { announce } from '../lib/announce.js';
 import { firstWeekSteps, hideFirstWeek, markWidgetDone, showFirstWeek } from '../lib/firstWeek.js';
+import { MARK } from '../lib/brand.js';
 
 const QUICK = { home: ['dumbbell', 'accent'], recovery: ['heart', 'accent'], cardio: ['chart', 'accent'], padel: ['racket', 'accent'] };
 
@@ -141,7 +142,7 @@ export default function Today() {
     <div className="page home">
       <header className="home-head">
         <div className="row between">
-          <div className="wordmark" aria-hidden="true">{t('home.wordmark')}<span>{t('home.wordmarkOs')}</span></div>
+          <div className="wordmark" aria-hidden="true"><svg className="wordmark-mark" viewBox="0 0 24 24"><path d={MARK} /></svg><span className="wordmark-name">{t('home.wordmark')}<span>{t('home.wordmarkOs')}</span></span></div>
           <Link to="/settings" className="icon-btn round" data-tour="settings" aria-label={t('home.settings')}><Icon name="gear" /></Link>
         </div>
         <h1 className="greeting">
