@@ -5,10 +5,17 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.29',
+    version: '1.1.31',
     items: [
       { icon: 'star', text: 'Tafra has three colours now: green for training, guava pink for meals, and Nile blue for recovery, water and sleep.' },
       { icon: 'check', text: 'Light mode uses the same bright green buttons as dark mode, with softer cards that lift off the page.' },
+    ],
+  },
+  {
+    version: '1.1.29',
+    items: [
+      { icon: 'bell', text: 'Open the "Rest done" notification to see the exercise photo and the set, change the weight with − and +, then tap Start set.' },
+      { icon: 'timer', text: 'While a set is going the notification counts up. Tap Done set to log it and start your rest, all without opening the app.' },
     ],
   },
   {

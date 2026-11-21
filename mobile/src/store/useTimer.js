@@ -9,7 +9,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { create } from 'zustand';
 
 import { t } from '../lib/i18n.js';
-import { shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
+import { shadePhoto, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
 import { addSet } from '../lib/data.js';
 import { trainingSettings } from '../lib/training.js';
 import { recordError } from './errors.js';
@@ -77,12 +77,14 @@ async function toShade() {
       done: t('shade.done'), nextSet: t('shade.nextSet'), nextSetLabel: t('shade.nextSetLabel'),
       paused: t('shade.paused'), pause: t('shade.pause'), resume: t('shade.resume'), left: t('shade.left'), sets: t('shade.sets'),
       next: t('shade.next'), go: t('shade.go'), moreRest: t('shade.moreRest'), openWorkout: t('shade.openWorkout'),
-      logSet: t('shade.logSet'),
+      logSet: t('shade.logSet'), startSet: t('shade.startSet'), doneSet: t('shade.doneSet'), setGoing: t('shade.setGoing'),
     };
     const w = currentWorkout();
     await RestTimer.start({
       endsAt: endsAt || Date.now(), pausedLeft: pausedLeft || 0, total, label, ...w,
       detail: lines?.detail || '', progress: lines?.progress || w.workout, sound: sounds, texts,
+      // The exercise's photo for the open notification (a bundled file under exercise-db/).
+      photo: shadePhoto(lines?.photo),
       // "Log set & rest" on Rest done: the sets it can log, and the rest after each.
       logs: logs?.chain || [], logRest: logs?.restS || 0,
     });
@@ -134,7 +136,7 @@ export const useTimer = create((set, get) => ({
   endsAt: null,
   total: 0,
   label: '',
-  lines: null, // { detail, progress } for the notification (lib/restTimer.js shadeLines)
+  lines: null, // { detail, progress, photo } for the notification (lib/restTimer.js shadeLines)
   logs: null, // { chain, restS } for "Log set & rest" in the shade (lib/restTimer.js shadeLogChain)
   pausedLeft: null, // ms left while paused, else null
   inShade: false, // the countdown also runs in the notification shade, which chimes at the end

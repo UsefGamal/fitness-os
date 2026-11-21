@@ -9,7 +9,7 @@ import EquipmentSheet from '../components/EquipmentPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import LeapMark from '../components/LeapMark.jsx';
 import Toast from '../components/Toast.jsx';
-import { entryFor, groupOf } from '../lib/catalogue.js';
+import { entryFor, groupOf, photoSrc } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
 import { safeVideo } from '../lib/links.js';
 import { effectiveDay } from '../lib/planEdit.js';
@@ -482,12 +482,16 @@ export default function Workout() {
       const nxEntry = ni === current ? entry : entryOf(nx.name);
       const nxKg = ni === current ? w : nxRow ? D.suggestSet(data, active.id, nxRow.id, 0).weightKg : 0;
       const warmup = !nxWork && isBarbell(nx.name, nxEntry) ? warmupSets(nxKg, barKg, settings.plates) : [];
-      timer.start(rest, nx.name, shadeLines({
-        setNo: nxWork + 1, setsPlanned: nx.sets, targetReps: nx.reps,
-        // The same exercise again: the load just lifted is the best guess.
-        ...(ni === current ? { weightKg: w, reps: r } : nxKg > 0 && warmup.length ? { weightKg: nxKg } : {}),
-        workout: day.label, done: after.sets.filter(D.isWorkSet).length, planned: totalTarget, warmup,
-      }),
+      timer.start(rest, nx.name, {
+        ...shadeLines({
+          setNo: nxWork + 1, setsPlanned: nx.sets, targetReps: nx.reps,
+          // The same exercise again: the load just lifted is the best guess.
+          ...(ni === current ? { weightKg: w, reps: r } : nxKg > 0 && warmup.length ? { weightKg: nxKg } : {}),
+          workout: day.label, done: after.sets.filter(D.isWorkSet).length, planned: totalTarget, warmup,
+        }),
+        // The open notification shows the next exercise's photo.
+        photo: photoSrc(nxEntry?.photos?.[0]),
+      },
       // More sets of this lift next (not a superset): "Log set & rest" on
       // Rest done logs each at this load and starts the same rest again.
       ni === current && !nx.pair ? {

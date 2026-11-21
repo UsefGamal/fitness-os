@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { DONE_GRACE_MS, SHADE_LOG_MAX, shadeLines, shadeLogChain, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
+import { DONE_GRACE_MS, SHADE_LOG_MAX, shadeLines, shadePhoto, shadeLogChain, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
 
 const now = 1_000_000;
 const running = { endsAt: now + 60_000, total: 90, label: 'Squat', pausedLeft: null };
@@ -88,6 +88,17 @@ test('Log set & rest offers the rest of the exercise at the load just lifted', (
   assert.equal(chain[1].set.n, 4);
   assert.equal(chain[1].detail, 'Set 3 of 3 · 60 kg × 8');
   assert.equal(chain[1].progress, 'Lower A · 6/18 sets');
+  // The shade rewrites "Set 2 of 3 · 62.5 kg × 8" from these when the weight is changed there.
+  assert.equal(chain[0].head, 'Set 2 of 3');
+  assert.equal(chain[0].timed, false);
+});
+
+test('the notification photo is only a bundled exercise-db file', () => {
+  assert.equal(shadePhoto('exercise-db/Barbell_Squat/0.jpg'), 'exercise-db/Barbell_Squat/0.jpg');
+  assert.equal(shadePhoto('exercise-db/a/b.webp'), 'exercise-db/a/b.webp');
+  for (const bad of [null, '', 'https://x.com/a.jpg', 'exercise-db/../secret.jpg', 'exercise-db//a.jpg', 'meal-photos/a.jpg', 'exercise-db/a.gif', `exercise-db/${'a'.repeat(300)}.jpg`]) {
+    assert.equal(shadePhoto(bad), '', String(bad));
+  }
 });
 
 test('a timed hold logs seconds; nothing is offered when done or unknown', () => {

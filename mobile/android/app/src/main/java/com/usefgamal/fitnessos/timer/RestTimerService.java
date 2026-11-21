@@ -56,6 +56,17 @@ public class RestTimerService extends Service {
     public static final String ACTION_MORE_REST = "com.usefgamal.fitnessos.timer.MORE_REST";
     /** "Log set & rest" on Rest done: log the set it shows and start the same rest again. */
     public static final String ACTION_LOG_SET = "com.usefgamal.fitnessos.timer.LOG_SET";
+    /** Rest done: change the weight of the sets still to log (EXTRA_KG_TENTHS, e.g. -25 = -2.5 kg). */
+    public static final String ACTION_KG = "com.usefgamal.fitnessos.timer.KG";
+    /** Rest done: "Start set" puts a set clock in the shade with "Done set". */
+    public static final String ACTION_START_SET = "com.usefgamal.fitnessos.timer.START_SET";
+    /** "Done set": log the set (as "Log set & rest") and start the rest after it. */
+    public static final String ACTION_DONE_SET = "com.usefgamal.fitnessos.timer.DONE_SET";
+    public static final String EXTRA_KG_TENTHS = "kgTenths";
+    public static final String EXTRA_PHOTO = "photo";
+    private static final String SET_STARTED = "setStartedAt";
+    /** The weight step of the -/+ buttons, in tenths of a kg (2.5 kg, one small plate a side). */
+    static final int KG_STEP_TENTHS = 25;
     public static final String EXTRA_ENDS_AT = "endsAt";
     public static final String EXTRA_PAUSED_LEFT = "pausedLeft";
     public static final String EXTRA_TOTAL = "total";
@@ -111,6 +122,10 @@ public class RestTimerService extends Service {
     static volatile String logs = "[]";
     /** The rest after a set logged from the shade, in ms. */
     static volatile long logRestMs = 0;
+    /** The exercise photo (a bundled file under the web assets' exercise-db/), or "". */
+    static volatile String photo = "";
+    /** When "Start set" was tapped (wall clock ms); 0 when no set is going. */
+    static volatile long setStartedAt = 0;
     /** The app is on screen: play the "rest done" chime directly instead of relying on the notification sound. */
     static volatile boolean foreground = false;
 
@@ -154,15 +169,21 @@ public class RestTimerService extends Service {
     private static final long WAKE_SLACK_MS = 10_000L;
 
     public static void start(Context context, long endsAt, long pausedLeft, long totalMs, String label, String workout, String detail, int sets, boolean sound) {
-        start(context, endsAt, pausedLeft, totalMs, label, workout, detail, sets, sound, logs, logRestMs);
+        start(context, endsAt, pausedLeft, totalMs, label, workout, detail, sets, sound, logs, logRestMs, photo);
     }
 
     public static void start(Context context, long endsAt, long pausedLeft, long totalMs, String label, String workout, String detail, int sets, boolean sound,
                              String logs, long logRestMs) {
+        start(context, endsAt, pausedLeft, totalMs, label, workout, detail, sets, sound, logs, logRestMs, photo);
+    }
+
+    public static void start(Context context, long endsAt, long pausedLeft, long totalMs, String label, String workout, String detail, int sets, boolean sound,
+                             String logs, long logRestMs, String photo) {
         Intent i = new Intent(context, RestTimerService.class).setAction(ACTION_START)
             .putExtra(EXTRA_ENDS_AT, endsAt).putExtra(EXTRA_PAUSED_LEFT, pausedLeft).putExtra(EXTRA_TOTAL, totalMs)
             .putExtra(EXTRA_LABEL, label).putExtra(EXTRA_WORKOUT, workout).putExtra(EXTRA_DETAIL, detail).putExtra(EXTRA_SETS, sets)
-            .putExtra(EXTRA_SOUND, sound).putExtra(EXTRA_LOGS, logs).putExtra(EXTRA_LOG_REST, logRestMs);
+            .putExtra(EXTRA_SOUND, sound).putExtra(EXTRA_LOGS, logs).putExtra(EXTRA_LOG_REST, logRestMs)
+            .putExtra(EXTRA_PHOTO, safePhoto(photo));
         androidx.core.content.ContextCompat.startForegroundService(context, i);
     }
 
@@ -172,7 +193,7 @@ public class RestTimerService extends Service {
     }
 
     public static void send(Context context, String action) {
-        if (!active()) return;
+        if (!active() && setStartedAt == 0) return; // a set clock (Start set) can be stopped too
         context.startService(new Intent(context, RestTimerService.class).setAction(action));
     }
 
@@ -196,6 +217,8 @@ public class RestTimerService extends Service {
             String l = intent.getStringExtra(EXTRA_LOGS);
             logs = l != null ? l : "[]";
             logRestMs = Math.max(0, Math.min(intent.getLongExtra(EXTRA_LOG_REST, 0), MAX_REST_MS));
+            photo = safePhoto(intent.getStringExtra(EXTRA_PHOTO));
+            setStartedAt = 0;
             skipped = false;
             nm().cancel(ID_DONE);
             save(this);
@@ -233,14 +256,23 @@ public class RestTimerService extends Service {
             save(this);
             show(true);
             changed();
-        } else if (ACTION_LOG_SET.equals(action)) {
+        } else if (ACTION_LOG_SET.equals(action) || ACTION_DONE_SET.equals(action)) {
+            setStartedAt = 0;
             logFromShade(now);
+        } else if (ACTION_KG.equals(action)) {
+            changeKg(intent.getIntExtra(EXTRA_KG_TENTHS, 0));
+        } else if (ACTION_START_SET.equals(action)) {
+            startSet(now);
         } else if (ACTION_STOP.equals(action)) {
             boolean fromShade = intent.getBooleanExtra("fromShade", false);
             if (fromShade) skipped = true;
+            setStartedAt = 0;
             end();
             Listener ls = listener;
             if (fromShade && ls != null) ls.onStopped(false);
+        } else if (action == null && !active() && restoreSet(this)) {
+            // Killed mid-set: the set clock comes back.
+            showSet(true);
         } else if (action == null && restore(this) && (pausedLeft > 0 || endsAt > now)) {
             // The phone killed the app mid-rest and Android restarted the
             // service: carry on with the saved rest.
@@ -294,6 +326,179 @@ public class RestTimerService extends Service {
         }
         Listener ls = listener;
         if (ls != null) ls.onLogged();
+    }
+
+    /**
+     * The -/+ weight buttons on Rest done: every set still to log moves by
+     * `tenths` (tenths of a kg), never below 0, and its line is rewritten
+     * ("Set 2 of 3 · 62.5 kg × 8"). The notification is posted again quietly.
+     */
+    private void changeKg(int tenths) {
+        // A new process: a set clock that was going comes back, else the last card's sets.
+        if (!active() && setStartedAt == 0 && !restoreSet(this)) restoreLast(this);
+        org.json.JSONArray chain = parse(logs);
+        org.json.JSONObject head = chain.optJSONObject(0);
+        if (head == null || head.optJSONObject("set") == null || tenths == 0) {
+            if (head != null && setStartedAt == 0) postDone(false, true);
+            if (!active() && setStartedAt == 0) stopSelf();
+            return;
+        }
+        try {
+            for (int i = 0; i < chain.length(); i++) {
+                org.json.JSONObject e = chain.optJSONObject(i);
+                org.json.JSONObject set = e == null ? null : e.optJSONObject("set");
+                if (set == null || e.optBoolean("timed", false)) continue;
+                double kg = Math.round(Math.max(0, Math.min(1000, set.optDouble("kg", 0) + tenths / 10.0)) * 100) / 100.0;
+                set.put("kg", kg);
+                String h = e.optString("head", "");
+                int reps = set.optInt("r", 0);
+                if (!h.isEmpty() && reps > 0) e.put("detail", kg > 0 ? h + " · " + kgText(kg) + " kg × " + reps : h + " · " + reps + " reps");
+            }
+        } catch (org.json.JSONException ignored) {
+            // A key we just read: can't happen.
+        }
+        logs = chain.toString();
+        org.json.JSONObject first = chain.optJSONObject(0);
+        if (first != null && !first.optString("detail", "").isEmpty()) detail = first.optString("detail", "");
+        save(this);
+        if (setStartedAt > 0) {
+            showSet(false);
+        } else {
+            postDone(false, true);
+            if (!active()) stopSelf(); // only the card changed: nothing to keep running for
+        }
+    }
+
+    /** "62.5", "60": the weight without trailing zeros. */
+    static String kgText(double kg) {
+        if (kg == Math.floor(kg)) return String.valueOf((long) kg);
+        String s = String.format(java.util.Locale.US, "%.2f", kg);
+        while (s.endsWith("0")) s = s.substring(0, s.length() - 1);
+        return s;
+    }
+
+    /** "Start set" on Rest done: a set clock in the shade until "Done set". */
+    private void startSet(long now) {
+        if (!active()) restoreLast(this);
+        nm().cancel(ID_DONE);
+        if (parse(logs).optJSONObject(0) == null) {
+            startForegroundWith(placeholder()); // nothing to log: just close
+            end();
+            return;
+        }
+        handler.removeCallbacks(finish);
+        handler.removeCallbacks(tick);
+        releaseAwake();
+        endsAt = 0;
+        pausedLeft = 0;
+        setStartedAt = now;
+        save(this);
+        showSet(true);
+    }
+
+    /** The set going: a clock counting up, the set, the photo, and Done set / Open workout. */
+    private void showSet(boolean first) {
+        ensureChannels();
+        String title = label.isEmpty() ? tx("setGoing", "Set going") : label;
+        String sub = detail.isEmpty() ? tx("setGoing", "Set going") : detail;
+        long since = Math.max(0, System.currentTimeMillis() - setStartedAt);
+        RemoteViews small = new RemoteViews(getPackageName(), R.layout.notif_set);
+        RemoteViews big = new RemoteViews(getPackageName(), R.layout.notif_set_big);
+        for (RemoteViews v : new RemoteViews[] {small, big}) {
+            v.setChronometer(R.id.s_clock, SystemClock.elapsedRealtime() - since, null, true);
+            v.setTextViewText(R.id.s_title, title);
+            v.setTextViewText(R.id.s_detail, sub);
+        }
+        setPhoto(big, R.id.s_photo);
+        big.setTextViewText(R.id.s_progress, workout);
+        big.setViewVisibility(R.id.s_progress, workout.isEmpty() ? View.GONE : View.VISIBLE);
+        kgRow(big, R.id.s_kg_less, R.id.s_kg, R.id.s_kg_more, 20);
+        big.setTextViewText(R.id.s_open, tx("openWorkout", "Open workout"));
+        big.setTextViewText(R.id.s_done, tx("doneSet", "Done set"));
+        big.setOnClickPendingIntent(R.id.s_open, openApp());
+        big.setOnClickPendingIntent(R.id.s_done, self(ACTION_DONE_SET, 9).let());
+        Notification n = new NotificationCompat.Builder(this, CHANNEL_RUNNING)
+            .setSmallIcon(R.drawable.ic_stat_bolt)
+            .setColor(Color.parseColor("#1c1c1e"))
+            .setColorized(true)
+            .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(small)
+            .setCustomBigContentView(big)
+            .setContentTitle(title)
+            .setContentText(sub)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setShowWhen(false)
+            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setContentIntent(openApp())
+            .build();
+        if (first) startForegroundWith(n);
+        else nm().notify(ID_RUNNING, n);
+    }
+
+    /**
+     * The weight row: "−2.5 · 60 kg · +2.5" for the next set to log, hidden
+     * for a timed hold or a set with no weight (bodyweight).
+     */
+    private void kgRow(RemoteViews v, int less, int text, int more, int codeBase) {
+        org.json.JSONObject head = parse(logs).optJSONObject(0);
+        org.json.JSONObject set = head == null ? null : head.optJSONObject("set");
+        double kg = set == null ? 0 : set.optDouble("kg", 0);
+        boolean show = set != null && !head.optBoolean("timed", false) && kg > 0;
+        int row = text == R.id.d_kg ? R.id.d_kg_row : R.id.s_kg_row;
+        v.setViewVisibility(row, show ? View.VISIBLE : View.GONE);
+        if (!show) return;
+        String step = kgText(KG_STEP_TENTHS / 10.0);
+        v.setTextViewText(less, "−" + step);
+        v.setTextViewText(more, "+" + step);
+        v.setTextViewText(text, kgText(kg) + " kg × " + set.optInt("r", 0));
+        v.setOnClickPendingIntent(less, self(ACTION_KG, codeBase).putExtra(EXTRA_KG_TENTHS, -KG_STEP_TENTHS).let());
+        v.setOnClickPendingIntent(more, self(ACTION_KG, codeBase + 1).putExtra(EXTRA_KG_TENTHS, KG_STEP_TENTHS).let());
+    }
+
+    /** The exercise photo, if it was sent and is in the app's files. */
+    private void setPhoto(RemoteViews v, int id) {
+        android.graphics.Bitmap b = photoBitmap(this, photo);
+        if (b != null) v.setImageViewBitmap(id, b);
+        v.setViewVisibility(id, b != null ? View.VISIBLE : View.GONE);
+    }
+
+    private static String cachedPath = "";
+    private static android.graphics.Bitmap cachedBitmap;
+
+    /** A small copy (about 320 px wide) of a bundled exercise photo, or null. */
+    static synchronized android.graphics.Bitmap photoBitmap(Context c, String path) {
+        if (path == null || path.isEmpty()) return null;
+        if (path.equals(cachedPath)) return cachedBitmap;
+        android.graphics.Bitmap out = null;
+        try {
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            try (java.io.InputStream in = c.getAssets().open("public/" + path)) {
+                android.graphics.BitmapFactory.decodeStream(in, null, o);
+            }
+            int sample = 1;
+            while (o.outWidth / (sample * 2) >= 320) sample *= 2;
+            o = new android.graphics.BitmapFactory.Options();
+            o.inSampleSize = sample;
+            try (java.io.InputStream in = c.getAssets().open("public/" + path)) {
+                out = android.graphics.BitmapFactory.decodeStream(in, null, o);
+            }
+        } catch (java.io.IOException | RuntimeException e) {
+            out = null; // not bundled (photos missing in this build): no picture
+        }
+        cachedPath = path;
+        cachedBitmap = out;
+        return out;
+    }
+
+    /** Only a bundled photo under exercise-db/, never a web address or a path going up. */
+    static String safePhoto(String p) {
+        if (p == null || p.length() > 200 || p.contains("..") || p.contains("//")) return "";
+        return p.matches("exercise-db/[A-Za-z0-9_\\-./]+\\.(?i)(jpe?g|png|webp)") ? p : "";
     }
 
     private static org.json.JSONArray parse(String json) {
@@ -381,6 +586,7 @@ public class RestTimerService extends Service {
             v.setTextViewText(R.id.n_detail, sub);
         }
         big.setProgressBar(R.id.n_bar, max, leftS, false);
+        setPhoto(big, R.id.n_photo);
         String prog = workout.isEmpty() ? "" : workout;
         big.setTextViewText(R.id.n_progress, prog);
         big.setViewVisibility(R.id.n_progress, prog.isEmpty() ? View.GONE : View.VISIBLE);
@@ -469,6 +675,20 @@ public class RestTimerService extends Service {
                 // Fixed notes: can't happen.
             }
         }
+        postDone(!chime, false);
+        end();
+        Listener ls = listener;
+        if (ls != null) ls.onStopped(true);
+    }
+
+    /**
+     * The "Rest done" card: GO, the set, the photo, the weight -/+ and Start
+     * set (or Open workout when there is nothing to log). `loud` uses the
+     * channel with the notification sound (off when the app chimed itself);
+     * `again` posts it again without any sound or buzz (a weight change).
+     */
+    private void postDone(boolean loud, boolean again) {
+        ensureChannels();
         String doneTitle = label.isEmpty() ? tx("done", "Rest done") : label;
         String doneSub = !detail.isEmpty() ? detail : (label.isEmpty() ? tx("nextSet", "Time for your next set") : tx("done", "Rest done"));
         RemoteViews dSmall = new RemoteViews(getPackageName(), R.layout.notif_done);
@@ -484,13 +704,16 @@ public class RestTimerService extends Service {
         dBig.setTextViewText(R.id.d_open, tx("openWorkout", "Open workout"));
         dBig.setOnClickPendingIntent(R.id.d_more, self(ACTION_MORE_REST, 5).let());
         dBig.setOnClickPendingIntent(R.id.d_open, openApp());
-        // "Log set & rest" when the app sent the set to log; the card itself still opens the workout.
+        setPhoto(dBig, R.id.d_photo);
+        // Start set (then Done set logs it) when the app sent the set to log;
+        // the card itself still opens the workout.
         boolean canLog = parse(logs).optJSONObject(0) != null;
         dBig.setViewVisibility(R.id.d_log, canLog ? View.VISIBLE : View.GONE);
         dBig.setViewVisibility(R.id.d_open, canLog ? View.GONE : View.VISIBLE);
-        dBig.setTextViewText(R.id.d_log, tx("logSet", "Log set & rest"));
-        dBig.setOnClickPendingIntent(R.id.d_log, self(ACTION_LOG_SET, 6).let());
-        Notification done = new NotificationCompat.Builder(this, sound && !chime ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
+        dBig.setTextViewText(R.id.d_log, tx("startSet", "Start set"));
+        dBig.setOnClickPendingIntent(R.id.d_log, self(ACTION_START_SET, 6).let());
+        kgRow(dBig, R.id.d_kg_less, R.id.d_kg, R.id.d_kg_more, 7);
+        Notification done = new NotificationCompat.Builder(this, sound && loud ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))
             .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
@@ -504,12 +727,11 @@ public class RestTimerService extends Service {
             .setVibrate(new long[] {0, 300, 150, 300})
             .setAutoCancel(true)
             .setTimeoutAfter(5 * 60 * 1000L)
+            .setOnlyAlertOnce(again)
+            .setSilent(again)
             .setContentIntent(openApp())
             .build();
         nm().notify(ID_DONE, done);
-        end();
-        Listener ls = listener;
-        if (ls != null) ls.onStopped(true);
     }
 
     private void end() {
@@ -530,7 +752,8 @@ public class RestTimerService extends Service {
             c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putLong(EXTRA_ENDS_AT, endsAt).putLong(EXTRA_PAUSED_LEFT, pausedLeft).putLong(EXTRA_TOTAL, totalMs)
                 .putString(EXTRA_LABEL, label).putString(EXTRA_WORKOUT, workout).putString(EXTRA_DETAIL, detail).putInt(EXTRA_SETS, sets)
-                .putBoolean(EXTRA_SOUND, sound).putString(EXTRA_LOGS, logs).putLong(EXTRA_LOG_REST, logRestMs).apply();
+                .putBoolean(EXTRA_SOUND, sound).putString(EXTRA_LOGS, logs).putLong(EXTRA_LOG_REST, logRestMs)
+                .putString(EXTRA_PHOTO, photo).putLong(SET_STARTED, setStartedAt).apply();
         } catch (RuntimeException ignored) {
             // No storage: the rest just isn't kept.
         }
@@ -556,6 +779,7 @@ public class RestTimerService extends Service {
             sound = p.getBoolean(EXTRA_SOUND, true);
             logs = orEmpty(p.getString(EXTRA_LOGS, "[]"));
             logRestMs = Math.min(Math.max(0, p.getLong(EXTRA_LOG_REST, 0)), MAX_REST_MS);
+            photo = safePhoto(p.getString(EXTRA_PHOTO, ""));
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -574,8 +798,23 @@ public class RestTimerService extends Service {
             sound = p.getBoolean(EXTRA_SOUND, true);
             logs = orEmpty(p.getString(EXTRA_LOGS, "[]"));
             logRestMs = Math.min(Math.max(0, p.getLong(EXTRA_LOG_REST, 0)), MAX_REST_MS);
+            photo = safePhoto(p.getString(EXTRA_PHOTO, ""));
         } catch (RuntimeException ignored) {
             // No storage: nothing to log.
+        }
+    }
+
+    /** A set clock that was going when the process died (at most 30 min ago). True if one is back. */
+    static boolean restoreSet(Context c) {
+        try {
+            long at = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong(SET_STARTED, 0);
+            long now = System.currentTimeMillis();
+            if (at <= 0 || at > now || now - at > 30 * 60 * 1000L) return false;
+            restoreLast(c);
+            setStartedAt = at;
+            return parse(logs).optJSONObject(0) != null;
+        } catch (RuntimeException e) {
+            return false;
         }
     }
 

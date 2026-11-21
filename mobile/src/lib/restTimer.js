@@ -112,7 +112,9 @@ export function shadeLogChain({ workoutId, exerciseId, logged, workDone, setsPla
   for (let i = 0; workDone + i < setsPlanned && i < SHADE_LOG_MAX; i += 1) {
     const lines = shadeLines({ setNo: workDone + i + 1, setsPlanned, ...(timed ? {} : { weightKg: kg, reps }), workout, done: done + i, planned });
     if (timed) lines.detail += ` · ${Math.round(reps)}s`;
-    out.push({ set: { w: workoutId, e: exerciseId, n: logged + i + 1, r: Math.round(reps), kg: timed ? 0 : kg, s: timed ? Math.round(reps) : null }, ...lines });
+    // `head` lets the shade rewrite the line when the weight is changed there.
+    const head = `Set ${Math.min(workDone + i + 1, 99)} of ${setsPlanned}`;
+    out.push({ head, timed, set: { w: workoutId, e: exerciseId, n: logged + i + 1, r: Math.round(reps), kg: timed ? 0 : kg, s: timed ? Math.round(reps) : null }, ...lines });
   }
   return out;
 }
@@ -154,4 +156,17 @@ export function shadeLogsToAdd(data, logs) {
     out.push({ workoutId: /** @type {number} */ (w), exerciseId: /** @type {number} */ (e), reps: seconds ?? /** @type {number} */ (r), weightKg, seconds });
   }
   return out;
+}
+
+/**
+ * The exercise photo the notification may show: a bundled file under
+ * exercise-db/ (catalogue photoSrc), else ''. Anything else (a web address,
+ * a path going up a folder) is dropped, since the phone reads it from the
+ * app's own files.
+ * @param {unknown} path
+ */
+export function shadePhoto(path) {
+  if (typeof path !== 'string' || path.length > 200) return '';
+  if (!/^exercise-db\/[A-Za-z0-9_\-./]+\.(jpe?g|png|webp)$/i.test(path) || path.includes('..') || path.includes('//')) return '';
+  return path;
 }
