@@ -21,8 +21,8 @@ export default function LineChart({ points, unit = 'kg', label = 'Trend', summar
   return (
     <figure style={{ margin: 0 }}>
       <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('aria.lineChart', { label, from: vs[0], to: last.value, unit })}>
-        <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {points.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.value)} r={i === points.length - 1 ? 4 : 2.5} fill="var(--accent)" />)}
+        <path d={d} fill="none" stroke="var(--accent-stroke)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {points.map((p, i) => <circle key={p.date} cx={x(i)} cy={y(p.value)} r={i === points.length - 1 ? 4 : 2.5} fill="var(--accent-stroke)" />)}
       </svg>
       <figcaption className="row between muted small"><span>{formatDate(points[0].date)}</span><span>{summary ?? `Best ${Math.max(...vs)} ${unit}`}</span><span>{formatDate(last.date)}</span></figcaption>
     </figure>

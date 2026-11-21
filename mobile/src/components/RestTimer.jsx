@@ -124,7 +124,7 @@ export default function RestTimer({ compact = false }) {
         <div className="muted">{done ? 'Rest done' : paused ? 'Paused' : 'Rest'}</div>
         <svg viewBox="0 0 280 280" className={`ring${done ? ' done' : restEnding(left, !paused) ? ' ending' : ''}`} aria-hidden="true">
           <circle cx="140" cy="140" r={RING_R} fill="none" stroke="var(--surface2)" strokeWidth="14" />
-          <circle ref={ringRef} className="ring-fill" cx="140" cy="140" r={RING_R} fill="none" stroke="var(--accent)" strokeWidth="14" strokeLinecap="round"
+          <circle ref={ringRef} className="ring-fill" cx="140" cy="140" r={RING_R} fill="none" stroke="var(--accent-stroke)" strokeWidth="14" strokeLinecap="round"
             strokeDasharray={RING_C} style={{ strokeDashoffset: RING_C * (1 - fraction) }} transform="rotate(-90 140 140)" />
           <text x="140" y="160" textAnchor="middle" className="ring-t">{done ? 'Go' : clock(left)}</text>
         </svg>

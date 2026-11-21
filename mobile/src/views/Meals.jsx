@@ -75,10 +75,10 @@ function Targets() {
         {showKcal && target.reverse && !target.reverse.done ? <div className="muted small" style={{ marginTop: 4 }}>{t(target.reverse.heldLast ? 'maint.held' : 'maint.week', { week: target.reverse.week, weeks: target.reverse.weeks, kcal: target.kcal, next: formatDate(target.reverse.next_on) })}</div> : null}
         {target.source === 'plan' ? <div className="muted small" style={{ marginTop: 6 }}><Link to="/profile">{t('mealsSimple.setUp')}</Link></div> : null}
         <div className="row between" style={{ marginTop: 14 }}>
-          <strong><Icon name="drop" className="icon" /> {t('mealsSimple.water')}</strong>
+          <strong><Icon name="drop" className="icon tone-water" /> {t('mealsSimple.water')}</strong>
           <span className="muted small">{water} / {WATER_GOAL} ml</span>
         </div>
-        <div className={`progress ${fillTone(water, WATER_GOAL, { overAt: Infinity })}`} style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
+        <div className={`progress water ${fillTone(water, WATER_GOAL, { overAt: Infinity })}`} style={{ margin: '10px 0 12px' }}><span style={{ transform: `scaleX(${(Math.min(100, (water / WATER_GOAL) * 100)) / 100})` }} /></div>
         <div className="row">
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 250)); feedback('water'); }}>{t('mealsSimple.add250')}</button>
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 500)); feedback('water'); }}>{t('mealsSimple.add500')}</button>

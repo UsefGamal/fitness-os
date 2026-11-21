@@ -63,8 +63,8 @@ export default function WeightChart({ logs, today, goalLow, goalHigh }) {
           <text key={tk.date} x={at(tk.date)} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--chart-label)">{tickLabel(tk)}</text>
         ))}
         {pts.map((p) => <circle key={p.date} cx={at(p.date)} cy={y(p.weight)} r="2.2" fill="var(--muted)" opacity="0.55" />)}
-        <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        <circle cx={at(now.date)} cy={y(now.trend)} r="4.5" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />
+        <path d={line} fill="none" stroke="var(--accent-stroke)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={at(now.date)} cy={y(now.trend)} r="4.5" fill="var(--accent-stroke)" stroke="var(--surface)" strokeWidth="2" />
       </svg>
       <div className="chart-key">
         <span><i className="key-line" aria-hidden="true" />{t('wchart.trend')}</span>

@@ -2,7 +2,7 @@
 // or 'system' (match the phone). Pure; theme.test.js.
 export const THEMES = ['dark', 'light', 'system'];
 /** The page colour per theme, for the browser bar and the status bar. */
-export const THEME_BG = { dark: '#000000', light: '#f2f2f7' };
+export const THEME_BG = { dark: '#000000', light: '#eef1ee' };
 
 export function themeChoice(data) {
   const v = data?.settings?.theme;

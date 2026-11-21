@@ -58,8 +58,8 @@ export default function WeightCard({ data, today, onLog }) {
           <svg className="spark" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
             <defs><linearGradient id="spark-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity="0.28" /><stop offset="1" stopColor="var(--accent)" stopOpacity="0" /></linearGradient></defs>
             <path d={`${spark.d} L${spark.end[0]},${H} L6,${H} Z`} fill="url(#spark-fill)" />
-            <path d={spark.d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx={spark.end[0]} cy={spark.end[1]} r="4" fill="var(--accent)" />
+            <path d={spark.d} fill="none" stroke="var(--accent-stroke)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx={spark.end[0]} cy={spark.end[1]} r="4" fill="var(--accent-stroke)" />
           </svg>
         ) : null}
       </div>
