@@ -1,74 +1,65 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## What this is
-
-Fitness OS is a fitness and nutrition app that runs as a standalone Android APK: training plan, guided workouts, macro targets, a high-protein meal plan and a weekly shopping list. Data lives only on the phone. It started as Yusuf's own tracker and is being made ready for a few friends, one person per phone, with no accounts or server. Scope for v1 is in [`PRODUCT.md`](PRODUCT.md); the dated plan (phases 11-18) is in the roadmap doc's "Roadmap and backlog" tab. **Every change works on a phone screen first.**
-
-The old FastAPI/Render web app was retired in phase 11 (Nov 2026). Its last version is the `web-final` branch; don't bring server code back.
-
-## Commands
-
-```bash
-cd mobile
-npm ci
-npm test            # export content/, then node --test src/lib/*.test.js
-npm run coverage    # the same with coverage; fails on a drop below coverage-baseline.json
-npm run typecheck   # tsc over src/lib in JSDoc mode; the data file's shape is in src/types.d.ts
-npm run dev         # vite dev server
-npm run build       # production web build into dist/
-node --test src/lib/data.test.js   # one test file (after npm run content)
-
-# Python: only content/ and the export scripts remain
-pip install -r requirements-dev.txt
-pytest
-ruff check .
-
-scripts/build-apk.sh          # debug APK (needs JDK 21 + Android SDK)
-scripts/build-apk.sh release  # signed release APK (keystore env vars)
-scripts/build-apk.sh unsigned # release APK without a key; CI signs it with scripts/sign-apk.sh
-```
-
-CI (`.github/workflows/ci.yml`) runs the JS tests with coverage in both UTC and Africa/Cairo, plus ruff and pytest for `content/`. `android.yml` builds a debug APK on every PR.
+Tafra (repo and app ids still say fitness-os) is an offline Android app: training plan, guided workouts, macro targets, meal plan, shopping list. Capacitor + React + Zustand, data only on the phone, no server, no accounts, no telemetry. One app version for everyone. Scope: [`PRODUCT.md`](PRODUCT.md). **Every change works on a 360-412px phone screen first.**
 
 ## Layout
 
 ```
-fitness-os/
-  content/            # plan content in plain Python: the single source of truth
-  scripts/            # export_content.py (content/ -> mobile/src/content.json), fetch_exercise_photos.py, build-apk.sh
-  tests/              # pytest for content/ and the export scripts
-  mobile/
-    src/views/        # one screen per file
-    src/components/   # shared UI (timers, sheets, charts)
-    src/store/        # the Zustand store, persisted to localStorage + a file mirror on the phone
-    src/lib/          # pure, framework-free helpers, each with a *.test.js beside it
-    android/          # Capacitor Android project (native timer, widget, Health Connect)
-  docs/               # ANDROID_ROADMAP.md (phases 0-10 history)
-  PRODUCT.md          # v1 scope and the Won't-now list
+content/          plan content in Python, the single source of truth
+scripts/          export_content.py (content/ -> mobile/src/content.json), photos, APK build/sign, ci_changes.py
+tests/            pytest for content/ and scripts
+mobile/src/views/       one screen per file
+mobile/src/components/  shared UI (sheets, timers, charts, Intro)
+mobile/src/store/       Zustand store, persisted to localStorage + file mirror (mirror.js)
+mobile/src/lib/         pure helpers, each with a *.test.js beside it
+mobile/src/i18n/en.js   every visible string goes through t()
+mobile/src/styles.css   tokens in :root and :root[data-theme="light"]
+mobile/e2e/             harness, device tests, journeys (Playwright)
+mobile/android/         native timer, widget, Health Connect, notifications
 ```
 
-`content/tdee.py` and `content/projections.py` are frozen reference copies of the old server maths. They are not authoritative: the app's `mobile/src/lib/` is. Port from them; don't change them.
+`content/tdee.py` and `content/projections.py` are frozen reference copies; `mobile/src/lib/` is authoritative.
 
-## Look and feel
+## Checks (run in `mobile/`)
 
-The look and usability follow [openGym](https://github.com/DuarteSantos8/openGym); where the two apps differ, openGym's way wins. Black page, `#1c1c1e` cards, green accent, one system font, inset grouped lists and hairlines instead of outlined boxes, a solid bottom tab bar (no blur: it costs too much on cheap phones, FEEL-1), press-scale feedback, 44px touch targets, 16px+ inputs. The tokens are in `mobile/src/styles.css`'s `:root`; the light theme (Settings > Look, dark by default) overrides them in `:root[data-theme="light"]`, so new colours go in both blocks as tokens, never as literals. Pages follow openGym's shape (Home / Plan / Start / Meals / Stats, Library, History, Settings, Modules); fitness-os-only features (meals, shopping, quests, sessions) stay, restyled to match.
+```bash
+npm ci
+npm run check          # eslint + i18n lint + tsc + unit tests (store tests too)
+npm run coverage       # fails below coverage-baseline.json
+node --test src/lib/foo.test.js   # one file, after npm run content
+npm run e2e            # screen harness: every route at 360/390/412, LTR + RTL; axe, <44px taps, sideways scroll
+node e2e/harness.mjs --shots      # also save screenshots to e2e/out/
+node e2e/harness.mjs --update     # re-record e2e/baseline.json (counts may only go down)
+npm run e2e:device     # setup, speed, midnight, file mirror (VITE_FAKE_FS build)
+npm run e2e:journeys   # tapped-through flows at 360px, Cairo time
+```
 
-### Rules for the mobile work
+Python: `pip install -r requirements-dev.txt && pytest && ruff check .` (repo root). Playwright and Chromium are preinstalled in cloud sessions; don't reinstall. For a screenshot, use `vite preview` + a Playwright script in `mobile/e2e/` and hide `.fanfare` / `.popup-dim`.
 
-- **Phone first.** Design every screen at 360-412px wide first. Inputs at 16px or more (smaller makes mobile browsers zoom on focus), touch targets at least 44px, respect `env(safe-area-inset-*)`.
-- **One source of truth for plan content.** Meal plan, programs and the weekly plan stay in `content/`; `mobile/` reads `src/content.json`, generated by `scripts/export_content.py` on every `npm run dev/build/test`, never a hand-copied duplicate.
-- **Decision logic is a pure helper with a test** (in `mobile/src/lib/` with a `*.test.js` run by `node --test`, or in Python with a pytest): what's scheduled today, macro targets, which meal day, shopping-list merging, streaks. When a rule exists in both Python and JS, keep matching test cases on both sides and change them together.
-- **Dependency-light.** Frontend: React, react-router, Zustand, Capacitor and its official plugins. Anything else needs a reason in the PR.
-- **Data on the phone is the user's only copy.** Every store write also lands in the file mirror (`mobile/src/store/mirror.js`); never ship a change that can drop local data, and keep every older backup readable. A format change needs a version bump and an upgrade path.
-- **No telemetry, no third-party SDKs.** This is personal health data.
-- **Signing.** The release keystore is never committed (`*.keystore`, `*.jks` are gitignored). Losing it means the APK can't update in place; say so when touching signing.
+## Version rule
 
-### Using openGym as a reference
+- Each PR that changes the app (`mobile/`, `content/`) bumps `mobile/package.json` `version` (patch) **and** adds a matching entry at the top of `mobile/src/lib/whatsNewNotes.js` (1-6 short lines a friend would understand). `whatsNew.test.js` and the release build fail without it.
+- When main moves while your PR is open, merge main in and rebump above main's version. Several open PRs means whichever merges second rebumps.
+- `e2e/harness.mjs` `STATES` is a shared list several PRs touch: after each merge, merge main into the others and keep every entry.
+- Releases: Yusuf tags `vX.Y.Z` on main and approves the `release` environment in Actions. Claude can't create releases.
 
-openGym is a reference for structure and approach, not a code source:
+## CI
 
-- It is **AGPL-3.0**. Reimplement ideas in our own code; don't paste its files or large chunks in, which would make this repo AGPL too.
-- Its **exercise stills and animations are licensed from Gym visual** separately. Never copy, download into, or link them from this repo.
-- Good places to read there: `CLAUDE.md` and `docs/ARCHITECTURE.md` (overall layout), `docs/MOBILE.md` (Capacitor flavours, file mirror, pairing, APK signing), `frontend/src/lib/mobile.js` (native bridge behind a build flag), `frontend/src/lib/sync-merge.js` (409 merge), `frontend/android/app/src/main/java/.../RestTimerService.java` (rest timer in the shade).
+`ci.yml` jobs: `changes` (path filter, scripts/ci_changes.py) -> `js` (UTC + Africa/Cairo: coverage, i18n, ESLint, tsc, audit), `screens` (harness, 4 workers via `E2E_WORKERS`), `device` (device + journeys), `python`. PR runs cancel older runs; a full run is ~4 min. `android.yml` builds a debug APK per PR; a `v*` tag builds the signed release APK. The release keystore is never committed.
+
+## Code rules
+
+- Decision logic is a pure helper in `src/lib/` with a test. Plan content stays in `content/`, never hand-copied into `mobile/`.
+- Colours are tokens in both theme blocks, never literals: buttons/ticks `--accent-fill`, green text `--accent`, bars/rings/lines `--accent-stroke`, food `--guava`, recovery/water/sleep `--nile`, red only for errors. Font sizes use `--fs-*`.
+- Inputs 16px+, touch targets 44px+, respect `env(safe-area-inset-*)`, works RTL.
+- Units are kg only. Week start is a setting (Sunday default). Watch/Health Connect data is optional: every screen works without it.
+- Dependencies: React, react-router, Zustand, Capacitor official plugins. Anything else needs a reason in the PR.
+- The phone holds the user's only copy: never ship a change that can drop data; a data format change needs a version bump and an upgrade path.
+- openGym (AGPL) is a reference for ideas only: don't copy its code or its Gym visual media.
+
+## PRs
+
+- Branch `claude/<topic>`; pushes to `dependabot/*` are refused, so fixes go in a `claude/*` PR.
+- No "Generated with Claude Code" line and no session link in the PR body.
+- Assign `UsefGamal` and request his review.
+- Stacked PRs: retarget the base to main before merging.
