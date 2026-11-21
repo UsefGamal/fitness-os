@@ -25,7 +25,7 @@ import { tabPaths } from './lib/swipeNav.js';
 import { todayISO } from './lib/dates.js';
 import { routesFor } from './lib/flags.js';
 import { dirOf, localeOf, setLocale, t } from './lib/i18n.js';
-import { introLine, isNewOpen, shouldPlayIntro } from './lib/intro.js';
+import { introKind, introLine, isNewOpen } from './lib/intro.js';
 import { needsSetup } from './lib/setup.js';
 import { tourDue } from './lib/tour.js';
 import { backAction, inGymMode } from './lib/gymMode.js';
@@ -193,12 +193,21 @@ installMotion((to) => router.navigate(to));
   for (const load of [() => import('./views/ExerciseDetail.jsx'), () => import('./views/History.jsx'), () => import('./views/MealDetail.jsx'), () => import('./views/CatalogueDetail.jsx'), () => import('./views/Stats.jsx'), () => import('./views/Library.jsx')]) load().catch(() => {});
 });
 
-/** Decides on each open whether the intro plays, and what it says. */
+const INTRO_DAY_KEY = 'tafra-intro-full-on';
+
+/** Decides on each open which intro plays (or none), and what TalkBack hears. */
 function introFor() {
   const { data, activeWorkoutId } = useData.getState();
   const reducedMotion = reduceMotion(data) || (typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches));
-  if (!data || !shouldPlayIntro({ hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId) })) return null;
+  if (!data) return null;
   const today = todayISO();
+  // The full leap plays on the first open of the day; later opens get the
+  // short jump. The day is kept on this phone only (not in the backup).
+  let lastFullOn = null;
+  try { lastFullOn = localStorage.getItem(INTRO_DAY_KEY); } catch { /* no storage: full every time */ }
+  const kind = introKind({ hash: window.location.hash, reducedMotion, activeWorkout: Boolean(activeWorkoutId), today, lastFullOn });
+  if (!kind) return null;
+  if (kind === 'full') { try { localStorage.setItem(INTRO_DAY_KEY, today); } catch { /* fine */ } }
   let next;
   try {
     next = programDayFor(today, activePlan(data, content), data.session_moves || []);
@@ -206,7 +215,7 @@ function introFor() {
     next = null;
   }
   const doneToday = data.workouts.some((w) => w.log_date === today && w.finished_at && (w.workout_type || 'gym') === 'gym');
-  return introLine({ next, time: sessionAt(effectiveTimes(data, content, today)), doneToday, firstRun: data.workouts.length === 0 });
+  return { kind, at: Date.now(), line: introLine({ next, time: sessionAt(effectiveTimes(data, content, today)), doneToday, firstRun: data.workouts.length === 0 }) };
 }
 
 /** Android back: close the top sheet first, then go back a screen, and
@@ -295,8 +304,8 @@ export default function App() {
       hiddenAt = null;
       const s = useData.getState();
       if (!s.ready || s.loadError || s.startError || needsSetup(s.data) || !isNewOpen(away)) return;
-      const line = introFor();
-      if (typeof line === 'string') setIntro(line);
+      const next = introFor();
+      if (next) setIntro(next);
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
@@ -325,7 +334,7 @@ export default function App() {
       <RouterProvider router={router} />
       <SaveBar />
       {perms && intro === null ? <PermissionsSheet onDone={() => setPerms(false)} /> : null}
-      {typeof intro === 'string' ? <Intro line={intro} onDone={endIntro} /> : null}
+      {intro ? <Intro key={intro.at} kind={intro.kind} line={intro.line} onDone={endIntro} /> : null}
       {tour && !perms && intro === null ? <GuidedTour /> : null}
     </>
   );
