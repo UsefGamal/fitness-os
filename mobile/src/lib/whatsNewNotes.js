@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.31',
+    items: [
+      { icon: 'star', text: 'Tafra has three colours now: green for training, guava pink for meals, and Nile blue for recovery, water and sleep.' },
+      { icon: 'check', text: 'Light mode uses the same bright green buttons as dark mode, with softer cards that lift off the page.' },
+    ],
+  },
+  {
     version: '1.1.30',
     items: [
       { icon: 'bolt', text: 'New intro: the ط leaps along its slit and lands beside Tafra on Home. Full leap once a day, a quick jump after.' },

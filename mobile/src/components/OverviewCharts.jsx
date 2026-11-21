@@ -3,7 +3,7 @@ import { dayMonth } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
 
 const W = 340;
-const OUTCOME_TONE = { up: 'var(--accent)', held: 'var(--muted)', down: 'var(--orange)' };
+const OUTCOME_TONE = { up: 'var(--accent-stroke)', held: 'var(--muted)', down: 'var(--orange)' };
 // Each lift has its own line style, so two lifts with the same outcome
 // (same colour) still tell apart; the end label names them.
 const LIFT_DASH = [null, '7 4', '2 3'];
@@ -36,10 +36,10 @@ export function WeeksChart({ weeks }) {
           const x = i * (bw + gap);
           const h = base - y(w.days);
           const ok = !(w.days < w.need);
-          const fill = w.deload ? 'url(#deload-hatch)' : w.current ? 'none' : ok ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 40%, transparent)';
+          const fill = w.deload ? 'url(#deload-hatch)' : w.current ? 'none' : ok ? 'var(--accent-stroke)' : 'color-mix(in srgb, var(--accent) 40%, transparent)';
           return (
             <g key={w.week}>
-              {w.days ? <rect x={x} y={y(w.days)} width={bw} height={h} rx="4" fill={fill} stroke={w.current ? 'var(--accent)' : 'none'} strokeWidth="1.5" strokeDasharray={w.current ? '3 2' : undefined} /> : null}
+              {w.days ? <rect x={x} y={y(w.days)} width={bw} height={h} rx="4" fill={fill} stroke={w.current ? 'var(--accent-stroke)' : 'none'} strokeWidth="1.5" strokeDasharray={w.current ? '3 2' : undefined} /> : null}
               <line x1={x - 1} x2={x + bw + 1} y1={y(w.need)} y2={y(w.need)} stroke="var(--text)" strokeWidth="1.5" opacity="0.6" />
               <text x={x + bw / 2} y={(w.days ? y(w.days) : base) - 4} textAnchor="middle" fontSize="10" fill="var(--chart-label)">{w.days}</text>
               {i % 4 === 0 || w.current ? <text x={i === 0 ? x : x + bw / 2} y={H - 5} textAnchor={i === 0 ? 'start' : 'middle'} fontSize="10" fill="var(--chart-label)">{w.current ? t('ov.now') : dayMonth(w.week)}</text> : null}

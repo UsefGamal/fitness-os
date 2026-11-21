@@ -24,7 +24,7 @@ test('theme: every dark colour token has a light value', () => {
   // Sizes, safe areas, the text size and the type scale (--fs-*) are the same in both themes.
   const layout = new Set(['--radius', '--radius-lg', '--gutter', '--tabbar', '--ts']);
   for (const n of dark) if (!layout.has(n) && !n.startsWith('--fs-')) assert.ok(light.has(n), `${n} has no light value`);
-  assert.equal(THEME_BG.light, '#f2f2f7');
+  assert.equal(THEME_BG.light, '#eef1ee');
   assert.ok(block(':root[data-theme="light"] {').includes(`--bg: ${THEME_BG.light}`));
 });
 
