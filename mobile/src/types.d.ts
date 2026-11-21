@@ -39,6 +39,8 @@ export interface Workout {
   notes?: string | null;
   sets: WorkoutSet[];
   checklist_items?: unknown[];
+  /** An interval run (Intervals timer): preset, work rounds done, work and rest seconds. */
+  intervals?: { preset: string; rounds: number; work_s?: number; rest_s?: number } | null;
   [key: string]: unknown;
 }
 

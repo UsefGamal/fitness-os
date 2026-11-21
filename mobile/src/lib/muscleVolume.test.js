@@ -62,3 +62,13 @@ test('stretches count for nothing, and are not unknown', () => {
   assert.equal(v.groups.quads.avg, 0);
   assert.equal(v.unknown, 0);
 });
+
+test('cardio and padel count in the weekly average as light sets', async () => {
+  const { logSession } = await import('./data.js');
+  let d = emptyData(content);
+  d = logSession(d, { date: '2026-11-03', type: 'padel', label: 'Padel', durationMin: 90 });
+  const v = muscleVolume(d, activePlan(d, content), TODAY);
+  assert.equal(v.ready, true);
+  assert.equal(v.groups.quads.avg, 3);
+  assert.equal(v.groups.forearms.avg, 1.5);
+});

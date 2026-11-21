@@ -15,6 +15,8 @@ import PermissionsSheet from './components/PermissionsSheet.jsx';
 import { askPermissionsOnOpen } from './lib/reminderHealth.js';
 import { closeTopOverlay } from './lib/overlays.js';
 import RestTimer from './components/RestTimer.jsx';
+import IntervalRunner from './components/IntervalRunner.jsx';
+import { useIntervalRun } from './store/intervalRun.js';
 import { useTimer } from './store/useTimer.js';
 import TabBar from './components/TabBar.jsx';
 import useSwipeTabs from './components/useSwipeTabs.js';
@@ -88,7 +90,10 @@ const SEEN = new Set();
 function Shell() {
   const { pathname, state } = useLocation();
   const back = useNavigationType() === 'POP';
-  const timing = useTimer((t) => Boolean(t.endsAt));
+  const resting = useTimer((t) => Boolean(t.endsAt));
+  // An interval run shows its own pill on every page but its own.
+  const intervals = useIntervalRun((s) => Boolean(s.run)) && pathname !== '/intervals';
+  const timing = resting || intervals;
   // Swipe left or right on a tab page to open the tab next to it.
   const mealsOn = useData((s) => moduleOn(s.data, 'meals'));
   const locale = useData((s) => localeOf(s.data));
@@ -123,7 +128,7 @@ function Shell() {
     <>
       {/* New pages open at the top; Back returns to where you were (UX-03). */}
       <ScrollRestoration />
-      <div key={pathname} ref={setRoute} {...swipe} className={`route ${motion.enter}${motion.rise ? ' rise' : ''}${timing ? (pathname === '/workout' ? ' with-timer' : ' with-pill') : ''}`}>
+      <div key={pathname} ref={setRoute} {...swipe} className={`route ${motion.enter}${motion.rise ? ' rise' : ''}${timing ? (pathname === '/workout' && resting ? ' with-timer' : ' with-pill') : ''}`}>
         <ErrorBoundary key={pathname}>
           {/* Rule 19: a page that is still loading says so (after a short
               delay, so a fast open never flashes the skeleton). */}
@@ -134,6 +139,7 @@ function Shell() {
       </div>
       <CompactTitle pathname={pathname} />
       <RestTimer compact={pathname !== '/workout'} />
+      <IntervalRunner />
       <Fanfare />
       <Announcer />
       <TabBar />

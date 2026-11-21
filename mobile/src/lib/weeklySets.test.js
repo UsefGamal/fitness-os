@@ -80,3 +80,16 @@ test('a drop set counts half a hard set; to-failure counts in full', () => {
   d = { ...d, workouts: d.workouts.map((w) => ({ ...w, sets: w.sets.map((s, i) => (i === 3 ? { ...s, set_type: 'drop' } : i === 2 ? { ...s, set_type: 'failure' } : s)) })) };
   assert.deepEqual(doneThisWeek(d, activePlan(d, content), TODAY).muscles, { chest: 3.5, 'front delts': 1.75, triceps: 1.75 });
 });
+
+test('padel and interval rounds add light sets to the week', async () => {
+  const { logSession } = await import('./data.js');
+  let d = emptyData(content);
+  d = logSession(d, { date: '2026-11-10', type: 'padel', label: 'Padel', durationMin: 90 });
+  d = logSession(d, { date: '2026-11-10', type: 'cardio', label: 'Tabata', durationMin: 6, intervals: { preset: 'tabata', rounds: 4 },
+    checklist: [{ item_name: 'Push-up', completed: true, reps_achieved: 4 }] });
+  const { muscles, unknown } = doneThisWeek(d, activePlan(d, content), TODAY);
+  assert.equal(muscles.quadriceps, 3);
+  assert.equal(muscles.chest, 2);
+  assert.equal(muscles.forearms, 1.5);
+  assert.equal(unknown, 0);
+});

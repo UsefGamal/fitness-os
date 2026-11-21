@@ -23,20 +23,26 @@ const TEXTS = {
 
 /** Show move `index` of `steps` with `leftMs` to go (paused or running). */
 export async function followToShade({ steps, index, title, leftMs, totalS, paused = false }) {
-  if (!isNative()) return;
   const lines = followShadeLines(steps, index, title);
   if (!lines) return;
+  await stepToShade({ ...lines, leftMs, totalS, paused });
+}
+
+/** Any timed step in the shade (a follow-along move, an interval round):
+ * `label` as the title, `detail` under it, `progress` below. */
+export async function stepToShade({ label, detail, progress, leftMs, totalS, paused = false, texts = {} }) {
+  if (!isNative()) return;
   setShadeOwner('follow');
   try {
     const { sounds } = trainingSettings(useData.getState().data);
     await RestTimer.start({
       endsAt: Date.now() + Math.max(0, leftMs) + SLACK_MS,
       pausedLeft: paused ? Math.max(1000, leftMs) : 0,
-      total: totalS, label: lines.label, workout: lines.progress, progress: lines.progress, detail: lines.detail,
-      sets: 0, sound: sounds, texts: TEXTS,
+      total: totalS, label, workout: progress, progress, detail,
+      sets: 0, sound: sounds, texts: { ...TEXTS, ...texts },
     });
   } catch (err) {
-    recordError(new Error(`Follow-along in notifications: ${err?.message || err}`));
+    recordError(new Error(`Timer in notifications: ${err?.message || err}`));
   }
 }
 

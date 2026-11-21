@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { activeKcalAverage, hm, KEEP_DAYS, mergeDaily, readiness, watchTdee, worn } from './activity.js';
+import { activeKcalAverage, hm, KEEP_DAYS, mergeDaily, readiness, recoveryExtraDays, watchTdee, watchTrends, worn } from './activity.js';
 import { addDays } from './dates.js';
 import * as D from './data.js';
 import { macroTargets } from './macros.js';
@@ -76,4 +76,30 @@ test('readiness compares last night with your own two weeks', () => {
 test('hours and minutes', () => {
   assert.equal(hm(440), '7h 20m');
   assert.equal(hm(45), '45m');
+});
+
+test('a short night or a raised resting heart rate adds a recovery day', () => {
+  assert.equal(recoveryExtraDays(null), 0);
+  assert.equal(recoveryExtraDays({ level: 'good' }), 0);
+  assert.equal(recoveryExtraDays({ level: 'unknown' }), 0);
+  assert.equal(recoveryExtraDays({ level: 'caution' }), 1);
+  assert.equal(recoveryExtraDays({ level: 'easy' }), 1);
+});
+
+test('watch trends only use days the watch sent a number', () => {
+  const daily = {
+    [back(0)]: { steps: 8000, sleep_min: 420, resting_hr: 60 },
+    [back(1)]: { steps: 1200 }, // watch off most of the day
+    [back(2)]: { steps: 10000, sleep_min: 390 },
+    [back(5)]: { steps: 6000, resting_hr: 62 },
+    [back(40)]: { steps: 9000, resting_hr: 58 },
+  };
+  const tr = watchTrends(daily, today);
+  assert.deepEqual(tr.steps.points.map((p) => p.date), [back(5), back(2), back(0)]);
+  assert.equal(tr.steps.avg, 8000);
+  assert.equal(tr.sleep, null); // two nights only
+  assert.equal(tr.rhr, null);
+  const more = watchTrends({ ...daily, [back(3)]: { sleep_min: 450 } }, today);
+  assert.deepEqual(more.sleep.points.map((p) => p.value), [7.5, 6.5, 7]);
+  assert.deepEqual(watchTrends(null, today), { steps: null, sleep: null, rhr: null });
 });
