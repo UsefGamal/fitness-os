@@ -12,6 +12,18 @@ export const WHATS_NEW = [
     ],
   },
   {
+    version: '1.1.28',
+    items: [
+      { icon: 'bell', text: 'Reminders show the same small green Tafra mark as the rest timer, instead of the full app icon.' },
+    ],
+  },
+  {
+    version: '1.1.27',
+    items: [
+      { icon: 'check', text: 'Swiping between pages no longer buzzes. Taps on the tab bar still do.' },
+    ],
+  },
+  {
     version: '1.1.25',
     items: [
       { icon: 'waves', text: 'Intervals show a move with its photo each round, run in the notification and keep going when you leave the page.' },

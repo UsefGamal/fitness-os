@@ -426,6 +426,7 @@ public class RestTimerService extends Service {
     private Notification placeholder() {
         return new NotificationCompat.Builder(this, CHANNEL_RUNNING)
             .setSmallIcon(R.drawable.ic_stat_bolt)
+            .setColor(Color.parseColor("#30d158"))
             .setContentTitle(tx("rest", "Rest"))
             .setSilent(true)
             .build();

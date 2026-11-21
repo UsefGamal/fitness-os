@@ -35,3 +35,21 @@ test('widget: the picker has a preview image', () => {
   assert.match(xml, /android:previewImage="@drawable\/widget_preview"/);
   assert.ok(existsSync(new URL('drawable-nodpi/widget_preview.png', RES)));
 });
+
+// Notification icons (20 Nov 2026): reminders showed the full app icon while the
+// rest timer showed the ط mark. Every notification uses the one status icon.
+test('notifications: reminders and native notifications all use ic_stat_bolt', async () => {
+  const cfg = JSON.parse(readFileSync(new URL('../../capacitor.config.json', import.meta.url), 'utf8'));
+  assert.equal(cfg.plugins.LocalNotifications.smallIcon, 'ic_stat_bolt');
+  assert.equal(cfg.plugins.LocalNotifications.iconColor.toLowerCase(), '#30d158');
+  const { NOTIFY_ICON } = await import('./reminders.js');
+  assert.equal(NOTIFY_ICON, 'ic_stat_bolt');
+  const stat = readdirSync(RES).filter((d) => d.startsWith('drawable') && readdirSync(new URL(`${d}/`, RES)).some((f) => f.startsWith('ic_stat_bolt.')));
+  assert.deepEqual(stat, ['drawable'], 'ic_stat_bolt lives only in drawable/');
+  const JAVA = new URL('../../android/app/src/main/java/', import.meta.url);
+  const files = readdirSync(JAVA, { recursive: true }).filter((f) => String(f).endsWith('.java'));
+  for (const f of files) {
+    const src = readFileSync(new URL(String(f), JAVA), 'utf8');
+    for (const m of src.matchAll(/setSmallIcon\(([^)]*)\)/g)) assert.equal(m[1], 'R.drawable.ic_stat_bolt', `${f} uses the Tafra status icon`);
+  }
+});

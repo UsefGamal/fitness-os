@@ -64,6 +64,11 @@ export function plannedReminders(today, content, now = new Date(), moves = [], e
 /** Planned reminders as Android local notifications on `channel`: the
  * route rides along so a tap opens that screen (lib/routes.js checks it
  * again on the way back in). TEST-1 part C: was inline in store/notify.js. */
+// Same status-bar mark and green as the rest timer and every other notification,
+// not the full app icon (res/drawable/ic_stat_bolt.xml, the monochrome ط).
+export const NOTIFY_ICON = 'ic_stat_bolt';
+export const NOTIFY_COLOR = '#30d158';
+
 export function toNotifications(planned, channel) {
-  return planned.map((r) => ({ id: r.id, title: r.title, body: r.body, channelId: channel, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
+  return planned.map((r) => ({ id: r.id, title: r.title, body: r.body, channelId: channel, smallIcon: NOTIFY_ICON, iconColor: NOTIFY_COLOR, extra: { route: r.route }, schedule: { at: r.at, allowWhileIdle: true } }));
 }
