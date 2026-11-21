@@ -486,36 +486,25 @@ details.more > summary::-webkit-details-marker { display: none; }
 .fill-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .list-row input[type=time], .list-row input[type=date] { background: var(--surface2); border: 0; border-radius: 10px; color: var(--text); padding: 8px 10px; font-size: calc(var(--fs-body) * var(--ts)); min-height: 44px; color-scheme: inherit; }
 
-/* Intro on open (components/Intro.jsx, 1.8 s). The bolt sits where the
-   Android splash draws it, so the hand-over is seamless. */
-.intro { position: fixed; inset: 0; z-index: 100; background: var(--bg); border: 0; padding: 0; margin: 0; color: var(--text); width: 100%;
-  clip-path: circle(150% at 50% 50%); animation: intro-out 0.42s cubic-bezier(.6, 0, .8, .2) 1.38s forwards; }
-/* A soft green light behind the bolt that swells as it charges. */
-.intro-glow { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent); opacity: 0; transform: scale(.4);
-  animation: intro-glow 0.9s var(--ease-emph) 0.45s forwards; }
-.intro-mark { position: absolute; left: 50%; top: 50%; width: 160px; height: 160px; transform: translate(-50%, -50%); overflow: visible; }
-.intro-ring-bg { fill: none; stroke: var(--accent-dim); stroke-width: 6; opacity: 0; animation: intro-fade 0.3s ease-out 0.1s forwards; }
-.intro-ring { fill: none; stroke: var(--accent-stroke); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transform: rotate(-90deg); transform-origin: 80px 80px; animation: intro-ring 0.7s cubic-bezier(.3, 1.2, .4, 1) 0.3s forwards; }
-.intro-bolt { transform-box: fill-box; }
-.intro-bolt-line { fill: none; stroke: var(--accent); stroke-width: 0.9; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: intro-draw 0.45s ease-in-out forwards, intro-line-out 0.2s ease-out 0.75s forwards; }
-.intro-bolt-fill { fill: var(--accent); opacity: 0; transform-origin: 12px 12px; animation: intro-fill 0.5s var(--spring) 0.42s forwards; }
-.intro-text { position: absolute; left: 0; right: 0; top: calc(50% + 100px); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 24px; }
-.intro-name { display: flex; font-size: calc(var(--fs-display) * var(--ts)); font-weight: 800; letter-spacing: -0.03em; }
-.intro-ch { display: inline-block; opacity: 0; transform: translateY(14px); animation: intro-up 0.42s var(--spring) forwards; animation-delay: calc(0.62s + var(--c) * 0.035s); }
-.intro-ch.accent { color: var(--accent); }
-.intro-slogan { margin-top: -2px; font-size: calc(var(--fs-foot) * var(--ts)); font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); opacity: 0; animation: intro-up 0.4s ease-out 0.9s forwards; }
-.intro-line { margin-top: 10px; font-size: calc(var(--fs-body) * var(--ts)); color: var(--text); opacity: 0; animation: intro-up 0.4s ease-out 1.15s forwards; }
-@keyframes intro-draw { to { stroke-dashoffset: 0; } }
-/* Once the mark is filled the outline goes, so it never thickens the blades or closes the slit. */
-@keyframes intro-line-out { to { opacity: 0; } }
-@keyframes intro-fill { 0% { opacity: 0; transform: scale(.7); } 100% { opacity: 1; transform: none; } }
-@keyframes intro-glow { 0% { opacity: 0; transform: scale(.4); } 60% { opacity: 1; transform: scale(1.05); } 100% { opacity: .7; transform: scale(1); } }
-@keyframes intro-ring { to { stroke-dashoffset: 0; } }
-@keyframes intro-fade { to { opacity: 1; } }
-@keyframes intro-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-/* The exit: the intro closes into the bolt like an iris, showing Home. */
-@keyframes intro-out { to { clip-path: circle(0% at 50% 50%); visibility: hidden; } }
+/* Intro on open (components/Intro.jsx): the leap. The mark starts where the
+   Android splash draws it (104 px, centred), so the hand-over is seamless.
+   Positions are set from lib/intro.js goldenLayout(); only transform and
+   opacity animate. */
+.intro { position: fixed; inset: 0; z-index: 100; background: transparent; border: 0; padding: 0; margin: 0; color: var(--text); width: 100%; overflow: hidden; }
+.intro-cover { position: absolute; inset: 0; background: var(--bg); }
+.intro-mark { position: absolute; left: calc(50% - 52px); top: calc(50% - 52px); width: 104px; height: 104px; transform-origin: 50% 50%; will-change: transform; overflow: visible; }
+.intro-mark path, .intro-land path { fill: var(--accent-fill); } /* the same green as the splash icon, both themes */
+.intro-land { position: absolute; opacity: 0; transform-origin: 50% 50%; }
+.intro-trails { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.intro-trails path { fill: none; stroke: var(--accent-fill); stroke-width: 3; stroke-linecap: round; opacity: 0; }
+.intro-trails path + path { stroke-width: 2.5; }
+/* A soft green launch pad under the mark: the mark's width / phi. */
+.intro-pad { position: absolute; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, var(--accent-fill), transparent); opacity: 0; }
+.intro-name { position: absolute; left: 0; right: 0; text-align: center; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; opacity: 0; }
+.intro-name .accent { color: var(--accent); }
+.intro-slogan { position: absolute; left: 0; right: 0; text-align: center; font-weight: 600; letter-spacing: 0.16em; line-height: 1.25; text-transform: uppercase; color: var(--muted); opacity: 0; }
+/* The header mark waits while the intro's own copy lands on it. */
+.intro-on .home-head .wordmark-mark { opacity: 0; }
 
 /* Right-to-left (E9-S2): the layout uses logical sides (inline-start/end)
    above, and arrows that mean forward or back point the other way. */
@@ -577,8 +566,10 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .icon.inline { width: 14px; height: 14px; vertical-align: -2px; }
 
 .home-head { margin: 0 4px 16px; }
-.wordmark { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 800; letter-spacing: -0.03em; }
-.wordmark span { color: var(--accent); }
+.wordmark { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 800; letter-spacing: -0.03em; display: flex; align-items: center; gap: 0.3em; }
+.wordmark-mark { width: 1.2em; height: 1.2em; flex: none; }
+.wordmark-mark path { fill: var(--accent); }
+.wordmark-name span { color: var(--accent); }
 .greeting { margin: 16px 0 2px; display: flex; flex-direction: column; font-weight: 700; }
 .greet-small { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 600; color: var(--muted); letter-spacing: -0.01em; }
 .greet-name { font-size: calc(var(--fs-t1) * var(--ts)); letter-spacing: -0.03em; line-height: 1.15; }
