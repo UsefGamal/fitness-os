@@ -19,6 +19,7 @@
       "style": "DARK"
     },
     "LocalNotifications": {
+      "smallIcon": "ic_stat_bolt",
       "iconColor": "#30d158"
     }
   }

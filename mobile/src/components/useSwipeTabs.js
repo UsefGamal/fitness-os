@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { useNavigate } from 'react-router';
 
 import { overlayCount } from '../lib/overlays.js';
-import { feedback } from '../store/feedback.js';
 import { reducedMotion } from '../store/motionFx.js';
 import { DRAG, dragLock, dragOffset, neighbourTab, swipeCommits } from '../lib/swipeNav.js';
 
@@ -70,8 +69,8 @@ export default function useSwipeTabs(pathname, { rtl, tabs }) {
     const forward = rtl ? dx > 0 : dx < 0;
     const open = Boolean(neighbourTab(pathname, forward, tabs));
     if (!calm()) s.el.style.transform = `translate3d(${dragOffset(dx, open)}px, 0, 0)`;
-    // MOVE-2: at the first or last tab the page stretches; a tap says "end".
-    if (!open && Math.abs(dx) > 56 && !s.edge) { s.edge = true; feedback('tap'); }
+    // MOVE-2: at the first or last tab the page stretches. No buzz on swipes
+    // between pages (Yusuf, 20 Nov): only the stretch says "end".
   };
 
   const onTouchEnd = () => {
@@ -81,7 +80,6 @@ export default function useSwipeTabs(pathname, { rtl, tabs }) {
     const forward = rtl ? s.dx > 0 : s.dx < 0;
     const to = neighbourTab(pathname, forward, tabs);
     if (!to || overlayCount() > 0 || !swipeCommits({ dx: s.dx, ms: Date.now() - s.at, width: s.width })) { reset(s.el); return; }
-    feedback('tap');
     const go = () => navigate(to, { state: { swipe: forward ? 'forward' : 'back' } });
     if (calm()) { go(); return; }
     // Slide the page the rest of the way out, then show the next one coming in.

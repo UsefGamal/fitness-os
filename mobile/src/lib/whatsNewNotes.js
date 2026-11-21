@@ -5,10 +5,22 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
-    version: '1.1.27',
+    version: '1.1.29',
     items: [
       { icon: 'bell', text: 'Open the "Rest done" notification to see the exercise photo and the set, change the weight with − and +, then tap Start set.' },
       { icon: 'timer', text: 'While a set is going the notification counts up. Tap Done set to log it and start your rest, all without opening the app.' },
+    ],
+  },
+  {
+    version: '1.1.28',
+    items: [
+      { icon: 'bell', text: 'Reminders show the same small green Tafra mark as the rest timer, instead of the full app icon.' },
+    ],
+  },
+  {
+    version: '1.1.27',
+    items: [
+      { icon: 'check', text: 'Swiping between pages no longer buzzes. Taps on the tab bar still do.' },
     ],
   },
   {
