@@ -180,3 +180,14 @@ export function pictureLines(stats, t = tr) {
   if (stats.streak > 0) lines.push({ label: t('wrap.rowStreak'), value: t('wrap.weeksN', { n: stats.streak }) });
   return lines;
 }
+
+/** The streak, when this workout is the session that kept its week (design
+ * laws plan #5): its day is the one that brought the week's training days up
+ * to the need. 0 when it didn't, or when another session that day already
+ * counted. Shown once, on the finish card. */
+export function keptWeekBy(data, w) {
+  if (!w) return 0;
+  if (data.workouts.some((x) => x.log_date === w.log_date && x.id !== w.id)) return 0;
+  const s = weekStreaks(data, w.log_date);
+  return s.week.done === s.week.need ? s.current : 0;
+}

@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.35',
+    items: [
+      { icon: 'play', text: 'When a workout is due, these notes wait as a small line on Home, so Start is the first thing you see.' },
+      { icon: 'download', text: 'Home shows one reminder line at a time, and the backup ask no longer shows twice in your first week.' },
+      { icon: 'trophy', text: 'Badges from a workout now show on the "Workout saved" card. Other badges appear at the top, away from Start.' },
+      { icon: 'flame', text: 'The "Workout saved" card tells you when that session kept your week.' },
+    ],
+  },
+  {
     version: '1.1.34',
     items: [
       { icon: 'check', text: 'Tap a logged set to fix its kg, reps or kind. Delete is inside, so a wet thumb can\'t lose a set.' },

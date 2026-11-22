@@ -41,6 +41,7 @@ import { SESSIONS, SessionSheet } from './Session.jsx';
 import { useToday } from '../store/today.js';
 import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
+import { homeLine, whatsNewMode } from '../lib/interrupts.js';
 import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
 import { dismissWrap, weekDaysLine, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
@@ -134,6 +135,12 @@ export default function Today() {
   // Only closing the sheet (or finishing setup) marks them seen, so a build
   // with no note of its own never hides the next one's.
   const news = unseenNotes(data, APP.version, WHATS_NEW);
+  // One interrupt at a time (design laws plan #4): while today's session is
+  // due, What's new waits as a thin line, and only one thin line shows.
+  const sessionDue = Boolean(next && !next.isRestToday && !todays);
+  const newsMode = whatsNewMode({ hasNews: news.length > 0, sessionDue });
+  const [newsOpen, setNewsOpen] = useState(false);
+  const line = homeLine({ news: newsMode === 'line', backup: Boolean(backup), firstWeekAsksBackup: card === 'first' && firstSteps.some((s) => s.key === 'backup' && !s.done) });
   const name = firstName(data.profile);
   const greet = t(`home.greet.${partOfDay(new Date().getHours())}`);
   const addWater = (ml) => { update((d) => D.addWater(d, today, ml)); feedback('water'); };
@@ -237,11 +244,20 @@ export default function Today() {
 
       {/* Today's session and Start come first (UX-01); weight is next, one tap to log (UX-03). */}
       {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} onLog={() => setWeighing(true)} /> : null}
-      {news.length ? <WhatsNewSheet notes={news} onClose={() => update((d) => markSeen(d, APP.version))} /> : null}
+      {newsMode === 'sheet' || (newsOpen && news.length) ? <WhatsNewSheet notes={news} onClose={() => { setNewsOpen(false); update((d) => markSeen(d, APP.version)); }} /> : null}
       {weighing ? <WeighInSheet data={data} update={update} today={today} onClose={() => setWeighing(false)} /> : null}
       <MetricStrip tiles={tiles} />
       {/* One thin line, not a card (UX-02). */}
-      {backup ? (
+      {line === 'news' ? (
+        <div className="backup-line" role="status">
+          <button type="button" className="grow backup-link" onClick={() => setNewsOpen(true)}>
+            <Icon name="star" className="icon tone-accent" />
+            <span><strong>{t('whatsNew.titleV', { v: APP.version })}</strong></span>
+          </button>
+          <Icon name="chev" className="icon chev" />
+        </div>
+      ) : null}
+      {line === 'backup' ? (
         <div className="backup-line" role="status">
           <Link className="grow backup-link" to="/settings/data">
             <Icon name="download" className="icon tone-accent" />
