@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { activeDays, badgeGroups, daysSince, firstLoadDates, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from './statsView.js';
+import { activeDays, badgeCounts, badgeGroups, badgeSections, badgeState, daysSince, firstLoadDates, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, SPECIAL_BADGES, statsTabs } from './statsView.js';
 
 const rows = [
   { key: 'chest', group: 'Chest', done: 6, planned: 6 },
@@ -74,4 +74,46 @@ test('firstLoadDates skips warm-ups, holds and unloaded sets (CHART-1)', () => {
     { log_date: '2026-11-01', sets: [{ exercise_id: 1, weight_kg: 20, reps: 10, is_warmup: true }, { exercise_id: 2, weight_kg: 20, reps: 60, track: 'time' }, { exercise_id: 3, weight_kg: 0, reps: 10 }] },
   ];
   assert.deepEqual([...firstLoadDates(w)], [[1, '2026-11-05']]);
+});
+
+test('badge states, counts and filtered sections', () => {
+  const all = [
+    { id: 'first', earned: true, fraction: 1, date: '2026-11-01' },
+    { id: 'w10', earned: false, fraction: 0.3 },
+    { id: 'w50', earned: false, fraction: 0.06 },
+    { id: 'w100', earned: false, fraction: 0 },
+    { id: 'streak4', earned: true, fraction: 1, date: '2026-11-20' },
+    { id: 'pr1', earned: false, fraction: 0 },
+    { id: 'meals7', earned: false, fraction: 0 },
+  ];
+  assert.equal(badgeState(all[0]), 'earned');
+  assert.equal(badgeState(all[1]), 'progress');
+  assert.equal(badgeState(all[3]), 'locked');
+  assert.deepEqual(badgeCounts(all), { all: 7, earned: 2, progress: 2, locked: 3 });
+  assert.ok(SPECIAL_BADGES.has('w100'));
+
+  const s = badgeSections(all, 'all');
+  const cons = s.find((g) => g.key === 'consistency');
+  assert.deepEqual(cons.badges.map((b) => b.id), ['streak4', 'first', 'w10', 'w50', 'w100'], 'earned newest first, then closest, then locked');
+  assert.equal(cons.earned, 2);
+  assert.equal(cons.total, 5);
+  assert.equal(cons.open, true);
+  assert.equal(s.find((g) => g.key === 'strength').open, false, 'nothing started: starts closed');
+
+  const prog = badgeSections(all, 'progress');
+  assert.deepEqual(prog.map((g) => g.key), ['consistency']);
+  assert.deepEqual(prog[0].badges.map((b) => b.id), ['w10', 'w50']);
+  assert.equal(prog[0].total, 5, 'counts stay the whole category');
+  assert.deepEqual(badgeSections(all, 'earned')[0].badges.map((b) => b.id), ['streak4', 'first']);
+  assert.deepEqual(badgeSections([], 'all'), []);
+});
+
+test('badgeSections keeps the list order for ties', () => {
+  const all = [
+    { id: 'first', earned: true, fraction: 1, date: null },
+    { id: 'w10', earned: true, fraction: 1, date: null },
+    { id: 'w50', earned: false, fraction: 0.5 },
+    { id: 'w100', earned: false, fraction: 0.5 },
+  ];
+  assert.deepEqual(badgeSections(all, 'all')[0].badges.map((b) => b.id), ['first', 'w10', 'w50', 'w100']);
 });

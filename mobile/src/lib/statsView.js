@@ -116,3 +116,52 @@ export function seriesChange(points) {
 export function statsTabs(weightOn) {
   return ['overview', 'muscles', 'strength', ...(weightOn ? ['body'] : []), 'badges'];
 }
+
+/** The hardest step of each badge family: gold once earned, so a rare
+ * badge looks rare (Badges review, 22 Nov). */
+export const SPECIAL_BADGES = new Set(['w100', 'streak12', 'pr25', 'ton100', 'dead2']);
+export const BADGE_FILTERS = ['all', 'progress', 'earned'];
+
+/** 'earned' | 'progress' (started, not done) | 'locked' (nothing yet). */
+export function badgeState(b) {
+  if (b.earned) return 'earned';
+  return b.fraction > 0 ? 'progress' : 'locked';
+}
+
+/** How many badges are in each state, plus all. */
+export function badgeCounts(all) {
+  const out = { all: all.length, earned: 0, progress: 0, locked: 0 };
+  for (const b of all) out[badgeState(b)] += 1;
+  return out;
+}
+
+const STATE_ORDER = { earned: 0, progress: 1, locked: 2 };
+
+/**
+ * The Badges list for a filter ('all' | 'progress' | 'earned'): categories
+ * in order, each { key, badges, earned, total, open }. Inside a category,
+ * earned come first (newest first), then started ones (closest first),
+ * then locked, so locked badges never lead. earned/total count the whole
+ * category whatever the filter. A category with nothing left after the
+ * filter is dropped. open: on 'all', only categories with something
+ * earned or started start open, so a new user's page is short.
+ */
+export function badgeSections(all, filter = 'all') {
+  return badgeGroups(all).map((g) => {
+    const keep = g.badges
+      .filter((b) => filter === 'all' || badgeState(b) === filter)
+      .map((b, i) => ({ b, i }))
+      .sort((x, y) => {
+        const sx = badgeState(x.b);
+        const sy = badgeState(y.b);
+        if (sx !== sy) return STATE_ORDER[sx] - STATE_ORDER[sy];
+        if (sx === 'earned' && x.b.date !== y.b.date) return (y.b.date || '') < (x.b.date || '') ? -1 : 1;
+        if (sx === 'progress' && x.b.fraction !== y.b.fraction) return y.b.fraction - x.b.fraction;
+        return x.i - y.i;
+      })
+      .map((x) => x.b);
+    const earned = g.badges.filter((b) => b.earned).length;
+    const open = filter !== 'all' || g.badges.some((b) => badgeState(b) !== 'locked');
+    return { key: g.key, badges: keep, earned, total: g.badges.length, open };
+  }).filter((g) => g.badges.length);
+}

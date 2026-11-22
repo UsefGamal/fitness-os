@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router';
 import BodyMap from '../components/BodyMap.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import Sheet from '../components/Sheet.jsx';
 import Icon from '../components/Icon.jsx';
 import LineChart from '../components/LineChart.jsx';
 import { KeptChart, WeeksChart } from '../components/OverviewCharts.jsx';
@@ -16,7 +17,7 @@ import { addDays, dayMonth, formatDate, formatNumber, weekStart } from '../lib/d
 import { currentGoal, macroTargets, profileOf } from '../lib/macros.js';
 import { measuredBurn } from '../lib/measuredBurn.js';
 import { sparkLine, strengthMovers } from '../lib/movers.js';
-import { THIN_WEEK, weeklyAverages } from '../lib/bodyStats.js';
+import { lastTwoWeeks, THIN_WEEK, weeklyAverages, weightSummary } from '../lib/bodyStats.js';
 import { AVG_WEEKS, muscleVolume } from '../lib/muscleVolume.js';
 import { keptWhileCutting, weeklyDays } from '../lib/overview.js';
 import * as D from '../lib/data.js';
@@ -29,16 +30,13 @@ import { useCatalogue } from '../store/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
 import { doneThisWeek, GUIDE, muscleRows, plannedThisWeek } from '../lib/weeklySets.js';
-import { activeDays, badgeGroups, daysSince, firstLoadDates, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, statsTabs } from '../lib/statsView.js';
+import { activeDays, BADGE_FILTERS, badgeCounts, badgeSections, badgeState, daysSince, firstLoadDates, groupStatus, groupVolume, latestBadge, recordSummary, seriesChange, sessionsLast7, SPECIAL_BADGES, statsTabs } from '../lib/statsView.js';
 import { content, useData } from '../store/useData.js';
 import PullRefresh from '../components/PullRefresh.jsx';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { isNative } from '../store/native.js';
 import { useToday } from '../store/today.js';
 
-const MEASURES = [
-  ['waist_cm', 'Waist'], ['chest_cm', 'Chest'], ['arm_cm', 'Arm'], ['hips_cm', 'Hips'], ['thigh_cm', 'Thigh'],
-];
 // Body map volume shades, matched to the 10-20 guide (BI-17): fainter is
 // fewer sets; the legend names each step, so shade is never the only cue.
 const BAND_FILL = { none: null, low: 'color-mix(in srgb, var(--accent) 30%, transparent)', good: 'color-mix(in srgb, var(--accent) 65%, transparent)', high: 'var(--accent)' };
@@ -449,8 +447,6 @@ function Movers({ movers, onPick, lifting }) {
   );
 }
 
-const ROMAN = ['', 'I', 'II', 'III', 'IV'];
-
 /** "3 / 10", "0.8 / 1 × BW", "2.5 / 5 kg" */
 function progressText(b) {
   const round = (v) => (b.goal >= 1000 ? formatNumber(Math.round(v)) : Math.round(v * 10) / 10);
@@ -460,34 +456,83 @@ function progressText(b) {
 
 function Badges({ data, today }) {
   const all = badges(data, today);
-  const earned = all.filter((b) => b.earned).length;
+  const counts = badgeCounts(all);
   const latest = latestBadge(all);
+  const [filter, setFilter] = useState('all');
+  const [openBy, setOpenBy] = useState({}); // category -> open, once tapped
+  const [info, setInfo] = useState(null); // the badge whose sheet is open
+  const sections = badgeSections(all, filter);
+  const next = all.filter((b) => badgeState(b) === 'progress').sort((a, b) => b.fraction - a.fraction)[0];
   return (
     <>
       <section className="card">
-        <div className="row between" style={{ alignItems: 'baseline' }}><h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2><span className="macro-value" style={{ fontSize: 'calc(var(--fs-t1) * var(--ts))' }}>{earned} / {all.length}</span></div>
-        <div className="progress" style={{ margin: '12px 0 8px' }} role="progressbar" aria-label={t('stats.achievements')} aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={earned}><span style={{ transform: `scaleX(${all.length ? earned / all.length : 0})` }} /></div>
-        <div className="muted small">{latest ? t('stats.latestBadge', { name: latest.label, date: formatDate(latest.date) }) : t('stats.noBadge')}</div>
-      </section>
-      {badgeGroups(all).map((g) => (
-        <div key={g.key}>
-          <div className="section-head"><h2 className="section-title">{t(`stats.cat.${g.key}`)}</h2><span className="muted small">{g.badges.filter((b) => b.earned).length}/{g.badges.length}</span></div>
-          <div className="badges">
-            {g.badges.map((b) => (
-              <div key={b.id} className={`badge tone-${b.tone}${b.earned ? ' on' : ''}`} style={{ '--p': `${Math.round(b.fraction * 360)}deg` }}>
-                <span className="medal" aria-hidden="true">
-                  <span className="medal-in"><Icon name={b.earned ? b.icon : 'lock'} /></span>
-                  {b.tier > 1 ? <span className="tier">{ROMAN[b.tier]}</span> : null}
-                </span>
-                <span className="name">{b.label}</span>
-                <span className="meta">{b.earned && b.date ? formatDate(b.date) : b.note}</span>
-                {b.earned ? <span className="got"><Icon name="check" /> {t('stats.earned')}</span> : <span className="count">{progressText(b)}</span>}
-              </div>
-            ))}
+        <h2 className="section-title" style={{ margin: 0 }}>{t('stats.achievements')}</h2>
+        <div className="ach-head">
+          <div className="ach-num"><strong>{counts.earned}</strong><span>/{counts.all}</span></div>
+          <div className="ach-split">
+            <span><b className="dot earned" aria-hidden="true" />{t('badge.nEarned', { n: counts.earned })}</span>
+            <span><b className="dot progress" aria-hidden="true" />{t('badge.nProgress', { n: counts.progress })}</span>
+            <span><b className="dot locked" aria-hidden="true" />{t('badge.nLocked', { n: counts.locked })}</span>
           </div>
         </div>
-      ))}
+        <div className="progress" style={{ margin: '10px 0 8px' }} role="progressbar" aria-label={t('stats.achievements')} aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={counts.earned}><span style={{ transform: `scaleX(${all.length ? counts.earned / all.length : 0})` }} /></div>
+        <div className="muted small">{latest ? t('stats.latestBadge', { name: latest.label, date: formatDate(latest.date) }) : t('badge.intro')}</div>
+        {next ? <div className="small" style={{ marginTop: 2 }}>{t('badge.closest', { name: next.label, left: progressText(next) })}</div> : null}
+      </section>
+      <div className="seg badge-filter" role="group" aria-label={t('badge.filter')}>
+        {BADGE_FILTERS.map((k) => (
+          <button key={k} type="button" className={filter === k ? 'on' : ''} aria-pressed={filter === k} onClick={() => setFilter(k)}>{t(`badge.f.${k}`, { n: counts[k] })}</button>
+        ))}
+      </div>
+      {sections.length ? sections.map((g) => {
+        const open = openBy[`${filter}:${g.key}`] ?? g.open;
+        return (
+          <div key={g.key} className="badge-cat">
+            <button type="button" className="badge-cat-head" aria-expanded={open} onClick={() => setOpenBy((o) => ({ ...o, [`${filter}:${g.key}`]: !open }))}>
+              <span className="section-title">{t(`stats.cat.${g.key}`)}</span>
+              <span className="muted small">{t('badge.catCount', { n: g.earned, all: g.total })}</span>
+              <Icon name="chev" className={`icon chev${open ? ' open' : ''}`} />
+            </button>
+            {open ? (
+              <div className="badges">
+                {g.badges.map((b) => {
+                  const st = badgeState(b);
+                  const special = SPECIAL_BADGES.has(b.id);
+                  return (
+                    <button key={b.id} type="button" className={`badge b-${st}${special ? ' special' : ''}`} style={{ '--p': `${Math.round(b.fraction * 360)}deg` }} onClick={() => setInfo(b)}>
+                      <span className="medal" aria-hidden="true">
+                        <span className="medal-in"><Icon name={st === 'locked' ? 'lock' : b.icon} /></span>
+                        {st === 'earned' ? <span className="tick"><Icon name="check" /></span> : null}
+                      </span>
+                      <span className="name">{b.label}</span>
+                      <span className="sr-only">{t(`badge.state.${st}`)}</span>
+                      <span className="count">{st === 'earned' ? (b.date ? formatDate(b.date) : t('stats.earned')) : progressText(b)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        );
+      }) : <p className="muted small badge-empty">{t(`badge.empty.${filter}`)}</p>}
+      <p className="muted small" style={{ margin: '12px 4px 0' }}>{t('badge.tapHint')}</p>
+      {info ? <BadgeSheet b={info} onClose={() => setInfo(null)} /> : null}
     </>
+  );
+}
+
+/** A badge's criteria, progress and date, on a tap. */
+function BadgeSheet({ b, onClose }) {
+  const st = badgeState(b);
+  return (
+    <Sheet title={b.label} onClose={onClose}>
+      <div className="stack">
+        <p style={{ margin: 0 }}>{b.note}</p>
+        <div className="progress" role="progressbar" aria-label={b.label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(b.fraction * 100)}><span style={{ transform: `scaleX(${b.fraction})` }} /></div>
+        <div className="row between small"><span className="muted">{t(`badge.state.${st}`)}{SPECIAL_BADGES.has(b.id) ? ` · ${t('badge.special')}` : ''}</span><strong>{progressText(b)}</strong></div>
+        {b.earned && b.date ? <div className="muted small">{t('badge.earnedOn', { date: formatDate(b.date) })}</div> : null}
+      </div>
+    </Sheet>
   );
 }
 
@@ -504,19 +549,29 @@ function modelSide(b) {
   return Math.sign(b.diff) === 1 ? 'high' : 'low';
 }
 
-/** Measured maintenance (BI-13): what this month's meals and weight say
- * you burn, as a range, beside the app's own estimate. Hidden with
- * calories, under 18, with a safety limit on, and in Ramadan. */
-function BurnCard({ data, today }) {
+/** Measured maintenance (BI-13), inside the consistency card: what this
+ * month's meals and weight say you burn, as a range, beside the app's own
+ * estimate. In a goal's first 2 weeks it says why the scale moves fast
+ * instead (Body review: "Early weight change"). Hidden with calories,
+ * under 18, with a safety limit on, and in Ramadan. */
+function BurnBlock({ data, today }) {
   const model = macroTargets(data, content.nutrition, today)?.tdee ?? null;
   const b = measuredBurn(data, content.nutrition.meal_slots, today, model);
   if (!b.ready && b.reason === 'hidden') return null;
+  if (!b.ready && b.reason === 'water') {
+    return (
+      <div className="sub-block">
+        <strong>{t('body.early')}</strong>
+        <p className="muted small" style={{ margin: '4px 0 0' }}>{t('body.earlyNote')}</p>
+      </div>
+    );
+  }
   if (!b.ready) {
     return (
-      <section className="card">
+      <div className="sub-block">
         <div className="row between"><strong>{t('burn.title')}</strong><span className="muted small">{t('burn.window')}</span></div>
         <p className="muted small" style={{ margin: '4px 0 0' }}>{t(`burn.need.${b.reason}`, { n: b.need })}</p>
-      </section>
+      </div>
     );
   }
   const lo = Math.min(b.low, b.model ?? b.low) - 150;
@@ -524,7 +579,7 @@ function BurnCard({ data, today }) {
   const pos = (v) => `${((v - lo) / (hi - lo)) * 100}%`;
   const off = modelSide(b);
   return (
-    <section className="card">
+    <div className="sub-block">
       <div className="row between"><strong>{t('burn.title')}</strong><span className="muted small">{t('burn.window')}</span></div>
       <div className="burn-num">{t('burn.range', { low: formatNumber(b.low), high: formatNumber(b.high) })}</div>
       <div className="burn-bar" role="img" aria-label={t('burn.aria', { low: b.low, high: b.high, model: b.model ?? '' })}>
@@ -533,155 +588,148 @@ function BurnCard({ data, today }) {
       </div>
       {b.model ? <p className="small" style={{ margin: '6px 0 0' }}>{t(`burn.model.${off}`, { model: formatNumber(b.model), n: formatNumber(Math.abs(b.diff)) })}</p> : null}
       <p className="muted small" style={{ margin: '6px 0 0' }}>{t('burn.note', { days: b.days, eaten: formatNumber(b.eaten) })}</p>
+    </div>
+  );
+}
+
+/** 2. Weight consistency: the last two weekly averages side by side (one
+ * number a week, which a salty day can't swing), the older weeks one tap
+ * away, then measured burn. Thin weeks are faint. */
+function Consistency({ data, today, good }) {
+  const [all, setAll] = useState(false);
+  const weeks = weeklyAverages(data.body_logs, today, data);
+  const pair = lastTwoWeeks(weeks);
+  return (
+    <section className="card">
+      <h2 className="section-title" style={{ margin: 0 }}>{t('body.consistency')}</h2>
+      <div className="muted small">{t('body.weeklyAvg')}</div>
+      {pair ? (
+        <div className="wk-pair">
+          {pair.weeks.map((w) => (
+            <div key={w.week} className={`wk${w.thin ? ' thin' : ''}`}>
+              <div className="meta">{w.current ? t('body.thisWeek') : t('wavg.week', { date: dayMonth(w.week) })}</div>
+              <strong className="wk-kg">{t('wchart.kg', { kg: w.avg.toFixed(1) })}</strong>
+              <div className="meta">{t('wavg.count', { n: w.n })}</div>
+            </div>
+          ))}
+          <span className={`chip wavg-chg${good(pair.change) ? ' accent' : ''}`}>{changeText(pair.change)}</span>
+        </div>
+      ) : (
+        <p className="muted small" style={{ margin: '6px 0 0' }}>{t(weeks.length ? 'body.oneWeek' : 'body.noWeeks')}</p>
+      )}
+      {all && weeks.length > 2 ? (
+        <div className="wavg-list">
+          {weeks.slice(2).map((w) => (
+            <div key={w.week} className={`wavg-row${w.thin ? ' thin' : ''}`}>
+              <div className="grow"><div>{t('wavg.week', { date: dayMonth(w.week) })}</div><div className="meta">{t('wavg.count', { n: w.n })}</div></div>
+              <strong className="wavg-kg">{t('wchart.kg', { kg: w.avg.toFixed(1) })}</strong>
+              {w.change == null ? <span className="chip wavg-chg" aria-label={t('wavg.noChange')}>{t('wavg.dash')}</span> : <span className={`chip wavg-chg${good(w.change) ? ' accent' : ''}`}>{changeText(w.change)}</span>}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {weeks.length > 2 ? <button type="button" className="btn ghost small" aria-expanded={all} onClick={() => setAll((v) => !v)}>{t(all ? 'body.fewerWeeks' : 'body.allWeeks', { n: weeks.length })}</button> : null}
+      {pair && weeks.slice(0, all ? weeks.length : 2).some((w) => w.thin) ? <p className="muted small" style={{ margin: '8px 0 0' }}>{t('body.thinNote', { n: THIN_WEEK })}</p> : null}
+      <BurnBlock data={data} today={today} />
     </section>
   );
 }
 
-/** Weekly averages (BI-21): one number a week, which a salty day can't
- * swing. Thin weeks are faint; this week says "so far". */
-function WeeklyAverages({ data, today }) {
-  const weeks = weeklyAverages(data.body_logs, today, data);
-  if (weeks.length < 2) return null;
-  const dir = currentGoal(data)?.direction || 'lose';
-  const sign = { gain: 1, lose: -1 }[dir] || 0;
-  const good = (c) => !flat(c) && Math.sign(c) === sign;
+const METRICS = [
+  ['steps', 'watch.steps', 'body.stepsSub', (v) => formatNumber(Math.round(v)), 'steps'],
+  ['sleep', 'watch.sleep', 'body.sleepSub', (v) => `${v.toFixed(1)} h`, 'h'],
+  ['rhr', 'body.hr', 'body.hrSub', (v) => `${Math.round(v)}`, 'bpm'],
+];
+
+/** 3. Daily activity: steps, sleep and resting heart rate from Health
+ * Connect behind one selector, so the card shows the one chart it names.
+ * A metric with no days says so instead of drawing an empty chart. Hidden
+ * when Health Connect is off (watch data is always optional). */
+function Activity({ data, today }) {
+  const tr = watchTrends(data.health_daily, today);
+  const [pick, setPick] = useState(() => (METRICS.find(([k]) => tr[k]) || METRICS[0])[0]);
+  if (!data.settings?.health?.enabled) return null;
+  const [, labelKey, subKey, , unit] = METRICS.find(([k]) => k === pick);
+  const s = tr[pick];
   return (
     <section className="card">
-      <div className="row between"><strong>{t('wavg.title')}</strong><span className="muted small">{t('wavg.sub')}</span></div>
-      <div className="wavg-list">
-        {weeks.map((w) => (
-          <div key={w.week} className={`wavg-row${w.thin ? ' thin' : ''}`}>
-            <div className="grow">
-              <div>{t('wavg.week', { date: dayMonth(w.week) })}</div>
-              <div className="meta">{t(w.current ? 'wavg.soFar' : 'wavg.count', { n: w.n })}</div>
-            </div>
-            <strong className="wavg-kg">{t('wchart.kg', { kg: w.avg.toFixed(1) })}</strong>
-            {w.change == null ? <span className="chip wavg-chg" aria-label={t('wavg.noChange')}>{t('wavg.dash')}</span> : (
-              <span className={`chip wavg-chg${good(w.change) ? ' accent' : flat(w.change) ? '' : ' effort'}`}>{changeText(w.change)}</span>
-            )}
-          </div>
+      <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('body.activity')}</h2><span className="muted small">{t('watch.window', { n: TREND_DAYS })}</span></div>
+      <div className="metric-pick" role="group" aria-label={t('body.activity')}>
+        {METRICS.map(([k, lk, , f]) => (
+          <button key={k} type="button" className={pick === k ? 'on' : ''} aria-pressed={pick === k} onClick={() => setPick(k)}>
+            <span className="label">{t(lk)}</span>
+            <span className="v">{tr[k] ? f(tr[k].avg) : '—'}</span>
+            <span className="meta">{tr[k] ? t('body.dailyAvg') : t('body.noData')}</span>
+          </button>
         ))}
       </div>
-      {weeks.some((w) => w.thin) ? <p className="muted small" style={{ margin: '8px 0 0' }}>{t('wavg.thinNote', { n: THIN_WEEK })}</p> : null}
-    </section>
-  );
-}
-
-/** Steps, sleep and resting heart rate from Health Connect, one line each
- * whatever sent them (phone, watch, another app); days with nothing are
- * left out, so a watch worn now and then is fine. */
-function WatchTrends({ data, today }) {
-  if (!data.settings?.health?.enabled) return null;
-  const tr = watchTrends(data.health_daily, today);
-  const rows = [
-    ['steps', tr.steps, t('watch.steps'), 'steps', (v) => formatNumber(Math.round(v))],
-    ['sleep', tr.sleep, t('watch.sleep'), 'h', (v) => v.toFixed(1)],
-    ['rhr', tr.rhr, t('watch.rhr'), 'bpm', (v) => String(Math.round(v))],
-  ].filter((r) => r[1]);
-  if (!rows.length) return null;
-  return (
-    <section className="card">
-      <div className="row between"><h2 className="section-title" style={{ margin: 0 }}>{t('watch.title')}</h2><span className="muted small">{t('watch.window', { n: TREND_DAYS })}</span></div>
-      {rows.map(([k, s, label, unit, fmt]) => (
-        <div key={k} style={{ marginTop: 12 }}>
-          <div className="row between"><strong className="small">{label}</strong><span className="muted small">{t('watch.avg', { v: fmt(s.avg), unit, n: s.points.length })}</span></div>
-          <LineChart points={s.points} unit={unit} label={label} summary={t('watch.days', { n: s.points.length })} />
-        </div>
-      ))}
+      {s ? (
+        <>
+          <div className="muted small" style={{ marginTop: 10 }}>{t(subKey)} · {t('watch.days', { n: s.points.length })}</div>
+          <LineChart points={s.points} unit={unit} label={t(labelKey)} summary={t('watch.days', { n: s.points.length })} />
+        </>
+      ) : (
+        <p className="muted small" style={{ margin: '10px 0 0' }}>{t('body.metricEmpty', { name: t(labelKey).toLowerCase() })}</p>
+      )}
       <p className="muted small" style={{ margin: '8px 0 0' }}>{t('watch.note')}</p>
     </section>
   );
 }
 
 function Body({ data, update, today }) {
-  const latest = D.latestWeight(data);
-  const [form, setForm] = useState({ weight: latest ? String(latest.weight_kg) : '' });
-  const [more, setMore] = useState(false);
-  const [editingBody, setEditingBody] = useState(null); // a weigh-in row being edited (UX-23)
-  const goalLow = profileOf(data).goal_weight_low_kg;
-  const goalHigh = profileOf(data).goal_weight_high_kg;
-  const first = data.body_logs[0];
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const lastOf = (k) => [...data.body_logs].reverse().find((b) => b[k] != null);
-
-  const save = (e) => {
-    e.preventDefault();
-    const kg = parseFloat(form.weight);
-    if (!(kg >= 20 && kg <= 400)) return;
-    const extra = {};
-    for (const [k] of MEASURES) {
-      const cm = parseFloat(form[k]);
-      if (cm >= 10 && cm <= 300) extra[k] = cm;
-    }
-    update((d) => D.logBody(d, { log_date: today, weight_kg: kg, ...extra }));
-    setForm({ weight: String(kg) });
-  };
-
+  const [logging, setLogging] = useState(false);
+  const p = profileOf(data);
+  const goalLow = p.goal_weight_low_kg;
+  const goalHigh = p.goal_weight_high_kg;
+  const s = weightSummary(data.body_logs, goalLow && goalHigh ? { low: goalLow, high: goalHigh } : null);
+  const sign = { gain: 1, lose: -1 }[currentGoal(data)?.direction || 'lose'] || 0;
+  const good = (c) => !flat(c) && Math.sign(c) === sign;
   const vs = weightVs(data, today);
+  const n = data.body_logs.length;
+  const lastWaist = [...data.body_logs].reverse().find((b) => b.waist_cm != null);
+  const photos = (data.progress_photos || []).length;
+
   return (
     <>
-      {vs ? <p className="vs-line"><Icon name="trend" className="icon" /> {t(vs.kg < 0 ? 'stats.vsWeightDown' : vs.kg > 0 ? 'stats.vsWeightUp' : 'stats.vsWeightSame', { kg: Math.abs(vs.kg), date: formatDate(vs.date), from: vs.from, now: vs.now })}</p> : null}
-      <form className="card stack" onSubmit={save}>
-        <div className="row between"><strong>{t('stats.logToday')}</strong>{latest ? <span className="muted small">{t('stats.lastLog', { kg: latest.weight_kg, date: formatDate(latest.log_date) })}</span> : null}</div>
-        <div className="measure-grid">
-          <label className="field"><span>Weight (kg)</span><input type="number" inputMode="decimal" step="0.1" value={form.weight} onChange={set('weight')} required /></label>
-          <label className="field"><span>Waist (cm)</span><input type="number" inputMode="decimal" step="0.5" value={form.waist_cm || ''} onChange={set('waist_cm')} placeholder={lastOf('waist_cm')?.waist_cm ? String(lastOf('waist_cm').waist_cm) : 'Optional'} /></label>
-          {more ? MEASURES.slice(1).map(([k, l]) => (
-            <label key={k} className="field"><span>{l} (cm)</span><input type="number" inputMode="decimal" step="0.5" value={form[k] || ''} onChange={set(k)} placeholder={lastOf(k) ? String(lastOf(k)[k]) : 'Optional'} /></label>
-          )) : null}
-        </div>
-        {more ? null : <button type="button" className="btn ghost small" onClick={() => setMore(true)}><Icon name="plus" /> Chest, arm, hips, thigh</button>}
-        <button type="submit" className="btn">Save</button>
-      </form>
-      <div className="stat-grid three">
-        <div className="stat"><div className="label">{t('stats.now')}</div><div className="value">{latest ? latest.weight_kg : '–'}<span className="unit">{t('home.kg')}</span></div></div>
-        <div className="stat"><div className="label">{t('stats.change')}</div><div className="value">{latest && first ? (latest.weight_kg - first.weight_kg).toFixed(1) : '–'}<span className="unit">{t('home.kg')}</span></div></div>
-        <div className="stat"><div className="label">{t('stats.goal')}</div><div className="value">{goalLow ? `${goalLow}–${goalHigh}` : '–'}</div></div>
-      </div>
+      {logging ? <WeighInSheet data={data} update={update} today={today} measures onClose={() => setLogging(false)} /> : null}
       <section className="card">
-        <div className="row between"><strong>Weight</strong>{goalLow ? <span className="muted small">Goal {goalLow}–{goalHigh} kg</span> : null}</div>
-        <WeightChart logs={data.body_logs} today={today} goalLow={goalLow} goalHigh={goalHigh} />
+        <div className="row between">
+          <h2 className="section-title" style={{ margin: 0 }}>{t('body.progress')}</h2>
+          <button type="button" className="btn small log-btn" onClick={() => setLogging(true)}><Icon name="plus" /> {t('body.log')}</button>
+        </div>
+        {s.current == null ? (
+          <p className="muted small" style={{ margin: '10px 0 0' }}>{t('body.firstLog')}</p>
+        ) : (
+          <>
+            <div className="body-sum">
+              <div>
+                <div className="label">{t('body.current')}</div>
+                <div className="body-num">{s.current}<span className="unit">{t('home.kg')}</span></div>
+                <div className="meta">{formatDate(s.currentDate)}</div>
+              </div>
+              <div>
+                <div className="label">{t('body.total')}</div>
+                <div className={`body-num sm${s.change != null && good(s.change) ? ' good' : ''}`}>{s.change == null ? '–' : changeText(s.change)}<span className="unit">{t('home.kg')}</span></div>
+                <div className="meta">{s.change == null ? t('body.needTwo') : t('body.fromStart', { kg: s.start })}</div>
+              </div>
+            </div>
+            <div className="body-goal">
+              {goalLow ? <span className="chip">{t('body.goal', { low: goalLow, high: goalHigh })}</span> : null}
+              {s.toGoal != null ? <span className={`chip${s.toGoal === 0 ? ' accent' : ''}`}>{s.toGoal === 0 ? t('body.inGoal') : t('body.toGo', { kg: s.toGoal })}</span> : null}
+            </div>
+            {vs ? <p className="vs-line" style={{ margin: '10px 0 0' }}><Icon name="trend" className="icon" /> {t(vs.kg < 0 ? 'stats.vsWeightDown' : vs.kg > 0 ? 'stats.vsWeightUp' : 'stats.vsWeightSame', { kg: Math.abs(vs.kg), date: formatDate(vs.date), from: vs.from, now: vs.now })}</p> : null}
+            <WeightChart logs={data.body_logs} today={today} goalLow={goalLow} goalHigh={goalHigh} />
+          </>
+        )}
       </section>
-      <WeeklyAverages data={data} today={today} />
-      <BurnCard data={data} today={today} />
-      <WatchTrends data={data} today={today} />
+      {n ? <Consistency data={data} today={today} good={good} /> : null}
+      <Activity data={data} today={today} />
+      <div className="section-label">{t('body.more')}</div>
       <div className="list">
-        <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>Progress photos</div><div className="meta">{(data.progress_photos || []).length ? `${data.progress_photos.length} on this phone · before and after` : 'Front, side and back, kept on this phone only'}</div></div><Icon name="chev" className="icon chev" /></Link>
+        <Link to="/photos" className="list-row"><Icon name="user" /><div className="grow"><div>{t('body.photos')}</div><div className="meta">{photos ? t('body.photosN', { n: photos }) : t('body.photosSub')}</div></div><Icon name="chev" className="icon chev" /></Link>
+        <Link to="/stats/body/measurements" className="list-row"><Icon name="tape" /><div className="grow"><div>{t('body.measTitle')}</div><div className="meta">{lastWaist ? t('body.waistLast', { cm: lastWaist.waist_cm, date: formatDate(lastWaist.log_date) }) : t('body.measSub')}</div></div><Icon name="chev" className="icon chev" /></Link>
+        <Link to="/stats/body/weigh-ins" className="list-row"><Icon name="scale" /><div className="grow"><div>{t('body.histTitle')}</div><div className="meta">{n ? t('body.histMeta', { n, date: formatDate(s.currentDate) }) : t('body.histNone')}</div></div><Icon name="chev" className="icon chev" /></Link>
       </div>
-      {MEASURES.some(([k]) => lastOf(k)) ? (
-        <>
-          <div className="section-label">Measurements</div>
-          <div className="list">
-            {MEASURES.map(([k, l]) => {
-              const rows = data.body_logs.filter((b) => b[k] != null);
-              if (!rows.length) return null;
-              const now = rows[rows.length - 1][k];
-              const diff = now - rows[0][k];
-              return (
-                <div key={k} className="list-row">
-                  <div className="grow"><div>{l}</div><div className="meta">{formatDate(rows[rows.length - 1].log_date)}{rows.length > 1 ? ` · ${diff > 0 ? '+' : ''}${diff.toFixed(1)} cm since ${formatDate(rows[0].log_date)}` : ''}</div></div>
-                  <strong>{now} cm</strong>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
-      {data.body_logs.length ? (
-        <>
-          {editingBody ? <WeighInSheet data={data} update={update} today={today} entry={editingBody} onClose={() => setEditingBody(null)} /> : null}
-          <div className="section-label">Weigh-ins</div>
-          <div className="list">
-            {[...data.body_logs].reverse().slice(0, 10).map((b) => (
-              <button key={b.id} type="button" className="list-row" aria-label={t('weighIn.editAria', { date: formatDate(b.log_date) })} onClick={() => setEditingBody(b)}>
-                <div className="grow">{b.weight_kg} kg{b.waist_cm ? <span className="meta"> · waist {b.waist_cm} cm</span> : null}</div>
-                <span className="meta">{formatDate(b.log_date)}</span>
-                <Icon name="chev" className="icon chev" />
-              </button>
-            ))}
-          </div>
-        </>
-      ) : null}
     </>
   );
 }

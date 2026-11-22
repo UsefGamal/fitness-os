@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { addDays } from './dates.js';
-import { dateTicks, weeklyAverages, weightFrame } from './bodyStats.js';
+import { dateTicks, lastTwoWeeks, weeklyAverages, weightFrame, weightSummary } from './bodyStats.js';
 
 const TODAY = '2026-11-19'; // a Thursday
 const logs = Array.from({ length: 80 }, (_, i) => ({ log_date: addDays('2026-09-01', i), weight_kg: Math.round((103 - i * 0.1) * 10) / 10 }));
@@ -47,4 +47,27 @@ test('dateTicks: weekly for a month, month starts for longer', () => {
   assert.deepEqual(dateTicks('2026-08-21', TODAY).map((x) => x.date), ['2026-09-01', '2026-10-01', '2026-11-01']);
   assert.deepEqual(dateTicks('2026-12-20', '2027-02-10').map((x) => x.date), ['2027-01-01', '2027-02-01']);
   assert.deepEqual(dateTicks(TODAY, '2026-11-01'), []);
+});
+
+test('weightSummary: current, start, change and kg to the goal range', () => {
+  assert.deepEqual(weightSummary([]), { current: null, currentDate: null, start: null, startDate: null, change: null, toGoal: null });
+  const one = weightSummary([{ log_date: '2026-11-01', weight_kg: 103 }], { low: 77, high: 79 });
+  assert.equal(one.current, 103);
+  assert.equal(one.change, null, 'one weigh-in has no change yet');
+  assert.equal(one.toGoal, 24);
+  const two = weightSummary([{ log_date: '2026-11-01', weight_kg: 103 }, { log_date: '2026-11-20', weight_kg: 102.3 }], { low: 77, high: 79 });
+  assert.equal(two.change, -0.7);
+  assert.equal(two.toGoal, 23.3);
+  assert.equal(two.startDate, '2026-11-01');
+  assert.equal(weightSummary([{ log_date: '2026-11-01', weight_kg: 78 }], { low: 77, high: 79 }).toGoal, 0);
+  assert.equal(weightSummary([{ log_date: '2026-11-01', weight_kg: 60 }], { low: 65, high: 70 }).toGoal, 5, 'gaining counts up to the low end');
+  assert.equal(weightSummary([{ log_date: '2026-11-01', weight_kg: 60 }]).toGoal, null);
+});
+
+test('lastTwoWeeks: oldest first with the change, null under two weeks', () => {
+  assert.equal(lastTwoWeeks([]), null);
+  assert.equal(lastTwoWeeks([{ week: '2026-11-22', avg: 102.3 }]), null);
+  const r = lastTwoWeeks([{ week: '2026-11-22', avg: 102.3 }, { week: '2026-11-15', avg: 103 }, { week: '2026-11-08', avg: 104 }]);
+  assert.deepEqual(r.weeks.map((w) => w.week), ['2026-11-15', '2026-11-22']);
+  assert.equal(r.change, -0.7);
 });
