@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { homeLine, whatsNewMode } from './interrupts.js';
+import { homeLine, homeOrder, whatsNewMode } from './interrupts.js';
 
 test("What's new never covers a session that is still due", () => {
   assert.equal(whatsNewMode({ hasNews: false, sessionDue: true }), null);
@@ -15,4 +15,9 @@ test('Home shows one thin line at most, and never the same backup ask twice', ()
   assert.equal(homeLine({ news: false, backup: true, firstWeekAsksBackup: false }), 'backup');
   assert.equal(homeLine({ news: false, backup: true, firstWeekAsksBackup: true }), null);
   assert.equal(homeLine({ news: false, backup: false, firstWeekAsksBackup: false }), null);
+});
+
+test("Home: Today's ticks before the weight on a training day, the weight first on a rest day", () => {
+  assert.equal(homeOrder({ trainingDay: true }), 'today');
+  assert.equal(homeOrder({ trainingDay: false }), 'weight');
 });

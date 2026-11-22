@@ -267,8 +267,8 @@ export default function Plan() {
             <EditList day={day} sessionKey={picked.key} />
           ) : (
             <>
-              <details className="card more">
-                <summary>{t('plan.warmup', { what: day.pre_cardio, n: day.warmup_items.length })}</summary>
+              <details className="card more warm-more">
+                <summary><Icon name="flame" className="icon" /> {t('plan.warmup', { what: day.pre_cardio, n: day.warmup_items.length })}</summary>
                 <div className="stack" style={{ marginTop: 8 }}>{day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}</div>
                 <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> {t('plan.follow')}</Link>
               </details>

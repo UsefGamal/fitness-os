@@ -71,8 +71,8 @@ export default function CheckIn() {
       <div className="muted small" role="status">{t('checkin.count', { n: step + 1, of: list.length })} · {item.label}</div>
       <div className="card" style={{ marginTop: 8 }}><div className="session-name">{item.name}</div></div>
       <div className="row" style={{ gap: 10, marginTop: 12 }}>
-        <button type="button" className="btn secondary grow" onClick={() => setStep(step + 1)}><Icon name="check" /> {t('checkin.keep')}</button>
-        <button type="button" className="btn grow" onClick={() => setSwapping(true)}><Icon name="dumbbell" /> {t('checkin.swap')}</button>
+        <button type="button" className="btn grow" onClick={() => setStep(step + 1)}><Icon name="check" /> {t('checkin.keep')}</button>
+        <button type="button" className="btn secondary grow" onClick={() => setSwapping(true)}><Icon name="dumbbell" /> {t('checkin.swap')}</button>
       </div>
       <button type="button" className="btn ghost" style={{ marginTop: 12 }} onClick={done}>{t('checkin.finishNow')}</button>
       {swapping ? <SwapSheet data={data} name={item.name} others={list.filter((x) => x.key === item.key).map((x) => x.name)} onPick={pick} onClose={() => setSwapping(false)} /> : null}
