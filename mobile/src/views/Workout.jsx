@@ -215,7 +215,7 @@ export default function Workout() {
   const [undo, setUndo] = useState(null); // { set, label } after a delete
   const [sheet, setSheet] = useState(null); // 'warmups' | 'swap' | 'note' | null
   const [swapGroup, setSwapGroup] = useState(null); // one of the 16 groups, or null for the closest matches
-  const [typing, setTyping] = useState(null); // the logged set whose kind is being picked
+  const [typing, setTyping] = useState(null); // the logged set being edited (kg, reps, kind)
   const [dropFor, setDropFor] = useState(null); // { name, backKg }: the next set of this exercise is a drop set
   const [showPhoto, setShowPhoto] = useState(false); // the big moving photo, opened from the thumbnail
   const openSwap = () => { setSwapGroup(null); setSheet('swap'); };
@@ -577,6 +577,7 @@ export default function Workout() {
     return undefined;
   };
 
+  const typingSet = typing ? active.sets.find((s) => s.id === typing.id) || null : null;
   const removeSet = (s) => {
     update((d) => D.deleteSet(d, active.id, s.id));
     setUndo({ set: s, label: `Set ${s.set_number} of ${ex?.name || 'exercise'} deleted` });
@@ -752,7 +753,7 @@ export default function Workout() {
                           </button>
                           <span>{isTime ? setLabel(s) : s.reps}</span>
                           {timed ? null : <span>{isTime ? '' : s.weight_kg}</span>}
-                          <button type="button" className="st-tick on" aria-label={t('workout.deleteSet', { n: s.set_number })} onClick={() => removeSet(s)}><Icon name="check" /></button>
+                          <button type="button" className="st-tick on" aria-label={t('workout.editSet', { n: s.set_number })} onClick={() => setTyping(s)}><Icon name="check" /></button>
                           <Ghost prev={r.n ? prevWork[r.n - 1] : null} cur={s} />
                         </div>
                       </SwipeRow>
@@ -794,19 +795,33 @@ export default function Workout() {
           <Icon name="check" /> {t('workout.finishWorkout')}
         </button>
       )}
-      {typing ? (
-        <Sheet title={t('setType.title', { n: typing.set_number })} onClose={() => setTyping(null)}>
+      {typingSet ? (
+        <Sheet title={t('setEdit.title', { n: typingSet.set_number })} onClose={() => setTyping(null)}>
+          {setFields(typingSet).track === 'time' ? null : (
+            <div className="set-edit">
+              <label className="field">
+                <span>{t('workout.colReps')}</span>
+                <NumBox value={typingSet.reps} whole max={100} label={t('workout.editReps', { n: typingSet.set_number })} onChange={(n) => update((d) => D.replaceSet(d, active.id, { ...typingSet, reps: n }))} />
+              </label>
+              <label className="field">
+                <span>{t('workout.colKg')}</span>
+                <NumBox value={typingSet.weight_kg} max={500} label={t('workout.editKg', { n: typingSet.set_number })} onChange={(n) => update((d) => D.replaceSet(d, active.id, { ...typingSet, weight_kg: n }))} />
+              </label>
+            </div>
+          )}
+          <div className="section-label">{t('setEdit.kind')}</div>
           <div className="list">
             {typeChoices({ gentle: gateOn(data, 'beginner_only', today) || gateOn(data, 'needs_clearance', today) }).map((k) => {
-              const on = setFields(typing).set_type === k;
+              const on = setFields(typingSet).set_type === k;
               return (
-                <button key={k} type="button" className="list-row" aria-pressed={on} onClick={() => { update((d) => D.replaceSet(d, active.id, withType(typing, k))); setTyping(null); }}>
+                <button key={k} type="button" className="list-row" aria-pressed={on} onClick={() => { update((d) => D.replaceSet(d, active.id, withType(typingSet, k))); setTyping(null); }}>
                   <div className="grow"><div>{t(`setType.${k}`)}</div><div className="meta">{t(`setType.${k}Note`)}</div></div>
                   <span className={`check${on ? ' on' : ''}`}>{on ? <Icon name="check" /> : null}</span>
                 </button>
               );
             })}
           </div>
+          <button type="button" className="btn danger" style={{ marginTop: 16 }} onClick={() => { removeSet(typingSet); setTyping(null); }}><Icon name="trash" /> {t('setEdit.delete')}</button>
         </Sheet>
       ) : null}
       {sheet === 'exmore' && ex ? (

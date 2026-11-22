@@ -37,9 +37,9 @@ test('year grid is Sunday-start weeks ending this week', () => {
 
 test('week streaks: current run and the longest', () => {
   const data = { exercises, workouts: ['2026-10-05', '2026-10-12', '2026-10-19', '2026-10-27', '2026-09-01'].map((d, i) => w(i + 1, d, [])) };
-  assert.deepEqual(weekStreaks(data, '2026-11-04'), { current: 4, longest: 4, week: { done: 0, need: 1 } });
-  assert.deepEqual(weekStreaks(data, '2026-11-12'), { current: 0, longest: 4, week: { done: 0, need: 1 } });
-  assert.deepEqual(weekStreaks({ workouts: [] }, '2026-11-04'), { current: 0, longest: 0, week: { done: 0, need: 1 } });
+  assert.deepEqual(weekStreaks(data, '2026-11-04'), { current: 4, longest: 4, week: { done: 0, need: 1, planned: 0 } });
+  assert.deepEqual(weekStreaks(data, '2026-11-12'), { current: 0, longest: 4, week: { done: 0, need: 1, planned: 0 } });
+  assert.deepEqual(weekStreaks({ workouts: [] }, '2026-11-04'), { current: 0, longest: 0, week: { done: 0, need: 1, planned: 0 } });
 });
 
 test('e1RM series keeps the best set per day', () => {
@@ -99,10 +99,10 @@ test('the streak: a week is kept with one planned session missed, by the plan of
   // 25 Oct (5 planned): 4 (kept). 1 Nov: 3 so far.
   const dates = ['2026-10-04', '2026-10-06', '2026-10-11', '2026-10-13', '2026-10-15', '2026-10-19', '2026-10-25', '2026-10-26', '2026-10-27', '2026-10-28', '2026-11-01', '2026-11-02', '2026-11-03'];
   const data = { exercises, program, workouts: dates.map((d, i) => w(i + 1, d, [])) };
-  assert.deepEqual(weekStreaks(data, '2026-11-03'), { current: 1, longest: 2, week: { done: 3, need: 4 } });
+  assert.deepEqual(weekStreaks(data, '2026-11-03'), { current: 1, longest: 2, week: { done: 3, need: 4, planned: 5 } });
   // One more session this week and it is kept: two in a row.
   const more = { ...data, workouts: [...data.workouts, w(99, '2026-11-04', [])] };
-  assert.deepEqual(weekStreaks(more, '2026-11-04'), { current: 2, longest: 2, week: { done: 4, need: 4 } });
+  assert.deepEqual(weekStreaks(more, '2026-11-04'), { current: 2, longest: 2, week: { done: 4, need: 4, planned: 5 } });
   // Two workouts on one day are one training day.
   const twice = { exercises, program, workouts: [w(1, '2026-10-04', []), w(2, '2026-10-04', [])] };
   assert.equal(weekStreaks(twice, '2026-10-05').current, 0);

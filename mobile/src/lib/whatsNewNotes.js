@@ -5,6 +5,16 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.34',
+    items: [
+      { icon: 'check', text: 'Tap a logged set to fix its kg, reps or kind. Delete is inside, so a wet thumb can\'t lose a set.' },
+      { icon: 'trash', text: 'Delete workout moved into the ⋯ menu on the workout page.' },
+      { icon: 'calendar', text: 'Home counts your week against your plan, like "2 of 3 training days · week kept". No more "3 of 2".' },
+      { icon: 'medal', text: 'Badges reward training, not the scale: "5 kg down" is gone and bodyweight lifts use your heavier weight. You keep your badges.' },
+      { icon: 'star', text: 'Quests: no cardio points, a kinder food habit, 6 of 7 days is enough. New phones start with Quests off.' },
+    ],
+  },
+  {
     version: '1.1.33',
     items: [
       { icon: 'dumbbell', text: 'Exercises now show coloured tags for the muscles they work: Legs, Chest, Back, Shoulders, Arms, Core.' },

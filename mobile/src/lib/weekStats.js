@@ -107,8 +107,24 @@ export function identityLine(stats, t = tr) {
 /** "3 of 4 sessions · 46 sets", the card's one line. */
 export function summaryLine(stats, t = tr) {
   const s = stats.sessions;
-  const sessions = s.planned ? t('wrap.sessionsOf', { done: s.done, planned: s.planned }) : t('wrap.sessionsN', { n: s.done });
-  return `${sessions} · ${t('wrap.setsN', { n: stats.workSets })}`;
+  const sessions = !s.planned ? t(s.done === 1 ? 'wrap.sessionsOne' : 'wrap.sessionsN', { n: s.done })
+    : s.done > s.planned ? t('wrap.sessionsOver', { done: s.done, planned: s.planned })
+      : t('wrap.sessionsOf', { done: s.done, planned: s.planned });
+  return `${sessions} · ${t(stats.workSets === 1 ? 'wrap.setsOne' : 'wrap.setsN', { n: stats.workSets })}`;
+}
+
+/** Home's week line: "2 of 3 training days this week · kept · 14 work sets".
+ * Always against the plan's own number, never the streak's need (the need
+ * is planned - 1, so "3 of 2" read as a bug), and never "4 of 3": more days
+ * than planned say both numbers plainly. "kept" once the streak rule is met. */
+export function weekDaysLine({ days, planned, need, sets }, t = tr) {
+  const head = !planned ? t(days === 1 ? 'home.weekDayOne' : 'home.weekDaysN', { days })
+    : days > planned ? t('home.weekDaysOver', { days, planned })
+      : t('home.weekDays', { days, planned });
+  const parts = [head];
+  if (planned && days >= need) parts.push(t('home.weekKept'));
+  parts.push(t(sets === 1 ? 'home.weekSetOne' : 'home.weekSets', { n: sets }));
+  return parts.join(' · ');
 }
 
 /** The week a wrap-up on the first two days of a week (Sunday and Monday,

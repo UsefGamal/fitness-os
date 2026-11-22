@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import Icon from '../components/Icon.jsx';
 import LeapMark from '../components/LeapMark.jsx';
+import MoreMenu from '../components/MoreMenu.jsx';
 import Stepper from '../components/Stepper.jsx';
 import { formatDate, LOCALE, todayISO } from '../lib/dates.js';
 import * as D from '../lib/data.js';
@@ -108,7 +109,10 @@ export default function History() {
       ) : (
         <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
       )}
-      <h1 className="page-title" style={{ marginTop: 4 }}>{w.notes || w.workout_type}</h1>
+      <div className="plan-head">
+        <h1 className="page-title" style={{ marginTop: 4 }}>{w.notes || w.workout_type}</h1>
+        <MoreMenu title={w.notes || w.workout_type} actions={[{ key: 'delete', label: t('history.deleteTitle'), icon: 'trash', danger: true, onClick: () => setConfirming(true) }]} />
+      </div>
       {editDate ? (
         <div className="row" style={{ margin: '-8px 0 16px' }}>
           <input type="date" value={w.log_date} max={todayISO()} aria-label={t('aria.workoutDate')} onChange={(e) => e.target.value && update((d) => D.editWorkout(d, w.id, { log_date: e.target.value }))} />
@@ -150,7 +154,6 @@ export default function History() {
           {w.checklist_items.map((c) => <div key={c.id} className="row small"><Icon name={c.completed ? 'check' : 'x'} /> {c.item_name}{c.reps_achieved ? ` · ${c.reps_achieved} ${w.intervals ? 'rounds' : 'reps'}` : ''}</div>)}
         </section>
       ) : null}
-      <button type="button" className="btn danger" onClick={() => setConfirming(true)}><Icon name="trash" /> Delete workout</button>
       {confirming ? <ConfirmSheet title={t('history.deleteTitle')} body={t('history.deleteBody', { n: w.sets.length })} action={t('history.deleteTitle')} onConfirm={remove} onClose={() => setConfirming(false)} /> : null}
     </div>
   );

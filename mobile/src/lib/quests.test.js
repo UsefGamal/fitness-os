@@ -33,10 +33,11 @@ test('three sessions in a Sunday-start week earns the weekly quest once', () => 
   assert.ok(!doneKeys(once, '2026-11-08', Q).has('three_sessions_week'));
 });
 
-test('losing 5 kg from the start weight earns the milestone', () => {
+test('losing 5 kg no longer earns a milestone (design laws plan #3)', () => {
   const d = base();
+  d.goals = [{ id: 'g1', set_on: '2026-09-01', direction: 'lose', ended_on: null }];
   d.body_logs = [{ id: 1, log_date: '2026-09-01', weight_kg: 95 }, { id: 2, log_date: '2026-10-20', weight_kg: 89.8 }];
-  assert.ok(doneKeys(syncQuests(d, '2026-11-04', Q), '2026-11-04', Q).has('first_5kg'));
+  assert.ok(!doneKeys(syncQuests(d, '2026-11-04', Q), '2026-11-04', Q).has('first_5kg'));
 });
 
 test('longest streak and badges', () => {
@@ -53,9 +54,12 @@ test('no day-1 awards: the every-day quests wait for the week to end (E7-S3)', (
   let d = toggleDaily(base(), '2026-11-08', 'extra_walk', Q); // Sunday, day 1
   const day1 = syncQuests(d, '2026-11-08', Q);
   assert.ok(!doneKeys(day1, '2026-11-08', Q).has('no_missed_week'));
-  for (let i = 9; i <= 14; i += 1) d = toggleDaily(d, `2026-11-${String(i).padStart(2, '0')}`, 'extra_walk', Q);
+  for (let i = 9; i <= 13; i += 1) d = toggleDaily(d, `2026-11-${String(i).padStart(2, '0')}`, 'extra_walk', Q);
   assert.ok(!doneKeys(syncQuests(d, '2026-11-13', Q), '2026-11-13', Q).has('no_missed_week'), 'not on Friday');
-  assert.ok(doneKeys(syncQuests(d, '2026-11-14', Q), '2026-11-14', Q).has('no_missed_week'), 'yes on Saturday, all 7 days');
+  // 6 of 7 days is enough: all days but one, like the streak.
+  assert.ok(doneKeys(syncQuests(d, '2026-11-14', Q), '2026-11-14', Q).has('no_missed_week'), 'yes on Saturday, 6 days');
+  const five = toggleDaily(d, '2026-11-13', 'extra_walk', Q);
+  assert.ok(!doneKeys(syncQuests(five, '2026-11-14', Q), '2026-11-14', Q).has('no_missed_week'), 'not with 5 days');
 });
 
 test('the 30-day streak quest is gone; old awards still count', () => {
@@ -71,21 +75,19 @@ test('the 30-day streak quest is gone; old awards still count', () => {
 const goal = (direction) => [{ id: 'g1', set_on: '2026-09-01', direction, ended_on: null }];
 const lost5 = (direction) => ({ ...base(), goals: goal(direction), body_logs: [{ id: 1, log_date: '2026-09-01', weight_kg: 95 }, { id: 2, log_date: '2026-10-20', weight_kg: 89.8 }] });
 
-test('the 5 kg milestone is only for a weight-loss goal', () => {
-  for (const direction of ['gain', 'recomp', 'maintain']) {
+test('retired quests: no 5 kg milestone or cardio points, old awards stay (design laws plan #3, #14)', () => {
+  for (const direction of ['lose', 'gain', 'recomp', 'maintain']) {
     const d = lost5(direction);
     assert.equal(syncQuests(d, '2026-11-04', Q), d, direction);
     assert.ok(!questList(d, Q, '2026-11-04').some((t) => t.key === 'first_5kg'), direction);
   }
-  const lose = lost5('lose');
-  assert.ok(questList(lose, Q, '2026-11-04').some((t) => t.key === 'first_5kg'));
-  // Earned before the goal changed: it stays on the list with its points.
-  const earned = { ...syncQuests(lose, '2026-11-04', Q), goals: goal('gain') };
+  assert.ok(!questList(base(), Q, '2026-11-04').some((t) => t.key === 'extra_cardio'));
+  assert.equal(toggleDaily(base(), '2026-11-04', 'extra_cardio', Q).bonus_logs.length, 0);
+  // Earned before: the milestone stays on the list, done, with its points.
+  const earned = { ...lost5('lose'), bonus_logs: [{ id: 1, log_date: '2026-10-20', task_key: 'first_5kg', points: 50 }, { id: 2, log_date: '2026-10-21', task_key: 'extra_cardio', points: 15 }] };
   assert.ok(questList(earned, Q, '2026-11-04').some((t) => t.key === 'first_5kg'));
-  assert.equal(totalPoints(earned), 50);
-  // Never while a cut is off, whatever the goal says.
-  const gated = { ...lose, safety: { gates: { no_deficit: true } } };
-  assert.ok(!questList(gated, Q, '2026-11-04').some((t) => t.key === 'first_5kg'));
+  assert.ok(doneKeys(earned, '2026-11-04', Q).has('first_5kg'));
+  assert.equal(totalPoints(earned), 65);
 });
 
 test('the water habit names the person\'s own goal', () => {
@@ -93,7 +95,7 @@ test('the water habit names the person\'s own goal', () => {
   assert.equal(label(base()), 'Hit your water goal (3 L)');
   assert.equal(label({ ...base(), settings: { ...base().settings, water_goal_ml: 2500 } }), 'Hit your water goal (2.5 L)');
   // Nothing else on the list changes.
-  assert.equal(questList(base(), Q, '2026-11-04').length, Q.bonus_tasks.length);
+  assert.equal(questList(base(), Q, '2026-11-04').length, Q.bonus_tasks.length - 2);
 });
 
 test('quests are on until switched off; off earns nothing and keeps the points', () => {
