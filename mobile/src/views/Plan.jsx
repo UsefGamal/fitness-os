@@ -281,7 +281,7 @@ export default function Plan() {
                   starts today (BeFit item 9). */}
               <div className="start-bar">
                 {picked.date === today ? (
-                  <button type="button" className="btn glow hero" onClick={() => navigate('/workout')}><Icon name="play" /> {t('plan.start')}</button>
+                  <button type="button" className="btn glow hero" onClick={() => navigate('/workout', { state: { go: true } })}><Icon name="play" /> {t('plan.start')}</button>
                 ) : (
                   <button type="button" className="btn glow hero" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> {t('plan.startDay', { label: day.label })}</button>
                 )}

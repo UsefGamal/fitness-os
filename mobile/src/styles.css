@@ -1544,3 +1544,15 @@ label.field input { transition: box-shadow 300ms ease; }
 .finish-kept { margin: -6px 0 14px; color: var(--accent); font-weight: 600; }
 button.backup-link { background: none; border: 0; font: inherit; text-align: start; cursor: pointer; }
 .backup-line > .chev { margin-inline-end: 12px; }
+
+/* The bottom bar of a running workout (design laws plan #7): the next set,
+   then Finish, in thumb reach. One fixed thing at the bottom: it gives way
+   to the rest timer, and toasts sit above it. */
+.log-bar { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--sab) + 10px); z-index: 30; max-width: 528px; margin: 0 auto; }
+.log-bar .btn { min-height: 56px; box-shadow: 0 6px 20px var(--deep-shadow); font-size: calc(var(--fs-t3) * var(--ts)); }
+.page.with-log-bar { padding-bottom: calc(var(--tabbar) + var(--sab) + 96px); }
+:root:has(.log-bar) .toast { bottom: calc(var(--tabbar) + var(--sab) + 78px); }
+/* Effort chips on the finish sheet. */
+.effort-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.effort-chips .chip { min-width: 56px; justify-content: center; }
+.field-label { color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); margin: 0 0 6px 4px; }

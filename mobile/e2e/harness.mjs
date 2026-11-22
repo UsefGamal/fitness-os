@@ -156,6 +156,28 @@ export const STATES = [
       await p.getByRole('button', { name: en['setEdit.delete'] }).waitFor({ timeout: 5000 });
     },
   },
+  // Design laws plan #7: the bottom bar and the finish sheet.
+  {
+    name: 'workout: log bar after a set',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await p.locator('.log-bar').waitFor({ timeout: 5000 }).catch(() => {});
+    },
+  },
+  {
+    name: 'sheet: finish a workout',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await btnNamed(p, en['workout.finishWorkout']).click();
+      await p.getByRole('radiogroup', { name: en['finish.effort'] }).waitFor({ timeout: 5000 });
+    },
+  },
   { name: 'empty week on Plan', route: '/plan', data: restWeek },
   // BACK-1: the last workout 11 days ago; and the session time long gone
   // (the starting plan rests on Fridays, so a session is put on it).
