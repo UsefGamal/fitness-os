@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { homeCard } from './homeCard.js';
-import { dismissWrap, hasWeek, identityLine, pictureLines, summaryLine, weekStats, weekText, wrapDue, wrapWeek } from './weekStats.js';
+import { dismissWrap, hasWeek, identityLine, pictureLines, summaryLine, weekDaysLine, weekStats, weekText, wrapDue, wrapWeek } from './weekStats.js';
 
 const content = JSON.parse(readFileSync(new URL('../content.json', import.meta.url), 'utf8'));
 const SLOTS = content.nutrition.meal_slots;
@@ -162,4 +162,20 @@ test('home card priority: doctor note, welcome back, wrap-up, recovery', () => {
   assert.equal(homeCard(data, content, '2026-11-08', { goal: true, target: true }), 'goal');
   assert.equal(homeCard(data, content, '2026-11-08'), 'wrapup');
   assert.equal(homeCard(data, content, '2026-11-11'), null);
+});
+
+// Design laws plan #2: one week number, never "3 of 2" or "4 of 3".
+test('the Home week line counts against the plan, says kept, and never overshoots', () => {
+  assert.equal(weekDaysLine({ days: 1, planned: 3, need: 2, sets: 12 }), '1 of 3 training days this week · 12 work sets');
+  assert.equal(weekDaysLine({ days: 2, planned: 3, need: 2, sets: 24 }), '2 of 3 training days this week · week kept · 24 work sets');
+  assert.equal(weekDaysLine({ days: 4, planned: 3, need: 2, sets: 40 }), '4 training days this week, plan 3 · week kept · 40 work sets');
+  assert.equal(weekDaysLine({ days: 1, planned: 0, need: 1, sets: 1 }), '1 training day this week · 1 work set');
+  assert.equal(weekDaysLine({ days: 0, planned: 0, need: 1, sets: 0 }), '0 training days this week · 0 work sets');
+});
+
+test('the wrap line says both numbers when there were more sessions than planned', () => {
+  const s = (done, planned, workSets) => ({ sessions: { done, planned }, workSets });
+  assert.equal(summaryLine(s(4, 3, 40)), '4 sessions, plan 3 · 40 sets');
+  assert.equal(summaryLine(s(2, 3, 20)), '2 of 3 sessions · 20 sets');
+  assert.equal(summaryLine(s(1, null, 1)), '1 session · 1 set');
 });

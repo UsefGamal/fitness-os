@@ -144,6 +144,18 @@ export const STATES = [
       await p.getByRole('heading', { name: en['finish.title'] }).waitFor({ timeout: 5000 });
     },
   },
+  // Design laws plan #1: a logged set's tick opens this sheet, never a delete.
+  {
+    name: 'sheet: edit a logged set',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await btnNamed(p, en['workout.editSet'].replace('{n}', 1)).click();
+      await p.getByRole('button', { name: en['setEdit.delete'] }).waitFor({ timeout: 5000 });
+    },
+  },
   { name: 'empty week on Plan', route: '/plan', data: restWeek },
   // BACK-1: the last workout 11 days ago; and the session time long gone
   // (the starting plan rests on Fridays, so a session is put on it).

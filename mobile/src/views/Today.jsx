@@ -42,7 +42,7 @@ import { useToday } from '../store/today.js';
 import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
 import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
-import { dismissWrap, weekStats, wrapWeek } from '../lib/weekStats.js';
+import { dismissWrap, weekDaysLine, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 import FirstWeekCard from '../components/FirstWeekCard.jsx';
 import GoalReachedCard from '../components/GoalReachedCard.jsx';
@@ -254,7 +254,7 @@ export default function Today() {
       {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
       <section className="home-week" aria-label={t('home.weekAria')}>
         <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
-        <div className="muted small home-week-line">{t('home.weekLine', { days: glance.days, need: weeks.week.need, sets: glance.sets })}</div>
+        <div className="muted small home-week-line">{weekDaysLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need, sets: glance.sets })}</div>
       </section>
       {isRecoveryWeek(data, today) ? (
         <div className="pill-row warn">

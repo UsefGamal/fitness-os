@@ -1534,3 +1534,7 @@ label.field input { transition: box-shadow 300ms ease; }
 .ex-target:has(.mtags) { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--muted); font-weight: 500; }
 .ex-target .mtags { margin-top: 0; }
 .ex-detail { font-size: calc(var(--fs-foot) * var(--ts)); }
+
+/* Edit a logged set (design laws plan #1): reps and kg side by side. */
+.set-edit { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 4px; }
+.set-edit .st-input { width: 100%; }

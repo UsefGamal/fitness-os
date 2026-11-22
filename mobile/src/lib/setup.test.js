@@ -5,7 +5,7 @@ import test from 'node:test';
 import { emptyData } from './data.js';
 import { macroTargets } from './macros.js';
 import { activeBlock } from './plan.js';
-import { activityFor, bodyComplete, bodyErrors, finishSetup, needsSetup, pickRoutine, settleSetup, setupGoalDate, skipSetup } from './setup.js';
+import { activityFor, bodyComplete, bodyErrors, finishSetup, needsSetup, pickRoutine, questsOffForNew, settleSetup, setupGoalDate, skipSetup } from './setup.js';
 import { QUESTIONS, gateOn, kcalHidden } from './safety.js';
 import { content } from './testContent.js';
 
@@ -183,4 +183,15 @@ test('a man in setup is not asked about pregnancy, and is not gated by it', () =
   assert.equal(man.safety.gates.no_deficit, false);
   const woman = finishSetup(emptyData(content), content, { ...BODY, gender: 'female', goal: 'lose', screening: sixNo }, TODAY);
   assert.equal(woman.safety.gates.no_deficit, true, 'a woman who never answered it is gated');
+});
+
+// Design laws plan #14: Quests start off for a new install only.
+test('setup turns Quests off for a new install and leaves anyone else alone', () => {
+  const fresh = emptyData(content);
+  assert.equal(finishSetup(fresh, content, { goal: 'lose', days: 3 }, '2026-11-22').settings.modules.quests, false);
+  assert.equal(skipSetup(fresh, '2026-11-22').settings.modules.quests, false);
+  const ticked = { ...fresh, bonus_logs: [{ id: 1, log_date: '2026-11-01', task_key: 'extra_walk', points: 10 }] };
+  assert.equal(questsOffForNew(ticked), ticked);
+  const chose = { ...fresh, settings: { ...fresh.settings, modules: { ...fresh.settings.modules, quests: true } } };
+  assert.equal(questsOffForNew(chose), chose);
 });

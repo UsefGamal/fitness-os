@@ -99,17 +99,26 @@ export function plannedPerWeek(block) {
  * week (the last block started on or before the week's Saturday); with no
  * plan in the data, one session keeps a week. Returns need(weekStartIso). */
 export function weekNeed(data) {
+  const planned = weekPlanned(data);
+  return (weekIso) => {
+    const n = planned(weekIso);
+    return n ? Math.max(1, n - 1) : 1;
+  };
+}
+
+/** Training days the plan running that week asks for (0 with no plan):
+ * planned(weekStartIso). The number people see next to what they did. */
+export function weekPlanned(data) {
   const blocks = (data?.program?.blocks || []).filter((b) => b && b.started_on).sort((a, b) => (a.started_on < b.started_on ? -1 : 1));
   return (weekIso) => {
     const end = addDays(weekIso, 6);
     let block = blocks[0] || null;
     for (const b of blocks) if (b.started_on <= end) block = b;
-    const planned = plannedPerWeek(block);
-    return planned ? Math.max(1, planned - 1) : 1;
+    return plannedPerWeek(block);
   };
 }
 
-/** Weeks in a row that were kept: { current, longest, week: { done, need } }.
+/** Weeks in a row that were kept: { current, longest, week: { done, need, planned } }.
  * A week is kept when its training days reach the need: by default the
  * weekNeed rule above; a number asks for that many every week. Recovery
  * and Ramadan weeks count like any other. The current week counts once it
@@ -127,7 +136,7 @@ export function weekStreaks(data, today, min) {
   }
   const done = (k) => days.get(k)?.size || 0;
   const thisWeek = weekStart(today, data);
-  const week = { done: done(thisWeek), need: need(thisWeek) };
+  const week = { done: done(thisWeek), need: need(thisWeek), planned: weekPlanned(data)(thisWeek) };
   if (!days.size) return { current: 0, longest: 0, week };
   const hit = (k) => done(k) >= need(k);
   let longest = 0;

@@ -13,6 +13,9 @@ import { celebratesWeightLoss, rewardsWeightLoss } from './safety.js';
 // the 5 kg badge also for every goal that is not weight loss.
 export const WEIGHT_BADGES = ['lost5', 'waist5'];
 const LOSS_GOAL_BADGES = ['lost5'];
+// No longer earned (design laws plan #3): "5 kg down" rewarded weight loss
+// alone, which PRODUCT.md rules out. Someone who already has it keeps it.
+export const RETIRED_BADGES = ['lost5'];
 
 const gymCount = (s) => s.gym;
 
@@ -36,7 +39,7 @@ export const BADGES = [
   { id: 'dead2', label: 'Double deadlift', note: 'Deadlift 2 × your bodyweight (est. 1RM)', goal: 2, value: (s) => s.ratio.deadlift, unit: '× BW', icon: 'barbell', tone: 'indigo', tier: 3 },
   { id: 'lost5', label: '5 kg down', note: 'Weigh 5 kg less than your first weigh-in', goal: 5, value: (s) => s.lost, unit: 'kg', icon: 'scale', tone: 'green', tier: 1 },
   { id: 'waist5', label: 'Belt notch', note: 'Waist 5 cm smaller than your first measure', goal: 5, value: (s) => s.waist, unit: 'cm', icon: 'tape', tone: 'green', tier: 1 },
-  { id: 'meals7', label: 'Every meal ticked', note: 'Tick every meal for a whole week', goal: 1, value: (s) => s.mealWeeks, icon: 'meals', tone: 'green', tier: 1 },
+  { id: 'meals7', label: 'Every meal ticked', note: 'Tick every meal on 6 days of a week', goal: 1, value: (s) => s.mealWeeks, icon: 'meals', tone: 'green', tier: 1 },
 ];
 
 /** Count of sets that beat every earlier set of the same exercise. */
@@ -79,10 +82,13 @@ const LIFTS = {
   deadlift: /deadlift/i,
 };
 
-/** Best estimated 1RM of each big lift divided by the latest bodyweight. */
+/** Best estimated 1RM of each big lift divided by the heavier of the first
+ * and the latest bodyweight, so losing weight alone never earns a lift
+ * badge (design laws plan #3). */
 export function liftRatios(data) {
   const out = { bench: 0, squat: 0, deadlift: 0 };
-  const bw = data.body_logs.length ? data.body_logs[data.body_logs.length - 1].weight_kg : null;
+  const weighed = data.body_logs.filter((b) => b.weight_kg > 0);
+  const bw = weighed.length ? Math.max(weighed[0].weight_kg, weighed[weighed.length - 1].weight_kg) : null;
   if (!bw) return out;
   const names = new Map(data.exercises.map((e) => [e.id, e.name]));
   for (const w of data.workouts) {
@@ -103,13 +109,14 @@ function drop(logs, field) {
   return Math.max(0, Math.round((rows[0][field] - rows[rows.length - 1][field]) * 10) / 10);
 }
 
-/** Weeks (by the person's week start) in which every meal slot was ticked on all 7 days. */
+/** Weeks (by the person's week start) in which every meal slot was ticked on
+ * 6 of the 7 days: all days but one, like the streak (design laws plan #14). */
 export function fullMealWeeks(data, slots = 5) {
   const perDay = new Map();
   for (const m of data.meal_logs || []) if (m.completed) perDay.set(m.log_date, (perDay.get(m.log_date) || 0) + 1);
   const perWeek = new Map();
   for (const [d, n] of perDay) if (n >= slots) perWeek.set(weekStart(d, data), (perWeek.get(weekStart(d, data)) || 0) + 1);
-  return [...perWeek.values()].filter((n) => n >= 7).length;
+  return [...perWeek.values()].filter((n) => n >= 6).length;
 }
 
 export function badgeStats(data, today) {
@@ -133,7 +140,7 @@ export function badges(data, today) {
   const kept = data.achievements || {};
   const cheer = celebratesWeightLoss(data, today);
   const loss = rewardsWeightLoss(data, goalDirection(data), today);
-  return BADGES.filter((b) => (cheer || !WEIGHT_BADGES.includes(b.id)) && (loss || !LOSS_GOAL_BADGES.includes(b.id))).map((b) => {
+  return BADGES.filter((b) => (cheer || !WEIGHT_BADGES.includes(b.id)) && (loss || !LOSS_GOAL_BADGES.includes(b.id)) && (!RETIRED_BADGES.includes(b.id) || kept[b.id])).map((b) => {
     const value = b.value(stats);
     return { ...b, value, earned: value >= b.goal, fraction: Math.min(1, value / b.goal), date: kept[b.id] || null };
   });

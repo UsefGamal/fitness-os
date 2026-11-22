@@ -143,6 +143,7 @@ export function finishSetup(data, content, a, today) {
   if (goal === 'gain') d = withMainSet(d);
   d = setTraining(d, { level: levelFromSetup(a.experience) });
   d = a.screening ? applyScreening(d, a.screening, today, a.gender ?? null) : skipScreening(d, today);
+  d = questsOffForNew(d);
   return {
     ...d,
     safety: { ...(d.safety || {}), hide_kcal: body ? Boolean(d.safety?.hide_kcal) : true },
@@ -150,9 +151,18 @@ export function finishSetup(data, content, a, today) {
   };
 }
 
+/** New installs start with Quests off (design laws plan #14): a daily
+ * "0 / 7" a person never asked for reads as a small failure. Anyone who
+ * already has a quest tick, or chose a setting, keeps what they had. */
+export function questsOffForNew(data) {
+  const modules = data.settings?.modules || {};
+  if ('quests' in modules || (data.bonus_logs || []).length) return data;
+  return { ...data, settings: { ...(data.settings || {}), modules: { ...modules, quests: false } } };
+}
+
 /** Skip everything: nothing set, kcal hidden, a "finish your setup" note. */
 export function skipSetup(data, today) {
-  const d = skipScreening(data, today);
+  const d = questsOffForNew(skipScreening(data, today));
   return { ...d, safety: { ...(d.safety || {}), hide_kcal: true }, setup: { done_on: today, routine: null, needs_body: true, skipped: true } };
 }
 

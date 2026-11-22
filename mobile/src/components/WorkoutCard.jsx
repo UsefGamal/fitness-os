@@ -79,12 +79,12 @@ export default function WorkoutCard({ next, day, hits, groups, time, todays, cha
       {last && !todays ? (
         // Last time, set by set (charts step 2): walk in knowing what to beat.
         <div className="last-time" aria-label={t('last.aria', { label: next.label, lines: last.lifts.map((l) => `${l.name} ${l.text}`).join('; ') })}>
-          <div className="last-head"><strong>{t('last.title', { label: next.label, date: shortDate(last.date) })}</strong> <span className="muted">· {t(last.minutes ? 'last.metaMin' : 'last.meta', { sets: last.sets, min: last.minutes })}</span></div>
+          <div className="last-head"><strong>{t('last.title', { label: next.label, date: shortDate(last.date) })}</strong> <span className="muted">· {t(last.sets === 1 ? (last.minutes ? 'last.metaMinOne' : 'last.metaOne') : (last.minutes ? 'last.metaMin' : 'last.meta'), { sets: last.sets, min: last.minutes })}</span></div>
           {last.lifts.map((l) => <div key={l.exercise_id} className="last-lift"><span className="grow">{l.name}</span><span className="num">{l.text}</span></div>)}
         </div>
       ) : null}
       {todays?.finished_at ? (
-        <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> {t('home.doneSets', { n: todays.sets.length })}</Link>
+        <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> {t(todays.sets.length === 1 ? 'home.doneSetOne' : 'home.doneSets', { n: todays.sets.length })}</Link>
       ) : (
         <button type="button" className="btn hero" onClick={onStart}><Icon name="play" /> {t(todays ? 'home.resume' : 'home.start')}</button>
       )}

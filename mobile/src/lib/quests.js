@@ -4,8 +4,6 @@
 // app (the old site used ISO Monday weeks).
 import { daysBetween, weekStart } from './dates.js';
 import { moduleOn, nextId, waterGoal } from './data.js';
-import { goalDirection, profileOf } from './macros.js';
-import { rewardsWeightLoss } from './safety.js';
 
 const byKey = (quests) => Object.fromEntries(quests.bonus_tasks.map((t) => [t.key, t]));
 
@@ -15,15 +13,19 @@ export function questsOn(data) {
   return moduleOn(data, 'quests');
 }
 
+/** Quests that no longer show or pay (design laws plan #3, #14): the 5 kg
+ * milestone rewarded weight loss alone (PRODUCT.md), and extra cardio paid
+ * points for more exercise in a deficit. Old ticks keep their points. */
+export const RETIRED_QUESTS = ['first_5kg', 'extra_cardio'];
+
 /** The quests this person sees, with their own numbers: the water habit
- * names their water goal, and the 5 kg milestone is only there for a
- * weight-loss goal (never while weight is hidden or a cut is off), unless
- * it was already earned. */
+ * names their water goal. A retired milestone that was already earned
+ * stays on the list as done. */
 export function questList(data, quests, today) {
-  const loss = rewardsWeightLoss(data, goalDirection(data), today);
+  void today;
   const earned = new Set(data.bonus_logs.map((b) => b.task_key));
   return quests.bonus_tasks
-    .filter((t) => t.key !== 'first_5kg' || loss || earned.has(t.key))
+    .filter((t) => !RETIRED_QUESTS.includes(t.key) || (t.frequency === 'once' && earned.has(t.key)))
     .map((t) => (t.key === 'hydration' ? { ...t, label: `Hit your water goal (${Math.round(waterGoal(data) / 100) / 10} L)` } : t));
 }
 
@@ -48,7 +50,7 @@ export function doneKeys(data, today, quests) {
 /** Tick or untick a daily habit for today. Weekly and once quests are earned, not ticked. */
 export function toggleDaily(data, today, key, quests) {
   const task = byKey(quests)[key];
-  if (!task || task.frequency !== 'daily') return data;
+  if (!task || task.frequency !== 'daily' || RETIRED_QUESTS.includes(key)) return data;
   const existing = data.bonus_logs.find((b) => b.log_date === today && b.task_key === key);
   if (existing) return { ...data, bonus_logs: data.bonus_logs.filter((b) => b !== existing) };
   return { ...data, bonus_logs: [...data.bonus_logs, { id: nextId(data.bonus_logs), log_date: today, task_key: key, points: task.points }] };
@@ -79,24 +81,18 @@ export function weeklyConditions(data, today) {
   const prepDays = new Set(logs.filter((b) => b.task_key === 'meal_prep').map((b) => b.log_date));
   return {
     three_sessions_week: sessionDays.size >= 3,
-    no_missed_week: weekDone && checkinDays.size >= 7,
+    // All days but one, like the streak's free skip (design laws plan #14).
+    no_missed_week: weekDone && checkinDays.size >= 6,
     meal_prep_week: weekDone && prepDays.size >= 7,
   };
 }
 
 /** Once-ever milestones. The 30-day streak quest is gone (E7-S3): it asked
- * for training on rest days. Old awards of it still count their points. */
+ * for training on rest days. The 5 kg milestone is retired (RETIRED_QUESTS):
+ * old awards of both still count their points. */
 export function onceConditions(data, today) {
-  let lost5 = false;
-  // Only for a weight-loss goal, and never while weight is hidden or a cut
-  // is off (SAFE-1, REW-1).
-  if (data.body_logs.length && rewardsWeightLoss(data, goalDirection(data), today)) {
-    const start = profileOf(data).start_weight_kg || data.body_logs[0].weight_kg;
-    const lowest = Math.min(...data.body_logs.map((b) => b.weight_kg));
-    lost5 = start - lowest >= 5;
-  }
+  void today;
   return {
-    first_5kg: lost5,
     first_deload: data.workouts.some((w) => w.is_deload),
   };
 }

@@ -31,24 +31,34 @@ test('bodyweight lifts, weight and waist drops, full meal weeks', () => {
     body_logs: [{ log_date: '2026-09-01', weight_kg: 86, waist_cm: 95 }, { log_date: '2026-10-01', weight_kg: 80, waist_cm: 91 }],
     meal_logs: [],
   };
-  assert.deepEqual(liftRatios(data), { bench: 1, squat: 1.25, deadlift: 0 });
+  // Against the heavier of the first (86) and latest (80) weigh-in, so the
+  // cut alone doesn't turn an 80 kg bench into a bodyweight bench.
+  assert.deepEqual(liftRatios(data), { bench: 0.93, squat: 1.16, deadlift: 0 });
   const b = Object.fromEntries(badges(data, '2026-11-04').map((x) => [x.id, x]));
-  assert.equal(b.bench1.earned, true);
+  assert.equal(b.bench1.earned, false);
   assert.equal(b.squat15.earned, false);
-  assert.equal(b.lost5.earned, true);
+  assert.equal(b.lost5, undefined, 'the 5 kg badge is retired');
   assert.equal(b.waist5.value, 4);
+  // Getting stronger still counts: a heavier bench earns it.
+  const stronger = { ...data, workouts: [{ ...data.workouts[0], sets: [{ id: 1, exercise_id: 1, weight_kg: 86, reps: 1 }] }] };
+  assert.equal(liftRatios(stronger).bench, 1);
   const meals = [];
   for (let d = 1; d <= 7; d += 1) for (const slot of ['a', 'b', 'c', 'd', 'e']) meals.push({ log_date: `2026-11-0${d}`, meal_slot: slot, completed: true });
   assert.equal(fullMealWeeks({ meal_logs: meals }), 1);
-  assert.equal(fullMealWeeks({ meal_logs: meals.slice(1) }), 0);
+  // All days but one is enough, like the streak.
+  assert.equal(fullMealWeeks({ meal_logs: meals.slice(1) }), 1);
+  assert.equal(fullMealWeeks({ meal_logs: meals.slice(6) }), 0);
 });
 
 // REW-1
-test('the 5 kg badge is only for a weight-loss goal; "On the scale" is gone', () => {
+test('the 5 kg badge is retired; "On the scale" is gone', () => {
   const body = { exercises, workouts: [], meal_logs: [], body_logs: [{ log_date: '2026-09-01', weight_kg: 86, waist_cm: 95 }, { log_date: '2026-10-01', weight_kg: 80, waist_cm: 91 }] };
   const ids = (direction) => badges({ ...body, goals: [{ id: 'g1', set_on: '2026-09-01', direction, ended_on: null }] }, '2026-11-04').map((b) => b.id);
-  assert.ok(ids('lose').includes('lost5'));
-  for (const direction of ['gain', 'recomp', 'maintain']) assert.ok(!ids(direction).includes('lost5'), direction);
+  for (const direction of ['lose', 'gain', 'recomp', 'maintain']) assert.ok(!ids(direction).includes('lost5'), direction);
+  // Someone who earned it before keeps it.
+  const had = { ...body, goals: [{ id: 'g1', set_on: '2026-09-01', direction: 'lose', ended_on: null }], achievements: { lost5: '2026-10-01' } };
+  assert.equal(badges(had, '2026-11-04').find((b) => b.id === 'lost5').date, '2026-10-01');
+  assert.equal(newBadges({ ...had, achievements: {} }, '2026-11-04').some((b) => b.id === 'lost5'), false);
   assert.ok(ids('recomp').includes('waist5'));
   assert.ok(!ids('lose').includes('weigh30'));
   assert.equal(badges(body, '2026-11-04').find((b) => b.id === 'meals7').label, 'Every meal ticked');
