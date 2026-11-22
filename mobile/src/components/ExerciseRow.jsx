@@ -1,14 +1,19 @@
 import { Link } from 'react-router';
 
 import { t } from '../lib/i18n.js';
-import { targetLabel } from '../lib/muscles.js';
+import { tagGroups, targetLabel } from '../lib/muscles.js';
 import BodyMap from './BodyMap.jsx';
 import Icon from './Icon.jsx';
+import MuscleTags from './MuscleTags.jsx';
 
 /** One exercise in a plan day: a small body map of the muscles it
  * targets (main bright, helpers dim, the angle when known), name, target muscle, sets x reps and
  * RIR (rest times show in the workout). Taps open the exercise (Library first, then the catalogue). */
 export default function ExerciseRow({ ex, target, to }) {
+  const groups = tagGroups(target);
+  const detail = targetLabel(target);
+  // A detail that only repeats the one tag ("Chest") is left out.
+  const showDetail = detail && !(groups.length === 1 && detail === groups[0]);
   const meta = [t('plan.meta', { sets: ex.sets, reps: ex.reps }), ex.rir ? t('plan.tank', { rir: ex.rir }) : null].filter(Boolean).join(' · ');
   const body = (
     <>
@@ -17,7 +22,7 @@ export default function ExerciseRow({ ex, target, to }) {
       </div>
       <div className="grow">
         <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
-        {target ? <div className="ex-target">{targetLabel(target)}</div> : null}
+        {target ? <div className="ex-target"><MuscleTags groups={groups} />{showDetail ? <span className="ex-detail">{detail}</span> : null}</div> : null}
         <div className="ex-meta">{meta}</div>
         {ex.swapped_from ? <div className="ex-meta">{t('plan.instead', { name: ex.swapped_from })}</div> : null}
         {ex.note ? <div className="ex-note"><Icon name="info" className="icon" /> {ex.note}</div> : null}

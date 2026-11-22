@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.33',
+    items: [
+      { icon: 'dumbbell', text: 'Exercises now show coloured tags for the muscles they work: Legs, Chest, Back, Shoulders, Arms, Core.' },
+      { icon: 'check', text: 'Each tag also has its own shape, so you can tell them apart without the colour.' },
+    ],
+  },
+  {
     version: '1.1.31',
     items: [
       { icon: 'star', text: 'Tafra has three colours now: green for training, guava pink for meals, and Nile blue for recovery, water and sleep.' },

@@ -4,10 +4,12 @@ import { Link } from 'react-router';
 import BodyMap from '../components/BodyMap.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
+import MuscleTags from '../components/MuscleTags.jsx';
 import { entryFor, thumbOf } from '../lib/catalogue.js';
 import { exerciseGroups, GROUP16, GROUPS16 } from '../lib/muscleGroups.js';
 import * as D from '../lib/data.js';
 import { t } from '../lib/i18n.js';
+import { TAG_GROUPS } from '../lib/muscles.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 import Catalogue from './Catalogue.jsx';
@@ -81,7 +83,7 @@ export default function Library() {
           return (
             <Link key={e.id} to={`/library/${e.id}`} className="list-row">
               {catalogue ? (() => { const c = entryFor(e.name, content.training, catalogue.byId); return thumbOf(c) ? <img className="thumb" src={`exercise-db/${thumbOf(c)}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />; })() : null}
-              <div className="grow"><div>{e.name}</div><div className="meta">{e.muscle_group}{e.equipment ? ` · ${e.equipment}` : ''}</div></div>
+              <div className="grow"><div>{e.name}</div>{TAG_GROUPS.includes(e.muscle_group) ? <><MuscleTags groups={[e.muscle_group]} />{e.equipment ? <div className="meta">{e.equipment}</div> : null}</> : <div className="meta">{e.muscle_group}{e.equipment ? ` · ${e.equipment}` : ''}</div>}</div>
               {b ? <span className="meta">{b.weight_kg} × {b.reps}</span> : null}
               <Icon name="chev" className="icon chev" />
             </Link>

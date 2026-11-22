@@ -669,6 +669,13 @@ export default {
   'about.report': 'Send a bug report',
   'about.reportNote': 'Versions, counts and recent errors only; nothing personal.',
 
+  'mtag.Legs': 'Legs',
+  'mtag.Chest': 'Chest',
+  'mtag.Back': 'Back',
+  'mtag.Shoulders': 'Shoulders',
+  'mtag.Arms': 'Arms',
+  'mtag.Core': 'Core',
+  'mtag.aria': 'Works: {groups}',
   'muscles.pick': 'Muscle',
   'muscles.all': 'All {group}',
   'mg.count': '{n} exercises',

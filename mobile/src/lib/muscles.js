@@ -117,6 +117,19 @@ export function targetFor(name, training, entry = null) {
   return { main: musclesOf(entry), helpers: helpersOf(entry), angle: angleOf(entry) };
 }
 
+// The six groups as coloured tags (TAG-1), in this order. Each has its own
+// colour and shape, so the tag still reads without colour.
+export const TAG_GROUPS = ['Legs', 'Chest', 'Back', 'Shoulders', 'Arms', 'Core'];
+
+/** The groups a target's main muscles (or its angle's muscle) belong to,
+ * each once, in TAG_GROUPS order. */
+export function tagGroups(target) {
+  if (!target) return [];
+  const keys = target.angle && ANGLES[target.angle] ? [ANGLES[target.angle].muscle] : target.main || [];
+  const groups = new Set(keys.map((k) => MUSCLE[k]?.group).filter(Boolean));
+  return TAG_GROUPS.filter((g) => groups.has(g));
+}
+
 /** Short label for a target: the angle when there is one, else the muscles. */
 export function targetLabel(target) {
   if (!target) return '';

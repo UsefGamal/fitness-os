@@ -8,6 +8,7 @@ import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import EquipmentSheet from '../components/EquipmentPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import LeapMark from '../components/LeapMark.jsx';
+import MuscleTags from '../components/MuscleTags.jsx';
 import Toast from '../components/Toast.jsx';
 import { entryFor, groupOf, photoSrc } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
@@ -702,6 +703,7 @@ export default function Workout() {
               <Thumb entry={xEntry} onClick={xEntry?.photos?.length ? () => setShowPhoto(!showPhoto) : null} label={t(showPhoto ? 'workout.hidePhoto' : 'workout.showPhoto')} />
               <div className="grow" style={{ minWidth: 0 }}>
                 <div className="ex-name big">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
+                <MuscleTags target={targets[i]} />
                 <div className="ex-status">{status}</div>
                 <div className="ex-meta">{meta}</div>
               </div>

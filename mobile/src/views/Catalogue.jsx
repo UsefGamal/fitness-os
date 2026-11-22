@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import BodyMap from '../components/BodyMap.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import Icon from '../components/Icon.jsx';
+import MuscleTags from '../components/MuscleTags.jsx';
 import { capitalize, filterCatalogue, isStretch, thumbOf } from '../lib/catalogue.js';
 import { t } from '../lib/i18n.js';
 import { countByGroup, GROUP16, GROUPS16, musclesOfGroup } from '../lib/muscleGroups.js';
@@ -91,7 +92,7 @@ export default function Catalogue({ q, muscle, onPick }) {
         {list.slice(0, limit).map((e) => (
           <Link key={e.id} to={`/catalogue/${encodeURIComponent(e.id)}`} className="list-row">
             {thumbOf(e) ? <img className="thumb" src={`exercise-db/${thumbOf(e)}`} alt="" loading="lazy" decoding="async" /> : <span className="thumb blank" />}
-            <div className="grow"><div>{e.name}</div><div className="meta">{[isStretch(e) ? t('kind.tag') : null, targetText(e), e.equipment].filter(Boolean).join(' · ')}</div></div>
+            <div className="grow"><div>{e.name}</div><MuscleTags target={{ main: musclesOf(e) }} /><div className="meta">{[isStretch(e) ? t('kind.tag') : null, targetText(e), e.equipment].filter(Boolean).join(' · ')}</div></div>
             <Icon name="chev" className="icon chev" />
           </Link>
         ))}
