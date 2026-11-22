@@ -18,3 +18,10 @@ export function homeLine({ news, backup, firstWeekAsksBackup }) {
   if (backup && !firstWeekAsksBackup) return 'backup';
   return null;
 }
+
+/** Home's order under the plan card (design laws plan #11): on a training
+ * day the Today ticks come before the weight, on a rest day the weight
+ * leads. 'today' | 'weight'. */
+export function homeOrder({ trainingDay }) {
+  return trainingDay ? 'today' : 'weight';
+}

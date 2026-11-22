@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.37',
+    items: [
+      { icon: 'home', text: 'On a training day Home shows Today (water, meals) above your weight. On a rest day your weight comes first.' },
+      { icon: 'meals', text: 'The simple Meals view now has a tick for each meal, so "meals eaten" on Home can fill up, and a Shopping button.' },
+      { icon: 'check', text: 'In the exercise check-in, Keep is the main button and Swap is the outlined one.' },
+      { icon: 'star', text: 'Less green on Plan, so Start stands out. Long tile names on Home wrap to two lines instead of being cut.' },
+    ],
+  },
+  {
     version: '1.1.36',
     items: [
       { icon: 'play', text: 'Start on Home and Plan starts your workout in one tap, with Undo. It still shows the page first if there is a safety note or swap.' },

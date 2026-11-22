@@ -41,7 +41,7 @@ import { SESSIONS, SessionSheet } from './Session.jsx';
 import { useToday } from '../store/today.js';
 import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
-import { homeLine, whatsNewMode } from '../lib/interrupts.js';
+import { homeLine, homeOrder, whatsNewMode } from '../lib/interrupts.js';
 import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
 import { dismissWrap, weekDaysLine, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
@@ -145,6 +145,39 @@ export default function Today() {
   const greet = t(`home.greet.${partOfDay(new Date().getHours())}`);
   const addWater = (ml) => { update((d) => D.addWater(d, today, ml)); feedback('water'); };
 
+  // Home order (design laws plan #11, Yusuf's pick): on a training day the
+  // Today ticks (water, meals) come before the weight; on a rest day the
+  // weight leads. The week strip stays next to the plan it shows.
+  const weightFirst = homeOrder({ trainingDay: Boolean(next && !next.isRestToday) }) === 'weight';
+  const weightBlock = (
+    <>
+      {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} onLog={() => setWeighing(true)} /> : null}
+    </>
+  );
+  const todayBlock = (
+    <>
+      <div className="section-head">
+        <h2 className="section-title">{t('home.quickStats')}</h2>
+        {streak > 0 && !back ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
+      </div>
+      <div className="tile-grid" data-tour="today">
+        {D.moduleOn(data, 'water') ? (
+          <StatTile wide icon="drop" tone="water" value={water} of={`${D.waterGoal(data)} ml`} label={t('home.water')}>
+            <div className="row" style={{ gap: 6 }}>
+              <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 250 })} onClick={() => addWater(250)}>{t('home.add250')}</button>
+              <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 500 })} onClick={() => addWater(500)}>{t('home.add500')}</button>
+              <button type="button" className="mini-btn" aria-label={t('home.undoWater')} disabled={!water} onClick={() => update((d) => D.addWater(d, today, -250))}><Icon name="undo" className="icon" /></button>
+            </div>
+          </StatTile>
+        ) : null}
+        {D.moduleOn(data, 'meals') ? (
+          <StatTile to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={`${t('home.meals')} · ${mealDay.label}`} />
+        ) : null}
+        {questsOn(data) ? <StatTile to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={t('home.quests')} /> : null}
+      </div>
+    </>
+  );
+
   return (
     <div className="page home">
       <header className="home-head">
@@ -242,8 +275,13 @@ export default function Today() {
         </section>
       ) : null}
 
-      {/* Today's session and Start come first (UX-01); weight is next, one tap to log (UX-03). */}
-      {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} onLog={() => setWeighing(true)} /> : null}
+      {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
+      <section className="home-week" aria-label={t('home.weekAria')}>
+        <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
+        <div className="muted small home-week-line">{weekDaysLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need, sets: glance.sets })}</div>
+      </section>
+      {weightFirst ? weightBlock : todayBlock}
+      {weightFirst ? todayBlock : weightBlock}
       {newsMode === 'sheet' || (newsOpen && news.length) ? <WhatsNewSheet notes={news} onClose={() => { setNewsOpen(false); update((d) => markSeen(d, APP.version)); }} /> : null}
       {weighing ? <WeighInSheet data={data} update={update} today={today} onClose={() => setWeighing(false)} /> : null}
       <MetricStrip tiles={tiles} />
@@ -267,11 +305,6 @@ export default function Today() {
         </div>
       ) : null}
 
-      {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
-      <section className="home-week" aria-label={t('home.weekAria')}>
-        <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
-        <div className="muted small home-week-line">{weekDaysLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need, sets: glance.sets })}</div>
-      </section>
       {isRecoveryWeek(data, today) ? (
         <div className="pill-row warn">
           <Icon name="calendar" />
@@ -289,25 +322,6 @@ export default function Today() {
         </button>
       ) : null}
 
-      <div className="section-head">
-        <h2 className="section-title">{t('home.quickStats')}</h2>
-        {streak > 0 && !back ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
-      </div>
-      <div className="tile-grid" data-tour="today">
-        {D.moduleOn(data, 'water') ? (
-          <StatTile wide icon="drop" tone="water" value={water} of={`${D.waterGoal(data)} ml`} label={t('home.water')}>
-            <div className="row" style={{ gap: 6 }}>
-              <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 250 })} onClick={() => addWater(250)}>{t('home.add250')}</button>
-              <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 500 })} onClick={() => addWater(500)}>{t('home.add500')}</button>
-              <button type="button" className="mini-btn" aria-label={t('home.undoWater')} disabled={!water} onClick={() => update((d) => D.addWater(d, today, -250))}><Icon name="undo" className="icon" /></button>
-            </div>
-          </StatTile>
-        ) : null}
-        {D.moduleOn(data, 'meals') ? (
-          <StatTile to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={`${t('home.meals')} · ${mealDay.label}`} />
-        ) : null}
-        {questsOn(data) ? <StatTile to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={t('home.quests')} /> : null}
-      </div>
 
       {/* Other sessions fold into one row (UX-04); open when one is logged today. */}
       <details className="other-sessions" open={otherToday.length > 0}>

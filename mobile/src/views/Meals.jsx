@@ -61,10 +61,16 @@ function Targets() {
   const water = D.waterOn(data, today);
   const WATER_GOAL = D.waterGoal(data);
   const showKcal = !kcalHidden(data) && target.source !== 'plan';
+  // Ticks only, no plan numbers: the person eats their own food here.
+  const eatenSlots = new Set(N.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed));
+  const done = eatenSlots.size;
   return (
     <div className="page">
-      <h1 className="page-title">{t('mealsSimple.title')}</h1>
-      <p className="page-sub">{t('mealsSimple.sub')}</p>
+      <div className="plan-head">
+        <h1 className="page-title">{t('mealsSimple.title')}</h1>
+        <Link to="/shopping" className="chip big-chip"><Icon name="cart" className="icon" /> {t('meals.shopping')}</Link>
+      </div>
+      <p className="page-sub" style={{ marginTop: 4 }}>{t('mealsSimple.sub')}</p>
       <section className="card">
         <div className="muted small">{t('mealsSimple.proteinLabel')}</div>
         <div className="row" style={{ alignItems: 'baseline', gap: 6, margin: '4px 0 6px' }}>
@@ -84,6 +90,25 @@ function Targets() {
           <button type="button" className="btn secondary small grow" onClick={() => { update((d) => D.addWater(d, today, 500)); feedback('water'); }}>{t('mealsSimple.add500')}</button>
         </div>
       </section>
+
+      <div className="section-head"><h2 className="section-title">{t('meals.todays')}</h2><span className="muted small">{t('meals.eatenOf', { done, all: N.meal_slots.length })}</span></div>
+      <div className="slot-ticks">
+        {N.meal_slots.map((slot) => {
+          const on = eatenSlots.has(slot);
+          return (
+            <button key={slot} type="button" className={`slot-tick${on ? ' on' : ''}`} aria-pressed={on} aria-label={t('meals.eatenAria', { meal: slotLabel(slot) })}
+              onClick={() => {
+                const ev = mealTickEvent({ nowDone: !on, doneBefore: done, slots: N.meal_slots.length });
+                update((d) => tickMeal(d, today, slot, null, !on));
+                if (ev) feedback(ev);
+                announce(mealTickLine({ meal: slotLabel(slot), eaten: !on, done: done + (on ? -1 : 1), total: N.meal_slots.length }));
+              }}>
+              <span className={`check${on ? ' on' : ''}`} aria-hidden="true">{on ? <Icon name="check" /> : null}</span>
+              <span>{slotLabel(slot)}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="section-label">{t('mealsSimple.foodsTitle', { g: perMeal })}</div>
       <div className="list">

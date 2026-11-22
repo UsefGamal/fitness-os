@@ -554,7 +554,7 @@ details.explain > summary { color: var(--accent); font-size: calc(var(--fs-sub) 
 details.explain > summary::-webkit-details-marker { display: none; }
 details.explain > div:first-of-type { margin-top: 0 !important; }
 /* The muscle or angle an exercise works, on Plan's exercise cards. */
-.ex-target { color: var(--accent); font-size: calc(var(--fs-sub) * var(--ts)); font-weight: 600; margin-top: 2px; }
+.ex-target { color: var(--text); font-size: calc(var(--fs-sub) * var(--ts)); font-weight: 600; margin-top: 2px; }
 
 /* Weekly sets per muscle (Stats). The faint band is the 10-20 guide, the
    outline is the plan's sets for the week, the fill is what's done. */
@@ -676,7 +676,7 @@ a.stat-tile:active, .quick:active { transform: scale(0.98); background: var(--su
 .stat-icon { width: 26px; height: 26px; }
 .stat-tile-value { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat-tile-value .of { font-size: calc(var(--fs-sub) * var(--ts)); color: var(--muted); font-weight: 600; }
-.stat-tile-label { color: var(--muted); font-size: calc(var(--fs-foot) * var(--ts)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-tile-label { color: var(--muted); font-size: calc(var(--fs-foot) * var(--ts)); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .mini-btn { min-height: 44px; min-width: 44px; padding: 0 8px; border: 0; border-radius: 12px; background: var(--surface2); color: var(--text); font: inherit; font-size: calc(var(--fs-sub) * var(--ts)); font-weight: 600; display: grid; place-items: center; }
 .mini-btn:active { transform: scale(0.95); color: var(--accent); }
 .mini-btn:disabled { opacity: 0.4; }
@@ -1556,3 +1556,12 @@ button.backup-link { background: none; border: 0; font: inherit; text-align: sta
 .effort-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .effort-chips .chip { min-width: 56px; justify-content: center; }
 .field-label { color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); margin: 0 0 6px 4px; }
+
+/* Targets view meal ticks (design laws #9): one row per meal, whole row taps. */
+.slot-ticks { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.slot-tick { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--surface3); border-radius: 12px; background: var(--surface); color: var(--text); font-size: calc(var(--fs-sub) * var(--ts)); text-align: start; }
+.slot-tick .check::after { content: none; }
+.slot-tick.on { border-color: var(--accent-fill); }
+/* Green budget (design laws #10): the warm-up reads as body text, only its icon is green. */
+details.warm-more > summary { color: var(--text); font-weight: 600; gap: 8px; }
+details.warm-more > summary .icon { color: var(--accent); flex: none; }
