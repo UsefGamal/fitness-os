@@ -179,3 +179,20 @@ test('the wrap line says both numbers when there were more sessions than planned
   assert.equal(summaryLine(s(2, 3, 20)), '2 of 3 sessions · 20 sets');
   assert.equal(summaryLine(s(1, null, 1)), '1 session · 1 set');
 });
+
+// Design laws plan #5: "This one kept your week" on the finish card.
+test('keptWeekBy: only the session whose day brought the week up to the need', async () => {
+  const { keptWeekBy } = await import('./weekStats.js');
+  const program = { blocks: [{ started_on: '2026-10-01', schedule: ['a', 'rest', 'b', 'rest', 'c', 'rest', 'rest'].map((session) => ({ session })) }] };
+  const wk = (id, log_date) => ({ id, log_date, workout_type: 'gym', sets: [] });
+  // 3 planned, so 2 keep the week (Sunday week, 1 Nov 2026 is a Sunday).
+  const first = { program, settings: {}, workouts: [wk(1, '2026-11-01')] };
+  assert.equal(keptWeekBy(first, first.workouts[0]), 0, 'one of two');
+  const second = { ...first, workouts: [...first.workouts, wk(2, '2026-11-03')] };
+  assert.equal(keptWeekBy(second, second.workouts[1]), 1);
+  const third = { ...second, workouts: [...second.workouts, wk(3, '2026-11-05')] };
+  assert.equal(keptWeekBy(third, third.workouts[2]), 0, 'already kept');
+  const sameDay = { ...second, workouts: [...second.workouts, wk(4, '2026-11-03')] };
+  assert.equal(keptWeekBy(sameDay, sameDay.workouts[2]), 0, 'that day already counted');
+  assert.equal(keptWeekBy(second, null), 0);
+});

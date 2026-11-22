@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
@@ -12,6 +12,8 @@ import { setLabel } from '../lib/sets.js';
 import { t } from '../lib/i18n.js';
 import { starterJustDone, starterProgress, STARTER_SESSIONS } from '../lib/starter.js';
 import { workoutSummary } from '../lib/summary.js';
+import { keptWeekBy } from '../lib/weekStats.js';
+import { useFinishBadges } from '../store/finishBadges.js';
 import { compareToLast, setsText } from '../lib/lastTime.js';
 import { activePlan } from '../lib/plan.js';
 import { nextSessionAfter } from '../lib/schedule.js';
@@ -43,6 +45,10 @@ export default function History() {
   const setActiveWorkout = useData((s) => s.setActiveWorkout);
   const navigate = useNavigate();
   const justFinished = Boolean(useLocation().state?.finished);
+  // This workout's badges (Fanfare hands them over); gone once you leave.
+  const earned = useFinishBadges((st) => st.list);
+  const clearEarned = useFinishBadges((st) => st.clear);
+  useEffect(() => clearEarned, [clearEarned]);
   const [editing, setEditing] = useState(null);
   const [editDate, setEditDate] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -58,6 +64,7 @@ export default function History() {
   const volume = w.sets.reduce((v, s) => v + (D.isWorkSet(s) && s.track !== 'time' ? s.weight_kg * s.reps : 0), 0);
 
   const sum = justFinished ? workoutSummary(data, w.id) : null;
+  const kept = justFinished ? keptWeekBy(data, w) : 0;
   // The finish is the moment people remember (LF-9): the mark, the one best
   // number, then what comes next.
   const comingUp = sum ? nextSessionAfter(w.log_date, activePlan(data, content), data.session_moves || []) : null;
@@ -84,6 +91,12 @@ export default function History() {
           <h2 className="finish-title">{t('finish.title')}</h2>
           <p className="muted" style={{ margin: '2px 0 14px' }}>{t(sum.weekSessions === 1 ? 'finish.weekOne' : 'finish.week', { n: sum.weekSessions })}</p>
           {starterNote ? <p className="starter-line" style={{ margin: '-6px 0 14px' }}>{starterNote}</p> : null}
+          {kept ? <p className="finish-kept small">{kept >= 2 ? t('finish.kept', { n: kept }) : t('finish.keptOne')}</p> : null}
+          {earned.length ? (
+            <div className="finish-badges" role="list" aria-label={t('finish.badges')}>
+              {earned.map((b) => <span key={b.id} role="listitem" className="chip accent"><Icon name="trophy" className="icon" /> {b.label}</span>)}
+            </div>
+          ) : null}
           {topBest ? (
             <div className="finish-hero">
               <span className="muted small">{t('finish.newBest', { name: topBest.name })}</span>
@@ -104,7 +117,7 @@ export default function History() {
             </div>
           ) : null}
           {comingUp ? <p className="finish-next small"><Icon name="calendar" className="icon" /> {t('finish.next', { label: comingUp.label, date: formatDate(comingUp.onDate) })}</p> : null}
-          <button type="button" className="btn hero" onClick={() => navigate('/', { replace: true })}>{t('finish.done')}</button>
+          <button type="button" className="btn hero" onClick={() => { clearEarned(); navigate('/', { replace: true }); }}>{t('finish.done')}</button>
         </section>
       ) : (
         <button type="button" className="btn ghost small" style={{ paddingInlineStart: 0 }} onClick={() => navigate(-1)}><Icon name="back" /> Back</button>
