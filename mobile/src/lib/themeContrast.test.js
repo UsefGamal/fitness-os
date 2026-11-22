@@ -44,7 +44,7 @@ function ratio(a, b) {
 }
 
 // Text colours, the surfaces they sit on, and the 4.5:1 they need.
-const TEXT = ['text', 'text-body', 'muted', 'accent', 'danger', 'warn', 'guava', 'nile', 'orange', 'purple'];
+const TEXT = ['text', 'text-body', 'muted', 'accent', 'danger', 'warn', 'guava', 'nile', 'orange', 'purple', 'coral', 'violet', 'sun'];
 const SURFACES = ['bg', 'surface', 'surface2'];
 
 for (const [theme, tokens] of [['dark', DARK], ['light', LIGHT]]) {

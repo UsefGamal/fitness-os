@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.33',
+    items: [
+      { icon: 'dumbbell', text: 'Exercises now show coloured tags for the muscles they work: Legs, Chest, Back, Shoulders, Arms, Core.' },
+      { icon: 'check', text: 'Each tag also has its own shape, so you can tell them apart without the colour.' },
+    ],
+  },
+  {
     version: '1.1.32',
     items: [
       { icon: 'scale', text: 'Stats > Body is shorter: your weight, change, goal and chart sit in one card, and Log opens a quick sheet.' },

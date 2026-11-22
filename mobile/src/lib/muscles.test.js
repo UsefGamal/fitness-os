@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { ANGLES, MUSCLE, MUSCLES, angleOf, anglesOf, deltOf, helpersOf, musclesIn, musclesOf, targetText } from './muscles.js';
+import { ANGLES, MUSCLE, MUSCLES, TAG_GROUPS, angleOf, tagGroups, anglesOf, deltOf, helpersOf, musclesIn, musclesOf, targetText } from './muscles.js';
 import { MUSCLE_GROUP } from './catalogue.js';
 import { SHAPES_OF } from './muscleMap.js';
 
@@ -206,4 +206,17 @@ test('rotator cuff and hip flexors come from the exercise name', () => {
   assert.equal(MUSCLE['rotator cuff'].group, 'Shoulders');
   assert.equal(MUSCLE['hip flexors'].group, 'Legs');
   assert.deepEqual(MUSCLE['hip flexors'].shapes, []);
+});
+
+test('tagGroups: one tag per group, in a fixed order', () => {
+  assert.deepEqual(tagGroups({ main: ['glutes', 'quadriceps'] }), ['Legs']);
+  assert.deepEqual(tagGroups({ main: ['triceps', 'chest', 'front delts'] }), ['Chest', 'Shoulders', 'Arms']);
+  assert.deepEqual(tagGroups({ main: ['quadriceps'], angle: 'back_thickness' }), ['Back']);
+  assert.deepEqual(tagGroups({ main: ['abdominals', 'obliques'] }), ['Core']);
+  assert.deepEqual(tagGroups({ main: ['unknown muscle'] }), []);
+  assert.deepEqual(tagGroups(null), []);
+});
+
+test('tagGroups: every muscle belongs to a tag group', () => {
+  for (const m of MUSCLES) assert.ok(TAG_GROUPS.includes(m.group), `${m.key} is in ${m.group}`);
 });

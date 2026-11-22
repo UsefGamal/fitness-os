@@ -43,7 +43,15 @@
   --guava: #ff5fa2;
   --nile: #4cc9f0;
   --blue: var(--nile);
-  --orange: #ff9f0a;
+  /* Muscle-group tag colours (TAG-1): small tags only, never buttons or big
+     areas. Legs green, Chest coral, Back nile, Shoulders violet, Arms sun,
+     Core grey; each tag also has its own shape. */
+  --coral: #ff8a5c;
+  --violet: #a78bfa;
+  --sun: #ffc247;
+  --tag-mix: 15%; /* tag background strength; 10% on light keeps text 4.5:1 */
+  /* Caution: amber, a step away from the coral tags (TAG-1). */
+  --orange: #ffb340;
   --purple: #c87bf5;
   --card-shadow: none;
   --seg-on: var(--surface3);
@@ -96,7 +104,11 @@
   --guava: #b0225f;
   --nile: #006e93;
   --blue: var(--nile);
-  --orange: #a64800;
+  --coral: #b4441a;
+  --violet: #6236c9;
+  --sun: #8f5a00;
+  --tag-mix: 10%;
+  --orange: #a35200;
   --purple: #7a3fb0;
   --sheet-bg: #fff;
   --tabbar-bg: #f7f8f7;
@@ -1509,3 +1521,16 @@ label.field input { transition: box-shadow 300ms ease; }
 .metric-pick .label { font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 600; color: var(--muted); }
 .metric-pick .v { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 700; font-variant-numeric: tabular-nums; }
 .metric-pick .meta { font-size: calc(var(--fs-caption) * var(--ts)); color: var(--muted); }
+/* TAG-1: muscle-group tags on exercise rows (Plan, Library, workout). */
+.mtags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 3px; }
+.mtag { --c: var(--muted); display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; padding-inline-start: 6px; border-radius: 999px; font-size: calc(var(--fs-foot) * var(--ts)); font-weight: 600; line-height: 1.35; color: var(--c); background: color-mix(in srgb, var(--c) var(--tag-mix), transparent); }
+.mtag svg { width: 10px; height: 10px; fill: currentColor; flex: none; }
+.mtag-legs { --c: var(--accent); }
+.mtag-chest { --c: var(--coral); }
+.mtag-back { --c: var(--nile); }
+.mtag-shoulders { --c: var(--violet); }
+.mtag-arms { --c: var(--sun); }
+.mtag-core { --c: var(--muted); }
+.ex-target:has(.mtags) { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--muted); font-weight: 500; }
+.ex-target .mtags { margin-top: 0; }
+.ex-detail { font-size: calc(var(--fs-foot) * var(--ts)); }
