@@ -9,6 +9,8 @@ export const RANGES = { m1: 28, m3: 91, all: Infinity };
 /** A week with fewer weigh-ins than this is drawn faint: one salty day
  * would swing its average. */
 export const THIN_WEEK = 3;
+/** Tape measures logged beside the weight, in cm. */
+export const MEASURES = ['waist_cm', 'chest_cm', 'arm_cm', 'hips_cm', 'thigh_cm'];
 
 /**
  * What the weight chart draws for a range ('m1' | 'm3' | 'all'):
@@ -92,4 +94,37 @@ export function dateTicks(from, to) {
     out.push({ date: d, kind: 'month' });
   }
   return out;
+}
+
+/**
+ * Stats > Body's one weight summary (Body review, 22 Nov): the latest
+ * weigh-in, the first one, the change between them and how far the goal
+ * range is. Every field is null when there is nothing to say yet.
+ *   { current, currentDate, start, startDate, change, toGoal }
+ * toGoal is kg still to go (always >= 0), 0 inside the range, null with no
+ * goal range. `goal` is { low, high } or null.
+ * @param {import('../types').BodyLog[]} logs */
+export function weightSummary(logs, goal = null) {
+  const first = logs[0] || null;
+  const last = logs.length ? logs[logs.length - 1] : null;
+  const current = last ? last.weight_kg : null;
+  const start = first ? first.weight_kg : null;
+  const change = last && logs.length > 1 ? Math.round((current - start) * 10) / 10 : null;
+  let toGoal = null;
+  if (current != null && goal && goal.low != null && goal.high != null) {
+    toGoal = current > goal.high ? current - goal.high : current < goal.low ? goal.low - current : 0;
+    toGoal = Math.round(toGoal * 10) / 10;
+  }
+  return { current, currentDate: last?.log_date ?? null, start, startDate: first?.log_date ?? null, change, toGoal };
+}
+
+/**
+ * The two newest weeks with weigh-ins, oldest first, for a side-by-side
+ * comparison: { weeks: [prev, cur], change } or null with fewer than two.
+ * `weeks` is weeklyAverages()' output (newest first).
+ */
+export function lastTwoWeeks(weeks) {
+  if (!weeks || weeks.length < 2) return null;
+  const [cur, prev] = weeks;
+  return { weeks: [prev, cur], change: Math.round((cur.avg - prev.avg) * 10) / 10 };
 }

@@ -79,6 +79,7 @@ const Stats = lazy(() => import('./views/Stats.jsx'));
 const MealLibrary = lazy(() => import('./views/MealLibrary.jsx'));
 const MealDetail = lazy(() => import('./views/MealDetail.jsx'));
 const FitnessTest = lazy(() => import('./views/FitnessTest.jsx'));
+const BodyHistory = lazy(() => import('./views/BodyHistory.jsx'));
 const Session = lazy(() => import('./views/Session.jsx'));
 
 // Detail pages slide in from the right (left in RTL); Back slides the other
@@ -169,6 +170,7 @@ const router = createHashRouter([
       { path: '/meals/library/:key', element: <MealDetail /> },
       { path: '/stats', element: <Stats /> },
       { path: '/stats/fitness-test', element: <FitnessTest /> },
+      { path: '/stats/body/:section', element: <BodyHistory /> },
       { path: '/history', element: <HistoryList /> },
       { path: '/history/:id', element: <History /> },
       { path: '/library', element: <Library /> },
