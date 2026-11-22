@@ -425,30 +425,46 @@ details.more > summary::-webkit-details-marker { display: none; }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .group-rows { display: grid; gap: 8px; margin-top: 12px; }
 .group-row { border: 0; background: none; color: var(--text); text-align: start; padding: 4px 0; min-height: 44px; width: 100%; display: grid; grid-template-columns: 84px 1fr 56px; align-items: center; gap: 10px; font-size: calc(var(--fs-sub) * var(--ts)); }
-.badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
-/* Badges: each family has its own colour (iOS system hues), a progress ring
-   that fills toward the goal, and a tier numeral for later steps. */
-.badge { --tone: var(--accent); --p: 0deg; background: var(--surface); border-radius: 16px; padding: 14px 8px 12px; text-align: center; display: grid; gap: 5px; justify-items: center; align-content: start; }
-/* Colour roles (LF-3): badges are green for milestones reached and amber
-   for effort and strength, nothing else. The tone names stay as data. */
-.badge.tone-blue, .badge.tone-gold, .badge.tone-teal, .badge.tone-green { --tone: var(--accent); }
-.badge.tone-orange, .badge.tone-purple, .badge.tone-pink, .badge.tone-indigo { --tone: var(--orange); }
-.badge .medal { position: relative; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 2px;
-  background: conic-gradient(var(--tone) var(--p), var(--surface2) 0);
-  background: conic-gradient(color-mix(in srgb, var(--tone) 70%, transparent) var(--p), var(--surface2) 0); }
-.badge .medal-in { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--faint); }
-.badge .medal-in .icon { width: 24px; height: 24px; }
-.badge.on .medal { background: var(--tone); box-shadow: 0 0 18px color-mix(in srgb, var(--tone) 35%, transparent); }
-.badge.on .medal-in { background: var(--surface2); }
-.badge.on .medal-in { background: color-mix(in srgb, var(--tone) 22%, var(--surface)); color: var(--tone); }
-.badge .tier { position: absolute; inset-inline-end: -4px; bottom: -2px; min-width: 22px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--surface3); color: var(--muted); font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 700; line-height: 18px; }
-.badge.on .tier { background: var(--tone); color: var(--on-tone); }
-.badge .name { font-weight: 600; font-size: calc(var(--fs-sub) * var(--ts)); line-height: 1.25; }
-.badge:not(.on) .name { color: var(--muted); }
-.badge .meta { font-size: calc(var(--fs-foot) * var(--ts)); color: var(--muted); line-height: 1.3; }
-.badge .count { font-size: calc(var(--fs-foot) * var(--ts)); font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-.badge .got { display: inline-flex; align-items: center; gap: 3px; font-size: calc(var(--fs-foot) * var(--ts)); font-weight: 600; color: var(--tone); }
-.badge .got .icon { width: 14px; height: 14px; }
+.badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* Badges (Badges review, 22 Nov): three states, so green only means done.
+   Locked: muted icon, no ring. In progress: a ring that fills toward the
+   goal and the count. Earned: green medal with a tick. Special (the
+   hardest step of a family): gold once earned. */
+.badge { --tone: var(--accent-stroke); --p: 0deg; border: 0; color: var(--text); background: var(--surface); border-radius: 14px; padding: 10px 6px 10px; min-height: 44px; text-align: center; display: grid; gap: 4px; justify-items: center; align-content: start; font: inherit; }
+.badge .medal { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--surface2); }
+.badge.b-progress .medal { background: conic-gradient(var(--accent-stroke) var(--p), var(--surface3) 0); }
+.badge .medal-in { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--faint); }
+.badge .medal-in .icon { width: 20px; height: 20px; }
+.badge.b-progress .medal-in { color: var(--text); }
+.badge.b-earned .medal { background: var(--accent-fill); box-shadow: 0 0 14px color-mix(in srgb, var(--accent-fill) 30%, transparent); }
+.badge.b-earned .medal-in { background: color-mix(in srgb, var(--accent-fill) 18%, var(--surface)); color: var(--accent); }
+.badge.b-earned.special .medal { background: var(--gold); box-shadow: 0 0 14px var(--gold-dim); }
+.badge.b-earned.special .medal-in { background: color-mix(in srgb, var(--gold) 18%, var(--surface)); color: var(--gold); }
+.badge .tick { position: absolute; inset-inline-end: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-fill); color: var(--on-accent); border: 2px solid var(--surface); }
+.badge.special .tick { background: var(--gold); color: var(--on-tone); }
+.badge .tick .icon { width: 11px; height: 11px; }
+.badge .name { font-weight: 600; font-size: calc(var(--fs-foot) * var(--ts)); line-height: 1.2; }
+.badge.b-locked .name { color: var(--muted); }
+.badge .count { font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.badge.b-progress .count { color: var(--text); }
+.badge.b-earned .count { color: var(--accent); }
+.badge.b-earned.special .count { color: var(--gold); }
+.badge:active { transform: scale(0.97); }
+.ach-head { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.ach-num strong { font-size: calc(var(--fs-display) * var(--ts)); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ach-num span { font-size: calc(var(--fs-t3) * var(--ts)); color: var(--muted); font-weight: 600; }
+.ach-split { display: grid; gap: 2px; font-size: calc(var(--fs-foot) * var(--ts)); color: var(--muted); }
+.ach-split .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-inline-end: 6px; vertical-align: 1px; }
+.ach-split .dot.earned { background: var(--accent-fill); }
+.ach-split .dot.progress { background: transparent; border: 2px solid var(--accent-stroke); }
+.ach-split .dot.locked { background: var(--surface3); }
+.badge-filter { margin: 12px 0 4px; }
+.badge-filter button { font-size: calc(var(--fs-foot) * var(--ts)); }
+.badge-cat-head { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; margin: 10px 0 6px; padding: 0 4px; border: 0; background: none; color: var(--text); text-align: start; font: inherit; }
+.badge-cat-head .section-title { margin: 0; flex: 1; }
+.badge-cat-head .chev { transform: rotate(90deg); transition: transform 0.15s ease; }
+.badge-cat-head .chev.open { transform: rotate(-90deg); }
+.badge-empty { margin: 16px 4px; }
 .fanfare { border: 0; color: var(--text); text-align: start; position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--sab) + 80px); z-index: 60; max-width: 528px; margin: 0 auto; background: var(--surface2); border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,.5); animation: pop-in .35s cubic-bezier(.2,.9,.3,1.3); }
 .fanfare .medal { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-dim); color: var(--accent); flex: none; }
 @keyframes pop-in { from { transform: translateY(20px) scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -1470,3 +1486,26 @@ label.field input { transition: box-shadow 300ms ease; }
 
 .home-week-line { margin-top: 8px; text-align: center; }
 .day-times summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* Stats > Body (Body review, 22 Nov): one weight summary, compact weekly
+   comparison, one activity chart behind a metric picker. */
+.log-btn { width: auto; min-height: 44px; padding: 0 14px; }
+.body-sum { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 12px; }
+.body-sum .label { font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.body-sum .meta { font-size: calc(var(--fs-foot) * var(--ts)); color: var(--muted); }
+.body-num { font-size: calc(var(--fs-display) * var(--ts)); font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.body-num.sm { font-size: calc(var(--fs-t2) * var(--ts)); line-height: 1.6; }
+.body-num.good { color: var(--accent); }
+.body-num .unit { font-size: calc(var(--fs-sub) * var(--ts)); font-weight: 600; color: var(--muted); margin-inline-start: 3px; }
+.body-goal { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.wk-pair { display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 10px; margin-top: 10px; }
+.wk .meta { font-size: calc(var(--fs-foot) * var(--ts)); color: var(--muted); }
+.wk-kg { display: block; font-size: calc(var(--fs-t3) * var(--ts)); font-variant-numeric: tabular-nums; }
+.wk.thin .wk-kg { opacity: 0.6; }
+.sub-block { border-top: var(--hair); margin-top: 12px; padding-top: 12px; }
+.metric-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.metric-pick button { border: 0; border-radius: 12px; background: var(--surface2); color: var(--text); padding: 8px 6px; min-height: 64px; display: grid; gap: 1px; text-align: start; font: inherit; }
+.metric-pick button.on { background: var(--seg-on); box-shadow: inset 0 0 0 2px var(--nile); }
+.metric-pick .label { font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 600; color: var(--muted); }
+.metric-pick .v { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 700; font-variant-numeric: tabular-nums; }
+.metric-pick .meta { font-size: calc(var(--fs-caption) * var(--ts)); color: var(--muted); }

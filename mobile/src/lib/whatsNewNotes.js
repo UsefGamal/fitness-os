@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.32',
+    items: [
+      { icon: 'scale', text: 'Stats > Body is shorter: your weight, change, goal and chart sit in one card, and Log opens a quick sheet.' },
+      { icon: 'chart', text: 'Steps, sleep and heart rate share one card: tap a metric to see its chart.' },
+      { icon: 'tape', text: 'Body measurements and every weigh-in have their own pages now.' },
+      { icon: 'medal', text: 'Badges show what you earned, what is in progress and how close you are. Tap one for details.' },
+    ],
+  },
+  {
     version: '1.1.31',
     items: [
       { icon: 'star', text: 'Tafra has three colours now: green for training, guava pink for meals, and Nile blue for recovery, water and sleep.' },

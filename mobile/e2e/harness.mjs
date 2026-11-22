@@ -118,6 +118,10 @@ export const STATES = [
   },
   { name: 'plan: another day picked', route: '/plan', act: (p) => p.locator('.week-day').nth(0).click() },
   { name: 'stats: recovery by group', route: '/stats?tab=muscles', act: (p) => p.getByRole('button', { name: 'Recovery' }).click() },
+  { name: 'stats: body', route: '/stats?tab=body' },
+  { name: 'stats: badges', route: '/stats?tab=badges' },
+  { name: 'stats: weigh-in history', route: '/stats/body/weigh-ins' },
+  { name: 'stats: body measurements', route: '/stats/body/measurements' },
   { name: 'sheet: more menu', route: '/plan', act: (p) => btnNamed(p, en['more.label']).first().click() },
   {
     name: 'sheet: swap similar',

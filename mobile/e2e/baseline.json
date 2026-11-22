@@ -65,6 +65,24 @@
   "overflow": 0,
   "errors": 0
  },
+ "/settings/training 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/times 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/prefs 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/settings/about 360 ltr": {
   "axe": 0,
   "taps": 0,
@@ -72,6 +90,18 @@
   "errors": 0
  },
  "/settings/install 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/help 360 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/privacy 360 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -191,6 +221,24 @@
   "overflow": 0,
   "errors": 0
  },
+ "/settings/training 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/times 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/prefs 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/settings/about 390 ltr": {
   "axe": 0,
   "taps": 0,
@@ -198,6 +246,18 @@
   "errors": 0
  },
  "/settings/install 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/help 390 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/privacy 390 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -317,6 +377,24 @@
   "overflow": 0,
   "errors": 0
  },
+ "/settings/training 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/times 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/prefs 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/settings/about 412 ltr": {
   "axe": 0,
   "taps": 0,
@@ -324,6 +402,18 @@
   "errors": 0
  },
  "/settings/install 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/help 412 ltr": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/privacy 412 ltr": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -443,6 +533,24 @@
   "overflow": 0,
   "errors": 0
  },
+ "/settings/training 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/times 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/prefs 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/settings/about 360 rtl": {
   "axe": 0,
   "taps": 0,
@@ -450,6 +558,18 @@
   "errors": 0
  },
  "/settings/install 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/help 360 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/privacy 360 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -569,6 +689,24 @@
   "overflow": 0,
   "errors": 0
  },
+ "/settings/training 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/times 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/prefs 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/settings/about 390 rtl": {
   "axe": 0,
   "taps": 0,
@@ -576,6 +714,18 @@
   "errors": 0
  },
  "/settings/install 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/help 390 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/privacy 390 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -695,6 +845,24 @@
   "overflow": 0,
   "errors": 0
  },
+ "/settings/training 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/times 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/prefs 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "/settings/about 412 rtl": {
   "axe": 0,
   "taps": 0,
@@ -702,6 +870,18 @@
   "errors": 0
  },
  "/settings/install 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/help 412 rtl": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "/settings/privacy 412 rtl": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -791,6 +971,162 @@
   "overflow": 0,
   "errors": 0
  },
+ "state: settings: search 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: settings: search 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: settings: training all open 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: settings: training all open 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: rest time 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: rest time 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: export CSV 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: export CSV 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: library: by muscle 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: library: by muscle 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: library: one group 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: library: one group 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: swap by muscle 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: swap by muscle 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: plan: another day picked 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: plan: another day picked 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: recovery by group 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: recovery by group 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: body 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: body 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: badges 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: badges 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: weigh-in history 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: weigh-in history 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: body measurements 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: stats: body measurements 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "state: sheet: more menu 360": {
   "axe": 0,
   "taps": 0,
@@ -839,6 +1175,54 @@
   "overflow": 0,
   "errors": 0
  },
+ "state: welcome back on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: welcome back on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: still time today on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: still time today on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: wrap-up card on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: wrap-up card on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: your week 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: your week 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "state: beginner: session 1 of 6 360": {
   "axe": 0,
   "taps": 0,
@@ -875,6 +1259,306 @@
   "overflow": 0,
   "errors": 0
  },
+ "state: sheet: kind of set 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: kind of set 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: help: an answer open 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: help: an answer open 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: delete everything 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: delete everything 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: first week on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: first week on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: add the widget 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: sheet: add the widget 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Plan 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Plan 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Stats 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Stats 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Settings 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: Settings 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Plan 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Plan 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Workout 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Workout 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Meals 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Meals 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Stats 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Stats 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Settings 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Settings 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: History 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: History 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Library 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: light: Library 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: check-in card on Plan 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: check-in card on Plan 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: plan check-in 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: plan check-in 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: monday week on Plan 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: monday week on Plan 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: time varies on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: time varies on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: time varies: settings 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: time varies: settings 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: ramadan: Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: ramadan: Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: ramadan: Meals 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: ramadan: Meals 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: ramadan: settings 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: ramadan: settings 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: after Eid on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: after Eid on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
  "state: safety limits on: Meals 360": {
   "axe": 0,
   "taps": 0,
@@ -882,6 +1566,66 @@
   "errors": 0
  },
  "state: safety limits on: Meals 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: gym mode: logging a set 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: gym mode: logging a set 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: goal reached on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: goal reached on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: maintenance week on Meals 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: maintenance week on Meals 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: target check on Home 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: target check on Home 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: adjusted target on Meals 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: adjusted target on Meals 412": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
@@ -906,6 +1650,18 @@
   "errors": 0
  },
  "state: text 130%: Workout 412": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: logging a set 360": {
+  "axe": 0,
+  "taps": 0,
+  "overflow": 0,
+  "errors": 0
+ },
+ "state: text 130%: logging a set 412": {
   "axe": 0,
   "taps": 0,
   "overflow": 0,
