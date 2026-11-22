@@ -53,6 +53,7 @@ import { applyTheme, followPhone } from './store/theme.js';
 import { ghostOut, installMotion, morphLanded } from './store/motionFx.js';
 import { pageMotion } from './lib/motion.js';
 import CompactTitle from './components/CompactTitle.jsx';
+import { loadFontScale, useFontScale } from './store/fontScale.js';
 
 // Screens you open now and then load on first use, so start-up stays quick.
 const CatalogueDetail = lazy(() => import('./views/CatalogueDetail.jsx'));
@@ -263,7 +264,9 @@ export default function App() {
   const theme = useData((s) => themeChoice(s.data));
   useLayoutEffect(() => { applyTheme(theme); return followPhone(theme); }, [theme]);
   // Text size (UIUX-2): one variable every font size reads.
-  const ts = useData((s) => textScale(textSize(s.data)));
+  const fontScale = useFontScale((s) => s.scale);
+  useEffect(() => { loadFontScale(); }, []);
+  const ts = useData((s) => textScale(textSize(s.data, fontScale)));
   useLayoutEffect(() => { document.documentElement.style.setProperty('--ts', String(ts)); }, [ts]);
   // Reduce motion (MOVE-2): the app's own switch, on top of the phone's.
   const calmMotion = useData((s) => reduceMotion(s.data));

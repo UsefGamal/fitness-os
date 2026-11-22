@@ -50,6 +50,18 @@ export async function takeNativeCrashes() {
 
 export const Device = registerPlugin('Device');
 
+/** Android's font size (1 = default, 1.3 = large), or 1 in a browser or an
+ * older APK without the method. Read once at start (design laws #12). */
+export async function systemFontScale() {
+  if (!isNative()) return 1;
+  try {
+    const f = Number((await Device.fontScale()).fontScale);
+    return Number.isFinite(f) && f > 0 ? f : 1;
+  } catch {
+    return 1;
+  }
+}
+
 /** Photo lock and FLAG_SECURE (P14-13): store/photoLock.js. */
 export const PhotoLock = registerPlugin('PhotoLock');
 

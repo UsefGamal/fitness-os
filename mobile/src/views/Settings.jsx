@@ -48,6 +48,7 @@ import { WHATS_NEW } from '../lib/whatsNewNotes.js';
 import WhatsNewSheet from '../components/WhatsNewSheet.jsx';
 import { shareText, shareTextFile } from '../store/share.js';
 import ReportSheet from '../components/ReportSheet.jsx';
+import { useFontScale } from '../store/fontScale.js';
 
 const n = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -66,6 +67,7 @@ function lastBackupText(data) {
 
 export default function Settings() {
   const data = useData((s) => s.data);
+  const fontScale = useFontScale((s) => s.scale);
   const update = useData((s) => s.update);
   const replaceAll = useData((s) => s.replaceAll);
   const navigate = useNavigate();
@@ -413,7 +415,7 @@ export default function Settings() {
       <div className="section-label">{tr('theme.title')}</div>
       <div className="list">
         <Choice label={tr('theme.label')} value={themeChoice(data)} onChange={(v) => update((d) => setTheme(d, v))} options={THEMES.map((k) => [k, tr(`theme.${k}`)])} />
-        <Choice label={tr('theme.textSize')} value={textSize(data)} onChange={(v) => update((d) => setTextSize(d, Number(v)))} options={TEXT_SIZES.map((k) => [k, tr('theme.textPct', { n: k })])} />
+        <Choice label={tr('theme.textSize')} value={textSize(data, fontScale)} onChange={(v) => update((d) => setTextSize(d, Number(v)))} options={TEXT_SIZES.map((k) => [k, tr('theme.textPct', { n: k })])} />
         <Toggle on={reduceMotion(data)} onClick={() => update((d) => setReduceMotion(d, !reduceMotion(d)))} title={tr('theme.reduceMotion')} note={tr('theme.reduceMotionNote')} />
       </div>
       <div className="list" style={{ marginTop: 16 }}>

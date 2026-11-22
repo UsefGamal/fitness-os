@@ -29,7 +29,19 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(CrashPlugin.class);
         registerPlugin(BackupFolderPlugin.class);
         super.onCreate(savedInstanceState);
+        fixTextZoom();
         addPredictiveBack();
+    }
+
+    /**
+     * Design laws #12: the WebView would scale text by Android's font size
+     * on top of the app's own Text size, so a large phone font and 130% in
+     * the app gave about 170%. Text zoom stays at 100 and the app starts its
+     * Text size from the phone's font size instead (Device.fontScale).
+     */
+    private void fixTextZoom() {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        getBridge().getWebView().getSettings().setTextZoom(100);
     }
 
     /**

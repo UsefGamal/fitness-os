@@ -150,9 +150,12 @@ export function statusGood(mode, status) {
 }
 
 /** Is a two-week change of `kg` towards the goal? Losing: down. Gaining:
- * up. Maintaining or recomposing: neither way is a win, so never. */
-export function changeGood(mode, kg) {
+ * up. Maintaining or recomposing: neither way is a win, so never. A
+ * 'fast' pace is never green either. */
+export function changeGood(mode, kg, status = null) {
   if (!Number.isFinite(kg) || kg === 0) return false;
+  // Losing too fast is not a win to colour green (design laws #16).
+  if (status === 'fast') return false;
   if (mode === 'gain') return kg > 0;
   if (mode === 'maintain' || mode === 'recomp') return false;
   return kg < 0;
