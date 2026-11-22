@@ -233,7 +233,7 @@ async function comebackDay(browser) {
   const kg = Number(await page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).inputValue());
   // 90% of 60 kg (all sets at the top of the range would otherwise add).
   check('back: the first session back is 90% of last time, never "add"', /^Welcome back: [\d.]+ kg today, a little lighter/.test(reason) && kg > 50 && kg < 60, `${kg} kg, "${reason}"`);
-  await page.getByRole('button', { name: /^Log set 1/ }).click();
+  await page.getByRole('button', { name: 'Log set 1', exact: true }).click();
   await page.getByRole('button', { name: 'Finish workout', exact: true }).click();
   await page.getByRole('button', { name: /^(Save workout|Save as a short session)$/ }).click();
   await page.waitForTimeout(800);

@@ -194,7 +194,7 @@ export default function Today() {
         starter={starterProgress(data)}
         last={next && !next.isRestToday ? lastTimePreview(data, next.key, today) : null}
         onChange={() => setPicking(true)}
-        onStart={() => navigate('/workout')}
+        onStart={() => navigate('/workout', { state: { go: true } })}
       />
       {still ? (
         <div className="still-row" role="group" aria-label={t('still.title')}>

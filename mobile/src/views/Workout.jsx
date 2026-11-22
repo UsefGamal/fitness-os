@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Sheet from '../components/Sheet.jsx';
@@ -45,6 +45,7 @@ import { setChange, setsText as lastText } from '../lib/lastTime.js';
 import { gateOn, safeDay } from '../lib/safety.js';
 import SafetyChanges from '../components/SafetyChanges.jsx';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
+import { EFFORT, logBarMode, startMode } from '../lib/workoutFlow.js';
 import { useToday } from '../store/today.js';
 import { plannedSet, readNumber, setRows, stopwatch, workoutKcal, workoutVolume } from '../lib/liveStats.js';
 import { reducedMotion } from '../store/motionFx.js';
@@ -184,6 +185,12 @@ export default function Workout() {
   const { catalogue } = useCatalogue();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  // One-tap Start from Home (design laws plan #6): the session starts
+  // straight away unless its preview has something to read first.
+  const go = Boolean(location.state?.go);
+  const autoRef = useRef(null);
+  const [startedUndo, setStartedUndo] = useState(false);
   const today = useToday();
   const T = activePlan(data, content);
 
@@ -356,6 +363,23 @@ export default function Workout() {
     return [...own, ...GROUPS16.map((g) => g.key).filter((k) => !own.includes(k))];
   }, [ex, exRow, entry]);
 
+  useEffect(() => {
+    if (!go || active) return;
+    const a = autoRef.current;
+    if (!a || a.mode === 'wait') return;
+    navigate({ search: location.search }, { replace: true, state: null });
+    if (a.mode === 'go') {
+      a.start();
+      setStartedUndo(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [go, active, catalogue]);
+  useEffect(() => {
+    if (!startedUndo) return undefined;
+    const id = setTimeout(() => setStartedUndo(false), UNDO_MS);
+    return () => clearTimeout(id);
+  }, [startedUndo]);
+
   if (!day) {
     return (
       <div className="page">
@@ -390,6 +414,12 @@ export default function Workout() {
     setActiveWorkout(id);
     setCurrent(0);
   };
+
+  {
+    const prevToday = D.workoutOn(data, today);
+    const notes = recovery || (day.safety_changes || []).length > 0 || Boolean(prevToday?.finished_at) || Boolean(build && build.some((b) => b.status !== 'keep'));
+    autoRef.current = { start, mode: owned && !catalogue ? 'wait' : startMode({ notes }) };
+  }
 
   if (!active) {
     const prev = D.workoutOn(data, today);
@@ -611,10 +641,19 @@ export default function Workout() {
   const lengthTarget = targetProgress(ms, settings.target_min);
   const paused = Boolean(active.paused_at);
   const starter = starterProgress(data);
+  // The bottom bar (design laws plan #7): log the next set, then finish.
+  const curWork = ex ? (doneSets[ex.name] || []).filter(plannedSet).length : 0;
+  const barMode = logBarMode({ resting: Boolean(timer.endsAt), finishing, done: totalDone, target: totalTarget, canLog: Boolean(exRow) && curWork < (ex?.sets || 0) });
 
   return (
-    <div className="page">
+    <div className={`page${barMode ? ' with-log-bar' : ''}`}>
       {toast ? <Toast hidden onDismiss={() => setToast('')}><LeapMark size={18} /> <span className="pr">PR</span> {toast}</Toast> : null}
+      {startedUndo && !toast && !undo ? (
+        <Toast className="undo-toast" role="status" ms={UNDO_MS} onDismiss={() => setStartedUndo(false)}>
+          {t('workout.started', { label: day.label })}
+          {active.sets.length === 0 ? <button type="button" className="undo" onClick={() => { setStartedUndo(false); discard(); navigate('/', { replace: true }); }}><Icon name="undo" className="icon" /> {t('workout.undo')}</button> : null}
+        </Toast>
+      ) : null}
       {undo && !toast ? (
         <Toast className="undo-toast" role="status" ms={UNDO_MS} onDismiss={() => setUndo(null)}>
           {undo.label}
@@ -630,7 +669,7 @@ export default function Workout() {
           </div>
           <MoreMenu title={t('workout.more')} actions={[
             { key: 'pause', label: t(paused ? 'workout.resume' : 'workout.pause'), note: paused ? null : t('workout.pauseNote'), icon: paused ? 'play' : 'pause', onClick: () => update((d) => (paused ? resumeWorkout(d, active.id) : pauseWorkout(d, active.id))) },
-            { key: 'finish', label: t('workout.finishWorkout'), note: t('workout.finishNote', { done: totalDone, all: totalTarget }), icon: 'check', onClick: () => { setFinishing(true); window.scrollTo({ top: 0 }); } },
+            { key: 'finish', label: t('workout.finishWorkout'), note: t('workout.finishNote', { done: totalDone, all: totalTarget }), icon: 'check', onClick: () => setFinishing(true) },
             { key: 'discard', label: t('workout.discard'), note: t('workout.discardNote', { sets: setsText(active.sets.length) }), icon: 'trash', danger: true, onClick: () => setSheet('discard') },
           ]} />
         </div>
@@ -646,21 +685,27 @@ export default function Workout() {
       </section>
 
       {finishing ? (
-        <section className="card stack">
-          <h2>Finish {day.label}</h2>
-          <label className="field">
-            <span>How hard was it overall? (1-10)</span>
-            <select value={rpe} onChange={(e) => setRpe(e.target.value)}>
-              <option value="">Skip</option>
-              {Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>Anything hurt?</span><input type="text" value={pain} onChange={(e) => setPain(e.target.value)} placeholder="Optional" /></label>
-          {day.cardio_after ? <div className="muted small">Don't forget: {day.cooldown[0]}</div> : null}
-          {short ? <div className="small" role="status">{t('workout.shortNote', { done: totalDone, all: totalTarget })}</div> : null}
-          <button type="button" className={`btn${short ? ' secondary' : ''}`} onClick={finish}><Icon name="check" /> {t(short ? 'workout.saveShort' : 'workout.save')}</button>
-          <button type="button" className={`btn${short ? '' : ' ghost'}`} onClick={() => setFinishing(false)}>{t('workout.keepGoing')}</button>
-        </section>
+        <Sheet title={t('finish.sheetTitle', { label: day.label })} onClose={() => setFinishing(false)}>
+          <div className="stack">
+            <div className="muted small">{t('workout.setsOf', { done: totalDone, all: totalTarget })}</div>
+            <div role="radiogroup" aria-label={t('finish.effort')}>
+              <div className="field-label">{t('finish.effort')}</div>
+              <div className="effort-chips">
+                {EFFORT.map((e) => (
+                  <button key={e.key} type="button" role="radio" aria-checked={rpe === e.value} className={`chip${rpe === e.value ? ' accent' : ''}`} onClick={() => setRpe(e.value)}>{t(e.key)}</button>
+                ))}
+              </div>
+            </div>
+            <details className="how-to" open={Boolean(pain)}>
+              <summary><Icon name="plus" className="icon" /><span className="grow">{t('finish.painOpen')}</span><Icon name="chev" className="icon chev" /></summary>
+              <label className="field" style={{ marginTop: 8 }}><span>{t('finish.pain')}</span><input type="text" value={pain} onChange={(e) => setPain(e.target.value)} placeholder={t('finish.optional')} /></label>
+            </details>
+            {day.cardio_after ? <div className="muted small">{t('finish.cooldown', { what: day.cooldown[0] })}</div> : null}
+            {short ? <div className="small" role="status">{t('workout.shortNote', { done: totalDone, all: totalTarget })}</div> : null}
+            <button type="button" className={`btn${short ? ' secondary' : ''}`} onClick={finish}><Icon name="check" /> {t(short ? 'workout.saveShort' : 'workout.save')}</button>
+            <button type="button" className={`btn${short ? '' : ' ghost'}`} onClick={() => setFinishing(false)}>{t('workout.keepGoing')}</button>
+          </div>
+        </Sheet>
       ) : null}
 
       {day.exercises.map((x, i) => {
@@ -669,7 +714,8 @@ export default function Workout() {
         const work = sets.filter(plannedSet).length;
         const isCurrent = i === current;
         const restText = x.pair ? t('workout.restAfterRound', { rest: x.rest }) : x.rest ? t('plan.rest', { rest: x.rest }) : null;
-        const meta = [`${x.sets} × ${x.reps}`, restText, x.rir ? t('workout.rir', { rir: x.rir }) : null].filter(Boolean).join(' · ');
+        // "3 × 6-8" once: the status line already says it before the first set.
+        const meta = [sets.length ? `${x.sets} × ${x.reps}` : null, restText, x.rir ? t('workout.rir', { rir: x.rir }) : null].filter(Boolean).join(' · ');
         const xEntry = entryOf(x.name);
         // "1/4 logged · 10 kg" once a set is in, else the plan and last time (B2).
         const lastSet = sets[sets.length - 1];
@@ -790,11 +836,25 @@ export default function Workout() {
           </div>
         );
       })}
-      {finishing ? null : (
-        <button type="button" className={`btn${totalDone >= totalTarget ? '' : ' outline'}`} style={{ marginTop: 16 }} onClick={() => { setFinishing(true); window.scrollTo({ top: 0 }); }}>
+      {finishing || barMode === 'finish' ? null : (
+        <button type="button" className="btn outline" style={{ marginTop: 16 }} onClick={() => setFinishing(true)}>
           <Icon name="check" /> {t('workout.finishWorkout')}
         </button>
       )}
+      {barMode === 'finish' ? (
+        <div className="log-bar">
+          <button type="button" className="btn" onClick={() => setFinishing(true)}><Icon name="check" /> {t('workout.finishWorkout')}</button>
+        </div>
+      ) : null}
+      {barMode === 'log' ? (
+        <div className="log-bar">
+          {noWeight(weight) ? (
+            <button type="button" className="btn secondary" onClick={() => document.querySelector(`input[aria-label="${t('workout.editKg', { n: curWork + 1 })}"]`)?.focus()}>{t('workout.needWeightBar')}</button>
+          ) : (
+            <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> {timed ? t('workout.logBarSecs', { n: curWork + 1, secs: reps }) : t('workout.logBar', { n: curWork + 1, kg: weight, reps })}</button>
+          )}
+        </div>
+      ) : null}
       {typingSet ? (
         <Sheet title={t('setEdit.title', { n: typingSet.set_number })} onClose={() => setTyping(null)}>
           {setFields(typingSet).track === 'time' ? null : (

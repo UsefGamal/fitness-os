@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.36',
+    items: [
+      { icon: 'play', text: 'Start on Home and Plan starts your workout in one tap, with Undo. It still shows the page first if there is a safety note or swap.' },
+      { icon: 'check', text: 'A big "Log set" bar sits at the bottom of a workout, in thumb reach. After the last set it becomes "Finish workout".' },
+      { icon: 'star', text: 'Finishing opens a sheet: pick Easy, OK, Hard or All out, and add a note only if something hurt.' },
+      { icon: 'dumbbell', text: 'The current exercise no longer shows "3 × 6-8" twice.' },
+    ],
+  },
+  {
     version: '1.1.35',
     items: [
       { icon: 'play', text: 'When a workout is due, these notes wait as a small line on Home, so Start is the first thing you see.' },
