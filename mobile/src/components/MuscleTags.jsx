@@ -11,14 +11,15 @@ const SHAPE = {
   Core: <path d="M5 0 9.3 2.5v5L5 10 .7 7.5v-5z" />,
 };
 
-/** Small coloured tags for the muscle groups a target works. */
-export default function MuscleTags({ target, groups = tagGroups(target) }) {
+/** Small coloured tags for the muscle groups a target works. `shapes`
+ * keeps only the coloured shapes, for a row that names the muscles beside them. */
+export default function MuscleTags({ target, groups = tagGroups(target), shapes = false }) {
   if (!groups.length) return null;
   return (
-    <span className="mtags" role="img" aria-label={t('mtag.aria', { groups: groups.map((g) => t(`mtag.${g}`)).join(', ') })}>
+    <span className={`mtags${shapes ? ' shapes' : ''}`} role="img" aria-label={t('mtag.aria', { groups: groups.map((g) => t(`mtag.${g}`)).join(', ') })}>
       {groups.map((g) => (
         <span key={g} className={`mtag mtag-${g.toLowerCase()}`} aria-hidden="true">
-          <svg viewBox="0 0 10 10">{SHAPE[g]}</svg>{t(`mtag.${g}`)}
+          <svg viewBox="0 0 10 10">{SHAPE[g]}</svg>{shapes ? null : t(`mtag.${g}`)}
         </span>
       ))}
     </span>

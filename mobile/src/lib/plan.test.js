@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import { activeBlock, activePlan, planOverrides, withPlanOverrides } from './plan.js';
+import { activeBlock, activePlan, planOverrides, planOverview, withPlanOverrides } from './plan.js';
 import * as P from './planEdit.js';
 import { sessionKeyOn } from './schedule.js';
 import { content as appContent, ulPplContent as content } from './testContent.js';
@@ -114,4 +114,11 @@ test('one app: a plan started from the Upper / Lower / Push / Pull / Leg plan ke
   assert.equal(T.trainer_plan.tempo, '3010');
   assert.match(T.trainer_plan.name, /Upper \/ lower \/ push \/ pull \/ leg/);
   assert.ok(T.trainer_plan.glossary);
+});
+
+test('planOverview: no day count twice, time last', () => {
+  const t = (k, v) => `${v.name} · ${v.days} days a week · ~${v.min} min`;
+  assert.equal(planOverview({ name: 'Full body, 3 days', days: 3, min: 60, time: '07:00' }, t), 'Full body · 3 days a week · ~60 min · 07:00');
+  assert.equal(planOverview({ name: 'Upper / lower / push / pull / leg, 5 days, slow tempo', days: 5, min: 75 }, t), 'Upper / lower / push / pull / leg, slow tempo · 5 days a week · ~75 min');
+  assert.equal(planOverview({ name: 'Full body, 2 days (starter)', days: 3, min: 45 }, t), 'Full body, 2 days (starter) · 3 days a week · ~45 min');
 });

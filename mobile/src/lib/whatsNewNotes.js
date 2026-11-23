@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.44',
+    items: [
+      { icon: 'calendar', text: 'A shorter Plan header: the plan, days a week, minutes and time on one line. Tempo is in the terms sheet (⋯) and the workout.' },
+      { icon: 'dumbbell', text: 'Exercise rows name the muscles once, with the coloured group shape beside them.' },
+      { icon: 'flame', text: 'The warm-up is one row that opens, so the exercises come first.' },
+      { icon: 'book', text: 'Add to calendar and Exercise library are quiet links under Start.' },
+    ],
+  },
+  {
     version: '1.1.43',
     items: [
       { icon: 'dumbbell', text: 'A calmer Home: today\'s workout shows its size and one Start button. The warm-up and muscles are on Plan.' },

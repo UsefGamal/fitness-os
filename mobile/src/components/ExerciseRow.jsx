@@ -12,9 +12,12 @@ import MuscleTags from './MuscleTags.jsx';
 export default function ExerciseRow({ ex, target, to }) {
   const groups = tagGroups(target);
   const detail = targetLabel(target);
-  // A detail that only repeats the one tag ("Chest") is left out.
+  // The muscle names say the group (Home and Plan simplify): with names,
+  // the tags shrink to their coloured shapes; without, the tag words stay.
   const showDetail = detail && !(groups.length === 1 && detail === groups[0]);
-  const meta = [t('plan.meta', { sets: ex.sets, reps: ex.reps }), ex.rir ? t('plan.tank', { rir: ex.rir }) : null].filter(Boolean).join(' · ');
+  // Each part stays whole, so a narrow row breaks between them, not inside "in the tank".
+  const meta = [t('plan.meta', { sets: ex.sets, reps: ex.reps }), ex.rir ? t('plan.tank', { rir: ex.rir }) : null].filter(Boolean)
+    .map((part, i, all) => <span key={part}><span className="nowrap">{part}{i < all.length - 1 ? ' ·' : ''}</span>{i < all.length - 1 ? ' ' : ''}</span>);
   const body = (
     <>
       <div className="ex-thumb map" aria-hidden="true">
@@ -22,7 +25,7 @@ export default function ExerciseRow({ ex, target, to }) {
       </div>
       <div className="grow">
         <div className="ex-name">{ex.pair ? <span className="pair">{ex.pair}</span> : null}{ex.name}</div>
-        {target ? <div className="ex-target"><MuscleTags groups={groups} />{showDetail ? <span className="ex-detail">{detail}</span> : null}</div> : null}
+        {target ? <div className="ex-target"><MuscleTags groups={groups} shapes={Boolean(showDetail)} />{showDetail ? <span className="ex-detail">{detail}</span> : null}</div> : null}
         <div className="ex-meta">{meta}</div>
         {ex.swapped_from ? <div className="ex-meta">{t('plan.instead', { name: ex.swapped_from })}</div> : null}
         {ex.note ? <div className="ex-note"><Icon name="info" className="icon" /> {ex.note}</div> : null}

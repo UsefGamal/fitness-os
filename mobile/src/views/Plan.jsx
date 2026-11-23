@@ -21,7 +21,7 @@ import { sessionAt } from '../lib/times.js';
 import { t } from '../lib/i18n.js';
 import * as P from '../lib/planEdit.js';
 import { pairedWithNext } from '../lib/superset.js';
-import { activeBlock, activePlan } from '../lib/plan.js';
+import { activeBlock, activePlan, planOverview } from '../lib/plan.js';
 import { checkInDue, snoozeCheckIn } from '../lib/checkIn.js';
 import { dismissSplitTip, splitTip } from '../lib/splitFit.js';
 import { isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
@@ -214,10 +214,10 @@ export default function Plan() {
     <div className="page">
       <div className="plan-head">
         <h1 className="page-title">{t('tab.plan')}</h1>
-        {T.trainer_plan.tempo ? <span className="chip"><Icon name="timer" className="icon inline" /> {t('plan.tempo', { tempo: T.trainer_plan.tempo })}</span> : null}
         <MoreMenu title={t('plan.options')} actions={options} />
       </div>
-      <p className="plan-sub">{t('plan.overview', { name: T.trainer_plan.name, days: trainingDays, min: typical })}{sessionAt(times) ? ` · ${times.session_time}` : ''}</p>
+      {/* One line, nothing twice (Home and Plan simplify); Tempo is in the terms sheet and the workout. */}
+      <p className="plan-sub">{planOverview({ name: T.trainer_plan.name, days: trainingDays, min: typical, time: sessionAt(times) ? times.session_time : null }, t)}</p>
 
       {checkInDue(data, today) ? (
         <div className="backup-line" role="status">
@@ -255,7 +255,7 @@ export default function Plan() {
           </div>
           <div className="day-focus">
             <p className="muted small grow" style={{ margin: 0 }}>{day.focus}</p>
-            <div style={{ width: 64, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={64} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
+            <div style={{ width: 48, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={48} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
           </div>
           <SafetyChanges changes={day.safety_changes} />
           {movedHere ? (
@@ -267,8 +267,13 @@ export default function Plan() {
             <EditList day={day} sessionKey={picked.key} />
           ) : (
             <>
-              <details className="card more warm-more">
-                <summary><Icon name="flame" className="icon" /> {t('plan.warmup', { what: day.pre_cardio, n: day.warmup_items.length })}</summary>
+              {/* A compact row that opens, not a card that competes with the exercises. */}
+              <details className="warm-more">
+                <summary>
+                  <Icon name="flame" className="icon" />
+                  <span className="grow"><span className="warm-title">{t('plan.warmTitle')}</span><span className="warm-sub">{t('plan.warmSub', { what: day.pre_cardio, n: day.warmup_items.length })}</span></span>
+                  <Icon name="chev" className="icon chev" />
+                </summary>
                 <div className="stack" style={{ marginTop: 8 }}>{day.warmup.slice(1).map((line) => <div key={line} className="muted small">{line}</div>)}</div>
                 <Link to={`/follow?src=warmup:${day.key}`} className="btn ghost small" style={{ marginTop: 6 }}><Icon name="play" /> {t('plan.follow')}</Link>
               </details>
@@ -285,9 +290,6 @@ export default function Plan() {
                 ) : (
                   <button type="button" className="btn glow hero" onClick={() => navigate(`/workout?session=${day.key}`)}><Icon name="play" /> {t('plan.startDay', { label: day.label })}</button>
                 )}
-              </div>
-              <div className="action-stack">
-                {picked.date >= today ? <button type="button" className="btn outline" onClick={addToCalendar}><Icon name="calendar" /> {t('plan.calendar')}</button> : null}
               </div>
             </>
           )}
@@ -306,8 +308,13 @@ export default function Plan() {
       {shareMsg ? <p className="muted small" role="status" style={{ margin: '0 4px 12px' }}>{shareMsg}</p> : null}
       {choosing ? <DayPicker date={picked.date} dayName={longWeekday(picked.date)} training={T} data={data} update={update} onClose={() => setChoosing(false)} /> : null}
 
-      <div className="list" style={{ marginTop: 12 }}>
-        <Link to="/library" className="list-row"><Icon name="book" /><div className="grow">{t('plan.library')}</div><Icon name="chev" className="icon chev" /></Link>
+      {/* Secondary actions by importance (Home and Plan simplify): two quiet
+          links, then the one place to make the plan your own. */}
+      <div className="card-links plan-links">
+        {day && !editing && picked.date >= today ? <button type="button" className="card-link" onClick={addToCalendar}><Icon name="calendar" className="icon" /> {t('plan.calendar')}</button> : null}
+        <Link to="/library" className="card-link"><Icon name="book" className="icon" /> {t('plan.library')}</Link>
+      </div>
+      <div className="list">
         <Link to="/plan/mine" className="list-row"><Icon name="plus" /><div className="grow"><div>{t('my.open')}</div><div className="meta small">{t('my.openNote')}</div></div><Icon name="chev" className="icon chev" /></Link>
       </div>
 
@@ -342,6 +349,7 @@ export default function Plan() {
       {opt === 'terms' ? (
         <Sheet title={t('plan.opt.terms')} onClose={() => setOpt(null)}>
           <div className="stack small">
+            {T.trainer_plan.tempo ? <div><strong>{t('plan.tempo', { tempo: T.trainer_plan.tempo })}:</strong> <span className="muted">{t('plan.tempoNote')}</span></div> : null}
             {Object.entries(T.trainer_plan.glossary).map(([k, v]) => <div key={k}><strong>{k.replace(/_/g, ' ')}:</strong> <span className="muted">{v}</span></div>)}
             <div className="muted">{T.progression_note}</div>
           </div>

@@ -102,3 +102,11 @@ export function isWeekEdited(data, content) {
   const base = templateSchedule(block, content);
   return WEEKDAYS.some((d) => (block.schedule.find((e) => e.day === d)?.session ?? 'rest') !== (base.find((e) => e.day === d)?.session ?? 'rest'));
 }
+
+/** Plan's one-line header (Home and Plan simplify): the plan name without
+ * a day count the line already gives ("Full body, 3 days" -> "Full body"),
+ * then days a week, minutes and the session time. */
+export function planOverview({ name, days, min, time = null }, t) {
+  const short = String(name || '').replace(new RegExp(`,\\s*${days} days?\\b`), '').trim();
+  return [t('plan.overview', { name: short, days, min }), time].filter(Boolean).join(' · ');
+}
