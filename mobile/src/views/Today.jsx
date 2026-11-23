@@ -18,6 +18,7 @@ import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { firstName, partOfDay, watchTiles } from '../lib/home.js';
 import * as P from '../lib/planEdit.js';
+import { mealDayFor, mealStart } from '../lib/meals.js';
 import { doneKeys, questsOn } from '../lib/quests.js';
 import { lastTimePreview } from '../lib/lastTime.js';
 import { isChangedOn, moveSession, moveTargets, programDayFor, sessionKeyOn, weekView } from '../lib/schedule.js';
@@ -71,6 +72,7 @@ export default function Today() {
   const mealSlots = content.nutrition.meal_slots.length;
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
   const water = D.waterOn(data, today);
+  const mealDay = mealDayFor(today, content.nutrition, mealStart(data, content.nutrition));
   const weeks = weekStreaks(data, today);
   const glance = weekGlance(data, today);
   const streak = weeks.current;
@@ -156,17 +158,19 @@ export default function Today() {
   // Today's activity (Home simplify): one grid of the same tiles. Water is
   // wide for its buttons; an odd last tile takes the whole row.
   const halves = [];
-  if (D.moduleOn(data, 'meals')) halves.push(<StatTile key="meals" to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={t('home.mealsLogged')} />);
+  if (D.moduleOn(data, 'meals')) halves.push(<StatTile key="meals" to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={`${t('home.meals')} · ${mealDay.label}`} />);
   if (steps) halves.push(<StatTile key="steps" to="/stats?tab=body" icon="steps" tone="steps" value={steps.value} label={t('home.tile.steps')} />);
   if (questsOn(data)) halves.push(<StatTile key="quests" to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={t('home.quests')} />);
-  const todayBlock = (
+  const waterOn = D.moduleOn(data, 'water');
+  // Nothing to show (modules off, no watch): no empty heading.
+  const todayBlock = !waterOn && !halves.length && !watchLine ? null : (
     <>
       <div className="section-head">
         <h2 className="section-title">{t('home.quickStats')}</h2>
         {streak > 0 && !back ? <span className="chip accent" aria-label={t('home.streakAria', { n: streak, done: weeks.week.done, need: weeks.week.need })}><Icon name="bolt" className="icon" /> {t('home.streak', { n: streak })}</span> : null}
       </div>
       <div className="tile-grid" data-tour="today">
-        {D.moduleOn(data, 'water') ? (
+        {waterOn ? (
           <StatTile wide icon="drop" tone="water" value={water} of={`${D.waterGoal(data)} ml`} label={t('home.water')}>
             <div className="row" style={{ gap: 8 }}>
               <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 250 })} onClick={() => addWater(250)}>{t('home.add250')}</button>
@@ -240,14 +244,11 @@ export default function Today() {
         </div>
       ) : null}
       {card === 'back' ? (
-        <section className="card back-card" role="status">
-          <div className="row between">
-            <strong>{t('back.title')}</strong>
-            <button type="button" className="icon-btn" aria-label={t('back.hide')} onClick={() => update((d) => hideBack(d, today))}><Icon name="x" /></button>
-          </div>
-          <p className="muted small" style={{ margin: '0 0 4px' }}>{t(back.level === 'short' ? 'back.short' : back.level === 'fresh' ? 'back.fresh' : 'back.easy')}</p>
-          {/* No second Start: the workout card above has it (one screen, one main action). */}
-        </section>
+        // A thin line, no second Start: the workout card above has it (one screen, one main action).
+        <div className="backup-line back-line" role="status">
+          <span className="grow back-text"><strong>{t('back.title')}</strong> <span className="muted">{t(back.level === 'short' ? 'back.short' : back.level === 'fresh' ? 'back.fresh' : 'back.easy')}</span></span>
+          <button type="button" className="icon-btn" aria-label={t('back.hide')} onClick={() => update((d) => hideBack(d, today))}><Icon name="x" /></button>
+        </div>
       ) : null}
       {card === 'goal' ? (
         <GoalReachedCard targets={targets} showKcal={!kcalHidden(data) && targets?.source !== 'plan'} onStart={beginMaintenance} onLater={() => update(hideGoalReached)} />
@@ -278,10 +279,10 @@ export default function Today() {
       ) : null}
 
       {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
-      <section className="home-week" aria-label={t('home.weekAria')}>
+      <section className="home-week" aria-labelledby="home-week-title">
         <div className="card-head">
-          <h2 className="card-title">{t('home.weekAria')}</h2>
-          <span className="muted small">{weekShortLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need })}</span>
+          <h2 className="card-title" id="home-week-title">{t('home.weekAria')}</h2>
+          <span className={`small week-count${weeks.week.planned && glance.days >= weeks.week.need ? ' kept' : ''}`}>{weekShortLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need })}</span>
         </div>
         <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
       </section>

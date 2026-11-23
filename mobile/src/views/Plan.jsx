@@ -255,7 +255,7 @@ export default function Plan() {
           </div>
           <div className="day-focus">
             <p className="muted small grow" style={{ margin: 0 }}>{day.focus}</p>
-            <div style={{ width: 64, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={64} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
+            <div style={{ width: 48, flex: 'none' }}><BodyMap primary={dayHits.muscles} hit={dayGroups(data, dayHits.unknown)} size={48} label={`${day.label} works ${[...dayHits.muscles.map((m) => MUSCLE[m]?.label || m), ...dayGroups(data, dayHits.unknown)].join(', ')}`} /></div>
           </div>
           <SafetyChanges changes={day.safety_changes} />
           {movedHere ? (

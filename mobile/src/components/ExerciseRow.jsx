@@ -15,7 +15,9 @@ export default function ExerciseRow({ ex, target, to }) {
   // The muscle names say the group (Home and Plan simplify): with names,
   // the tags shrink to their coloured shapes; without, the tag words stay.
   const showDetail = detail && !(groups.length === 1 && detail === groups[0]);
-  const meta = [t('plan.meta', { sets: ex.sets, reps: ex.reps }), ex.rir ? t('plan.tank', { rir: ex.rir }) : null].filter(Boolean).join(' · ');
+  // Each part stays whole, so a narrow row breaks between them, not inside "in the tank".
+  const meta = [t('plan.meta', { sets: ex.sets, reps: ex.reps }), ex.rir ? t('plan.tank', { rir: ex.rir }) : null].filter(Boolean)
+    .map((part, i, all) => <span key={part}><span className="nowrap">{part}{i < all.length - 1 ? ' ·' : ''}</span>{i < all.length - 1 ? ' ' : ''}</span>);
   const body = (
     <>
       <div className="ex-thumb map" aria-hidden="true">
