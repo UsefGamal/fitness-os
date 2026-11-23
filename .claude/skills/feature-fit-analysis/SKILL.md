@@ -1,24 +1,26 @@
 ---
 name: feature-fit-analysis
-description: Use before building a new feature, logged entity, or integration in Fitness OS, or when the user proposes one — this is a single-user app scoped to a specific 6-month body-recomposition program, not a general product, so "would this be nice to have" isn't the right bar. Weighs a proposed feature against the program's actual goals and the app's own documented scope decisions before writing code.
+description: Use before building a new feature, logged entity, screen or integration in Tafra, or when someone proposes one. Weighs it against PRODUCT.md's v1 scope, the offline/no-server rules and the cost of keeping it working, before any code is written.
 ---
 
 # Feature-fit analysis
 
-This app has one user and one stated purpose (`README.md`'s opening line): a 6-month body-recomposition program, `PLAN_START_DATE = 2026-09-01` through the profile's `goal_date` (2027-01-18), tracked via structured meal/gym adherence and a blended confidence score. That's the actual product spec — not "a fitness app," this specific program. Judge new work against it, not against what a general fitness app "should" have.
+Tafra is an offline Android app for people training on their own: a ready-made routine, guided workouts, calorie and macro targets, a meal plan and a shopping list. Version 1 goes to a small pilot and then Google Play. [`PRODUCT.md`](../../../PRODUCT.md) is the scope; judge new work against it, not against what a general fitness app "should" have.
 
 ## Before proposing or building something new, answer these
 
-1. **Does it move a number the app already tracks, or does it need a new one?** The app already computes: meal adherence %, training adherence %, confidence score (pace-vs-target blended with adherence), streak, predicted goal date. A feature that feeds one of these (or removes friction from logging something that already feeds one) has a clear, checkable payoff. A feature that doesn't touch any of them needs its own justification for *why it matters to this program*, not just "would be useful to know."
+1. **Is it already decided?** Check PRODUCT.md's "Won't now" and "Could, after v1" lists first. A plan generator, food search or barcodes, accounts or sync, several profiles, leaderboards, "streak at risk" pushes and any telemetry are out. If a request maps onto one of these, say so plainly and ask whether the goal is something narrower, rather than building around a written decision.
 
-2. **Check `README.md`'s "Known gaps / deliberately out of scope" list first.** Apple Health/Google Fit sync and a progress-photo timeline are already explicitly declined — if a request maps onto one of these, that's a decision already made, not a gap waiting to be filled. Raise it explicitly ("this is the photo-timeline idea the README already scoped out — still want it, or is the goal something narrower?") rather than silently building around a documented decision.
+2. **Does it break the hard rules?** No server, no account, no network calls with user data, one app version for everyone, kg only, works on a 360 px screen and right-to-left, every watch or Health Connect feature optional. A feature that needs any of these broken is a scope change, not a feature.
 
-3. **Weigh the maintenance surface against the marginal value.** A new logged entity is a real, permanent cost: a model + migration (`db-migration-checklist`), a router (`new-logged-entity`), a template (`frontend-design`/`ui-ux-review`), tests, docs. For a program with a fixed ~5-month remaining window, ask whether an existing field/entity could absorb this instead — e.g. a new kind of note might fit `Workout.pain_note`'s pattern rather than needing its own table; a new metric might belong in `content/projections.py` computed from data already logged, rather than requiring a new log type at all.
+3. **Does it feed something the app already shows?** Targets, the weight trend and pace, streaks, records, muscle volume, the meal ticks and the shopping list. A feature that feeds one of these, or makes logging something that already feeds one quicker, has a clear payoff. One that adds a new number needs its own reason.
 
-4. **Prefer deriving over asking.** The app's whole design leans toward computing insight from what's already logged (adherence-vs-outcome insight, confidence score, pain-pattern flag) rather than adding another thing for the user to manually track. A proposed feature that adds logging burden should have a specific reason it can't instead be derived from existing `BodyLog`/`Workout`/`MealLog` data.
+4. **Derive before asking.** Prefer working insight out from what's already logged (workouts, sets, weigh-ins, meal ticks, watch data when present) over a new thing to log by hand. A new logged field needs a reason it can't be derived.
 
-5. **Consider the program's actual end date.** A feature whose payoff mostly accrues after 2027-01-18 (the goal date) is lower priority than one that helps the next few months — this isn't a forever-app, it's a program-length one. Say so explicitly if a proposal reads as more useful post-program than during it (e.g. long-term trend analysis across future years).
+5. **Count the cost.** New stored data means a data-format version bump, an upgrade step in `mobile/src/lib/migrate.js`, backup/import handling and tests, because the phone holds the person's only copy. New screens need the e2e harness states, i18n strings and safety handling. Ask whether an existing screen or field can absorb it.
 
-## Output of this analysis
+6. **Is it safe for everyone?** The setup screening can switch off a deficit, cap protein or hide weight (`mobile/src/lib/safety.js`). A feature about food, weight or intensity must respect those gates and never reward weight loss alone.
 
-State plainly: what the feature is, which existing metric/goal it serves (or why it's justified despite not serving one), what it costs to build (rough shape: new entity vs. an addition to existing data), and whether an existing gap-decision in the README already covers this ground. Then let the user decide — this skill is for surfacing the tradeoff clearly, not for vetoing ideas.
+## Output
+
+State what the feature is, which part of v1 it serves (or why it's worth it anyway), what it costs (new data or not, new screen or not), and any written decision it touches. Then let the person decide: this skill surfaces the trade-off, it doesn't veto ideas.

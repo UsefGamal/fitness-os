@@ -2,7 +2,7 @@
 //
 // The plan is written for one person (about 1,920 kcal on a normal day).
 // Everyone gets ONE factor: their kcal target divided by the plan's average
-// day. Inside 0.95 to 1.05 nothing changes (Yusuf, and anyone without a
+// day. Inside 0.95 to 1.05 nothing changes (that person, and anyone without a
 // profile, see the plan exactly as written). From 0.7 to 1.4 portions are
 // scaled; outside that the plan is shown unscaled with a calm line.
 //

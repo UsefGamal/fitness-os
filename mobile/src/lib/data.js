@@ -185,8 +185,7 @@ export function deleteWorkout(data, workoutId) {
 }
 const MAX_PENDING_DELETES = 200;
 
-/** Session types other than gym that are logged in one go (old site's Home,
- * Recovery, Cardio and Padel pages). */
+/** Session types other than gym that are logged in one go. */
 export const SESSION_TYPES = ['home', 'recovery', 'cardio', 'padel'];
 
 export function logSession(data, { date, type, label, durationMin = null, sessionRpe = null, result = null, notes = null, checklist = [], intervals = null, now = Date.now() }) {

@@ -1,42 +1,68 @@
-# Fitness OS phone app
+# Tafra phone app
 
-The standalone Android app. Everything runs inside the APK and your data is
-saved on the phone, so there's no server, no account and no internet needed.
+The Android app. Everything runs inside the app and the data is saved on the
+phone: no server, no account, no internet needed. The visible name is
+**Tafra**; the app ID (`com.usefgamal.fitnessos`), APK file names and code
+still say fitness-os.
 
 ## Screens
 
-The tab bar follows openGym: **Home**, **Plan**, **Start**, **Meals** and **Stats**. Settings is behind the gear on Home.
+The tab bar is **Home**, **Plan**, **Start**, **Meals** and **Stats** (with
+Meals switched off, **Library** takes its place). You can swipe between tabs.
+Settings, Profile and the rest open from Home's menu.
 
-- **Home:** today's session at 07:00 (or the next one on a rest day), the Sunday-start week, other sessions (home, recovery, cardio, padel), quests, meals eaten, water and your latest weight.
-- **Plan:** your Upper / Lower / Push / Pull / Leg week. Tap a day to see its warm-up and working sets with RIR, rest, notes, form videos and backups.
-- **Start:** a guided workout. Weight and reps come prefilled from last time and can be changed with big +/- buttons. One tap logs a set and starts the rest timer, which also buzzes as a notification with the screen off. Paired sets (A1/A2) alternate automatically, and a new best set shows a PR banner.
-- **Meals:** the 14-day meal plan for any date. Pick option A or B, tick each meal off and see calories and macros against your targets. **Shopping** lists the next seven days' food by aisle, with ticks that reset each Sunday.
-- **Stats:** weigh-ins with a trend chart against your goal band, your records per exercise, and links to History and Library.
-- **Library:** your exercises, and **All with photos**: 876 exercises from free-exercise-db (public domain) with start/end photos, instructions, muscles and equipment, searchable and filterable. Plan exercises show the closest match's photos on their page and in the workout. Your exercises: with search, a filter by muscle group and a tappable body map. Each exercise shows your best set, estimated 1RM, where it sits in your plan and every time you've done it. You can add your own exercises too.
-- **History:** every workout by month. Open one to change its date, edit a set's weight or reps, or delete sets or the whole workout.
-- **Editable Plan:** tap Edit on a day to swap an exercise (same muscle group first), change sets, reps or rest, reorder, remove or add exercises. The original plan stays as the starter plan; "Reset" puts a day back.
-- **Sessions:** log a home workout (its warm-up, exercises and cool-down as a checklist), recovery, cardio or padel (with the result).
-- **Quests:** tick daily habits; weekly quests and milestones are earned from what you log, adding up to levels and badges.
-- **Profile:** height, age, sex, activity and goal set the daily calorie and macro targets, worked out like the old site.
-- **Phone extras:** the rest timer also counts down in the notification shade with +15s and Stop, so you can run a workout without opening the app between sets. Add the **Fitness OS today** widget to your home screen for today's session, streak and meals. Switch on **Health Connect** in Settings to bring in weigh-ins from a scale and share finished workouts.
-- **Settings:** import your data, export a backup, turn reminders on (30 min before each 07:00 session and at every meal time), and switch **Modules** (Meals, Water, Weight) off to hide them. With Meals off, Library takes its place in the tab bar.
+- **Setup:** five short screens (welcome, about you, goal, training, done),
+  each one skippable, with a short safety check, then a one-time step to
+  allow reminders.
+- **Home:** today's session or the next one, the week strip (Sunday start by
+  default), today's meals and water, the latest weight, and quick actions.
+  On a training day the session comes first; on a rest day, the weight.
+- **Plan:** the routine's week with training days and times. Tap a day for
+  its warm-up and working sets (with RIR, rest, notes, muscle tags and a
+  muscle map). Move a session to another day, edit a day (swap an exercise
+  for a close match, change sets, reps or rest, reorder), pick another
+  ready-made routine, or build your own.
+- **Start:** a guided workout. The next set is ready with a suggested weight
+  (double progression), a big Log set button in thumb reach, and a rest
+  timer that also runs in the notification bar with the screen off. Paired
+  sets alternate, a new best set shows a record, and the finish sheet asks
+  how it felt. Gym mode makes the buttons bigger. Intervals, follow-along
+  and home, cardio, padel, stretching and recovery sessions live here too.
+- **Meals:** the day's meals from the shared meal library, scaled to your
+  calorie target, with ticks, recipes, swaps for any slot, your own foods,
+  water, and calories and macros against your targets. **Shopping** lists
+  the coming week's food by aisle. Ramadan mode moves meals to suhoor and
+  iftar.
+- **Stats:** the weight trend against a safe pace and your goal, body
+  measurements, progress photos (locked, kept only on the phone), strength
+  records, muscle volume and recovery, a fitness test, History (edit or
+  delete any workout), Library, weekly streaks and badges.
+- **Library:** your exercises with photos and instructions (from the public
+  domain free-exercise-db), searchable by name, muscle group or a tappable
+  body map, with your best set and every time you've done it.
+- **Settings:** Training, Times and reminders, Data (backups, automatic
+  backup, CSV, share a copy, snapshots), Preferences (theme, week start,
+  modules), Safety, Health Connect, Help, Privacy and About (version, what's
+  new, signing code, bug report).
+- **Phone extras:** the **Tafra** home-screen widget shows today's session,
+  streak and meals. Health Connect (optional) brings in weigh-ins, steps,
+  sleep and resting heart rate, and saves finished workouts.
 
-## Moving your data in
+## Your data
 
-1. On the old site, open Settings > "Download my data" and save the file.
-2. In the app, open Settings > "Import your data" and pick that file.
+Data lives in the app's storage plus a file mirror in its private folder;
+the newest copy wins when the app starts. When an update changes the data
+format, the app upgrades it automatically and keeps a **snapshot** of the
+old data first (Settings > Snapshots keeps the newest 7, also taken
+before every import or restore). A backup from a newer app version is
+refused instead of guessed at.
 
-Backups made with "Export a backup" are in the same format and import the
-same way, from any older version of the app. Data lives in the app's storage
-plus a file mirror in its private folder; the newest copy wins when the app
-starts. When an update changes the data format, the app upgrades it
-automatically and keeps a **snapshot** of the old data first (Settings >
-Snapshots keeps the newest 7, also taken before every import or restore). A
-backup from a newer app version is refused instead of guessed at. **Uninstalling
-the app deletes everything**, snapshots included, so export a backup now and
-then; Home reminds you after 14 days.
+**Uninstalling the app deletes everything**, snapshots included. Export a
+backup now and then (Home reminds you after 14 days), or switch on automatic
+backup to a folder you pick. Backups import the same way on any later
+version of the app.
 
-## Getting the APK
+## Getting the app
 
 There are two kinds of build, and they are separate apps on the phone.
 
@@ -52,12 +78,13 @@ There are two kinds of build, and they are separate apps on the phone.
   called **Fitness OS debug**, uses its own app ID
   (`com.usefgamal.fitnessos.debug`) and its own empty data, and installs
   *beside* the real app. It can never replace or break it.
-- **One APK per tag.** Each tag builds `fitness-os-<version>.apk`, the same
-  app for everyone (until Nov 2026 there were `-yusuf` and `-friends` files;
-  both update to the one file and keep their data). The Upper / Lower / Push /
-  Pull / Leg plan is a ready-made routine anyone can pick.
+- **One app for everyone.** Each tag builds one `fitness-os-<version>.apk`
+  and a Play bundle (`tafra-play-bundle-<version>` artifact) signed with the
+  same key, so a Play install and a GitHub install update over each other.
+  Play steps are in [`docs/play/README.md`](../docs/play/README.md).
 
-Before each release: set `version` in `mobile/package.json` (and
+Releases need the repo owner: they push the `vX.Y.Z` tag and approve the
+`release` environment in Actions. Before each release: set `version` in `mobile/package.json` (and
 `package-lock.json`) to the tag's number and add that version's notes to
 `mobile/src/lib/whatsNewNotes.js`. A test fails when the notes are older than
 `package.json`, and the APK's fallback version name reads the same file, so
@@ -98,9 +125,10 @@ Each release lists both APKs' SHA-256, the certificate's SHA-256 and an
 8-character **signing code** (like `AB12-CD34`). Settings > About on the
 phone reads the code from Android itself; a friend checks it matches the
 release message. If an update ever says "App not installed", **don't
-uninstall** (that deletes the data): message Yusuf.
+uninstall** (that deletes the data): send a bug report from Settings >
+About, or open an issue on GitHub.
 
-One-time GitHub settings (Yusuf, as repo owner):
+One-time GitHub settings (repo owner):
 
 1. **Settings > Environments > New environment** `release`. Turn on
    **Required reviewers** (yourself) and limit **Deployment branches and
@@ -127,7 +155,7 @@ Android's own backup may copy the app's data file to Google Drive, so a new
 phone can restore it. **Progress photos are excluded**
 (`res/xml/data_extraction_rules.xml`, `backup_rules.xml`): they never leave
 the phone. To check on the phone: Settings > Google > Backup > App data
-lists Fitness OS; its size should not grow when you add photos.
+lists Tafra; its size should not grow when you add photos.
 
 ## Developing
 
@@ -136,6 +164,7 @@ cd mobile
 npm ci
 npm run dev        # exports content/ to src/content.json, then starts Vite
 npm test           # node --test on src/lib/*.test.js
+npm run check      # eslint, i18n lint, tsc and all unit tests (what CI runs)
 npm run photos     # downloads and converts the exercise photos (once, ~2 min, ~50 MB)
 npm run build      # dist/
 ../scripts/build-apk.sh   # needs JDK 21 + Android SDK
@@ -144,6 +173,7 @@ npm run build      # dist/
 - Plan content comes from `content/` through `scripts/export_content.py`. Never edit `src/content.json` by hand; it's generated and gitignored.
 - Decision logic lives in `src/lib/` as pure functions, each with a `*.test.js` beside it. `schedule.test.js` mirrors `tests/test_gym_program.py`, so change both together.
 - Exercise photos land in `public/exercise-db/` (gitignored). `npm run build:mobile` fetches them; install Pillow (`pip install pillow`) to get WebP at half the size.
-- The app's own Android plugins live in `android/app/src/main/java/com/usefgamal/fitnessos/` (`timer/`, `widget/`, `health/`) and are registered in `MainActivity`. `src/store/native.js` is the JS side; in a browser they're no-ops.
+- The app's own Android plugins live in `android/app/src/main/java/com/usefgamal/fitnessos/` (`timer/`, `widget/`, `health/`, `backup/`, `crash/`, `photolock/` and more) and are registered in `MainActivity`. `src/store/native.js` is the JS side; in a browser they're no-ops.
 - `src/store/useData.js` is the one Zustand store. `src/store/mirror.js` keeps the file copy and `src/store/notify.js` handles local notifications.
+- The full list of checks, the version rule and PR rules are in [`CLAUDE.md`](../CLAUDE.md).
 - After changing `capacitor.config.json` or a Capacitor plugin, run `npx cap sync android` and commit the result.

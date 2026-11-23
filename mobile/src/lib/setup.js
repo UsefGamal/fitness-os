@@ -1,6 +1,6 @@
 // First-time setup for a new phone (E5-S2, E4-S7). Only a fresh install
 // sees it: anyone with a profile, a workout or a weigh-in never does, so
-// Yusuf's phone skips it. Five short screens (welcome, about you, goal,
+// a phone with data skips it. Five short screens (welcome, about you, goal,
 // training, done); every one can be skipped. Pure helpers; setup.test.js.
 
 import { logBody } from './data.js';

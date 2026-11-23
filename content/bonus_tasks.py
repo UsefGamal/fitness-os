@@ -1,9 +1,9 @@
 # Quest board: three cadences so it isn't just a daily checklist that
 # resets to zero every midnight.
-#   "daily"  — the only cadence the user marks by hand (see routers/bonus.py's
-#              toggle_bonus). Resets every day, checked against today's rows.
-#   "weekly" — resets once per ISO week. System-evaluated by quest_engine.py
-#              from real logged activity (including the daily habits above),
+#   "daily"  — the only cadence the user marks by hand. Resets every day.
+#   "weekly" — resets once per week. Worked out by the app
+#              (mobile/src/lib/quests.js) from logged activity (including the
+#              daily habits above),
 #              never toggled directly.
 #   "once"   — completed a single time, ever, and then stays done.
 #              System-evaluated by quest_engine.py, never toggled directly.

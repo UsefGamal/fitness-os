@@ -1,10 +1,10 @@
-// The week's shopping list from the static meal plan. Mirrors
-// routers/meals.py's shopping_list_page and content/food_items.py's
-// parse_shopping_unit / format_shopping_qty: seven days from today,
+// The week's shopping list from the meal plan. Units parse and format like
+// content/food_items.py's parse_shopping_unit / format_shopping_qty: seven
+// days from today,
 // quantities merged across portion sizes ("chicken 200g" + "chicken 150g").
 // With `pickOf` the list holds only the option picked for each meal (the
 // first one when nothing is picked), so it buys what will be eaten (UX-18).
-// Without it, both options of every meal, as the old web app did.
+// Without it, every option of every meal.
 import { addDays } from './dates.js';
 import { mealDayFor } from './meals.js';
 

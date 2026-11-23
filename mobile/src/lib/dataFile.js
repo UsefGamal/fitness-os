@@ -1,6 +1,5 @@
-// Import and export of the data file (E2-S2). Import accepts the old site's
-// Settings > "Download my data" file ("fitness-os-export" v1), this app's
-// own backups of any schema up to the current one, and snapshots.
+// Import and export of the data file (E2-S2). Import accepts the original
+// "fitness-os-export" v1 file, this app's own backups of any schema up to the current one, and snapshots.
 //
 // Restores are lossless, and the result goes through the same migrate() as
 // the data on the phone. A file from a newer schema is refused. A broken
@@ -96,7 +95,7 @@ export function parseDataFile(text, content, { trusted = false } = {}) {
     throw new ImportError("That's a shared copy without health data, so it can't be restored. Use a full backup (Settings > \"Export a backup\").");
   }
   if (!isObject(raw) || raw.format !== FILE_FORMAT) {
-    throw new ImportError('That isn\'t a Tafra data file. Use Settings > "Export a backup" in the app (or "Download my data" on the old site).');
+    throw new ImportError('That isn\'t a Tafra data file. Use Settings > "Export a backup" in the app.');
   }
   const version = schemaOf(raw);
   if (version < 1) throw new ImportError("That file's version can't be read, so nothing was changed.");

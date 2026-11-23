@@ -1,30 +1,29 @@
 ---
 name: user-persona
-description: Use whenever making a UX, design, or feature-priority judgment call in Fitness OS (alongside ui-ux-review and feature-fit-analysis) — this app has exactly one real user, not a target market, so "who is this for and what's their actual context of use" has a concrete, specific answer instead of a guessed-at demographic.
+description: Use whenever making a UX, design, or feature-priority judgment call in Tafra (alongside ui-ux-review and feature-fit-analysis), to keep in mind who opens the app, on what phone, and in what moment.
 ---
 
-# The user
+# Who uses Tafra
 
-Fitness OS has one user: a data engineer with a desk job, training for a 6-month body-recomposition program (103kg → 75-80kg, Aug 2026 – Jan 2027), based in Cairo (Africa/Cairo timezone; CI runs the date tests in it). Plays padel ~2x/week (1.5h) alongside the structured 4-day Upper/Lower gym program. Prefers Egyptian/Levantine-leaning food; fish and seafood are fine (Nov 2026); no pork, no alcohol.
+People training on their own, without a coach, who want one app for their training plan and their food. They have different jobs, schedules and goals (lose fat, recomp, keep, or build muscle) and mostly mid-range Android phones (Samsung A series, Xiaomi/Redmi, Infinix/Tecno), often with aggressive battery savers. Many are in Egypt and the region: Cairo time, Sunday-start weeks, Ramadan, Egyptian food. Some wear a cheap watch on Health Connect now and then; many don't.
 
-This isn't a demographic sketch for a market that doesn't exist — every field here comes from the app's profile defaults or the README. Update this file if any of it goes stale (e.g. the program window ends, the goal changes) rather than leaving it to drift from the real profile.
+The first users are a small pilot of friends, then Google Play testers. They install the app themselves and can't ask the developer what a screen means, so the app has to explain itself.
 
-## Context of use — when and how the app actually gets opened
+## Context of use
 
-- **On a phone, one-handed, mid-activity** — logging a set between reps at the gym, checking the meal plan before eating, marking hydration after a glass of water. Not sitting down to "review the app." This is *the* reason it's a phone-first Android app with a bottom tab bar, not a reason that's been forgotten since.
-- **Sessions are short and frequent**, not long and occasional. A single visit is usually "do the one thing I opened this for" (log today's weight, mark a meal eaten, log a set) — not a browsing session.
-- **Daily touchpoints**: dashboard check (streak, today's checklist), meal-slot logging (up to 5x/day), gym/home/cardio/padel logging (per session), hydration quick-add (multiple times/day). **Weekly/biweekly touchpoints**: body measurements (`/body`, deliberately reached via More, not the tab bar — see README). **Passive touchpoints**: reminders and the home-screen widget, meant to surface the day's plan without opening the app at all.
-- **It opens offline, straight from the phone**: there's no server and no account, and data lives only on the phone. Opening the app should cost nothing, so don't add steps that bring back the friction a server used to cause.
+- **On a phone, one-handed, mid-activity:** logging a set between reps, ticking a meal before eating, adding a glass of water. Not sitting down to explore the app.
+- **Short, frequent visits:** "do the one thing I opened it for". Daily: Home, a workout, meal ticks, water. Weekly: weigh-ins, the shopping list, body measurements. Passive: reminders and the home-screen widget.
+- **Offline and private:** no account, nothing to sign in to, data only on the phone. Opening the app should cost nothing.
+- **Not all fit, not all healthy:** beginners, people coming back after a break, people the setup screening gates (pregnancy, eating-disorder history, medical conditions, under 18). Copy stays calm and never shames.
 
-## What "low effort" means for this specific user
+## What "low effort" means here
 
-Not "fewer features" — the gamification layer, charts, and projections all exist because they help sustain a 6-month program, and removing them isn't a friction win. Low effort here means:
-- **Fewest taps/fields for the thing this exact context needs** — see `ui-ux-review`'s upsert-by-date and empty-state conventions.
-- **No re-deciding something already decided** — the program, the meal plan, the macro targets are all pre-computed; a feature that asks the user to re-enter or re-confirm something the app already knows is adding cost, not value.
-- **Legible at a glance, mid-activity** — a screen that needs to be *read carefully* to understand doesn't fit a one-handed, between-sets context. Direct labels over legends, status chips over raw numbers needing interpretation (both already established conventions — see `frontend-design`).
+- Fewest taps and fields for the thing this moment needs; the next set, the next meal, today's session are already worked out.
+- No re-deciding what the app already knows: the routine, the meal plan and the targets are pre-computed from setup.
+- Legible at a glance: direct labels over legends, one clear number over a table, 44 px taps and 16 px inputs.
 
-## Using this alongside the other UX/planning skills
+## With the other skills
 
-- `feature-fit-analysis` asks "does this serve the program's actual goals" — this file is what makes "actual goals" concrete (whose goals, what timeline, what constraints).
-- `ui-ux-review` asks "where does this live, what's the empty state, what's the one-handed path" — this file is the *why* behind judging those three questions the way it does.
-- `training-programming` / `nutrition-domain` are the domain rules; this file is the person those rules are in service of.
+- `feature-fit-analysis` asks whether something fits v1; this file says who it has to fit.
+- `ui-ux-review` asks where it lives and how it reads one-handed; this file is why.
+- `training-programming` and `nutrition-domain` are the domain rules these people rely on.

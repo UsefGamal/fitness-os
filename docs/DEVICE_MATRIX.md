@@ -1,4 +1,4 @@
-# Device checks (P14-17)
+# Device checks before a pilot build (P14-17)
 
 CI covers what a browser and an emulator can: the screen harness (both
 APKs), `npm run e2e:device` (setup states, 3 years of data at 6x slower
@@ -10,7 +10,7 @@ of the phones below as the pilot has.
 
 | Phone | Why it's here |
 |---|---|
-| Yusuf's phone | The main user, with the real data file |
+| The developer's own phone | Months of real data in the data file |
 | Xiaomi / Redmi / Poco (MIUI or HyperOS) | Kills background apps; autostart switch |
 | Infinix or Tecno (XOS / HiOS) | Kills background apps; Phone Master |
 | Samsung A series | Sleeping apps list; the most common friend phone |

@@ -9,8 +9,8 @@
 // Data from a newer schema than this app knows is refused rather than
 // guessed at: "Update the app first".
 //
-// v1 is the original shape (the old site's "fitness-os-export" v1 and this
-// app's own data until phase 11). v2 is the one planned schema bump: it
+// v1 is the original shape ("fitness-os-export" v1, the app's own data
+// until phase 11). v2 is the one planned schema bump: it
 // adds every field the next phases need, so later phases don't change the
 // shape again. v3 (V3, Nov 2026) lets a set hold six more fields and
 // nothing else: set_type, group, track, added_kg, distance_m, duration_s
@@ -36,8 +36,8 @@ export function needsMigration(raw) {
   return schemaOf(raw) < CURRENT_SCHEMA;
 }
 
-// Until v2, an empty profile meant these values (models.py's old Profile
-// defaults, which were Yusuf's). v1 data that already computed targets
+// Until v2, an empty profile meant these values (the first version's
+// profile defaults). v1 data that already computed targets
 // from them keeps them, so its numbers don't move; new installs never get
 // them.
 export const V1_PROFILE_DEFAULTS = {

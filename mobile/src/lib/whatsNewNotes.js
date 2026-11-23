@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.42',
+    items: [
+      { icon: 'check', text: 'Clearer help when an update won\'t install: send a bug report from Settings > About instead of uninstalling.' },
+      { icon: 'check', text: 'The old-WebView help page now says Tafra.' },
+    ],
+  },
+  {
     version: '1.1.41',
     items: [
       { icon: 'bell', text: 'The reminder Battery fix now opens Tafra\'s own settings. Tap Battery, then Unrestricted.' },

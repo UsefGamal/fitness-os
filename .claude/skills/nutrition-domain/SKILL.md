@@ -1,37 +1,38 @@
 ---
 name: nutrition-domain
-description: Use when writing or reviewing anything nutrition-related in Fitness OS — meal plan content (content/meal_plan.py, content/food_items.py), macro/calorie math (macro_targets.py, content/tdee.py), the Edamam sync's query/filter logic, or the eating-out guide. Encodes the diet rules and calculation methodology already established, so new content or logic doesn't quietly contradict it.
+description: Use when writing or reviewing anything nutrition-related in Tafra: meal library and meal plan content (content/meal_library.py, content/meal_plan.py, content/ingredients.py), calorie and macro maths (mobile/src/lib/macros.js), portion scaling, the shopping list, Ramadan or maintenance. Keeps new content and logic consistent with the rules already set.
 ---
 
-# Nutrition domain rules
+# Nutrition rules
 
-This app has one real diet spec, not general nutrition best practices — deviating from it (even with something nutritionally "healthier") is a regression, not an improvement, unless the user has explicitly changed the spec in `models.Profile` or asked for it.
+The app's targets and meal plan follow one set of rules. Changing them, even towards something that sounds healthier, is a product decision, not a fix.
 
-## Diet constraints (hard rules)
+## Food rules (hard)
 
-- **Fish and seafood are allowed** (changed Nov 2026; before that they were excluded).
-- **No pork, no alcohol, no shellfish** — enforced via Edamam's `HEALTH_LABELS = ["pork-free", "alcohol-free", "shellfish-free"]` in `edamam_sync.py`, and via `PORK_EXCLUDED_SETS` in `fitchef_sync.py` (a weaker guarantee — FitChef only has per-ingredient bacon/ham excludes, no generic "pork" tag; don't treat it as equivalent to Edamam's label).
-- **One meal library, no fixed A/B options** (Nov 2026). Meals live in `content/meal_library.py`, tagged by meal of day (breakfast, lunch, dinner, snack, suhoor, iftar), main protein and tags. The 14-day plan (`PLAN_DAYS`) puts one library meal in each slot; people swap any slot for another library meal that suits it (`mobile/src/lib/mealLibrary.js`). The Egyptian/Syrian split is gone.
-- **Numbers come from ingredients**, never typed in: each meal lists ingredient portions from `content/ingredients.py` (USDA FoodData Central SR Legacy, public domain, FDC id per row). Dish names may match well-known recipes; amounts and steps are written for Fitness OS, and no third-party recipe text or photos are bundled.
-- **Structured portions, not calorie-counting** — the user philosophy is explicit two-option meals with fixed items, not an open food log. Don't propose free-form calorie/macro entry as a "simpler" alternative; that's a different product than this one.
+- **No pork, no alcohol** anywhere in the meal library (`tests/test_meal_library.py` bans the words). Fish and seafood are fine.
+- **One meal library.** Every meal lives in `content/meal_library.py`, tagged by the meals of the day it suits (breakfast, lunch, dinner, snack, suhoor, iftar), main protein and tags. The 14-day plan (`PLAN_DAYS` in `content/meal_plan.py`) puts a default library meal in each slot, and people swap any slot for another meal that suits it (`mobile/src/lib/mealLibrary.js`). Day 14 is a refeed day.
+- **Numbers come from ingredients**, never typed in: each meal lists portions of `content/ingredients.py` rows (USDA FoodData Central, public domain, FDC id per row). Steps are written in our own words; no third-party recipe text or photos.
+- **A plan, not a food log.** Meals are ticked, swapped or scaled. People can add their own foods (`myFoods.js`), but there's no food search, barcode scanning or food database (PRODUCT.md "Won't now").
 
-## Calorie/macro methodology — don't hand-pick numbers
+## Targets: `mobile/src/lib/macros.js` is the only source
 
-`macro_targets.get_macro_targets()` is the only source of truth for daily targets, and it's a real calculation, not a constant:
-1. **BMR**: Mifflin-St Jeor (`content/tdee.py bmr_mifflin_st_jeor`) — `10×weight + 6.25×height − 5×age (+5 male / −161 female)`.
-2. **TDEE**: BMR × activity multiplier (`ACTIVITY_MULTIPLIERS`, sedentary 1.2 → very_active 1.9).
-3. **Deficit**: derived from `baseline.py`'s `target_rate_kg_per_week` — the pace *already implied* by the profile's own goal weight and goal date — converted via `KCAL_PER_KG_FAT = 7700`, capped to `MAX_DAILY_DEFICIT = 1000` and floored at `MIN_DAILY_KCAL = 1200`. Never hand-pick a deficit (no generic "500 kcal/day") — the whole point of this design is that the calorie target and the dashboard's predicted-goal-date projection can never silently disagree with each other. If you change one, you change both, because they share this one calculation.
-4. **Macro split**: protein `PROTEIN_G_PER_KG = 2.0` (high end of evidence-based range for a cut, favors muscle retention on a deficit), fat `FAT_G_PER_KG = 0.8` (hormonal-health floor, independent of deficit size), carbs fill the remainder.
-5. **Fallback**: `content.meal_plan.MACRO_TARGETS` (static band) when there isn't enough profile data yet (no weight logged, or age outside `MIN_AGE_YEARS`/`MAX_AGE_YEARS`) — this is the *only* place a fixed constant belongs; don't reintroduce fixed numbers anywhere else in the calculation path.
+`content/tdee.py` is a frozen old copy; the app's maths lives in `macros.js` and its tests.
 
-Refeed day (day 14 of the 14-day rotation, `is_refeed`) is a genuine higher-calorie day (~2400-2600 kcal per the README), same protein target (preserve muscle) with extra carbs/fat — see `fitchef_sync.py`'s `REFEED_EXTRA_CARBS_G`/`REFEED_EXTRA_FAT_G` for the exact shape if adding a refeed-aware feature elsewhere.
+1. **BMR** Mifflin-St Jeor, times an activity multiplier (sedentary 1.2 to very active 1.9) = TDEE. With enough watch days and the setting on, measured active calories replace the multiplier (`activity.js`).
+2. **By goal direction:**
+   - *lose:* the deficit for the pace to the goal weight by the goal date, capped at 25% of TDEE (`max_deficit_share` from `scripts/export_content.py`, one limit for everyone), 1000 kcal a day and 1% of body weight a week, and never below 1500 kcal (men) / 1200 (women);
+   - *recomp:* a small deficit of 10-15% of TDEE (12.5% default), same floors;
+   - *maintain:* TDEE; *gain:* TDEE + 300 kcal.
+3. **Protein** 2.0 / 2.2 / 1.8 / 1.6 g per kg of **goal** weight (lose / recomp / maintain / gain); **fat** 0.8 g/kg of goal weight; carbs fill the rest.
+4. **Safety gates win** (`safety.js`): a gated person gets no deficit, capped protein (1.2 g/kg), or hidden numbers; nursing adds 400 kcal. Skipped screening counts as gated.
+5. **Ramadan** caps the deficit at 15% (`ramadan.js`); after the goal, **maintenance** steps calories back up (`maintenance.js`).
+6. Never hand-pick a number (no flat "500 kcal deficit"). The target, the pace band and the goal date all come from the same maths, so they can't disagree.
 
-## Edamam sync specifics (if touching edamam_sync.py/edamam_client.py)
+## Portions and shopping
 
-- Recipe macros come back **per whole recipe** — always divide by `yield` (servings) before using a number anywhere else in the app; `normalize_recipe()` already does this, don't re-derive it differently elsewhere.
-- Two distinct ingredient representations exist for two distinct jobs: `ingredients` (exact per-recipe phrasing, e.g. "4 boneless chicken breasts") is for *display*; `structured_ingredients` (normalized food name + foodId + weight in grams) is for the *shopping list*, specifically so "1 clove garlic" / "2 cloves garlic" merge into one line instead of listing near-duplicates. Using the display form for aggregation was a real shipped bug — don't reintroduce it.
-- Edamam's real per-account rate limit is much tighter than documented — see `sync-job-pattern` for the retry/backoff handling this requires; don't add a new Edamam call site that skips `edamam_client.search_recipes()`'s existing retry wrapper.
+- `portions.js` gives everyone one factor: their kcal target over the plan's normal day. Inside 0.95-1.05 nothing changes; 0.7-1.4 scales portions in kitchen steps (carbs and fat move first, protein last); outside that the plan shows unscaled with a calm note.
+- `shopping.js` builds the week's list from the meals actually shown (swaps included), merged by ingredient key, so "1 clove garlic" and "2 cloves garlic" are one line.
 
-## Eating-out guidance
+## Eating out
 
-`content/eating_out_guide.py`'s tips are keyed by meal-slot bucket (`breakfast`/`lunch`/`dinner`/`snack`), shown per-meal on `/meals` plus a general set. New tips should stay practical/swap-oriented ("choose grilled over fried") consistent with the existing tone, not generic nutrition advice — the user already has the structured plan; eating-out tips exist for the exception case.
+`content/eating_out_guide.py` tips are keyed by meal slot and stay practical swaps ("grilled, not fried"), not general nutrition advice.
