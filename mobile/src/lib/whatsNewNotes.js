@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.40',
+    items: [
+      { icon: 'check', text: 'Behind-the-scenes updates to the app\'s building blocks. Nothing should look different.' },
+    ],
+  },
+  {
     version: '1.1.39',
     items: [
       { icon: 'dumbbell', text: 'Gym mode is now on: during a workout the tab bar hides and Back pauses. Turn it off in Settings > Training.' },
