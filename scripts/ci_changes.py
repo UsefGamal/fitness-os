@@ -16,6 +16,7 @@ APP_FILES = {
     "scripts/export_content.py",
     "scripts/ci_changes.py",
     ".github/workflows/ci.yml",
+    ".github/actions/node-setup/action.yml",
 }
 
 

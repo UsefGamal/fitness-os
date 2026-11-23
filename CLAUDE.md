@@ -45,7 +45,7 @@ Python: `pip install -r requirements-dev.txt && pytest && ruff check .` (repo ro
 
 ## CI
 
-`ci.yml` jobs: `changes` (path filter, scripts/ci_changes.py) -> `js` (UTC + Africa/Cairo: coverage, i18n, ESLint, tsc, audit), `screens` (harness, 4 workers via `E2E_WORKERS`), `device` (device + journeys), `python`. PR runs cancel older runs; a full run is ~4 min. `android.yml` builds a debug APK per PR; a `v*` tag builds the signed release APK. The release keystore is never committed.
+`ci.yml` jobs: `changes` (path filter, scripts/ci_changes.py) -> `js` (coverage in UTC + Africa/Cairo; i18n, ESLint, tsc and audit once), `screens` (harness, 8 workers via `E2E_WORKERS`), `device` (device + journeys), `python`. Shared setup lives in `.github/actions/` (`node-setup` for CI, `apk-setup` for the debug and release APK builds). PR runs cancel older runs; a full run is ~2 min. `android.yml` builds a debug APK per PR; a `v*` tag builds the signed release APK. The release keystore is never committed.
 
 ## Code rules
 

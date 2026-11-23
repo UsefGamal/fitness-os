@@ -1,0 +1,55 @@
+name: Node setup for the phone checks
+description: >
+  Node 22 with the npm cache, Python 3.12 (export_content.py turns content/
+  into mobile/src/content.json), npm ci in mobile/, and optionally
+  Playwright's Chromium. Shared by the js, screens and device jobs so the
+  setup is written once.
+
+inputs:
+  playwright:
+    description: "true to also install Playwright's Chromium"
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: "22"
+        cache: npm
+        cache-dependency-path: mobile/package-lock.json
+
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: "3.12"
+
+    - shell: bash
+      working-directory: mobile
+      run: npm ci --no-audit --no-fund
+
+    # The browser (about 150 MB) is kept between runs, keyed on the
+    # Playwright version only. (Keying on package-lock.json missed on every
+    # PR, because each PR bumps the app version written in it.)
+    - id: pw
+      if: ${{ inputs.playwright == 'true' }}
+      shell: bash
+      working-directory: mobile
+      run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+    - id: pw-cache
+      if: ${{ inputs.playwright == 'true' }}
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+    - if: ${{ inputs.playwright == 'true' && steps.pw-cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      working-directory: mobile
+      run: npx playwright install --with-deps chromium
+
+    # On a cache hit only the browser's system libraries install.
+    - if: ${{ inputs.playwright == 'true' && steps.pw-cache.outputs.cache-hit == 'true' }}
+      shell: bash
+      working-directory: mobile
+      run: npx playwright install-deps chromium
