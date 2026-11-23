@@ -1561,8 +1561,6 @@ button.backup-link { background: none; border: 0; font: inherit; text-align: sta
 .slot-tick .check::after { content: none; }
 .slot-tick.on { border-color: var(--accent-fill); }
 /* Green budget (design laws #10): the warm-up reads as body text, only its icon is green. */
-details.warm-more > summary { color: var(--text); font-weight: 600; gap: 8px; }
-details.warm-more > summary .icon { color: var(--accent); flex: none; }
 /* Workout list (design laws #13): a small muscle picture when there is no photo. */
 .ex-thumb.map-sm { padding: 3px; }
 .ex-thumb.map-sm img { width: 100%; height: 100%; object-fit: contain; }
@@ -1597,3 +1595,17 @@ details.last-time[open] { padding-bottom: 10px; }
 .home-customize { display: flex; justify-content: center; align-items: center; min-height: 44px; margin-top: 12px; color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); }
 .hero-card .hero-value .num { font-size: calc(var(--fs-display) * var(--ts)); }
 .hero-card .hero-value .unit { font-size: calc(var(--fs-sub) * var(--ts)); }
+/* Plan: the warm-up as one row that opens; muscle shapes beside the names. */
+details.warm-more { background: var(--surface); border-radius: var(--radius); padding: 0 16px; margin-bottom: 8px; box-shadow: var(--card-shadow); }
+details.warm-more > summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 56px; cursor: pointer; }
+details.warm-more > summary::-webkit-details-marker { display: none; }
+details.warm-more > summary > .icon:first-child { color: var(--accent); flex: none; width: 20px; height: 20px; }
+details.warm-more .warm-title { display: block; font-weight: 600; color: var(--text); }
+details.warm-more .warm-sub { display: block; color: var(--muted); font-size: calc(var(--fs-foot) * var(--ts)); }
+details.warm-more > summary .chev { flex: none; width: 16px; height: 16px; color: var(--faint); transform: rotate(90deg); transition: transform 0.15s ease; }
+details.warm-more[open] > summary .chev { transform: rotate(-90deg); }
+details.warm-more[open] { padding-bottom: 12px; }
+.mtags.shapes { gap: 3px; flex-wrap: nowrap; }
+.mtags.shapes .mtag { padding: 0; background: none; }
+.plan-links { margin: 8px 0 8px; }
+.card-link .icon { width: 18px; height: 18px; margin-inline-end: 6px; }
