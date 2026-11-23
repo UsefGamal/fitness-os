@@ -57,12 +57,30 @@ esac
 
 cd "$app"
 npm ci --no-audit --no-fund
-npm test
+# APK_SKIP_TESTS=1 skips the unit tests for a debug build only (CI's js job
+# has already run them). A release build always runs them.
+if [ "${APK_SKIP_TESTS:-}" = 1 ] && [ "$mode" = debug ]; then
+  echo "Unit tests skipped (APK_SKIP_TESTS=1, debug build)."
+else
+  npm test
+fi
 npm run build:mobile
 
 cd android
 chmod +x gradlew
-./gradlew --no-daemon "$task"
+# A busy Maven Central (429, timeouts) fails a build that changed nothing:
+# after a download failure, wait a minute and run Gradle once more.
+log="$(mktemp)"
+gradle() { ./gradlew --no-daemon "$task" 2>&1 | tee "$log"; }
+if ! gradle; then
+  if grep -qE 'status code (429|5[0-9][0-9])|Could not (GET|HEAD) |Read timed out|Connect timed out|Connection reset' "$log"; then
+    echo "Gradle could not download something; trying once more in 60 s."
+    sleep 60
+    gradle
+  else
+    exit 1
+  fi
+fi
 
 mkdir -p "$out"
 cp "$built" "$out/fitness-os-$mode.apk"

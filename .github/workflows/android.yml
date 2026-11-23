@@ -11,10 +11,10 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-    paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml"]
+    paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml", ".github/actions/apk-setup/**"]
   pull_request:
     branches: [main]
-    paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml"]
+    paths: ["mobile/**", "content/**", "scripts/**", ".github/workflows/android.yml", ".github/actions/apk-setup/**"]
   workflow_dispatch:
     inputs:
       update_test_tag:
@@ -43,67 +43,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      # scripts/export_content.py turns content/ into the app's content.json.
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-
-      # Pillow shrinks the bundled exercise photos to WebP (about half the size).
-      - name: Install Pillow
-        run: pip install pillow==12.3.0
-
-      # The photos only change when content/exercise_photos.py pins a new
-      # dataset commit, so keep the converted set between runs.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: mobile/public/exercise-db
-          key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
-
-      # Meal photos come from Wikimedia Commons, which limits request
-      # rates. Each run starts from the last run's set, fetches what is
-      # missing for at most 5 minutes, and saves the set straight away (so
-      # a later failure can't lose it). A photo still missing shows a
-      # placeholder and comes in on a later run. The builds below don't
-      # download again (MEAL_PHOTOS_SKIP).
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: mobile/public/meal-photos
-          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
-          # The second key keeps the photos already fetched when
-          # content/meal_photos.py changes; the script refetches only new or
-          # changed ones (titles.json). Without it every edit started from zero.
-          restore-keys: |
-            meal-photos-${{ hashFiles('content/meal_photos.py') }}-
-            meal-photos-
-
-      - name: Fetch meal photos
-        timeout-minutes: 8
-        continue-on-error: true
-        env:
-          MEAL_PHOTOS_BUDGET: "300"
-        run: python scripts/fetch_meal_photos.py mobile/public/meal-photos
-
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: mobile/public/meal-photos
-          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
-
-      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: gradle
+      # Node, Python + Pillow, the photos, JDK 21 and the Gradle cache:
+      # one setup for the debug and the release build.
+      - id: setup
+        uses: ./.github/actions/apk-setup
 
       # ── Debug: every PR and main push ─────────────────────────────────
       - name: Build debug APK
         env:
           MEAL_PHOTOS_SKIP: "1"
+          # The js job in CI runs the same tests (with coverage, in two time
+          # zones), so the debug build doesn't run them again. The release
+          # build always does.
+          APK_SKIP_TESTS: "1"
           APK_VERSION_CODE: ${{ github.run_number }}
           APK_VERSION_NAME: 0.4.${{ github.run_number }}
         run: scripts/build-apk.sh debug
@@ -117,6 +69,21 @@ jobs:
           path: dist/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Main keeps the Gradle cache that PRs and tags start from.
+      - name: Tidy the Gradle cache
+        if: ${{ github.ref == 'refs/heads/main' && steps.setup.outputs.gradle-hit != 'true' }}
+        run: |
+          rm -f ~/.gradle/caches/modules-2/modules-2.lock ~/.gradle/caches/modules-2/gc.properties
+          rm -rf ~/.gradle/caches/*/plugin-resolution ~/.gradle/caches/journal-1/*.lock
+
+      - if: ${{ github.ref == 'refs/heads/main' && steps.setup.outputs.gradle-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.setup.outputs.gradle-key }}
 
   # Tags only. The release environment (Settings > Environments) needs
   # Yusuf's approval before this job starts, and holds the signing secrets,
@@ -133,62 +100,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      # scripts/export_content.py turns content/ into the app's content.json.
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-
-      # Pillow shrinks the bundled exercise photos to WebP (about half the size).
-      - name: Install Pillow
-        run: pip install pillow==12.3.0
-
-      # The photos only change when content/exercise_photos.py pins a new
-      # dataset commit, so keep the converted set between runs.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: mobile/public/exercise-db
-          key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
-
-      # Meal photos come from Wikimedia Commons, which limits request
-      # rates. Each run starts from the last run's set, fetches what is
-      # missing for at most 5 minutes, and saves the set straight away (so
-      # a later failure can't lose it). A photo still missing shows a
-      # placeholder and comes in on a later run. The builds below don't
-      # download again (MEAL_PHOTOS_SKIP).
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: mobile/public/meal-photos
-          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
-          # The second key keeps the photos already fetched when
-          # content/meal_photos.py changes; the script refetches only new or
-          # changed ones (titles.json). Without it every edit started from zero.
-          restore-keys: |
-            meal-photos-${{ hashFiles('content/meal_photos.py') }}-
-            meal-photos-
-
-      - name: Fetch meal photos
-        timeout-minutes: 8
-        continue-on-error: true
-        env:
-          MEAL_PHOTOS_BUDGET: "300"
-        run: python scripts/fetch_meal_photos.py mobile/public/meal-photos
-
-      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: mobile/public/meal-photos
-          key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
-
-      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: gradle
+      # Node, Python + Pillow, the photos, JDK 21 and the Gradle cache:
+      # one setup for the debug and the release build.
+      - id: setup
+        uses: ./.github/actions/apk-setup
 
       # ── Release: tags only ────────────────────────────────────────────
       - name: Version from the tag

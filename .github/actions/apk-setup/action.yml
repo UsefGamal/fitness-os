@@ -1,0 +1,107 @@
+name: APK build setup
+description: >
+  Everything scripts/build-apk.sh needs: Node, Python with Pillow, the
+  exercise and meal photos, JDK 21 and the Gradle cache. Shared by the
+  debug build (every PR) and the release build (tags), so both build from
+  the same setup.
+
+outputs:
+  gradle-key:
+    description: The Gradle cache key for this build
+    value: ${{ steps.gradle-key.outputs.key }}
+  gradle-hit:
+    description: true when the Gradle cache matched the key exactly
+    value: ${{ steps.gradle-cache.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: "22"
+        cache: npm
+        cache-dependency-path: mobile/package-lock.json
+
+    # scripts/export_content.py turns content/ into the app's content.json.
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: "3.12"
+
+    # Pillow shrinks the bundled exercise photos to WebP (about half the size).
+    - name: Install Pillow
+      shell: bash
+      run: pip install pillow==12.3.0
+
+    # The photos only change when content/exercise_photos.py pins a new
+    # dataset commit, so keep the converted set between runs.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: mobile/public/exercise-db
+        key: exercise-db-${{ hashFiles('content/exercise_photos.py', 'scripts/fetch_exercise_photos.py') }}
+
+    # Meal photos come from Wikimedia Commons, which limits request rates.
+    # Each run starts from the last run's set, fetches what is missing for
+    # at most 5 minutes, and saves the set straight away (so a later
+    # failure can't lose it). A photo still missing shows a placeholder and
+    # comes in on a later run. The build doesn't download again
+    # (MEAL_PHOTOS_SKIP). The second key keeps the photos already fetched
+    # when content/meal_photos.py changes; the script refetches only new or
+    # changed ones (titles.json).
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: mobile/public/meal-photos
+        key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
+        restore-keys: |
+          meal-photos-${{ hashFiles('content/meal_photos.py') }}-
+          meal-photos-
+
+    # Never fails the build: at most 8 minutes, then carry on.
+    - name: Fetch meal photos
+      shell: bash
+      env:
+        MEAL_PHOTOS_BUDGET: "300"
+      run: |
+        timeout 480 python scripts/fetch_meal_photos.py mobile/public/meal-photos \
+          || echo "::warning::Meal photos stopped early; missing ones come in on a later run."
+
+    - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: mobile/public/meal-photos
+        key: meal-photos-${{ hashFiles('content/meal_photos.py') }}-${{ github.run_id }}
+
+    - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+      with:
+        distribution: temurin
+        java-version: "21"
+
+    # Gradle's downloads. Unlike setup-java's own cache, a changed build
+    # file (a Gradle or plugin update) still starts from the last saved set
+    # and only fetches what is new, so Maven Central sees a few requests,
+    # not hundreds (a dependabot Gradle PR failed on a 429, Nov 2026).
+    # Saved from main only (see android.yml), so PRs don't fill the cache.
+    - id: gradle-key
+      shell: bash
+      run: echo "key=gradle-${{ runner.os }}-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/android/gradle/wrapper/gradle-wrapper.properties') }}" >> "$GITHUB_OUTPUT"
+
+    - id: gradle-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ steps.gradle-key.outputs.key }}
+        restore-keys: gradle-${{ runner.os }}-
+
+    # A busy Maven Central answers 429 or times out: wait and ask again
+    # (Gradle's default is 3 tries 125 ms apart). scripts/build-apk.sh
+    # also reruns Gradle once after a download failure.
+    - name: Gradle download retries
+      shell: bash
+      run: |
+        mkdir -p ~/.gradle
+        cat >> ~/.gradle/gradle.properties <<'PROPS'
+        systemProp.org.gradle.internal.repository.max.retries=6
+        systemProp.org.gradle.internal.repository.initial.backoff=2000
+        systemProp.org.gradle.internal.http.connectionTimeout=60000
+        systemProp.org.gradle.internal.http.socketTimeout=60000
+        PROPS

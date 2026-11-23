@@ -14,6 +14,7 @@ from scripts.ci_changes import app_changed
         ["content/meal_plan.py"],
         ["scripts/export_content.py"],
         [".github/workflows/ci.yml"],
+        [".github/actions/node-setup/action.yml"],
         ["README.md", "mobile/src/lib/plan.js"],
         [],
     ],

@@ -56,76 +56,50 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      # export_content.py turns content/ into src/content.json for the tests.
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-
-      - run: npm ci --no-audit --no-fund
+      - uses: ./.github/actions/node-setup
 
       - name: Tests with coverage gate
         run: npm run coverage
 
+      # The checks below don't depend on the time zone: once is enough.
       - name: No new hard-coded strings (i18n)
+        if: ${{ matrix.tz == 'UTC' }}
         run: npm run lint:i18n
 
       - name: Code checks (ESLint)
+        if: ${{ matrix.tz == 'UTC' }}
         run: npm run lint
 
       - name: Type check on the pure helpers (JSDoc + tsc)
+        if: ${{ matrix.tz == 'UTC' }}
         run: npm run typecheck
 
       # SEC-17: what ships in the APK has no known high-severity hole.
       - name: No known high-severity holes in shipped packages
+        if: ${{ matrix.tz == 'UTC' }}
         run: npm audit --omit=dev --audit-level=high
 
   # Every screen at 360/390/412 px, left-to-right and right-to-left:
   # accessibility (axe, contrast), 44px taps, sideways scroll, page errors.
   # Counts may only go down (mobile/e2e/baseline.json), E6-S8. The harness
-  # checks 4 screens at a time.
+  # checks 8 screens at a time: most of each screen is waiting for it to
+  # settle, so 8 on the 4-core runner takes ~1 min instead of ~2 with 4.
   screens:
     needs: changes
     if: ${{ needs.changes.outputs.app == 'true' }}
     runs-on: ubuntu-latest
     env:
       TZ: Africa/Cairo
+      E2E_WORKERS: "8"
     defaults:
       run:
         working-directory: mobile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/node-setup
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-
-      - run: npm ci --no-audit --no-fund
-
-      # The browser is kept between runs (about 150 MB, keyed on the
-      # Playwright version); only its system libraries install each time.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: pw-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('mobile/package-lock.json') }}
-
-      - if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+          playwright: "true"
 
       - name: Phone harness
         timeout-minutes: 15
@@ -152,31 +126,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/node-setup
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.12"
-
-      - run: npm ci --no-audit --no-fund
-
-      # The browser is kept between runs (about 150 MB, keyed on the
-      # Playwright version); only its system libraries install each time.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: pw-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('mobile/package-lock.json') }}
-
-      - if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+          playwright: "true"
 
       # P14-17: setup states, 3 years of data at 6x slower CPU, midnight,
       # and the file mirror against a fake file system.
