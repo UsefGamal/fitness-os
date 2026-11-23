@@ -20,11 +20,22 @@ def _job(name, job):
 
 
 def test_every_action_is_pinned_to_a_commit():
-    for f in WORKFLOWS.glob("*.yml"):
+    # The workflows and the shared setup steps in .github/actions/. A local
+    # action (./.github/actions/...) is this repo's own code at the same
+    # commit, so it needs no pin; the actions inside it do.
+    local = ROOT / ".github" / "actions"
+    files = [*WORKFLOWS.glob("*.yml"), *local.glob("*/action.yml")]
+    assert len(files) > 3
+    for f in files:
         for line in f.read_text(encoding="utf-8").splitlines():
             m = re.search(r"uses:\s*([^\s#]+)", line)
-            if m:
-                assert re.fullmatch(r"[\w.-]+/[\w.-]+(?:/[\w.-]+)*@[0-9a-f]{40}", m.group(1)), f"{f.name}: {m.group(1)}"
+            if not m:
+                continue
+            ref = m.group(1)
+            if ref.startswith("./.github/actions/"):
+                assert (ROOT / ref / "action.yml").is_file(), f"{f.name}: {ref}"
+                continue
+            assert re.fullmatch(r"[\w.-]+/[\w.-]+(?:/[\w.-]+)*@[0-9a-f]{40}", ref), f"{f.name}: {ref}"
 
 
 def test_the_default_token_can_only_read():
