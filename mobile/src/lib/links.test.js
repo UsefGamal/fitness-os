@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 
-import { RELEASES_URL, safeOutside, safeVideo, SHARE_APP_TEXT } from './links.js';
+import { fromPlay, PLAY_URL, RELEASES_URL, safeOutside, safeVideo, SHARE_APP_TEXT, shareAppText, updateUrl } from './links.js';
 
 test('safeVideo keeps https links to the video sites', () => {
   assert.equal(safeVideo('https://www.youtube.com/watch?v=abc'), 'https://www.youtube.com/watch?v=abc');
@@ -48,4 +48,18 @@ test('no new network code: only the two fetches of files inside the app (UPD-1)'
     if (/\bfetch\(|XMLHttpRequest|sendBeacon|new WebSocket|EventSource\(/.test(readFileSync(new URL(file, root), 'utf8'))) hits.push(file.replaceAll('\\', '/'));
   }
   assert.deepEqual(hits.sort(), ['store/catalogue.js', 'store/share.js']);
+});
+
+test('a copy from Google Play updates and shares through Play; any other copy through GitHub (PLAY-1)', () => {
+  assert.equal(PLAY_URL, 'https://play.google.com/store/apps/details?id=com.usefgamal.fitnessos');
+  assert.equal(safeOutside(PLAY_URL), PLAY_URL);
+  assert.equal(fromPlay('com.android.vending'), true);
+  assert.equal(updateUrl('com.android.vending'), PLAY_URL);
+  assert.equal(shareAppText('com.android.vending'), `Tafra: a free training and meal plan app that keeps your data on your phone. Download: ${PLAY_URL}`);
+  // Sideloaded from a browser or file manager, another store, or unknown.
+  for (const other of [null, undefined, '', 'com.google.android.packageinstaller', 'com.sec.android.app.samsungapps', 'com.android.vending.evil']) {
+    assert.equal(fromPlay(other), false, String(other));
+    assert.equal(updateUrl(other), RELEASES_URL);
+    assert.equal(shareAppText(other), SHARE_APP_TEXT);
+  }
 });

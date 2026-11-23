@@ -54,13 +54,16 @@ public class DevicePlugin extends Plugin {
         call.resolve(out);
     }
 
-    /** Ask Android to let reminders run (one system dialog), or open the
-     * app's battery list when that dialog isn't available. */
+    /** Open Tafra's own Android settings page, where Battery > Unrestricted
+     * lets reminders run, or the phone's battery list if that page won't
+     * open. PLAY-1: Google Play only allows the one-tap "stop optimising"
+     * dialog (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS) for a few kinds of app,
+     * and a workout planner isn't one, so the app no longer asks for it. */
     @PluginMethod
     public void allowBackground(PluginCall call) {
         Context c = getContext();
-        Intent ask = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + c.getPackageName()));
-        if (!start(ask)) start(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        Intent page = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + c.getPackageName()));
+        if (!start(page)) start(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
         call.resolve();
     }
 

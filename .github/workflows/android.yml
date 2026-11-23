@@ -63,6 +63,15 @@ jobs:
       - name: Check debug APK installs beside the real app
         run: scripts/check-apk.sh dist/fitness-os-debug.apk com.usefgamal.fitnessos.debug
 
+      # PLAY-1: a release also builds a Play bundle. Building it here (from
+      # the web build above, no signing) catches a bundle-only break on the
+      # PR instead of on the tag.
+      - name: Check the Play bundle builds
+        working-directory: mobile/android
+        env:
+          APK_VERSION_CODE: ${{ github.run_number }}
+        run: ./gradlew --no-daemon bundleRelease
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: fitness-os-apk-${{ github.run_number }}
@@ -120,12 +129,13 @@ jobs:
           MEAL_PHOTOS_SKIP: "1"
         run: scripts/build-apk.sh unsigned
 
-      - name: Sign the release APKs
+      - name: Sign the release APK and Play bundle
         env:
           KEYSTORE_B64: ${{ secrets.FITNESS_OS_KEYSTORE_BASE64 }}
           FITNESS_OS_KEYSTORE_PASSWORD: ${{ secrets.FITNESS_OS_KEYSTORE_PASSWORD }}
           FITNESS_OS_KEY_ALIAS: ${{ secrets.FITNESS_OS_KEY_ALIAS }}
           FITNESS_OS_KEY_PASSWORD: ${{ secrets.FITNESS_OS_KEY_PASSWORD }}
+          CERT_SHA256: ${{ vars.FITNESS_OS_CERT_SHA256 }}
         run: |
           if [ -z "$KEYSTORE_B64" ] || [ -z "$FITNESS_OS_KEYSTORE_PASSWORD" ]; then
             echo "::error::A release needs the FITNESS_OS_KEYSTORE_BASE64 and FITNESS_OS_KEYSTORE_PASSWORD secrets (see mobile/README.md, Releases)."
@@ -133,6 +143,12 @@ jobs:
           fi
           scripts/sign-apk.sh dist/fitness-os-unsigned.apk dist/fitness-os-release.apk
           rm -f dist/fitness-os-unsigned*.apk
+          # PLAY-1: the same build as a Play bundle, signed with the same key
+          # and checked against the same certificate. It is a separate
+          # artifact (not on the GitHub release): Yusuf uploads it to Play.
+          mkdir -p play
+          scripts/sign-aab.sh dist/fitness-os-unsigned.aab "play/tafra-${APK_VERSION_NAME}.aab" "$CERT_SHA256"
+          rm -f dist/fitness-os-unsigned.aab
 
       - name: Check release ID, version and signing key
         env:
@@ -166,6 +182,15 @@ jobs:
         with:
           name: fitness-os-apk-${{ github.run_number }}
           path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      # Download this from the run's page and upload it in Play Console >
+      # Testing > Closed testing > Create new release (docs/play/README.md).
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tafra-play-bundle-${{ env.APK_VERSION_NAME }}
+          path: play/*.aab
           if-no-files-found: error
           retention-days: 30
 

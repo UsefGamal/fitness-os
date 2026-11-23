@@ -228,9 +228,12 @@ def test_only_the_sign_step_sees_the_key():
     assert "scripts/sign-apk.sh" in step
     for tool in ("build-apk.sh", "npm ", "gradlew", "npx "):
         assert tool not in step, tool
-    sign_lines = (ROOT / "scripts" / "sign-apk.sh").read_text(encoding="utf-8").splitlines()
-    sign = "\n".join(line for line in sign_lines if not line.lstrip().startswith("#"))
-    for tool in ("npm", "gradlew", "node "):
-        assert tool not in sign, tool
+    # PLAY-1: the Play bundle is signed in that same step, with JDK tools only.
+    assert "scripts/sign-aab.sh" in step
+    for script in ("sign-apk.sh", "sign-aab.sh"):
+        sign_lines = (ROOT / "scripts" / script).read_text(encoding="utf-8").splitlines()
+        sign = "\n".join(line for line in sign_lines if not line.lstrip().startswith("#"))
+        for tool in ("npm", "gradlew", "node "):
+            assert tool not in sign, (script, tool)
     build = (ROOT / "scripts" / "build-apk.sh").read_text(encoding="utf-8")
     assert "unset FITNESS_OS_KEYSTORE FITNESS_OS_KEYSTORE_PASSWORD" in build

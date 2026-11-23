@@ -22,6 +22,18 @@ export async function signingCode() {
   }
 }
 
+/** The package that installed this app ("com.android.vending" for Google
+ * Play), or null in a browser, an older APK, or when Android won't say.
+ * PLAY-1: decides where "Check for updates" and "Share Tafra" point. */
+export async function installer() {
+  if (!isNative()) return null;
+  try {
+    return (await AppInfo.installer()).installer || null;
+  } catch {
+    return null;
+  }
+}
+
 /** Write the start line (lib/dataCheck.js startLine) to the phone's own
  * log, where the release update test reads it with adb. Counts and a hash
  * only. A no-op in a browser or an older APK. PROOF-1. */
