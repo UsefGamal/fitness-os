@@ -22,6 +22,7 @@ This is the scope for version 1, the build Yusuf shares with friends on 24 Jan 2
 
 - Signed APKs come only from tags, with one keystore and one app ID. Debug builds install beside the real app (`.debug`), never over it.
 - Every tag that changes the data format is rehearsed on a real phone first: install the previous release, update over it, and compare the exports.
+- Google Play, for testers first (23 Nov 2026, Yusuf asked for it for the friends' pilot): the same build and key as the GitHub APK, so either installs over the other. Steps in `docs/play/README.md`.
 - A pilot with 2-3 friends (including one Xiaomi/Redmi and one Infinix/Tecno phone) and a fix week come before the wide share.
 - The dated plan is in the roadmap doc's "Roadmap and backlog" tab.
 
@@ -32,7 +33,6 @@ These stay out of v1. Each one either needs a server, puts health data at risk, 
 - A plan generator. Plans come from a few vetted templates.
 - Food search, barcode scanning or a food database.
 - Accounts, sync between phones, or any server.
-- The Play Store. The APK is shared directly.
 - Several profiles on one phone.
 - Leaderboards, or "streak at risk" push messages.
 - Fiber hints.

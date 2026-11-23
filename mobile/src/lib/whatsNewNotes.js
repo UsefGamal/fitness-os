@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.41',
+    items: [
+      { icon: 'bell', text: 'The reminder Battery fix now opens Tafra\'s own settings. Tap Battery, then Unrestricted.' },
+      { icon: 'upload', text: 'Getting ready for Google Play: if you install Tafra from Play, Check for updates and Share Tafra use Play too.' },
+    ],
+  },
+  {
     version: '1.1.40',
     items: [
       { icon: 'check', text: 'Behind-the-scenes updates to the app\'s building blocks. Nothing should look different.' },

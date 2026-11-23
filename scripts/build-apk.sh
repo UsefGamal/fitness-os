@@ -5,8 +5,9 @@
 #
 #   scripts/build-apk.sh            debug APK (debug-signed, for sideloading)
 #   scripts/build-apk.sh release    release APK, signed with your keystore
-#   scripts/build-apk.sh unsigned   release APK with no signature, for
-#                                   scripts/sign-apk.sh (what CI does, so
+#   scripts/build-apk.sh unsigned   release APK and Play bundle (AAB) with no
+#                                   signature, for scripts/sign-apk.sh and
+#                                   scripts/sign-aab.sh (what CI does, so
 #                                   the build never sees the key)
 #
 # Needs Node 22+, Python 3.12 (to export content/), git (to fetch the
@@ -33,6 +34,7 @@
 set -euo pipefail
 
 mode="${1:-debug}"
+bundle=""
 root="$(cd "$(dirname "$0")/.." && pwd)"
 app="$root/mobile"
 out="$root/dist"
@@ -51,7 +53,10 @@ case "$mode" in
     # The key must not be here: this build runs npm and Gradle code.
     unset FITNESS_OS_KEYSTORE FITNESS_OS_KEYSTORE_PASSWORD FITNESS_OS_KEY_PASSWORD KEYSTORE_B64
     export FITNESS_OS_RELEASE=1
-    task=assembleRelease; built="app/build/outputs/apk/release/app-release-unsigned.apk" ;;
+    # Google Play takes only bundles (.aab), so a release builds both from
+    # the same web build: the APK for GitHub, the bundle for Play (PLAY-1).
+    task=assembleRelease; built="app/build/outputs/apk/release/app-release-unsigned.apk"
+    bundle="app/build/outputs/bundle/release/app-release.aab" ;;
   *) echo "usage: $0 [debug|release|unsigned]" >&2; exit 2 ;;
 esac
 
@@ -71,7 +76,7 @@ chmod +x gradlew
 # A busy Maven Central (429, timeouts) fails a build that changed nothing:
 # after a download failure, wait a minute and run Gradle once more.
 log="$(mktemp)"
-gradle() { ./gradlew --no-daemon "$task" 2>&1 | tee "$log"; }
+gradle() { ./gradlew --no-daemon "$task" ${bundle:+bundleRelease} 2>&1 | tee "$log"; }
 if ! gradle; then
   if grep -qE 'status code (429|5[0-9][0-9])|Could not (GET|HEAD) |Read timed out|Connect timed out|Connection reset' "$log"; then
     echo "Gradle could not download something; trying once more in 60 s."
@@ -85,3 +90,7 @@ fi
 mkdir -p "$out"
 cp "$built" "$out/fitness-os-$mode.apk"
 echo "Built $out/fitness-os-$mode.apk"
+if [ -n "$bundle" ]; then
+  cp "$bundle" "$out/fitness-os-$mode.aab"
+  echo "Built $out/fitness-os-$mode.aab"
+fi

@@ -54,6 +54,30 @@ public class AppInfoPlugin extends Plugin {
     }
 
     /**
+     * PLAY-1: which app installed this one ("com.android.vending" when it
+     * came from Google Play, a file manager or browser for a GitHub APK).
+     * Resolves { installer: String or null }.
+     */
+    @PluginMethod
+    public void installer(PluginCall call) {
+        JSObject out = new JSObject();
+        try {
+            PackageManager pm = getContext().getPackageManager();
+            String pkg = getContext().getPackageName();
+            String from;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                from = pm.getInstallSourceInfo(pkg).getInstallingPackageName();
+            } else {
+                from = pm.getInstallerPackageName(pkg);
+            }
+            out.put("installer", from);
+        } catch (Exception e) {
+            out.put("installer", (String) null);
+        }
+        call.resolve(out);
+    }
+
+    /**
      * PROOF-1: writes the app's start line ("OK 0.9.8 W 12 · S 140 · M 61 ·
      * B 3 · 3F9A-12CD") to logcat under one tag, so the release update test
      * (scripts/update-over-install.sh) can compare the data before and after
