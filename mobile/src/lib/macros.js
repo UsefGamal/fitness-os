@@ -15,7 +15,7 @@
 // 1200 floor); this file has moved on from it on purpose.
 // Phone only, and only when switched on in Settings: with enough days of
 // watch data from Health Connect, the TDEE follows the measured active calories instead of the activity
-// level (lib/activity.js). The web app has no watch data, so it never does.
+// level (lib/activity.js).
 import { activeKcalAverage, watchTdee } from './activity.js';
 import { addDays, daysBetween } from './dates.js';
 import { deficitShare, ramadanActive } from './ramadan.js';
@@ -26,10 +26,9 @@ import { adjustTotal } from './targetCheck.js';
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
 const KCAL_PER_KG_FAT = 7700;
 const MAX_DAILY_DEFICIT = 1000;
-// The share-of-TDEE cap is off (1 = no cap): with Yusuf's maintenance near
-// 2940 kcal a quarter cap held him at 0.67 kg a week and flagged most of his
-// meal plan. The friends build turns it back on at 0.25 (rule A, E3-S13)
-// through content.nutrition.max_deficit_share.
+// The share-of-TDEE cap here is the fallback (1 = no cap). The app sets one
+// limit for everyone, 0.25 of TDEE (rule A, E3-S13), through
+// content.nutrition.max_deficit_share (scripts/export_content.py).
 export const MAX_DEFICIT_SHARE = 1; // of TDEE
 export const RECOMP_DEFICIT = { low: 0.1, high: 0.15, default: 0.125 }; // of TDEE
 export const MAX_LOSS_SHARE_BW = 0.01; // of body weight a week

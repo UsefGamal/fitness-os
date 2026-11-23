@@ -1,7 +1,6 @@
 // Quests: daily habits you tick by hand, plus weekly quests and once-ever
-// milestones earned from logged data. Mirrors quest_engine.py and
-// routers/bonus.py, except the week starts on Sunday like the rest of the
-// app (the old site used ISO Monday weeks).
+// milestones earned from logged data. Weeks start on the person's week
+// start, like the rest of the app.
 import { daysBetween, weekStart } from './dates.js';
 import { moduleOn, nextId, waterGoal } from './data.js';
 

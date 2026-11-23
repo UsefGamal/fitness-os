@@ -601,7 +601,7 @@ export default {
   'install.card.continue': 'Continue',
   'install.card.anyway': 'Install anyway',
   'install.card.update': 'Update',
-  'install.note': 'Button names differ a little between phones. If something looks different, message Yusuf before you uninstall anything.',
+  'install.note': 'Button names differ a little between phones. If something looks different, send a bug report from Settings > About before you uninstall anything.',
   'setup.installHelp': 'Help with installing and updating',
   'autoBackup.title': 'Automatic backup',
   'autoBackup.turnOn': 'Turn on automatic backup',
@@ -669,7 +669,7 @@ export default {
   'about.checkAria': 'Data check: {line}',
   'about.signing': 'Signing code',
   'about.signingNote': 'Must match the code in the release message.',
-  'about.notInstalled': "If an update says \"App not installed\", don't uninstall: that deletes your data. Message Yusuf.",
+  'about.notInstalled': "If an update says \"App not installed\", don't uninstall: that deletes your data. Send a bug report from Settings > About instead.",
   'about.report': 'Send a bug report',
   'about.reportNote': 'Versions, counts and recent errors only; nothing personal.',
 

@@ -13,7 +13,7 @@ that every plan exercise is here.
 """
 
 EXERCISE_TARGETS = {
-    # ── Yusuf's plan (content/trainer_plan.json) ─────────────────────────
+    # ── Upper / Lower / Push / Pull / Leg (content/trainer_plan.json) ────
     "15° Incline DB Press": (["chest"], ["front delts", "triceps"], "upper_chest"),
     "30° Incline DB Press": (["chest"], ["front delts", "triceps"], "upper_chest"),
     "DB Chest Press": (["chest"], ["front delts", "triceps"], "mid_chest"),

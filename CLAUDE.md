@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Tafra (repo and app ids still say fitness-os) is an offline Android app: training plan, guided workouts, macro targets, meal plan, shopping list. Capacitor + React + Zustand, data only on the phone, no server, no accounts, no telemetry. One app version for everyone. Scope: [`PRODUCT.md`](PRODUCT.md). **Every change works on a 360-412px phone screen first.**
+Tafra (repo and app ids still say fitness-os) is an offline Android app: training plan, guided workouts, macro targets, meal plan, shopping list. Capacitor + React + Zustand, data only on the phone, no server, no accounts, no telemetry. One app version for everyone. Scope: [`PRODUCT.md`](PRODUCT.md). Domain rules for Claude: `.claude/skills/` (training, nutrition, UX, feature fit, users). **Every change works on a 360-412px phone screen first.**
 
 ## Layout
 
@@ -41,11 +41,11 @@ Python: `pip install -r requirements-dev.txt && pytest && ruff check .` (repo ro
 - Each PR that changes the app (`mobile/`, `content/`) bumps `mobile/package.json` `version` (patch) **and** adds a matching entry at the top of `mobile/src/lib/whatsNewNotes.js` (1-6 short lines a friend would understand). `whatsNew.test.js` and the release build fail without it.
 - When main moves while your PR is open, merge main in and rebump above main's version. Several open PRs means whichever merges second rebumps.
 - `e2e/harness.mjs` `STATES` is a shared list several PRs touch: after each merge, merge main into the others and keep every entry.
-- Releases: Yusuf tags `vX.Y.Z` on main and approves the `release` environment in Actions. Claude can't create releases.
+- Releases: the repo owner (`UsefGamal`) tags `vX.Y.Z` on main and approves the `release` environment in Actions. Claude can't create releases.
 
 ## CI
 
-`ci.yml` jobs: `changes` (path filter, scripts/ci_changes.py) -> `js` (coverage in UTC + Africa/Cairo; i18n, ESLint, tsc and audit once), `screens` (harness, 8 workers via `E2E_WORKERS`), `device` (device + journeys), `python`. Shared setup lives in `.github/actions/` (`node-setup` for CI, `apk-setup` for the debug and release APK builds). PR runs cancel older runs; a full run is ~2 min. `android.yml` builds a debug APK per PR; a `v*` tag builds the signed release APK. The release keystore is never committed.
+`ci.yml` jobs: `changes` (path filter, scripts/ci_changes.py) -> `js` (coverage in UTC + Africa/Cairo; i18n, ESLint, tsc and audit once), `screens` (harness, 8 workers via `E2E_WORKERS`), `device` (device + journeys), `python`. Shared setup lives in `.github/actions/` (`node-setup` for CI, `apk-setup` for the debug and release APK builds). PR runs cancel older runs; a full run is ~2 min. `android.yml` builds a debug APK per PR; a `v*` tag builds the signed release APK and Play bundle. The release keystore is never committed.
 
 ## Code rules
 
@@ -61,5 +61,5 @@ Python: `pip install -r requirements-dev.txt && pytest && ruff check .` (repo ro
 
 - Branch `claude/<topic>`; pushes to `dependabot/*` are refused, so fixes go in a `claude/*` PR.
 - No "Generated with Claude Code" line and no session link in the PR body.
-- Assign `UsefGamal` and request his review.
+- Assign `UsefGamal` and request their review.
 - Stacked PRs: retarget the base to main before merging.

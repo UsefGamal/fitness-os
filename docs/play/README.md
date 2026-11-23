@@ -20,7 +20,7 @@ Play is for the friends' pilot first: friends install from a Play test link and 
 
 1. Go to [play.google.com/console/signup](https://play.google.com/console/signup) with the Google account you want to own the app.
 2. Pick **Yourself** (personal account). Pay the one-time **US$25** fee.
-3. Verify your identity (ID document) and your phone, and install the **Play Console** app on your A55 when asked: personal accounts must show they have an Android device.
+3. Verify your identity (ID document) and your phone, and install the **Play Console** app on your phone when asked: personal accounts must show they have an Android device.
 4. The contact email you give is shown on the store page. Use one you're happy to show.
 
 ### 2. Create the app

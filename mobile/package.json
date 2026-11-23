@@ -1,9 +1,9 @@
 {
   "name": "fitness-os-mobile",
   "private": true,
-  "version": "1.1.41",
+  "version": "1.1.42",
   "type": "module",
-  "description": "The standalone Fitness OS phone app. Runs inside the APK, data saved on the phone.",
+  "description": "Tafra, the offline training and meal plan app for Android. Data stays on the phone.",
   "scripts": {
     "content": "python3 ../scripts/export_content.py src/content.json",
     "dev": "npm run content && vite",
