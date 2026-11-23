@@ -127,6 +127,15 @@ export function weekDaysLine({ days, planned, need, sets }, t = tr) {
   return parts.join(' · ');
 }
 
+/** The short count beside Home's week strip (Home simplify): "2 of 3
+ * workouts", "kept" once the week is kept; the work sets live on Stats. */
+export function weekShortLine({ days, planned, need }, t = tr) {
+  if (!planned) return t(days === 1 ? 'home.weekShortOne' : 'home.weekShortN', { days });
+  // Never "4 of 3" (design laws plan #2).
+  const head = t(days > planned ? 'home.weekShortOver' : 'home.weekShort', { days, planned });
+  return days >= need ? `${head} · ${t('home.weekKept')}` : head;
+}
+
 /** The week a wrap-up on the first two days of a week (Sunday and Monday,
  * or Monday and Tuesday for a Monday week) is about, or null on other days. */
 export function wrapWeek(today, data) {

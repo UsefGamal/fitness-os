@@ -1,9 +1,8 @@
 import { Link, useNavigate } from 'react-router';
-import { useEffect, useState } from 'react';
+import { cloneElement, useEffect, useState } from 'react';
 
 import DayPicker from '../components/DayPicker.jsx';
 import Icon from '../components/Icon.jsx';
-import MetricStrip from '../components/MetricStrip.jsx';
 import QuickAction from '../components/QuickAction.jsx';
 import StatTile from '../components/StatTile.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
@@ -12,13 +11,12 @@ import WeightCard from '../components/WeightCard.jsx';
 import WorkoutCard from '../components/WorkoutCard.jsx';
 import { addDays, formatDate, longWeekday } from '../lib/dates.js';
 import * as D from '../lib/data.js';
-import { dayGroups, weekStreaks } from '../lib/insights.js';
+import { weekStreaks } from '../lib/insights.js';
 import { afterRamadan, effectiveTimes, ramadanActive } from '../lib/ramadan.js';
 import { sessionAt } from '../lib/times.js';
 import { hm, READINESS_TEXT, readiness } from '../lib/activity.js';
 import { eveningDone, eveningOn } from '../lib/evening.js';
 import { firstName, partOfDay, watchTiles } from '../lib/home.js';
-import { mealDayFor, mealStart } from '../lib/meals.js';
 import * as P from '../lib/planEdit.js';
 import { doneKeys, questsOn } from '../lib/quests.js';
 import { lastTimePreview } from '../lib/lastTime.js';
@@ -27,7 +25,7 @@ import { weekGlance } from '../lib/weekGlance.js';
 import WeekStrip from '../components/WeekStrip.jsx';
 import { t } from '../lib/i18n.js';
 import { activePlan } from '../lib/plan.js';
-import { dayMuscles } from '../lib/muscles.js';
+import { sessionMinutes } from '../lib/calendar.js';
 import { backupDue } from '../lib/durable.js';
 import { hardWeeksInARow, isRecoveryWeek, setRecoveryWeek } from '../lib/recovery.js';
 import { APP } from '../lib/version.js';
@@ -43,7 +41,7 @@ import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
 import { homeLine, homeOrder, whatsNewMode } from '../lib/interrupts.js';
 import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
-import { dismissWrap, weekDaysLine, weekStats, wrapWeek } from '../lib/weekStats.js';
+import { dismissWrap, weekShortLine, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 import FirstWeekCard from '../components/FirstWeekCard.jsx';
 import GoalReachedCard from '../components/GoalReachedCard.jsx';
@@ -69,8 +67,6 @@ export default function Today() {
   const next = programDayFor(today, T, moves);
   const nextDay = next ? P.effectiveDay(next.key, T, data) : null;
   const tonight = eveningOn(data, today);
-  const nextHits = dayMuscles(nextDay?.exercises, T);
-  const nextGroups = dayGroups(data, nextHits.unknown);
   const todays = D.workoutOn(data, today);
   const mealSlots = content.nutrition.meal_slots.length;
   const mealsDone = content.nutrition.meal_slots.filter((s) => D.mealLog(data, today, s)?.completed).length;
@@ -78,14 +74,17 @@ export default function Today() {
   const weeks = weekStreaks(data, today);
   const glance = weekGlance(data, today);
   const streak = weeks.current;
-  const mealDay = mealDayFor(today, content.nutrition, mealStart(data, content.nutrition));
   const dailyQuests = content.quests.bonus_tasks.filter((q) => q.frequency === 'daily');
   const questsDone = dailyQuests.filter((q) => doneKeys(data, today, content.quests).has(q.key)).length;
   const otherToday = data.workouts.filter((w) => w.log_date === today && w.workout_type !== 'gym');
   const healthOn = data.settings?.health?.enabled;
   const ready = healthOn ? readiness(data.health_daily, today) : null;
   const moved = healthOn ? data.health_daily?.[today] : null;
-  const tiles = watchTiles({ steps: moved?.steps ?? null, kcal: moved?.active_kcal ?? null, sleepMin: moved?.sleep_min ?? null });
+  // Watch numbers (optional): steps join the Today tiles, active kcal and
+  // sleep stay one quiet line (Home simplify). The module hides them all.
+  const tiles = D.moduleOn(data, 'activity') ? watchTiles({ steps: moved?.steps ?? null, kcal: moved?.active_kcal ?? null, sleepMin: moved?.sleep_min ?? null }) : [];
+  const steps = tiles.find((x) => x.key === 'steps');
+  const watchLine = tiles.filter((x) => x.key !== 'steps').map((x) => `${x.value} ${t(`home.tile.${x.key}`)}`).join(' · ');
   const readyLevel = ready && ready.level !== 'unknown' ? ready.level : null;
   const readyText = readyLevel ? [
     READINESS_TEXT[ready.level],
@@ -154,6 +153,12 @@ export default function Today() {
       {D.moduleOn(data, 'weight') && !data.safety?.hide_weight ? <WeightCard data={data} today={today} onLog={() => setWeighing(true)} /> : null}
     </>
   );
+  // Today's activity (Home simplify): one grid of the same tiles. Water is
+  // wide for its buttons; an odd last tile takes the whole row.
+  const halves = [];
+  if (D.moduleOn(data, 'meals')) halves.push(<StatTile key="meals" to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={t('home.mealsLogged')} />);
+  if (steps) halves.push(<StatTile key="steps" to="/stats?tab=body" icon="steps" tone="steps" value={steps.value} label={t('home.tile.steps')} />);
+  if (questsOn(data)) halves.push(<StatTile key="quests" to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={t('home.quests')} />);
   const todayBlock = (
     <>
       <div className="section-head">
@@ -163,18 +168,16 @@ export default function Today() {
       <div className="tile-grid" data-tour="today">
         {D.moduleOn(data, 'water') ? (
           <StatTile wide icon="drop" tone="water" value={water} of={`${D.waterGoal(data)} ml`} label={t('home.water')}>
-            <div className="row" style={{ gap: 6 }}>
+            <div className="row" style={{ gap: 8 }}>
               <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 250 })} onClick={() => addWater(250)}>{t('home.add250')}</button>
               <button type="button" className="mini-btn" aria-label={t('home.addWater', { ml: 500 })} onClick={() => addWater(500)}>{t('home.add500')}</button>
               <button type="button" className="mini-btn" aria-label={t('home.undoWater')} disabled={!water} onClick={() => update((d) => D.addWater(d, today, -250))}><Icon name="undo" className="icon" /></button>
             </div>
           </StatTile>
         ) : null}
-        {D.moduleOn(data, 'meals') ? (
-          <StatTile to="/meals" icon="meals" tone="meals" value={mealsDone} of={mealSlots} label={`${t('home.meals')} · ${mealDay.label}`} />
-        ) : null}
-        {questsOn(data) ? <StatTile to="/quests" icon="star" tone="quests" value={questsDone} of={dailyQuests.length} label={t('home.quests')} /> : null}
+        {halves.length % 2 ? [...halves.slice(0, -1), cloneElement(halves[halves.length - 1], { wide: true })] : halves}
       </div>
+      {watchLine ? <Link to="/stats?tab=body" className="watch-line"><span className="grow">{watchLine}</span><Icon name="chev" className="icon chev" /></Link> : null}
     </>
   );
 
@@ -217,8 +220,7 @@ export default function Today() {
       <WorkoutCard
         next={next}
         day={nextDay}
-        hits={nextHits}
-        groups={nextGroups}
+        minutes={nextDay ? sessionMinutes(nextDay) : null}
         time={sessionAt(times)}
         todays={todays}
         changed={isChangedOn(today, moves)}
@@ -244,7 +246,7 @@ export default function Today() {
             <button type="button" className="icon-btn" aria-label={t('back.hide')} onClick={() => update((d) => hideBack(d, today))}><Icon name="x" /></button>
           </div>
           <p className="muted small" style={{ margin: '0 0 4px' }}>{t(back.level === 'short' ? 'back.short' : back.level === 'fresh' ? 'back.fresh' : 'back.easy')}</p>
-          {next && sessionKeyOn(today, T, moves) !== 'rest' ? <button type="button" className="btn" onClick={() => navigate('/workout')}><Icon name="play" /> {t('back.start')}</button> : null}
+          {/* No second Start: the workout card above has it (one screen, one main action). */}
         </section>
       ) : null}
       {card === 'goal' ? (
@@ -277,14 +279,16 @@ export default function Today() {
 
       {/* The week at a glance (DV-04): position carries the meaning; a day opens it on Plan. */}
       <section className="home-week" aria-label={t('home.weekAria')}>
+        <div className="card-head">
+          <h2 className="card-title">{t('home.weekAria')}</h2>
+          <span className="muted small">{weekShortLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need })}</span>
+        </div>
         <WeekStrip week={weekView(today, T, data.session_moves || [], data)} doneDates={glance.done} onPick={(d) => navigate(`/plan?day=${d.date}`)} />
-        <div className="muted small home-week-line">{weekDaysLine({ days: glance.days, planned: weeks.week.planned, need: weeks.week.need, sets: glance.sets })}</div>
       </section>
       {weightFirst ? weightBlock : todayBlock}
       {weightFirst ? todayBlock : weightBlock}
       {newsMode === 'sheet' || (newsOpen && news.length) ? <WhatsNewSheet notes={news} onClose={() => { setNewsOpen(false); update((d) => markSeen(d, APP.version)); }} /> : null}
       {weighing ? <WeighInSheet data={data} update={update} today={today} onClose={() => setWeighing(false)} /> : null}
-      <MetricStrip tiles={tiles} />
       {/* One thin line, not a card (UX-02). */}
       {line === 'news' ? (
         <div className="backup-line" role="status">
@@ -350,6 +354,8 @@ export default function Today() {
         </div>
       </details>
       {logging ? <SessionSheet type={logging} onClose={() => setLogging(null)} /> : null}
+      {/* Personal density (Home simplify): hide what you don't use. */}
+      <Link to="/settings/modules" className="home-customize">{t('home.customize')}</Link>
     </div>
   );
 }

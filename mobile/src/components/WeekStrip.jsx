@@ -3,7 +3,7 @@
  * (BeFit item 9). */
 export default function WeekStrip({ week, doneDates = new Set(), onPick, picked = null }) {
   return (
-    <div className="week" role={onPick ? undefined : 'list'}>
+    <div className={`week${picked ? ' pickable' : ''}`} role={onPick ? undefined : 'list'}>
       {week.map((d) => {
         const cls = ['week-day', d.key === 'rest' && 'rest', d.isToday && 'today', doneDates.has(d.date) && 'done', onPick && picked === d.date && 'picked'].filter(Boolean).join(' ');
         const inner = (

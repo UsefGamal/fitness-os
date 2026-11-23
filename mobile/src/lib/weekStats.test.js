@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { homeCard } from './homeCard.js';
-import { dismissWrap, hasWeek, identityLine, pictureLines, summaryLine, weekDaysLine, weekStats, weekText, wrapDue, wrapWeek } from './weekStats.js';
+import { dismissWrap, hasWeek, identityLine, pictureLines, summaryLine, weekDaysLine, weekShortLine, weekStats, weekText, wrapDue, wrapWeek } from './weekStats.js';
 
 const content = JSON.parse(readFileSync(new URL('../content.json', import.meta.url), 'utf8'));
 const SLOTS = content.nutrition.meal_slots;
@@ -195,4 +195,12 @@ test('keptWeekBy: only the session whose day brought the week up to the need', a
   const sameDay = { ...second, workouts: [...second.workouts, wk(4, '2026-11-03')] };
   assert.equal(keptWeekBy(sameDay, sameDay.workouts[2]), 0, 'that day already counted');
   assert.equal(keptWeekBy(second, null), 0);
+});
+
+test('weekShortLine: the count beside the week strip, kept once the week is kept', () => {
+  assert.equal(weekShortLine({ days: 1, planned: 3, need: 2 }), '1 of 3 workouts');
+  assert.equal(weekShortLine({ days: 2, planned: 3, need: 2 }), '2 of 3 workouts · week kept');
+  assert.equal(weekShortLine({ days: 4, planned: 3, need: 2 }), '4 workouts, plan 3 · week kept');
+  assert.equal(weekShortLine({ days: 1, planned: 0, need: 1 }), '1 workout');
+  assert.equal(weekShortLine({ days: 0, planned: 0, need: 1 }), '0 workouts');
 });

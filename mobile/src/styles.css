@@ -186,11 +186,16 @@ button.chip { border: 0; min-height: 44px; padding: 0 12px; font-family: inherit
 /* Wraps at the space ("FB" over "A") instead of cutting off when the text size is large. */
 .week-day .s { font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-top: 2px; }
 .week-day .tick { color: var(--accent); margin-inline-start: 2px; }
+.week-day.rest { background: transparent; }
 .week-day.rest .s { color: var(--muted); font-weight: 600; }
+/* Green only for a state (Home and Plan simplify): a tick when done, an
+   outline for today (Home) or the open day (Plan). A session day is a
+   plain surface; a rest day has none. */
 .week-day.today { border-color: var(--accent); }
-.week-day.done .s { color: var(--accent); }
-.week-day.picked { background: var(--accent-dim); }
+.week-day.picked { background: var(--accent-dim); border-color: var(--accent); }
 .week-day.picked .d { color: var(--accent); }
+.week.pickable .week-day.today:not(.picked) { border-color: transparent; }
+.week.pickable .week-day.today .d { color: var(--text); font-weight: 700; }
 
 .progress { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
 .progress > span { display: block; height: 100%; width: 100%; background: var(--accent-stroke); transform-origin: left center; transition: transform 320ms cubic-bezier(.2, .8, .2, 1); will-change: transform; }
@@ -622,8 +627,8 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .other-sessions[open] > summary .chev { transform: rotate(90deg); }
 .other-sessions[open] > summary { margin-bottom: 12px; }
 
-.hero-card { display: block; color: inherit; border-radius: var(--radius-lg); padding: 16px 16px 16px 20px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), color-mix(in srgb, var(--accent) 2%, transparent) 55%), var(--surface); }
+.hero-card { display: block; color: inherit; border-radius: var(--radius-lg); padding: 16px;
+  background: var(--surface); }
 .hero-link { display: block; color: inherit; }
 .hero-link:active { opacity: 0.85; }
 .mini-btn.hero-log { flex: none; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -636,12 +641,6 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .hero-value .unit { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 600; color: var(--muted); }
 .spark { flex: none; max-width: 42%; height: auto; }
 
-.metric-strip { display: grid; padding: 16px 8px; }
-.metric { text-align: center; padding: 0 4px; }
-.metric + .metric { border-inline-start: var(--hair); }
-.metric .icon { width: 20px; height: 20px; }
-.metric-value { font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.metric-label { color: var(--muted); font-size: calc(var(--fs-foot) * var(--ts)); }
 
 .workout-card { border-radius: var(--radius-lg); }
 .session-row { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
@@ -652,8 +651,6 @@ details.explain > div:first-of-type { margin-top: 0 !important; }
 .session-icon.small .icon { width: 22px; height: 22px; }
 .session-name { font-size: calc(var(--fs-t2) * var(--ts)); font-weight: 700; letter-spacing: -0.02em; }
 .session-sub { color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); }
-.session-warm { font-size: calc(var(--fs-sub) * var(--ts)); font-weight: 600; }
-.session-detail { display: flex; align-items: center; gap: 12px; padding: 12px 0 16px; border-top: var(--hair); }
 
 /* Week strip outside a card: no bleed, a little more room per day. */
 .page > .week { margin-inline: -8px; gap: 3px; }
@@ -1133,7 +1130,6 @@ p, .page-sub, .muted, .meta, .session-sub { text-wrap: pretty; }
 /* Weight card mood (colour 6): greener on a good-pace week, neutral when it
    drifts. Never red. */
 .hero-card { transition: background 600ms ease; }
-.hero-card.neutral { background: linear-gradient(135deg, color-mix(in srgb, var(--text) 6%, transparent), transparent 55%), var(--surface); }
 
 /* Rolling digits (odometer) for the weight on Home. */
 .roll { display: inline-flex; overflow: hidden; line-height: 1; height: 1em; vertical-align: top; }
@@ -1494,9 +1490,11 @@ label.field input { transition: box-shadow 300ms ease; }
 .ready-list li.done .icon { color: var(--accent); }
 .ready-list li.done .grow { color: var(--muted); }
 .ready-list .meta { color: var(--muted); font-size: calc(var(--fs-foot) * var(--ts)); }
-.home-week { margin: 4px 0 14px; }
-
-.home-week-line { margin-top: 8px; text-align: center; }
+.home-week { margin: 8px 0 24px; }
+.home-week .card-head { padding: 0 4px; }
+/* Outside a card, like Plan's: -8 px each side keeps every day 44 px+ wide at 360 px. */
+.home-week .week { margin: 12px -8px 0; gap: 3px; }
+.home-week .week .week-day { min-height: 56px; }
 .day-times summary { min-height: 44px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
 
 /* Stats > Body (Body review, 22 Nov): one weight summary, compact weekly
@@ -1569,3 +1567,33 @@ details.warm-more > summary .icon { color: var(--accent); flex: none; }
 .ex-thumb.map-sm { padding: 3px; }
 .ex-thumb.map-sm img { width: 100%; height: 100%; object-fit: contain; }
 .story-done-time { margin-top: 16px; }
+
+/* Home and Plan simplify (Nov 2026): one card pattern. A card title
+   (semibold body size) with a quiet item on its right, then the content,
+   then quiet text links under the main button. */
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+.card-title { margin: 0; font-size: calc(var(--fs-body) * var(--ts)); font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.card .card-title { font-size: calc(var(--fs-body) * var(--ts)); margin: 0; }
+.card-head .see-all { margin-block: -8px; }
+.card-links { display: flex; justify-content: center; flex-wrap: wrap; margin: 8px 0 -8px; }
+.card-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--muted); font: inherit; font-size: calc(var(--fs-sub) * var(--ts)); cursor: pointer; }
+.card-link + .card-link { padding-inline-start: 0; }
+.card-link + .card-link::before { content: '·'; margin-inline-end: 12px; color: var(--faint); }
+.card-link:active { opacity: 0.6; }
+.workout-card .session-row { margin: 16px 0; }
+.ready-text { margin: -4px 0 16px; }
+details.last-time { padding: 0 12px; }
+details.last-time > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; list-style: none; cursor: pointer; }
+details.last-time > summary::-webkit-details-marker { display: none; }
+details.last-time > summary .chev { flex: none; width: 16px; height: 16px; color: var(--faint); transform: rotate(90deg); transition: transform 0.15s ease; }
+details.last-time[open] > summary .chev { transform: rotate(-90deg); }
+details.last-time[open] { padding-bottom: 10px; }
+.hero-change { margin-top: 6px; color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); font-weight: 600; }
+.hero-change.good { color: var(--accent); }
+.hero-card .hero-top { margin-top: 8px; }
+.btn.hero-log { margin-top: 16px; min-height: 48px; }
+.watch-line { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: -4px 0 12px; padding: 0 16px; border-radius: var(--radius); background: var(--surface); color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); }
+.watch-line .chev { width: 16px; height: 16px; color: var(--faint); flex: none; }
+.home-customize { display: flex; justify-content: center; align-items: center; min-height: 44px; margin-top: 12px; color: var(--muted); font-size: calc(var(--fs-sub) * var(--ts)); }
+.hero-card .hero-value .num { font-size: calc(var(--fs-display) * var(--ts)); }
+.hero-card .hero-value .unit { font-size: calc(var(--fs-sub) * var(--ts)); }
