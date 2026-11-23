@@ -4,24 +4,22 @@
 // far, plus the small sums the pickers and the goal chart need. Pure;
 // setupSteps.test.js.
 
-import { questionsFor, screeningResult } from './safety.js';
+import { screeningResult } from './safety.js';
 import { LIMITS, ageIn, isMinor, setupGoalDate } from './setup.js';
 
 /** Screen ids in order. Some depend on earlier answers:
- *  - one safety screen per question for this sex (no pregnancy question
- *    for a man), all gone when the check is skipped,
+ *  - one safety screen with every question for this sex (no pregnancy
+ *    question for a man) and the injury areas inline, gone when the check
+ *    is skipped (design laws #15: six screens became one),
  *  - goal weight only for a cut (lose, recomp) when a weight was given,
  *  - the goal chart only when that gives a date,
- *    and not while the safety check holds calories at maintenance. */
+ *    and not while the safety check holds calories at maintenance.
+ * The session time is asked on the Done screen, filled in already. The job
+ * keeps its own screen: it moves the calorie target, and a desk default
+ * would underfeed someone who lifts all day. */
 export function setupSteps(a = {}, today) {
   const steps = ['welcome', 'name', 'sex', 'age', 'height', 'weight'];
-  if (a.screening !== null) {
-    for (const q of questionsFor(a.gender ?? null)) {
-      steps.push(`safety:${q.key}`);
-      // A yes to the injury question asks where (SAFE-2).
-      if (q.key === 'injury' && a.screening?.injury === true) steps.push('injury_areas');
-    }
-  }
+  if (a.screening !== null) steps.push('safety');
   steps.push('goal');
   const cut = (a.goal === 'lose' || a.goal === 'recomp') && !(today && isMinor(a, today));
   if (cut && a.weight_kg > 0) {
@@ -31,7 +29,7 @@ export function setupSteps(a = {}, today) {
     const held = a.screening === null || (a.screening && screeningResult(a.screening, a.gender ?? null).gates.no_deficit);
     if (!held && today && setupGoalDate(a.weight_kg, a.goal_kg, today)) steps.push('projection');
   }
-  steps.push('where', 'experience', 'days', 'job', 'time', 'done');
+  steps.push('where', 'experience', 'days', 'job', 'done');
   return steps;
 }
 
@@ -47,9 +45,10 @@ export function prevStep(steps, id) {
   return i <= 0 ? steps[0] : steps[i - 1];
 }
 
-/** The first screen after the safety questions (for "Skip the check"). */
+/** The first screen after the safety check (for "Skip the check"). */
 export function afterSafety(steps) {
-  return steps.find((s, i) => i > 0 && !s.startsWith('safety:') && s !== 'injury_areas' && (steps[i - 1].startsWith('safety:') || steps[i - 1] === 'injury_areas')) || 'goal';
+  const i = steps.indexOf('safety');
+  return i >= 0 ? steps[i + 1] : 'goal';
 }
 
 /** How far along, for the bar: the welcome screen doesn't count. */

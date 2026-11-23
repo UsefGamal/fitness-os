@@ -676,7 +676,7 @@ function TrainingSettings({ data, update }) {
 
       <Fold title={tr('set.advanced')} {...fold('adv')}>
         <div className="list">
-          <Toggle on={t.gym_mode === true} onClick={() => set({ gym_mode: t.gym_mode !== true })} title={tr('gym.title')} note={tr('gym.note')} />
+          <Toggle on={t.gym_mode !== false} onClick={() => set({ gym_mode: t.gym_mode === false })} title={tr('gym.title')} note={tr('gym.note')} />
           <Choice label={tr('set.bar')} value={t.bar} onChange={(v) => set({ bar: v })} options={Object.entries(BARS).map(([k, b]) => [k, `${b.label} (${b.kg} kg)`])} />
           <div className="list-row" style={{ flexWrap: 'wrap', gap: 8 }}>
             <div style={{ width: '100%' }}>{tr('set.plates')}</div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
@@ -9,6 +9,7 @@ import EquipmentSheet from '../components/EquipmentPicker.jsx';
 import Icon from '../components/Icon.jsx';
 import LeapMark from '../components/LeapMark.jsx';
 import MuscleTags from '../components/MuscleTags.jsx';
+import MapImage from '../components/MapImage.jsx';
 import Toast from '../components/Toast.jsx';
 import { entryFor, groupOf, photoSrc } from '../lib/catalogue.js';
 import * as D from '../lib/data.js';
@@ -137,13 +138,16 @@ function NumBox({ value, onChange, whole = false, max, label }) {
   );
 }
 
-/** The exercise's first photo, small, with the muscle letter on it. */
-function Thumb({ entry, onClick, label }) {
+/** The exercise's first photo, small. With no photo, a small picture of
+ * the muscles it works, as on Plan (design laws #13); the grey barbell only
+ * when the muscles aren't known either. */
+const Thumb = memo(function Thumb({ entry, target, onClick, label }) {
   const src = entry?.photos?.[0];
+  if (!src && target?.main?.length) return <span className="ex-thumb map-sm" aria-hidden="true"><MapImage target={target} size={50} /></span>;
   if (!src) return <span className="ex-thumb empty" aria-hidden="true"><Icon name="barbell" /></span>;
   const img = <img src={`exercise-db/${src}`} alt="" decoding="async" />;
   return onClick ? <button type="button" className="ex-thumb" onClick={onClick} aria-label={label}>{img}</button> : <span className="ex-thumb" aria-hidden="true">{img}</span>;
-}
+});
 
 function IntervalsLink() {
   const navigate = useNavigate();
@@ -726,7 +730,7 @@ export default function Workout() {
           return (
             <button key={`${x.name}-${i}`} type="button" className={`ex-card collapsed${work >= x.sets ? ' finished' : ''}${sets.length ? ' started' : ''}`} onClick={() => setCurrent(i)} aria-expanded={false}>
               <div className="ex-line">
-                <Thumb entry={xEntry} />
+                <Thumb entry={xEntry} target={targets[i]} />
                 <div className="grow" style={{ minWidth: 0 }}>
                   <div className="ex-name">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
                   <div className="small ex-next">{status}</div>
@@ -747,7 +751,7 @@ export default function Workout() {
         return (
           <div key={`${x.name}-${i}`} className="ex-card current">
             <div className="ex-line" style={{ alignItems: 'flex-start' }}>
-              <Thumb entry={xEntry} onClick={xEntry?.photos?.length ? () => setShowPhoto(!showPhoto) : null} label={t(showPhoto ? 'workout.hidePhoto' : 'workout.showPhoto')} />
+              <Thumb entry={xEntry} target={targets[i]} onClick={xEntry?.photos?.length ? () => setShowPhoto(!showPhoto) : null} label={t(showPhoto ? 'workout.hidePhoto' : 'workout.showPhoto')} />
               <div className="grow" style={{ minWidth: 0 }}>
                 <div className="ex-name big">{x.pair ? <span className="pair">{x.pair}</span> : null}{x.name}</div>
                 <MuscleTags target={targets[i]} />

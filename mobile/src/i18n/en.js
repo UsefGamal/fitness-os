@@ -1768,7 +1768,7 @@ export default {
   'story.weightTitle': 'What do you weigh now?',
   'story.weightSub': 'This is also your first weigh-in.',
   'story.kg': 'kg',
-  'story.safetyCount': 'Safety check, {n} of {of}',
+  'story.safetyEyebrow': 'Safety check',
   'story.safetySub': 'So the app never sets a target that could hurt you. Answers are not saved, only the limits they switch on.',
   'story.goalTitle': 'What is your goal?',
   'story.goalWeightTitle': 'What is your goal weight?',

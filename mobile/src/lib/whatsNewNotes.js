@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.39',
+    items: [
+      { icon: 'dumbbell', text: 'Gym mode is now on: during a workout the tab bar hides and Back pauses. Turn it off in Settings > Training.' },
+      { icon: 'person', text: 'Exercises without a photo show the muscles they work in your workout list.' },
+      { icon: 'check', text: 'The meal tick sits in the middle of its circle again.' },
+      { icon: 'user', text: 'Setup is shorter for new phones: all safety questions on one screen, and the workout time on the last screen.' },
+    ],
+  },
+  {
     version: '1.1.38',
     items: [
       { icon: 'search', text: "Text size starts from your phone's font size, and the two no longer add up to giant text. Change it in Settings > Look." },
