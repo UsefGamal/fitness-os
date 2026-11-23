@@ -1,10 +1,11 @@
 import { Link } from 'react-router';
 
+import { formatDate } from '../lib/dates.js';
 import { trendChange, sparkPath } from '../lib/home.js';
 import { t } from '../lib/i18n.js';
 import { currentGoal } from '../lib/macros.js';
 import { paceRange } from '../lib/pace.js';
-import { changeGood, goalProgress, statusGood } from '../lib/progress.js';
+import { adviceKey, changeGood, goalProgress } from '../lib/progress.js';
 import Icon from './Icon.jsx';
 import RollNumber from './RollNumber.jsx';
 
@@ -35,7 +36,7 @@ export default function WeightCard({ data, today, onLog }) {
   const leftText = status === 'reached' ? t('body.inGoal') : p.mode !== 'maintain' ? t('body.toGo', { kg: p.left_kg }) : null;
   const share = Math.round((p.share_done ?? 0) * 100);
   return (
-    <section className={`card hero-card${statusGood(p.mode, status) ? '' : ' neutral'}`} data-tour="weight">
+    <section className="card hero-card" data-tour="weight">
       <div className="card-head">
         <h2 className="card-title">{t('home.weightTitle')}</h2>
         <Link to="/stats?tab=body" className="see-all">{t('home.weightProgress')} <Icon name="chev" className="icon" /></Link>
@@ -56,7 +57,11 @@ export default function WeightCard({ data, today, onLog }) {
           </svg>
         ) : null}
       </div>
-      {p.target != null ? (
+      {/* The weigh-in habit stays on Home: how many more weigh-ins until the
+          pace shows (with the water note when a jump is likely water), then
+          the last weigh-in date. Never "behind". */}
+      <div className="muted small hero-note">{pr.reason === 'water' && status === 'early' ? t('pace.water') : status === 'early' ? t(adviceKey(p.mode, 'early'), { n: pr.need || 1 }) : t('home.lastWeighed', { date: formatDate(p.latest_date) })}</div>
+      {p.target != null && p.mode !== 'maintain' ? (
         <>
           <div className="progress" style={{ margin: '16px 0 8px' }} role="progressbar" aria-label={t('goal.title')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={share}>
             <span style={{ transform: `scaleX(${share / 100})` }} />
