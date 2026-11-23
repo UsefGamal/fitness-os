@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
 import WeighInSheet from '../components/WeighInSheet.jsx';
+import WeightPace from '../components/WeightPace.jsx';
+import { goalProgress } from '../lib/progress.js';
 import EmptyState from '../components/EmptyState.jsx';
 import Sheet from '../components/Sheet.jsx';
 import Icon from '../components/Icon.jsx';
@@ -688,6 +690,9 @@ function Body({ data, update, today }) {
   const n = data.body_logs.length;
   const lastWaist = [...data.body_logs].reverse().find((b) => b.waist_cm != null);
   const photos = (data.progress_photos || []).length;
+  // The pace in words, moved here from Home's weight card (Home simplify).
+  const goal = currentGoal(data);
+  const prog = goalProgress(data.body_logs, goal, today);
 
   return (
     <>
@@ -718,6 +723,7 @@ function Body({ data, update, today }) {
               {s.toGoal != null ? <span className={`chip${s.toGoal === 0 ? ' accent' : ''}`}>{s.toGoal === 0 ? t('body.inGoal') : t('body.toGo', { kg: s.toGoal })}</span> : null}
             </div>
             {vs ? <p className="vs-line" style={{ margin: '10px 0 0' }}><Icon name="trend" className="icon" /> {t(vs.kg < 0 ? 'stats.vsWeightDown' : vs.kg > 0 ? 'stats.vsWeightUp' : 'stats.vsWeightSame', { kg: Math.abs(vs.kg), date: formatDate(vs.date), from: vs.from, now: vs.now })}</p> : null}
+            {prog ? <WeightPace data={data} goal={goal} p={prog} today={today} /> : null}
             <WeightChart logs={data.body_logs} today={today} goalLow={goalLow} goalHigh={goalHigh} />
           </>
         )}

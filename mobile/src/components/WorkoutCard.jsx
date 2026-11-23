@@ -2,92 +2,79 @@ import { Link } from 'react-router';
 
 import { formatDate, longWeekday } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
-import { MUSCLE } from '../lib/muscles.js';
-import BodyMap from './BodyMap.jsx';
 import Icon from './Icon.jsx';
 
 const READY = { good: 'home.ready', easy: 'home.easy', caution: 'home.steady' };
 
-/** Home's main card: today's session (or the next one on a rest day), the
- * muscles it works, the warm-up and the one button that starts it. */
 /** formatDate without the weekday: "12 Nov". */
 const shortDate = (d) => formatDate(d).replace(/^\S+\s/, '');
 
-export default function WorkoutCard({ next, day, hits, groups, time, todays, changed, ready, readyText, starter, last, onChange, onStart }) {
-  // A specific heading (rule 9): what this card is about right now.
-  const head = (key = 'home.planTitle') => (
-    <div className="row between" style={{ alignItems: 'flex-start' }}>
-      <h2 className="section-title" style={{ margin: 0 }}>{t(key)}</h2>
-      <Link to="/plan" className="see-all">{t('home.viewPlan')} <Icon name="chev" className="icon" /></Link>
-    </div>
-  );
+/** Home's main card (Home and Plan simplify, Nov 2026): one purpose, one
+ * action. Today's session with its size and time and the Start button; on a
+ * rest day, the next session and "Train today instead". The muscles and
+ * the warm-up live on Plan; last time folds away under the session. */
+export default function WorkoutCard({ next, day, time, todays, changed, ready, readyText, starter, last, minutes, onChange, onStart }) {
   const readyChip = ready && READY[ready] ? (
     <span className={`chip${ready === 'good' ? ' accent' : ' warn'}`}><Icon name={ready === 'good' ? 'check' : 'heart'} className="icon" /> {t(READY[ready])}</span>
   ) : null;
+  // The quiet links under the button: the plan always, Change while the day is open.
+  const links = (change, changeKey = 'home.changeWorkout') => (
+    <div className="card-links">
+      <Link to="/plan" className="card-link">{t('home.viewPlan')}</Link>
+      {change ? <button type="button" className="card-link" onClick={onChange}>{t(changeKey)}</button> : null}
+    </div>
+  );
 
-  if (!next) {
+  if (!next || next.isRestToday) {
     return (
       <section className="card workout-card" data-tour="workout">
-        {head('home.planNext')}
-        <div className="session-row">
-          <div className="session-icon rest"><Icon name="moon" /></div>
-          <div className="grow"><div className="session-name">{t('week.noSession')}</div><div className="session-sub">{t('week.noSessionNote')}</div></div>
+        <div className="card-head">
+          <h2 className="card-title">{t(next ? 'home.today' : 'home.planNext')}</h2>
+          {readyChip}
         </div>
-        <button type="button" className="btn secondary" onClick={onChange}>{t('home.trainToday')}</button>
-      </section>
-    );
-  }
-  if (next.isRestToday) {
-    return (
-      <section className="card workout-card" data-tour="workout">
-        {head()}
         <div className="session-row">
           <div className="session-icon rest"><Icon name="moon" /></div>
           <div className="grow">
-            <div className="session-name">{t('home.restToday')}</div>
-            <div className="session-sub">{t('home.restNext', { label: next.label })} · {(time ? t('home.nextOn', { day: longWeekday(next.onDate), time }) : longWeekday(next.onDate))}</div>
+            <div className="session-name">{t(next ? 'home.restDay' : 'week.noSession')}</div>
+            <div className="session-sub">{next ? <>{t('home.restNext', { label: next.label })} · <span className="nowrap">{time ? t('home.nextOn', { day: longWeekday(next.onDate), time }) : longWeekday(next.onDate)}</span></> : t('week.noSessionNote')}</div>
           </div>
-          {readyChip}
         </div>
-        {readyText ? <div className="muted small" style={{ marginBottom: 12 }}>{readyText}</div> : null}
-        <button type="button" className="btn secondary" onClick={onChange}>{t('home.trainToday')}</button>
+        {readyText ? <div className="muted small ready-text">{readyText}</div> : null}
+        {/* Rest is the plan today: training is a quiet link, not the biggest button. */}
+        {links(true, 'home.trainToday')}
       </section>
     );
   }
-  const label = `${next.label} works ${[...hits.muscles.map((m) => MUSCLE[m]?.label || m), ...groups].join(', ')}`;
+  const count = day?.exercises?.length || 0;
+  const size = [count ? t(count === 1 ? 'home.exOne' : 'home.exN', { n: count }) : null, minutes ? t('home.aboutMin', { min: minutes }) : null, time].filter(Boolean).join(' · ');
   return (
     <section className="card workout-card" data-tour="workout">
-      {head('home.planToday')}
+      <div className="card-head">
+        <h2 className="card-title">{t('home.planToday')}</h2>
+        {readyChip || (changed ? <span className="chip">{t('week.changed')}</span> : null)}
+      </div>
       <div className="session-row">
         <div className="session-icon"><Icon name="dumbbell" /></div>
         <div className="grow">
           <div className="session-name">{next.label}</div>
-          <div className="session-sub">{[time, changed ? t('week.changed') : null].filter(Boolean).join(' · ') || t('home.today')}</div>
+          {size ? <div className="session-sub">{size}</div> : null}
           {starter && !todays?.finished_at ? <div className="starter-line">{t('starter.session', { n: starter.next, all: starter.total })}</div> : null}
         </div>
-        {!todays ? <button type="button" className="btn ghost small" onClick={onChange}>{t('home.change')}</button> : null}
       </div>
-      <div className="session-detail">
-        <div style={{ width: 64, flex: 'none' }}><BodyMap primary={hits.muscles} hit={groups} size={64} label={label} /></div>
-        <div className="grow">
-          {day?.pre_cardio ? <div className="session-warm">{t('home.warmup', { what: day.pre_cardio })}</div> : null}
-          <div className="session-sub">{day?.warmup_items?.length ? t('home.warmupDrills', { n: day.warmup_items.length }) : next.focus}</div>
-        </div>
-        {readyChip}
-      </div>
-      {readyText ? <div className="muted small" style={{ marginBottom: 12 }}>{readyText}</div> : null}
+      {readyText ? <div className="muted small ready-text">{readyText}</div> : null}
       {last && !todays ? (
-        // Last time, set by set (charts step 2): walk in knowing what to beat.
-        <div className="last-time" aria-label={t('last.aria', { label: next.label, lines: last.lifts.map((l) => `${l.name} ${l.text}`).join('; ') })}>
-          <div className="last-head"><strong>{t('last.title', { label: next.label, date: shortDate(last.date) })}</strong> <span className="muted">· {t(last.sets === 1 ? (last.minutes ? 'last.metaMinOne' : 'last.metaOne') : (last.minutes ? 'last.metaMin' : 'last.meta'), { sets: last.sets, min: last.minutes })}</span></div>
+        // Last time, set by set (charts step 2), folded: one tap to see what to beat.
+        <details className="last-time">
+          <summary className="last-head"><span className="grow"><strong>{t('last.title', { label: next.label, date: shortDate(last.date) })}</strong> <span className="muted">· {t(last.sets === 1 ? (last.minutes ? 'last.metaMinOne' : 'last.metaOne') : (last.minutes ? 'last.metaMin' : 'last.meta'), { sets: last.sets, min: last.minutes })}</span></span><Icon name="chev" className="icon chev" /></summary>
           {last.lifts.map((l) => <div key={l.exercise_id} className="last-lift"><span className="grow">{l.name}</span><span className="num">{l.text}</span></div>)}
-        </div>
+        </details>
       ) : null}
       {todays?.finished_at ? (
         <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> {t(todays.sets.length === 1 ? 'home.doneSetOne' : 'home.doneSets', { n: todays.sets.length })}</Link>
       ) : (
         <button type="button" className="btn hero" onClick={onStart}><Icon name="play" /> {t(todays ? 'home.resume' : 'home.start')}</button>
       )}
+      {links(!todays)}
     </section>
   );
 }

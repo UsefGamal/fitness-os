@@ -39,6 +39,7 @@ export const MODULES = [
   // On unless switched off; `implicit` keeps it out of the saved defaults,
   // so older data and backups stay byte-for-byte the same (REW-1).
   { key: 'quests', label: 'Quests', note: 'Daily habits, points and levels', implicit: true },
+  { key: 'activity', label: 'Watch numbers', note: 'Steps, active kcal and sleep on Home, when a watch sends them', implicit: true },
 ];
 
 export function defaultSettings() {

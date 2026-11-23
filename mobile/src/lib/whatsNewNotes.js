@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.43',
+    items: [
+      { icon: 'dumbbell', text: 'A calmer Home: today\'s workout shows its size and one Start button. The warm-up and muscles are on Plan.' },
+      { icon: 'trend', text: 'The weight card shows four things: your weight, the change, the goal left and Log weight. The pace moved to Stats > Body.' },
+      { icon: 'calendar', text: 'This week sits in its own card. Green now means done or today, not just a workout day.' },
+      { icon: 'star', text: 'Steps join the Today tiles. Choose what Home shows from the link at the bottom.' },
+    ],
+  },
+  {
     version: '1.1.42',
     items: [
       { icon: 'check', text: 'Clearer help when an update won\'t install: send a bug report from Settings > About instead of uninstalling.' },

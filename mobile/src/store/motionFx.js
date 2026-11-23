@@ -11,7 +11,7 @@
 // with the phone's "Remove animations" setting.
 
 const PRESS = '.btn, .mini-btn, .chip-btn, .pill-btn, .tbtn, .st-tick, button.chip, .tpre';
-const MORPH = '.ex-row, .ex-card, .list-row, .stat-tile, .quick, .meal-card, .hero-link';
+const MORPH = '.ex-row, .ex-card, .list-row, .stat-tile, .quick, .meal-card';
 
 // The phone's setting, or the app's own switch (Settings > Look, MOVE-2).
 export const reducedMotion = () => globalThis.document?.documentElement?.dataset?.motion === 'reduce'

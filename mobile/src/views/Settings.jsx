@@ -433,7 +433,7 @@ export default function Settings() {
       {show('modules') ? (<>
       <div className="section-label">{t('settings.modules')}</div>
       <div className="list">
-        {MODULES.map((m) => {
+        {MODULES.filter((m) => m.key !== 'activity' || data.settings?.health?.enabled).map((m) => {
           const on = data.settings?.modules?.[m.key] !== false;
           return (
             <button key={m.key} type="button" className="list-row" aria-pressed={on}
