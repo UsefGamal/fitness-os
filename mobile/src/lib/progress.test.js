@@ -122,4 +122,7 @@ test('what counts as good news depends on the goal', () => {
   assert.equal(changeGood('maintain', -0.3), false);
   assert.equal(changeGood('recomp', -0.3), false);
   assert.equal(changeGood('lose', 0), false);
+  assert.equal(changeGood('lose', -1.2, 'fast'), false);
+  assert.equal(changeGood('gain', 0.6, 'fast'), false);
+  assert.equal(changeGood('lose', -1.2, 'steady'), true);
 });

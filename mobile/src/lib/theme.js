@@ -25,9 +25,19 @@ export function setTheme(data, choice) {
 // stay as they are, they are display sizes already.
 export const TEXT_SIZES = [100, 115, 130];
 
-export function textSize(data) {
+// The WebView ignores Android's own font size (MainActivity sets its text
+// zoom to 100), so the two never multiply (design laws #12: system 130% x
+// app 130% was about 170%). Until someone picks a size here, the app starts
+// from the phone's size, capped at the largest step.
+export function sizeForSystem(fontScale) {
+  const f = Number(fontScale);
+  if (!Number.isFinite(f) || f < 1.08) return 100;
+  return f < 1.22 ? 115 : 130;
+}
+
+export function textSize(data, fontScale = 1) {
   const v = data?.settings?.text_size;
-  return TEXT_SIZES.includes(v) ? v : 100;
+  return TEXT_SIZES.includes(v) ? v : sizeForSystem(fontScale);
 }
 
 /** The --ts value for a size: 1, 1.15 or 1.3. */

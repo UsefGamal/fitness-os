@@ -2,12 +2,15 @@ import { useMemo, useState } from 'react';
 
 import { hm } from '../lib/activity.js';
 import { checkLine } from '../lib/dataCheck.js';
-import { fromISO, LOCALE } from '../lib/dates.js';
+import { formatDate, fromISO, LOCALE } from '../lib/dates.js';
 import { firstName } from '../lib/home.js';
 import { t } from '../lib/i18n.js';
+import { activePlan } from '../lib/plan.js';
+import { programDayFor } from '../lib/schedule.js';
 import { identityLine, pictureLines, summaryLine, weekStats, weekText } from '../lib/weekStats.js';
 import { shareImage, shareText } from '../store/share.js';
 import { drawWeekPicture } from '../store/weekPicture.js';
+import { useToday } from '../store/today.js';
 import Icon from './Icon.jsx';
 import Sheet from './Sheet.jsx';
 
@@ -46,6 +49,9 @@ export function WrapSheet({ data, content, week, onClose }) {
   const s = stats.sessions;
   const identity = identityLine(stats);
   const title = t('wrap.sheetTitle', { from: dayMonth(stats.week.start), to: dayMonth(stats.week.end) });
+  // Peak-end (design laws #16): the wrap ends on the week and what comes next.
+  const today = useToday();
+  const comingUp = programDayFor(today, activePlan(data, content), data.session_moves || []);
 
   const sharePicture = async () => {
     const url = drawWeekPicture({
@@ -66,7 +72,7 @@ export function WrapSheet({ data, content, week, onClose }) {
   return (
     <Sheet title={title} onClose={onClose}>
       <div className="list">
-        <Row label={t('wrap.rowSessions')} value={s.planned ? t('wrap.ofN', { done: s.done, planned: s.planned }) : s.done} />
+        <Row label={t('wrap.rowSessions')} value={s.planned && s.done <= s.planned ? t('wrap.ofN', { done: s.done, planned: s.planned }) : s.done} />
         <Row label={t('wrap.rowSets')} value={stats.workSets} />
         <Row label={t('wrap.rowMealDays')} value={stats.mealDays} />
         {stats.proteinDays != null ? <Row label={t('wrap.rowProtein')} value={stats.proteinDays} /> : null}
@@ -74,6 +80,7 @@ export function WrapSheet({ data, content, week, onClose }) {
         {stats.sleepMin != null ? <Row label={t('wrap.rowSleep')} value={hm(stats.sleepMin)} /> : null}
       </div>
       {identity ? <p className="wrap-identity">{identity}</p> : null}
+      {comingUp ? <p className="finish-next small"><Icon name="calendar" className="icon" /> {t('finish.next', { label: comingUp.label, date: formatDate(comingUp.onDate) })}</p> : null}
 
       {name ? (
         <label className="row" style={{ gap: 10, minHeight: 44 }}>
@@ -83,15 +90,17 @@ export function WrapSheet({ data, content, week, onClose }) {
       ) : null}
       <button type="button" className="btn secondary" onClick={sharePicture}><Icon name="upload" /> {t('wrap.share')}</button>
 
-      <section className="stack" style={{ marginTop: 16 }}>
-        <strong>{t('wrap.sendTitle')}</strong>
+      <details className="more wrap-send" style={{ marginTop: 8 }}>
+        <summary><span className="grow">{t('wrap.sendTitle')}</span><Icon name="chev" className="icon chev" /></summary>
+        <div className="stack">
         <label className="field">
           <span>{t('wrap.feel')}</span>
           <input type="text" maxLength={200} value={feel} onChange={(e) => setFeel(e.target.value)} />
         </label>
         <button type="button" className="btn" onClick={sendWeek}><Icon name="upload" /> {t('wrap.send')}</button>
         <p className="muted small" style={{ margin: 0 }}>{t('wrap.sendNote')}</p>
-      </section>
+        </div>
+      </details>
       {msg ? <p className="muted small" role="status">{msg}</p> : null}
     </Sheet>
   );

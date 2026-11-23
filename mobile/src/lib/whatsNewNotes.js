@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.38',
+    items: [
+      { icon: 'search', text: "Text size starts from your phone's font size, and the two no longer add up to giant text. Change it in Settings > Look." },
+      { icon: 'dumbbell', text: 'In a workout, the names of the coming exercises are easier to read.' },
+      { icon: 'scale', text: 'Losing weight faster than planned no longer shows as a green win on Home.' },
+      { icon: 'calendar', text: '"Your week" now ends with your next session, no longer says "4 of 3", and sending it to a friend is folded away.' },
+    ],
+  },
+  {
     version: '1.1.37',
     items: [
       { icon: 'home', text: 'On a training day Home shows Today (water, meals) above your weight. On a rest day your weight comes first.' },

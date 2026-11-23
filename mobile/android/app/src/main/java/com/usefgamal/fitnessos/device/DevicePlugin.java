@@ -44,6 +44,16 @@ public class DevicePlugin extends Plugin {
         call.resolve(out);
     }
 
+    /** Android's font size (Settings > Display > Font size): 1 is the
+     * default, 1.3 is large. The WebView's own text zoom is fixed at 100
+     * (MainActivity), so the app picks its starting text size from this. */
+    @PluginMethod
+    public void fontScale(PluginCall call) {
+        JSObject out = new JSObject();
+        out.put("fontScale", getContext().getResources().getConfiguration().fontScale);
+        call.resolve(out);
+    }
+
     /** Ask Android to let reminders run (one system dialog), or open the
      * app's battery list when that dialog isn't available. */
     @PluginMethod

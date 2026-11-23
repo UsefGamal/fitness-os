@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { reduceMotion, resolveTheme, setReduceMotion, setTextSize, setTheme, TEXT_SIZES, textScale, textSize, THEME_BG, themeChoice } from './theme.js';
+import { reduceMotion, resolveTheme, setReduceMotion, setTextSize, setTheme, sizeForSystem, TEXT_SIZES, textScale, textSize, THEME_BG, themeChoice } from './theme.js';
 
 test('theme: dark by default, light or matching the phone when chosen', () => {
   assert.equal(themeChoice({}), 'dark');
@@ -74,4 +74,16 @@ test('Arabic type: the whole scale grows and letter spacing is off (LF-12)', () 
   assert.equal(Object.keys(base).length, 9, 'nine steps in the type scale (LF-2)');
   for (const k of Object.keys(ar)) assert.ok(ar[k] > base[k], `Arabic ${k} is larger`);
   assert.match(css, /:root:lang\(ar\) \* \{ letter-spacing: 0 !important;/);
+});
+
+test('text size starts from the phone font size, capped at 130, and a picked size wins', () => {
+  assert.equal(sizeForSystem(1), 100);
+  assert.equal(sizeForSystem(0.85), 100);
+  assert.equal(sizeForSystem(1.15), 115);
+  assert.equal(sizeForSystem(1.3), 130);
+  assert.equal(sizeForSystem(2), 130);
+  assert.equal(sizeForSystem(undefined), 100);
+  assert.equal(sizeForSystem('x'), 100);
+  assert.equal(textSize({}, 1.3), 130);
+  assert.equal(textSize({ settings: { text_size: 100 } }, 1.3), 100);
 });

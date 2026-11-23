@@ -65,7 +65,7 @@ export default function WeightCard({ data, today, onLog }) {
       </div>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
         {change ? (
-          <span className={`chip${changeGood(p.mode, change.kg) ? ' accent' : ''}`}>
+          <span className={`chip${changeGood(p.mode, change.kg, status) ? ' accent' : ''}`}>
             {change.kg < 0 ? '↓' : change.kg > 0 ? '↑' : '→'} {t('home.changeKg', { kg: Math.abs(change.kg) })}
           </span>
         ) : null}
