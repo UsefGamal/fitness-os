@@ -23,7 +23,8 @@ import {
 } from '../lib/setupSteps.js';
 import { pushOverlay } from '../lib/overlays.js';
 import { finishTour } from '../lib/tour.js';
-import { INJURY_AREAS, screeningResult } from '../lib/safety.js';
+import { answeredAll, screeningResult } from '../lib/safety.js';
+import SafetyQuestions from '../components/SafetyQuestions.jsx';
 import { content, useData } from '../store/useData.js';
 
 const AGES = ageChoices();
@@ -97,8 +98,7 @@ export default function Setup({ onDone }) {
     } catch { return null; }
   })() : null;
   const { at, of } = progressOf(steps, id);
-  const safetyKey = id.startsWith('safety:') ? id.slice(7) : null;
-  const safetyKeys = steps.filter((s) => s.startsWith('safety:'));
+  const safetyKey = id === 'safety';
 
   // Skip on a screen: forget that answer and go on.
   const SKIP = {
@@ -110,7 +110,6 @@ export default function Setup({ onDone }) {
     goal: () => next({ goal: null, goal_kg: null }),
     goal_weight: () => next({ goal_kg: null }),
     job: () => next({ job: null }),
-    injury_areas: () => next({ screening: { ...(a.screening || {}), injury_areas: [] } }),
   };
   const skipSafety = () => { const after = { ...a, screening: null }; setA(after); go(afterSafety(steps)); };
   const onSkip = safetyKey ? skipSafety : SKIP[id];
@@ -199,37 +198,16 @@ export default function Setup({ onDone }) {
       </>
     );
   } else if (safetyKey) {
-    const n = safetyKeys.indexOf(id) + 1;
+    // Every question on one screen, each with its own Yes and No and none
+    // picked for you (design laws #15). Next waits for an answer to each;
+    // "Skip the check" keeps every limit on (lib/safety.js).
     const answers = a.screening || {};
     body = (
       <>
-        <div className="story-eyebrow">{t('story.safetyCount', { n, of: safetyKeys.length })}</div>
-        {title(t(`safety.q.${safetyKey}`), n === 1 ? t('story.safetySub') : null)}
-        {cards([
-          { v: false, label: t('safety.no'), icon: 'check' },
-          { v: true, label: t('safety.yes'), icon: 'alert' },
-        ], answers[safetyKey], (v) => pick({ screening: { ...answers, [safetyKey]: v } }))}
-      </>
-    );
-  } else if (id === 'injury_areas') {
-    const answers = a.screening || {};
-    const on = new Set(answers.injury_areas || []);
-    const toggle = (area) => () => {
-      const nextOn = new Set(on);
-      if (nextOn.has(area)) nextOn.delete(area); else nextOn.add(area);
-      set('screening', { ...answers, injury_areas: INJURY_AREAS.filter((x) => nextOn.has(x)) });
-    };
-    body = (
-      <>
-        {title(t('story.areasTitle'), t('story.areasSub'))}
-        <div className="story-chips" role="group" aria-label={t('story.areasTitle')}>
-          {INJURY_AREAS.map((area) => (
-            <button key={area} type="button" className={`story-chip${on.has(area) ? ' on' : ''}`} aria-pressed={on.has(area)} onClick={toggle(area)}>
-              {on.has(area) ? <Icon name="check" /> : null}{t(`safety.area.${area}`)}
-            </button>
-          ))}
-        </div>
-        {nextBtn(() => next())}
+        <div className="story-eyebrow">{t('story.safetyEyebrow')}</div>
+        {title(t('safety.title'), t('story.safetySub'))}
+        <SafetyQuestions answers={answers} onChange={(v) => set('screening', v)} gender={a.gender ?? null} />
+        {nextBtn(() => next(), !answeredAll(answers, a.gender ?? null))}
       </>
     );
   } else if (id === 'goal') {
@@ -311,20 +289,6 @@ export default function Setup({ onDone }) {
         {cards(JOBS.map((j) => ({ v: j, label: t(`job.${j}`), note: t(`story.jobNote.${j}`), icon: JOB_ICON[j] })), a.job, (v) => pick({ job: v }))}
       </>
     );
-  } else if (id === 'time') {
-    body = (
-      <>
-        {title(t('setup.time'), t('setup.timeNote'))}
-        {a.session_varies ? null : (
-          <input className="story-input story-time" type="time" step="300" aria-label={t('setup.time')} value={a.session_time ?? content.training.session_time} onChange={(e) => isTime(e.target.value) && set('session_time', e.target.value)} />
-        )}
-        <label className="story-check">
-          <input type="checkbox" checked={Boolean(a.session_varies)} onChange={(e) => set('session_varies', e.target.checked)} />
-          <span>{t('setup.varies')}</span>
-        </label>
-        {nextBtn(() => next())}
-      </>
-    );
   } else if (id === 'done') {
     body = (
       <>
@@ -348,6 +312,18 @@ export default function Setup({ onDone }) {
           {a.screening === null ? (
             <div className="list-row"><Icon name="lock" /><div className="grow"><div>{t('story.doneSafetySkipped')}</div><div className="meta small">{t('safety.skipNote')}</div></div></div>
           ) : null}
+        </div>
+        <div className="story-done-time">
+          <label className="field">
+            <span>{t('setup.time')}</span>
+            {a.session_varies ? null : (
+              <input type="time" step="300" value={a.session_time ?? content.training.session_time} onChange={(e) => isTime(e.target.value) && set('session_time', e.target.value)} />
+            )}
+          </label>
+          <label className="story-check">
+            <input type="checkbox" checked={Boolean(a.session_varies)} onChange={(e) => set('session_varies', e.target.checked)} />
+            <span>{t('setup.varies')}</span>
+          </label>
         </div>
         <p className="muted small" style={{ margin: '12px 4px 0' }}>{t('setup.changeLater')}</p>
         {nextBtn(finish, false, t('setup.go'))}

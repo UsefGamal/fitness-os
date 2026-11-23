@@ -116,13 +116,16 @@ async function setUp(page, { where = null } = {}) {
   await btn(page, en['setup.next']).click();
   await page.getByLabel(en['setup.weight'], { exact: true }).fill('82');
   await btn(page, en['setup.next']).click();
-  let asked = 0;
-  while (await page.locator('.story-eyebrow').count()) {
-    if (await page.getByRole('heading', { name: en['safety.q.pregnant'] }).count()) throw new Error('a man was asked about pregnancy');
-    await card(en['safety.no']);
-    asked += 1;
-  }
-  if (asked !== 6) throw new Error(`a man got ${asked} safety questions, not 6`);
+  // The safety check: every question on one screen (design laws #15),
+  // nothing picked for you, Next off until each has an answer.
+  await page.locator('.safety-q').first().waitFor();
+  if (await page.getByRole('group', { name: en['safety.q.pregnant'] }).count()) throw new Error('a man was asked about pregnancy');
+  const nos = await page.locator('.safety-q').getByRole('button', { name: en['safety.no'], exact: true }).all();
+  if (nos.length !== 6) throw new Error(`a man got ${nos.length} safety questions, not 6`);
+  if (await btn(page, en['setup.next']).isEnabled()) throw new Error('Next works before the safety questions are answered');
+  for (const no of nos) await no.click();
+  await btn(page, en['setup.next']).click();
+  await page.waitForTimeout(400);
   await card(new RegExp(`^${en['setup.goal.lose']}`));
   await btn(page, en['setup.next']).click(); // goal weight
   await btn(page, en['setup.next']).click(); // the goal chart
@@ -130,8 +133,7 @@ async function setUp(page, { where = null } = {}) {
   await card(new RegExp(`^${en['setup.expNew']}`));
   await btn(page, en['setup.next']).click(); // days
   await card(new RegExp(`^${en['job.desk']}`));
-  await btn(page, en['setup.next']).click(); // time
-  await btn(page, en['setup.go']).click();
+  await btn(page, en['setup.go']).click(); // the time is on this screen, filled in
   await page.locator('.home').first().waitFor({ timeout: 10000 });
   // The guided tour plays once after setup (ONB-3); skipping it ends it.
   await page.locator('.tour-card').waitFor({ timeout: 5000 });
@@ -178,8 +180,10 @@ async function workout(page) {
     await btn(page, en['workout.logSet'].replace('{n}', i)).click();
     await settle(page, 300);
   }
-  // Leave for another tab and come back: still running, 3 sets.
-  await tab(page, 'Meals').click();
+  // Leave for another screen and come back: still running, 3 sets. Gym
+  // mode is on by default and hides the tab bar mid-workout, so this goes
+  // by address, as a notification or the widget would.
+  await page.goto(`${URL0}#/meals`);
   await page.getByRole('heading', { name: 'Meals', exact: true }).waitFor();
   await tab(page, 'Start').click();
   await btn(page, en['workout.finishWorkout']).waitFor();
@@ -231,7 +235,8 @@ async function resume(page) {
   // The workout is still open where it was left, Home offers to carry
   // on, and the set is still there.
   await btn(page, en['workout.logSet'].replace('{n}', 2)).waitFor();
-  await tab(page, 'Home').click();
+  // Gym mode hides the tab bar mid-workout: go Home by address.
+  await page.goto(`${URL0}#/`);
   await btn(page, en['home.resume']).click();
   await btn(page, en['workout.logSet'].replace('{n}', 2)).waitFor();
   const d = await read(page);

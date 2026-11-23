@@ -8,39 +8,25 @@ import {
 } from './setupSteps.js';
 
 const TODAY = '2026-11-19';
-const safety = (steps) => steps.filter((s) => s.startsWith('safety:')).map((s) => s.slice(7));
-
-test('a man never gets the pregnancy and breastfeeding screen', () => {
-  assert.ok(!safety(setupSteps({ gender: 'male' }, TODAY)).includes('pregnant'));
-  assert.equal(safety(setupSteps({ gender: 'male' }, TODAY)).length, QUESTIONS.length - 2);
-});
-
-test('a woman, or someone who skipped the sex, does', () => {
-  assert.ok(safety(setupSteps({ gender: 'female' }, TODAY)).includes('pregnant'));
-  assert.ok(safety(setupSteps({}, TODAY)).includes('pregnant'));
-  assert.ok(safety(setupSteps({ gender: null }, TODAY)).includes('pregnant'));
-});
-
-test('switching from female to male on Back drops the screen', () => {
-  const her = setupSteps({ gender: 'female' }, TODAY);
-  const him = setupSteps({ gender: 'male' }, TODAY);
-  assert.equal(her.length - him.length, 2);
-  assert.ok(her.includes('safety:pregnant') && !him.includes('safety:pregnant'));
-});
-
-test('a yes to the injury question asks where it hurts, right after', () => {
-  const no = setupSteps({ gender: 'male', screening: { injury: false } }, TODAY);
-  assert.ok(!no.includes('injury_areas'));
+test('the safety check is one screen, before the goal, gone when skipped', () => {
+  for (const gender of ['male', 'female', null, undefined]) {
+    const s = setupSteps({ gender }, TODAY);
+    assert.equal(s.filter((x) => x === 'safety').length, 1);
+    assert.ok(s.indexOf('weight') < s.indexOf('safety') && s.indexOf('safety') < s.indexOf('goal'), 'the check comes before the goal, so a held cut shows there');
+  }
   const yes = setupSteps({ gender: 'male', screening: { injury: true } }, TODAY);
-  assert.equal(yes[yes.indexOf('safety:injury') + 1], 'injury_areas');
+  assert.ok(!yes.includes('injury_areas'), 'the injury areas are on the same screen');
   assert.equal(afterSafety(yes), 'goal');
+  const skipped = setupSteps({ gender: 'female', screening: null }, TODAY);
+  assert.ok(!skipped.includes('safety'));
+  assert.equal(afterSafety(skipped), 'goal');
 });
 
-test('skipping the safety check removes every safety screen', () => {
-  const steps = setupSteps({ gender: 'female', screening: null }, TODAY);
-  assert.deepEqual(safety(steps), []);
-  const full = setupSteps({ gender: 'female' }, TODAY);
-  assert.equal(afterSafety(full), 'goal');
+test('the time is on the Done screen; the job keeps its own screen', () => {
+  const s = setupSteps({ gender: 'male' }, TODAY);
+  assert.ok(!s.includes('time'));
+  assert.equal(s[s.length - 2], 'job');
+  assert.ok(s.length <= 13, `${s.length} screens`);
 });
 
 test('goal weight and the chart only for a cut with a weight and a lower goal', () => {
@@ -60,8 +46,6 @@ test('order: welcome first, done last, body before goal', () => {
   const s = setupSteps({ gender: 'male' }, TODAY);
   assert.equal(s[0], 'welcome');
   assert.equal(s.at(-1), 'done');
-  assert.ok(s.indexOf('weight') < s.indexOf('safety:eating'));
-  assert.ok(s.indexOf('safety:injury') < s.indexOf('goal'), 'the check comes before the goal, so a held cut shows there');
   assert.ok(s.indexOf('experience') < s.indexOf('days'), 'the plan card on days knows the experience');
   assert.equal(nextStep(s, 'sex'), 'age');
   assert.equal(prevStep(s, 'sex'), 'name');
