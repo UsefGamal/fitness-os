@@ -8,6 +8,7 @@ import {
   CLAMP, DAY_TOLERANCE, OPTION_TOLERANCE, dayKcal, isProteinFood, optionChoices, planDayFor, planFit, planKcal,
   pluralName, portionText, portionsOf, scaleDay, scaleFactor, scaleOption, stepOf,
 } from './portions.js';
+import { QUESTIONS, applyScreening } from './safety.js';
 import { shoppingList } from './shopping.js';
 import { widgetDays } from './widget.js';
 import { content } from './testContent.js';
@@ -280,4 +281,26 @@ test("protein foods shrink only as far as each person's own protein target", () 
   const protein = (d) => d.meals.reduce((n, m) => n + m.options[0].protein, 0);
   assert.ok(protein(shrunk) <= protein(kept));
   assert.ok(protein(shrunk) >= protein(day) * 0.7 - 0.5, 'never below the target share');
+});
+
+test('NUT-3: with protein capped, plan days serve much less protein than the plan as written', () => {
+  const N = content.nutrition;
+  const today = '2026-11-26';
+  const no = Object.fromEntries(QUESTIONS.map((q) => [q.key, false]));
+  let d = emptyData(content);
+  d.profile = { height_cm: 175, date_of_birth: '1990-01-01', gender: 'male', activity_level: 'sedentary' };
+  d.body_logs = [{ id: 1, log_date: today, weight_kg: 60 }];
+  d.goals = [{ id: 'g1', set_on: '2026-11-01', direction: 'maintain', start_weight_kg: 60, target_low_kg: 59, target_high_kg: 61, target_date: null, ended_on: null }];
+  d.diet = { ...d.diet, mode: 'profile' };
+  d = applyScreening(d, { ...no, kidney: true }, today);
+  const fit = planFit(d, N, today);
+  assert.equal(fit.state, 'scaled');
+  assert.ok(fit.capRatio < 0.6);
+  const protein = (day) => day.meals.reduce((a, m) => a + (m.options[0]?.protein || 0), 0);
+  for (let i = 0; i < 14; i += 1) {
+    const iso = `2026-12-${String(i + 1).padStart(2, '0')}`;
+    const capped = planDayFor(iso, d, N, today, fit).day;
+    const plain = planDayFor(iso, emptyData(content), N, today).day;
+    assert.ok(protein(capped) <= protein(plain) * 0.8, `day ${i}: ${protein(capped)} vs ${protein(plain)}`);
+  }
 });

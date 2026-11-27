@@ -30,13 +30,14 @@ export function optionIssues(option, foods = {}, tolerance = 0.15) {
 /** How a day's totals compare to the targets: [{ key, label, total,
  * target, diff (fraction), over }] for calories that drift more than 10%
  * either way, and protein more than 10% UNDER. Protein is a floor: more is
- * fine on a cut, so it is never flagged as over (E3-S3). */
-export function dayDrift(totals, target, drift = DRIFT) {
+ * fine on a cut, so it is not flagged as over (E3-S3), unless protein is
+ * capped (the kidney answer): then it is a ceiling too (audit NUT-3). */
+export function dayDrift(totals, target, drift = DRIFT, { proteinCap = false } = {}) {
   const rows = [['kcal', 'Calories', 'kcal'], ['protein', 'Protein', 'g']];
   return rows
     .filter(([k]) => target[k])
     .map(([key, label, unit]) => ({ key, label, unit, total: totals[key], target: target[key], diff: (totals[key] - target[key]) / target[key] }))
-    .filter((r) => Math.abs(r.diff) > drift && !(r.key === 'protein' && r.diff > 0))
+    .filter((r) => Math.abs(r.diff) > drift && !(r.key === 'protein' && r.diff > 0 && !proteinCap))
     .map((r) => ({ ...r, over: r.diff > 0 }));
 }
 

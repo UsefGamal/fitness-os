@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.45',
+    items: [
+      { icon: 'check', text: 'If your safety answers say no calorie deficit, the slow step back up after a goal stops: you eat at maintenance straight away.' },
+      { icon: 'check', text: 'With calories hidden, the full meal plan shows no calories either, only protein, carbs and fat.' },
+      { icon: 'check', text: 'With protein capped, the meal plan gives smaller meat, fish and egg portions, and says so if a day is still over.' },
+      { icon: 'flame', text: 'Weekly calorie cuts now stop at the safe limit (25%, or the Ramadan limit), and a new goal direction starts fresh.' },
+    ],
+  },
+  {
     version: '1.1.44',
     items: [
       { icon: 'calendar', text: 'A shorter Plan header: the plan, days a week, minutes and time on one line. Tempo is in the terms sheet (⋯) and the workout.' },

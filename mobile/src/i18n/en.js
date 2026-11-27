@@ -393,6 +393,7 @@ export default {
   'meals.farPlan': 'This plan is built for about {plan} kcal. Use it as ideas and follow your own numbers.',
   'meals.farPlanNoKcal': 'This plan is built for someone else\'s needs. Use it as ideas and follow your own targets.',
   'meals.summary': 'Carbs {carbs}/{tc} g · fat {fat}/{tf} g · {done}/{all} eaten. All picks: {kcal} kcal, {protein} g protein.',
+  'meals.summaryNoKcal': 'Carbs {carbs}/{tc} g · fat {fat}/{tf} g · {done}/{all} eaten. All picks: {protein} g protein.',
   'meals.yourTargets': 'Your targets',
   'meals.setTargets': 'Set your targets',
 
@@ -1201,6 +1202,10 @@ export default {
   'meals.eatenAria': '{meal} eaten',
   'meals.pickAria': 'Option for {meal}',
   'meals.kcalProtein': '{kcal} kcal · {protein} g protein',
+  'meals.proteinOnly': '{protein} g protein',
+  'meals.proteinOverCap': 'Your protein is capped: take smaller portions of the meat, chicken, fish or eggs, and more of the bread, rice or vegetables.',
+  'meals.itemProtein': '{protein} g',
+  'meals.fullMacrosNoKcal': 'Total {protein} g protein · {carbs} g carbs · {fat} g fat',
   'meals.itemMacros': '{kcal} kcal · {protein} g',
   'other.open': 'I ate something else',
   'other.title': 'What you ate for {meal}',

@@ -72,3 +72,8 @@ test('undo clears the adjustments', () => {
   assert.equal(adjustTotal(clearAdjustments(d)), 0);
   assert.equal(clearAdjustments(d).goals[0].kcal_adjust, undefined);
 });
+
+test('already at the 25% cap: no cut is offered, since it would do nothing (audit NUT-4)', () => {
+  assert.deepEqual(due(base()), { step: 150 });
+  assert.equal(due(base(), { ...targets, reasons: ['capped'] }), null);
+});

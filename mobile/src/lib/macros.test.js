@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import { bmr, energyTarget, goalIssues, macroSplit, macroTargets, maxDeficit, minGoalWeight, safeGoalDate, targetKcal, tdee } from './macros.js';
+import { bmr, energyTarget, goalIssues, macroSplit, macroTargets, maxDeficit, minGoalWeight, pyRound, saveProfile, safeGoalDate, targetKcal, tdee } from './macros.js';
 import { content } from './testContent.js';
+import { QUESTIONS, applyScreening, skipScreening } from './safety.js';
 
 const N = content.nutrition;
 
@@ -147,8 +148,69 @@ test('a confirmed adjustment lowers a cut, never under the floor, and not mainte
   assert.equal(after.kcal, before.kcal - 150);
   assert.equal(after.adjust, -150);
   assert.ok(after.reasons.includes('adjusted'));
+  // A huge cut stops at the safe deficit (25% of TDEE here), not the floor (audit NUT-4).
   d.goals[0].kcal_adjust = [{ on: '2027-01-31', kcal: -5000 }];
-  assert.equal(macroTargets(d, N, '2027-01-31').kcal, 1500);
+  const held = macroTargets(d, N, '2027-01-31');
+  assert.equal(held.kcal, pyRound(held.tdee - maxDeficit(held.tdee, held.weight, N.max_deficit_share)));
+  assert.ok(held.kcal > 1500 && held.reasons.includes('capped'));
+  assert.ok(held.deficit <= held.tdee * 0.25 + 1);
   d.goals[0].direction = 'maintain';
   assert.equal(macroTargets(d, N, '2027-01-31').adjust, undefined);
+});
+
+// Audit 26 Nov 2026: rules that meet each other.
+const auditBase = () => {
+  const d = emptyData(content);
+  d.profile = { height_cm: 175, date_of_birth: '1990-01-01', gender: 'male', activity_level: 'moderate' };
+  d.body_logs = [{ id: 1, log_date: '2027-01-31', weight_kg: 95 }];
+  d.goals = [{ id: 'g1', set_on: '2026-12-01', direction: 'lose', start_weight_kg: 100, target_low_kg: 80, target_high_kg: 82, target_date: '2027-12-01', ended_on: null }];
+  return d;
+};
+
+test('NUT-1: the step-up back to maintenance stops while a gate asks for no deficit', () => {
+  const d = auditBase();
+  d.goals = [{ id: 'g2', set_on: '2027-01-20', direction: 'maintain', start_weight_kg: 95, target_low_kg: 94, target_high_kg: 96, target_date: null, ended_on: null, reverse: { from_kcal: 2000, started_on: '2027-01-20', step: 100, weeks: 6 } }];
+  const stepping = macroTargets(d, N, '2027-01-31');
+  assert.ok(stepping.reverse && stepping.kcal < stepping.tdee);
+  const gated = skipScreening(d, '2027-01-31');
+  const t = macroTargets(gated, N, '2027-01-31');
+  assert.equal(t.reverse, undefined);
+  assert.equal(t.kcal, t.tdee);
+});
+
+test('NUT-4: weekly cuts never pass the Ramadan limit, and none while fasting under a gate', () => {
+  const d = auditBase();
+  d.goals[0].kcal_adjust = [{ on: '2027-01-01', kcal: -200 }, { on: '2027-01-22', kcal: -200 }];
+  const plain = macroTargets(d, N, '2027-01-31');
+  assert.ok(plain.deficit <= plain.tdee * 0.25 + 1);
+  d.diet = { ...d.diet, ramadan: { from: '2027-02-08', to: '2027-03-09' } };
+  const fast = macroTargets(d, N, '2027-02-10');
+  assert.ok(fast.ramadan);
+  assert.ok(fast.deficit <= fast.tdee * 0.15 + 1, `deficit ${fast.deficit} of ${fast.tdee}`);
+  const no = Object.fromEntries(QUESTIONS.map((q) => [q.key, false]));
+  const diabetic = applyScreening(d, { ...no, diabetes: true }, '2027-02-01');
+  assert.equal(macroTargets(diabetic, N, '2027-02-10').deficit, 0);
+});
+
+test('UX-3: a new direction starts a fresh goal, so old cuts and the old start date do not come back', () => {
+  const d = auditBase();
+  d.goals[0].kcal_adjust = [{ on: '2027-01-01', kcal: -150 }];
+  d.goals[0].kcal_check_kept_on = '2027-01-10';
+  const form = { start_weight_kg: 95, goal_weight_low_kg: 99, goal_weight_high_kg: 101, goal_date: '2027-12-01' };
+  const gain = saveProfile(d, { ...form, direction: 'gain' }, '2027-02-01');
+  assert.equal(gain.goals.length, 2);
+  assert.equal(gain.goals[0].ended_on, '2027-02-01');
+  const g = gain.goals[1];
+  assert.equal(g.direction, 'gain');
+  assert.equal(g.set_on, '2027-02-01');
+  assert.equal(g.kcal_adjust, undefined);
+  assert.equal(g.kcal_check_kept_on, undefined);
+  const back = saveProfile(gain, { ...form, goal_weight_low_kg: 80, goal_weight_high_kg: 82, direction: 'lose' }, '2027-02-02');
+  assert.equal(back.goals.length, 3);
+  assert.equal(macroTargets(back, N, '2027-02-02').adjust, undefined);
+  // The same direction with new numbers edits the goal in place.
+  const tweak = saveProfile(d, { ...form, goal_weight_low_kg: 78, goal_weight_high_kg: 80, direction: 'lose' }, '2027-02-01');
+  assert.equal(tweak.goals.length, 1);
+  assert.equal(tweak.goals[0].target_low_kg, 78);
+  assert.deepEqual(tweak.goals[0].kcal_adjust, [{ on: '2027-01-01', kcal: -150 }]);
 });

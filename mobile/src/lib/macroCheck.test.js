@@ -24,3 +24,13 @@ test('a day more than 10% off on calories or protein is flagged', () => {
 test('the bundled meal plan is checked without errors', () => {
   assert.ok(Array.isArray(planIssues(content.nutrition)));
 });
+
+test('NUT-3: with protein capped, too much protein is flagged as over', () => {
+  const target = { kcal: 2000, protein: 80 };
+  const totals = { kcal: 2000, protein: 120 };
+  assert.deepEqual(dayDrift(totals, target), []);
+  const rows = dayDrift(totals, target, undefined, { proteinCap: true });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].key, 'protein');
+  assert.ok(rows[0].over);
+});
