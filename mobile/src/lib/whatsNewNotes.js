@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.50',
+    items: [
+      { icon: 'barbell', text: 'Tap the kg or reps of your next set to pick them on a ruler you slide. You can still type the number.' },
+      { icon: 'bell', text: 'Change the next set\'s weight and reps from the notification with −/+, while resting or after.' },
+      { icon: 'book', text: 'Going into an exercise and back keeps what you had picked: Library tab, muscle, search, Stats tab, Plan day and Meals day.' },
+    ],
+  },
+  {
     version: '1.1.49',
     items: [
       { icon: 'lock', text: 'Automatic backups are now encrypted for every folder. A folder on the phone can keep plain files if you choose.' },

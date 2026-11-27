@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import Alternatives from '../components/Alternatives.jsx';
@@ -15,6 +14,7 @@ import { useCatalogue } from '../store/catalogue.js';
 import { isAdvanced } from '../lib/levels.js';
 import { trainingSettings } from '../lib/training.js';
 import { useData } from '../store/useData.js';
+import useViewState from '../components/useViewState.js';
 
 const TABS = ['target', 'howto', 'equipment'];
 
@@ -22,7 +22,7 @@ const TABS = ['target', 'howto', 'equipment'];
  * muscles), How to (the steps), Equipment (what it needs, and other ways
  * to train the same muscles). `map` and `others` come from the page. */
 export function ExerciseTabs({ entry, target = null, map, others = null }) {
-  const [tab, setTab] = useState('target');
+  const [tab, setTab] = useViewState('tab', 'target');
   const main = target ? target.main : entry ? musclesOf(entry) : [];
   const helpers = target ? target.helpers : entry ? helpersOf(entry) : [];
   const angle = target ? target.angle : entry ? angleOf(entry) : null;

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Rest timer notification, open: the folded row, the next exercise's
-     photo, a draining bar, the
+     photo (or, for another set of the same lift,
+     its weight and reps with -/+), a draining bar, the
      workout so far, and -15s / Pause / +15s / Skip. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -18,6 +19,8 @@
         android:contentDescription="@null"
         android:scaleType="centerCrop"
         android:visibility="gone" />
+
+    <include layout="@layout/notif_adjust" />
 
     <ProgressBar
         android:id="@+id/n_bar"

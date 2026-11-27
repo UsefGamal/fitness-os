@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The next set's weight and reps with -/+ ("−2.5  60 kg  +2.5   −1  8 reps  +1"),
+     shared by the rest, Rest done and set going cards. The weight half hides
+     for a set with no weight; the whole row hides when there is no set to log. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/a_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:id="@+id/a_kg_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/a_kg_less"
+            style="@style/NotifButton"
+            android:layout_width="44dp"
+            android:layout_marginEnd="0dp"
+            android:layout_weight="0" />
+
+        <TextView
+            android:id="@+id/a_kg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="#ffffff"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/a_kg_more"
+            style="@style/NotifButton"
+            android:layout_width="44dp"
+            android:layout_marginEnd="0dp"
+            android:layout_weight="0" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="10dp"
+        android:layout_height="1dp" />
+
+    <LinearLayout
+        android:id="@+id/a_reps_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/a_reps_less"
+            style="@style/NotifButton"
+            android:layout_width="44dp"
+            android:layout_marginEnd="0dp"
+            android:layout_weight="0" />
+
+        <TextView
+            android:id="@+id/a_reps"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="#ffffff"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/a_reps_more"
+            style="@style/NotifButton"
+            android:layout_width="44dp"
+            android:layout_marginEnd="0dp"
+            android:layout_weight="0" />
+    </LinearLayout>
+</LinearLayout>

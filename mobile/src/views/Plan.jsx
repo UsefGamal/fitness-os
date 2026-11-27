@@ -36,6 +36,7 @@ import { content, useData } from '../store/useData.js';
 import { safeDay } from '../lib/safety.js';
 import SafetyChanges from '../components/SafetyChanges.jsx';
 import { useToday } from '../store/today.js';
+import useViewState from '../components/useViewState.js';
 
 function EditList({ day, sessionKey }) {
   const [resetting, setResetting] = useState(false);
@@ -127,7 +128,9 @@ export default function Plan() {
   const week = weekView(today, T, data.session_moves || [], data);
   const firstTraining = week.find((d) => d.isToday && d.key !== 'rest') || week.find((d) => d.key !== 'rest' && d.date >= today) || week.find((d) => d.key !== 'rest') || week.find((d) => d.isToday);
   const [params] = useSearchParams();
-  const [pickedRaw, setPicked] = useState(() => week.find((d) => d.date === params.get('day')) || firstTraining);
+  // The day you picked comes back when you return to Plan the same day
+  // (from an exercise, the Library, another tab); a ?day= link wins.
+  const [pickedRaw, setPicked] = useViewState('picked', () => firstTraining, { day: today, prefer: week.find((d) => d.date === params.get('day')) });
   const picked = week.find((d) => d.date === pickedRaw.date) || pickedRaw;
   const [choosing, setChoosing] = useState(false);
   const [editing, setEditing] = useState(false);

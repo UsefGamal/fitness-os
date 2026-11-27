@@ -10,6 +10,7 @@ import { mirrorIdle } from './mirror.js';
 import { isNative, Health, RestTimer } from './native.js';
 import { scheduleReminders } from './notify.js';
 import { content, stopSaving, useData } from './useData.js';
+import { forgetViews } from '../lib/viewMemory.js';
 
 /** Everything in one of the app's own folders, files and folders alike. */
 async function emptyDir(directory) {
@@ -47,6 +48,7 @@ export async function deleteEverything({ health = false, backups = true } = {}) 
     await emptyDir(Directory.Data); // data file, mirror, snapshots, photos
     await emptyDir(Directory.Cache); // share and export copies waiting to be sent
   }
+  forgetViews();
   try { localStorage.clear(); } catch { /* blocked: nothing kept there */ }
   try { sessionStorage.clear(); } catch { /* same */ }
   window.location.replace(`${window.location.pathname}#/`);

@@ -1,9 +1,9 @@
-import { useState } from 'react';
 
 import { dateTicks, weightFrame } from '../lib/bodyStats.js';
 import { dateScale } from '../lib/chartScale.js';
 import { formatDate, fromISO, LOCALE } from '../lib/dates.js';
 import { t } from '../lib/i18n.js';
+import useViewState from './useViewState.js';
 
 const RANGE_KEYS = ['m1', 'm3', 'all'];
 const W = 340;
@@ -22,8 +22,8 @@ const tickLabel = (tk) => fromISO(tk.date).toLocaleDateString(LOCALE, tk.kind ==
  * anyone who'd rather read numbers.
  */
 export default function WeightChart({ logs, today, goalLow, goalHigh }) {
-  const [range, setRange] = useState('m3');
-  const [table, setTable] = useState(false);
+  const [range, setRange] = useViewState('wchart-range', 'm3');
+  const [table, setTable] = useViewState('wchart-table', false);
   const goal = goalLow && goalHigh ? { low: goalLow, high: goalHigh } : null;
   const f = weightFrame(logs, today, range, goal);
   const pts = f.points;

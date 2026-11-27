@@ -941,6 +941,8 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .st-row .set-n { justify-self: center; }
 .st-input { width: 100%; min-height: 44px; font-size: calc(var(--fs-t3) * var(--ts)); font-weight: 600; text-align: center; background: var(--surface); color: var(--text); border: 0; border-radius: 10px; padding: 0 4px; font-variant-numeric: tabular-nums; }
 .st-input:focus { outline: 2px solid var(--accent); }
+/* The next set's reps and kg open the rulers (SetPicker); the dotted line says "tap me". */
+.st-pick { display: block; text-decoration: underline dotted var(--muted); text-underline-offset: 4px; }
 .st-tick { justify-self: center; width: 44px; height: 44px; border-radius: 22px; border: 0; padding: 0; display: grid; place-items: center; background: var(--surface3); color: var(--muted); }
 .st-tick.next { background: var(--surface); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .st-tick.on { background: var(--accent-fill); color: var(--on-accent); }
@@ -1260,6 +1262,11 @@ label.field input { transition: box-shadow 300ms ease; }
     repeating-linear-gradient(90deg, var(--faint) 0 1px, transparent 1px var(--tick)) 0 40px / 100% 18px no-repeat; }
 .ruler-num { position: absolute; top: 0; transform: translateX(-50%); color: var(--muted); font-size: calc(var(--fs-foot) * var(--ts)); font-variant-numeric: tabular-nums; }
 .ruler-needle { position: absolute; left: 50%; top: 22px; width: 4px; height: 52px; margin-left: -1px; border-radius: 2px; background: var(--accent-stroke); pointer-events: none; }
+.ruler-picker.compact { margin-top: 4px; }
+.ruler-picker.compact .ruler-read input { width: 5.2ch; font-size: calc(var(--fs-display) * var(--ts)); }
+.ruler-picker.compact .ruler { margin-top: 10px; height: 76px; }
+.ruler-picker.compact .ruler-needle { top: 20px; height: 48px; }
+.set-picker .section-label { margin-top: 12px; }
 /* Wheel (age) */
 .wheel { position: relative; height: 260px; margin: 20px auto 0; width: 100%; max-width: 320px; }
 .wheel-band { position: absolute; left: 0; right: 0; top: 104px; height: 52px; border-radius: 26px; background: var(--surface); pointer-events: none; }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router';
 
 import BodyMap from '../components/BodyMap.jsx';
@@ -10,6 +10,7 @@ import { t } from '../lib/i18n.js';
 import { countByGroup, GROUP16, GROUPS16, musclesOfGroup } from '../lib/muscleGroups.js';
 import { MUSCLE, anglesOf, musclesOf, targetText } from '../lib/muscles.js';
 import { useCatalogue } from '../store/catalogue.js';
+import useViewState from '../components/useViewState.js';
 
 const PAGE = 40;
 
@@ -34,12 +35,14 @@ export function ByMuscle({ counts, onPick }) {
  * the groups come first. */
 export default function Catalogue({ q, muscle, onPick }) {
   const { catalogue, error } = useCatalogue();
-  const [equipment, setEquipment] = useState('');
-  const [limit, setLimit] = useState(PAGE);
-  const [pickedMuscle, setPickedMuscle] = useState(null);
-  const [pickedAngle, setPickedAngle] = useState(null);
+  // Kept for coming back from an exercise (lib/viewMemory.js), with how far
+  // the list was opened, so the scroll lands on the same row.
+  const [equipment, setEquipment] = useViewState('cat-equipment', '');
+  const [limit, setLimit] = useViewState('cat-limit', PAGE);
+  const [pickedMuscle, setPickedMuscle] = useViewState('cat-muscle', null);
+  const [pickedAngle, setPickedAngle] = useViewState('cat-angle', null);
   // Training first; stretches are their own list (Yusuf, 19 Nov).
-  const [kind, setKind] = useState('train');
+  const [kind, setKind] = useViewState('cat-kind', 'train');
   const counts = useMemo(() => {
     if (!catalogue) return null;
     const of = (stretch) => countByGroup(catalogue.exercises.filter((e) => isStretch(e) === stretch).map((e) => ({ main: musclesOf(e) })));

@@ -13,6 +13,7 @@ import { TAG_GROUPS } from '../lib/muscles.js';
 import { useCatalogue } from '../store/catalogue.js';
 import { content, useData } from '../store/useData.js';
 import Catalogue from './Catalogue.jsx';
+import useViewState from '../components/useViewState.js';
 
 // The six groups an exercise you add yourself is saved with.
 export const MUSCLES = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
@@ -21,11 +22,12 @@ const LIT = { lit: 'color-mix(in srgb, var(--accent) 85%, transparent)' };
 export default function Library() {
   const data = useData((s) => s.data);
   const update = useData((s) => s.update);
-  const [q, setQ] = useState('');
-  const [muscle, setMuscle] = useState(null);
+  // The tab, search, muscle and map come back as they were (Yusuf, 27 Nov).
+  const [q, setQ] = useViewState('q', '');
+  const [muscle, setMuscle] = useViewState('muscle', null);
   const query = useDeferredValue(q); // typing stays instant while the list catches up
-  const [tab, setTab] = useState('mine');
-  const [showMap, setShowMap] = useState(false);
+  const [tab, setTab] = useViewState('tab', 'mine');
+  const [showMap, setShowMap] = useViewState('map', false);
   const { catalogue } = useCatalogue();
   // The picked group's chip scrolls into sight (picked from By muscle or the map).
   const chips = useRef(null);

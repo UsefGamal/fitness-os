@@ -21,6 +21,7 @@ import en from '../src/i18n/en.js';
 import { SCREENED } from './bigFixture.mjs';
 import { harnessPerson } from './harnessPerson.mjs';
 import { addExercise, createSession } from '../src/lib/myRoutine.js';
+import { fillSet, kgCell } from './setPick.mjs';
 
 const require = createRequire(import.meta.url);
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
@@ -89,7 +90,7 @@ const startSession = async (p) => {
   await p.waitForTimeout(500);
   const start = p.getByRole('button', { name: /^Start / }).first();
   if (await start.count()) await start.click();
-  await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).waitFor();
+  await kgCell(p).first().waitFor();
 };
 
 /** TEST-1 part B: sheets and states a route alone never shows. Each runs
@@ -138,7 +139,7 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await fillSet(p, 20);
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await btnNamed(p, en['workout.finishWorkout']).click();
       await p.getByRole('button', { name: new RegExp(`^(${en['workout.save']}|${en['workout.saveShort']})$`) }).click();
@@ -151,10 +152,20 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await fillSet(p, 20);
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await btnNamed(p, en['workout.editSet'].replace('{n}', 1)).click();
       await p.getByRole('button', { name: en['setEdit.delete'] }).waitFor({ timeout: 5000 });
+    },
+  },
+  // The next set's weight and reps as rulers (SetPicker).
+  {
+    name: 'sheet: set rulers',
+    route: '/workout',
+    act: async (p) => {
+      await startSession(p);
+      await kgCell(p).first().click();
+      await p.getByRole('dialog').getByRole('spinbutton', { name: /^Weight for set \d+, in kg$/ }).waitFor();
     },
   },
   // Design laws plan #7: the bottom bar and the finish sheet.
@@ -163,7 +174,7 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await fillSet(p, 20);
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await p.locator('.log-bar').waitFor({ timeout: 5000 }).catch(() => {});
     },
@@ -173,7 +184,7 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await fillSet(p, 20);
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await btnNamed(p, en['workout.finishWorkout']).click();
       await p.getByRole('radiogroup', { name: en['finish.effort'] }).waitFor({ timeout: 5000 });
@@ -197,7 +208,7 @@ export const STATES = [
     route: '/workout',
     act: async (p) => {
       await startSession(p);
-      await p.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+      await fillSet(p, 20);
       await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
       await p.getByRole('button', { name: new RegExp(`^1: set 1, ${en['setType.work']}`) }).click();
       // In the sheet: the workout's own Drop set button has the same words.
