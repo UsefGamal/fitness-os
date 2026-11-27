@@ -75,3 +75,16 @@ def test_release_notes_list_hashes_and_the_signing_code(tmp_path):
     assert "don't uninstall" in out
     bad = subprocess.run([str(ROOT / "scripts" / "release-notes.sh"), "0.6.0", "nope", str(apk)], capture_output=True)
     assert bad.returncode != 0
+
+
+def test_a_tag_must_match_the_app_version(tmp_path):
+    """Audit REL-1: a tag that differs from mobile/package.json is refused."""
+    script = str(ROOT / "scripts" / "check-whats-new.sh")
+    pkg = tmp_path / "package.json"
+    pkg.write_text('{\n  "name": "x",\n  "version": "1.0.1",\n}\n', encoding="utf-8")
+    ok = subprocess.run([script, "1.0.1"], capture_output=True, text=True, env={"PACKAGE_JSON": str(pkg), "PATH": "/usr/bin:/bin"})
+    assert ok.returncode == 0, ok.stderr
+    pkg.write_text('{\n  "name": "x",\n  "version": "1.1.44",\n}\n', encoding="utf-8")
+    bad = subprocess.run([script, "1.0.1"], capture_output=True, text=True, env={"PACKAGE_JSON": str(pkg), "PATH": "/usr/bin:/bin"})
+    assert bad.returncode != 0
+    assert "mobile/package.json says 1.1.44" in bad.stderr

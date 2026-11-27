@@ -51,6 +51,20 @@ test('replaceAll keeps a snapshot of what was there and writes at once', async (
   assert.deepEqual(JSON.parse(localStorage.getItem(KEY)).workouts, []);
 });
 
+test('DATA-2: a snapshot that cannot be saved stops an import, and nothing is replaced', async () => {
+  const had = useData.getState().data.workouts.length;
+  const real = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = (k, v) => { if (k === FS && v.includes('snapshots/')) throw new Error('QuotaExceededError'); real(k, v); };
+  try {
+    const done = await useData.getState().replaceAll({ ...useData.getState().data, workouts: [{ id: 1 }, { id: 2 }, { id: 3 }] }, 'import');
+    assert.equal(done, false);
+    assert.equal(useData.getState().data.workouts.length, had);
+  } finally {
+    localStorage.setItem = real;
+  }
+  assert.equal(await useData.getState().replaceAll({ ...useData.getState().data }, 'import'), true);
+});
+
 test('localStorage full: the file still saves and the bar shows once both fail', async () => {
   const real = localStorage.setItem.bind(localStorage);
   localStorage.setItem = (k, v) => { if (k === KEY) throw new Error('QuotaExceededError'); real(k, v); };

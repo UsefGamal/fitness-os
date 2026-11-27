@@ -5,6 +5,14 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.46',
+    items: [
+      { icon: 'lock', text: 'Saving is safer: two saves at the same moment can no longer remove the copy kept in the app\'s folder.' },
+      { icon: 'undo', text: 'An import or restore stops if the phone is too full to keep a copy of what is there now, so there is always an undo.' },
+      { icon: 'star', text: 'After a long gap, What\'s new shows the latest 5 versions; the rest are in Help & about.' },
+    ],
+  },
+  {
     version: '1.1.45',
     items: [
       { icon: 'check', text: 'If your safety answers say no calorie deficit, the slow step back up after a goal stops: you eat at maintenance straight away.' },

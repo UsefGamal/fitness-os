@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { emptyData } from './data.js';
-import { BACKUP_EVERY_DAYS, BACKUP_EVERY_DAYS_NO_LOCK, SNAPSHOT_KEEP, atomicWrite, backupDue, loadNewest, parseCopy, parseSnapshotName, pickNewest, snapshotName, snapshotsToPrune, sortSnapshots, stamp, takeSnapshot, unreadable } from './durable.js';
+import { BACKUP_EVERY_DAYS, BACKUP_EVERY_DAYS_NO_LOCK, SNAPSHOT_KEEP, atomicWrite, backupDue, loadNewest, parseCopy, parseSnapshotName, pickNewest, serialWriter, snapshotName, snapshotsToPrune, sortSnapshots, stamp, takeSnapshot, unreadable } from './durable.js';
 import { migrate, NewerSchemaError } from './migrate.js';
 import { content } from './testContent.js';
 
@@ -163,4 +163,54 @@ test('the reminder is quiet while automatic backup is healthy, and back when it 
   assert.equal(backupDue(withAuto({ on: true, last_error: 'no_space' }, { backup_snoozed_at: now - DAY }), now), null, '"Later" still hides it for three days');
   // Switched off: the ordinary 14-day rule, as before.
   assert.equal(backupDue(withAuto({ on: false, last_checked_at: now - DAY }, { last_backup_at: now - 2 * DAY }), now), null);
+});
+
+// An Android-like folder: every call takes a few ms, and rename refuses to
+// overwrite, so the adapter deletes the old file first (store/fs.js).
+function slowFolder() {
+  const files = new Map();
+  const wait = () => new Promise((r) => setTimeout(r, 2));
+  return {
+    files,
+    async read(p) { await wait(); return files.get(p) ?? null; },
+    async write(p, t) { await wait(); files.set(p, t); },
+    async rename(from, to) {
+      await wait();
+      if (!files.has(from)) throw new Error('no such file');
+      files.delete(to);
+      files.set(to, files.get(from));
+      files.delete(from);
+    },
+    async remove(p) { await wait(); files.delete(p); },
+    async list() { return [...files.keys()]; },
+  };
+}
+
+test('DATA-1: overlapping mirror writes run one at a time, and the file always ends with the newest copy', async () => {
+  const fs = slowFolder();
+  const results = [];
+  const w = serialWriter(fs, 'data.json', (ok) => results.push(ok));
+  w.write('{"n":1}');
+  w.write('{"n":2}');
+  const last = w.write('{"n":3}');
+  await last;
+  await w.idle();
+  assert.equal(fs.files.get('data.json'), '{"n":3}');
+  assert.equal(fs.files.has('data.json.tmp'), false);
+  assert.ok(results.every(Boolean));
+  // Coalesced: the newest text, not every one in between.
+  assert.ok(results.length <= 2);
+});
+
+test('DATA-1: a failed write is reported and the next one still runs', async () => {
+  const fs = slowFolder();
+  let fail = true;
+  const real = fs.write;
+  fs.write = async (p, t) => { if (fail) { fail = false; throw new Error('disk'); } return real(p, t); };
+  const results = [];
+  const w = serialWriter(fs, 'data.json', (ok) => results.push(ok));
+  await w.write('a');
+  await w.write('b');
+  assert.deepEqual(results, [false, true]);
+  assert.equal(fs.files.get('data.json'), 'b');
 });
