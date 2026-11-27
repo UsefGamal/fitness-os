@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The next set's weight and reps with -/+ ("−2.5  60 kg  +2.5   −1  8 reps  +1"),
+<!-- Only RemoteViews-safe views here (no plain <View>): a view a
+     notification can't draw makes Android kill the app ("Bad notification").
+     The next set's weight and reps with -/+ ("−2.5  60 kg  +2.5   −1  8 reps  +1"),
      shared by the rest, Rest done and set going cards. The weight half hides
      for a set with no weight; the whole row hides when there is no set to log. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -45,14 +47,12 @@
             android:layout_weight="0" />
     </LinearLayout>
 
-    <View
-        android:layout_width="10dp"
-        android:layout_height="1dp" />
 
     <LinearLayout
         android:id="@+id/a_reps_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
         android:layout_weight="1"
         android:gravity="center_vertical"
         android:orientation="horizontal">

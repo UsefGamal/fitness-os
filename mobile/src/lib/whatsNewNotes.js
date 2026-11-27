@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.51',
+    items: [
+      { icon: 'check', text: 'Fixed: the app closed when the rest started after a set, since the new weight and reps buttons in the notification.' },
+    ],
+  },
+  {
     version: '1.1.50',
     items: [
       { icon: 'barbell', text: 'Tap the kg or reps of your next set to pick them on a ruler you slide. You can still type the number.' },
