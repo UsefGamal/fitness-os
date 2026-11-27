@@ -464,6 +464,11 @@ async function measure(page, errors, key, shot, floor) {
     await page.evaluate(() => window.scrollTo(0, 0));
   }
   const ring = await page.evaluate(ringOverlaps, false);
+  // Where, so a CI failure names the element without a re-run.
+  const where = {
+    ring: ring ? await page.evaluate(ringOverlaps, true) : [],
+    bars: bars ? await page.evaluate(barClashes, { ...INSETS, detail: true }) : [],
+  };
   const errs = errors.splice(0);
   if (process.env.E2E_VERBOSE) {
     console.log(key, errs.join(' | '));
@@ -482,6 +487,7 @@ async function measure(page, errors, key, shot, floor) {
   return {
     axe: axe.reduce((n, v) => n + v.nodes, 0),
     rules: Object.fromEntries(axe.map((v) => [v.id, v.nodes])),
+    where,
     taps,
     overflow: overflow ? 1 : 0,
     bars,
@@ -599,7 +605,7 @@ export function compare(now, base) {
   const worse = [];
   for (const [key, row] of Object.entries(now)) {
     const was = base[key] || {};
-    for (const c of CHECKS) if (row[c] > (was[c] ?? 0)) worse.push(`${key}: ${c} ${was[c] ?? 0} -> ${row[c]}${c === 'axe' ? ` ${JSON.stringify(row.rules)}` : ''}`);
+    for (const c of CHECKS) if (row[c] > (was[c] ?? 0)) worse.push(`${key}: ${c} ${was[c] ?? 0} -> ${row[c]}${c === 'axe' ? ` ${JSON.stringify(row.rules)}` : ''}${row.where?.[c]?.length ? ` at ${row.where[c].slice(0, 4).join('; ')}` : ''}`);
   }
   return worse;
 }

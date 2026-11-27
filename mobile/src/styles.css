@@ -868,10 +868,11 @@ a.banner:active { transform: scale(0.99); background: var(--surface2); }
 .guide-steps li + li { border-top: var(--hair); }
 .guide-n { flex: none; width: 26px; height: 26px; border-radius: 13px; background: var(--accent-dim); color: var(--accent); font-weight: 700; font-size: calc(var(--fs-sub) * var(--ts)); display: grid; place-items: center; }
 .guide-card { flex: none; width: 84px; }
-.guide-phone { display: flex; flex-direction: column; justify-content: center; gap: 5px; height: 96px; padding: 8px 6px; border: 2px solid var(--surface3); border-radius: 12px; background: var(--bg); overflow: hidden; }
+/* min-height, not height: a label that wraps to more lines (another font, 130% text) grows the drawn phone instead of being cut off. */
+.guide-phone { display: flex; flex-direction: column; justify-content: center; gap: 5px; min-height: 96px; padding: 8px 6px; border: 2px solid var(--surface3); border-radius: 12px; background: var(--bg); overflow: hidden; }
 .guide-line { height: 5px; border-radius: 3px; background: var(--surface3); }
 .guide-line.short { width: 60%; }
-.guide-pick { display: block; padding: 4px 5px; border-radius: 6px; background: var(--accent-dim); color: var(--accent); font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 700; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.guide-pick { display: block; overflow-wrap: anywhere; padding: 4px 5px; border-radius: 6px; background: var(--accent-dim); color: var(--accent); font-size: calc(var(--fs-caption) * var(--ts)); font-weight: 700; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
 .guide-switch { display: flex; align-items: center; gap: 4px; text-align: start; }
 .guide-switch span { flex: 1; min-width: 0; }
 .guide-switch i { flex: none; width: 16px; height: 10px; border-radius: 5px; background: var(--accent-stroke); }
