@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  activeMs, clock, defaultTraining, intervalSteps, INTERVAL_PRESETS, normalizeIntervals, pauseWorkout, restFor,
+  activeMs, clock, closeStaleWorkouts, defaultTraining, MAX_WORKOUT_MIN, intervalSteps, INTERVAL_PRESETS, normalizeIntervals, pauseWorkout, restFor,
   restoreSet, resumeWorkout, setTraining, stepAt, targetProgress, totalSeconds, trainingSettings,
 } from './training.js';
 
@@ -106,4 +106,28 @@ test('the screen stays on for 20 minutes after the last tap, and while a rest ti
   assert.equal(shouldStayAwake(now - 3 * AWAKE_IDLE_MS, true, now), true);
   assert.equal(shouldStayAwake(null, false, now), false);
   assert.equal(shouldStayAwake(null, true, now), true);
+});
+
+test('UX-1: a workout left open on an earlier day is finished at start, not reopened as today\'s', () => {
+  const now = Date.parse('2026-11-27T08:00:00Z');
+  const started = Date.parse('2026-11-25T07:00:00Z');
+  const sets = Array.from({ length: 12 }, (_, i) => ({ id: i + 1, exercise_id: 1, reps: 8, weight_kg: 40 }));
+  const data = { workouts: [
+    { id: 1, log_date: '2026-11-25', started_at: started, finished_at: null, sets },
+    { id: 2, log_date: '2026-11-26', started_at: started + 86400000, finished_at: null, sets: [] },
+    { id: 3, log_date: '2026-11-27', started_at: now - 600000, finished_at: null, sets: [] },
+  ] };
+  const out = closeStaleWorkouts(data, '2026-11-27', now);
+  assert.equal(out.workouts.length, 2, 'the empty stale one had nothing logged');
+  const w = out.workouts.find((x) => x.id === 1);
+  assert.equal(w.duration_min, 36);
+  assert.equal(w.finished_at, started + 36 * 60000);
+  assert.ok(w.auto_closed);
+  assert.equal(w.sets.length, 12, 'no set is lost');
+  assert.equal(out.workouts.find((x) => x.id === 3).finished_at, null, "today's stays open");
+  // Long sessions are capped; a workout that crossed midnight a moment ago stays open.
+  const long = closeStaleWorkouts({ workouts: [{ id: 1, log_date: '2026-11-25', started_at: started, finished_at: null, sets: Array(90).fill(sets[0]) }] }, '2026-11-27', now);
+  assert.equal(long.workouts[0].duration_min, MAX_WORKOUT_MIN);
+  const late = { workouts: [{ id: 1, log_date: '2026-11-26', started_at: now - 3600000, finished_at: null, sets }] };
+  assert.equal(closeStaleWorkouts(late, '2026-11-27', now), late);
 });

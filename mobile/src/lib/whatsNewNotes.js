@@ -5,6 +5,17 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.47',
+    items: [
+      { icon: 'dumbbell', text: 'On 2-day plans, Sunday\'s lifts go up again: a few days between sessions no longer counts as a break.' },
+      { icon: 'trend', text: 'After a long break, the second session goes back to your old weight before adding more.' },
+      { icon: 'barbell', text: 'Light dumbbells really drop when a weight is too heavy, and barbell curls go up by 2.5 kg, which you can load.' },
+      { icon: 'check', text: 'A workout left open on an earlier day is finished for you, so today\'s sets keep today\'s date.' },
+      { icon: 'heart', text: 'Swaps in a workout skip moves your injury limits rule out. "Per leg" and "per side" moves now count reps and seconds.' },
+      { icon: 'home', text: 'Trained on a rest day? Home shows it, or lets you resume.' },
+    ],
+  },
+  {
     version: '1.1.46',
     items: [
       { icon: 'lock', text: 'Saving is safer: two saves at the same moment can no longer remove the copy kept in the app\'s folder.' },

@@ -108,3 +108,31 @@ test('timed holds: "30-45s" counts seconds, 5 s at a time, then a harder version
   const top = progressionTarget('30-45s', 2, [S(0, 45, 45)]);
   assert.equal(top.kind, 'harder');
 });
+
+test('TRN-2: a deload on a light weight still goes down', () => {
+  const missed = [[{ weight_kg: 10, reps: 5 }, { weight_kg: 10, reps: 5 }]];
+  const t = progressionTarget('8-12', 2, [missed[0], missed[0]], { step: 2 });
+  assert.equal(t.kind, 'deload');
+  assert.ok(t.weightKg < 10, `got ${t.weightKg}`);
+  const five = progressionTarget('8-12', 2, [[{ weight_kg: 5, reps: 5 }], [{ weight_kg: 5, reps: 5 }]], { step: 1 });
+  assert.equal(five.weightKg, 4);
+});
+
+test('TRN-3: per side, per leg and each arm are understood', () => {
+  assert.deepEqual(repRange('8-12 per leg'), [8, 12]);
+  assert.deepEqual(repRange('10 per side'), [10, 10]);
+  assert.deepEqual(repRange('8 each arm'), [8, 8]);
+  assert.deepEqual(holdRange('20-30s per side'), [20, 30]);
+  assert.deepEqual(holdRange('30-45s/side'), [30, 45]);
+  assert.equal(repRange('20-30s per side'), null);
+});
+
+test('TRN-5: a barbell or EZ-bar move steps by 2.5 kg, isolation or not', () => {
+  assert.equal(stepFor({ mechanic: 'isolation', equipment: 'barbell' }), 2.5);
+  assert.equal(stepFor({ mechanic: 'isolation', equipment: 'e-z curl bar' }), 2.5);
+  assert.equal(stepFor({ mechanic: 'isolation', equipment: 'dumbbell' }), 1);
+  const top = Array(3).fill({ weight_kg: 30, reps: 12 });
+  assert.equal(progressionTarget('8-12', 3, [top], { step: 2.5, bar: true }).weightKg, 32.5);
+  const ez = Array(3).fill({ weight_kg: 15, reps: 12 });
+  assert.equal(progressionTarget('8-12', 3, [ez], { step: 2.5, bar: true }).weightKg, 17.5);
+});

@@ -6,7 +6,7 @@ import { macroTargets, saveProfile } from './macros.js';
 import {
   GATES, SKIP_GATES, PROTEIN_CAP_G_PER_KG, QUESTIONS, SCREEN_VERSION, allowedDirections, answeredAll, applyScreening, capProtein,
   celebratesWeightLoss, gateOn, gentleDay, gentleRir, gatesOn, isMinorNow, kcalHidden, markClearanceSeen, needsScreening, safeMode,
-  NURSING_KCAL, questionsFor, recheckForSex, safeDay, swapLimits, screeningResult, screeningState, setHide, showClearance, skipScreening,
+  NURSING_KCAL, questionsFor, recheckForSex, safeDay, swapLimits, unsafeFor, screeningResult, screeningState, setHide, showClearance, skipScreening,
 } from './safety.js';
 import { content } from './testContent.js';
 
@@ -274,4 +274,14 @@ test('breastfeeding adds about 400 kcal on top of maintenance, and only a real y
 test('diabetes switches on the steady-carbs note', () => {
   assert.equal(gateOn(applyScreening(adult(), { ...NO, diabetes: true }, TODAY), 'steady_carbs', TODAY), true);
   assert.equal(gateOn(applyScreening(adult(), NO, TODAY), 'steady_carbs', TODAY), false);
+});
+
+test('TRN-8: a swap picked in a workout is checked against the limits that are on', () => {
+  const swaps = content.training.safety_swaps.swaps;
+  const area = Object.keys(swaps).find((k) => k !== 'pregnancy' && Object.keys(swaps[k]).length);
+  const name = Object.keys(swaps[area])[0];
+  const d = { ...adult(), safety: { ...adult().safety, injury_areas: [area] } };
+  assert.equal(unsafeFor(d, name, TODAY, swaps), area);
+  assert.equal(unsafeFor(adult(), name, TODAY, swaps), null);
+  assert.equal(unsafeFor(d, 'Not An Exercise', TODAY, swaps), null);
 });

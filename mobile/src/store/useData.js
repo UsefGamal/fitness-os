@@ -16,6 +16,8 @@ import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { backfillEaten } from '../lib/meals.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { keepPhotoLock } from '../lib/photoLock.js';
+import { todayISO } from '../lib/dates.js';
+import { closeStaleWorkouts } from '../lib/training.js';
 import { cancelMirror, hasMirror, lastSaveMs, mirrorIdle, onMirrorResult, readMirror, writeMirror } from './mirror.js';
 import { logStart } from './native.js';
 import { APP } from '../lib/version.js';
@@ -190,6 +192,14 @@ export const useData = create((set, get) => ({
       else set({ startError: 'failed', rawCopies, ready: true });
       logStart(startLine({ version: APP.version, error: err instanceof NewerSchemaError ? 'newer' : 'failed' }));
       return;
+    }
+    // A workout left open on an earlier day is finished, not reopened as
+    // today's (audit UX-1).
+    const closed = closeStaleWorkouts(get().data, todayISO());
+    if (closed !== get().data) {
+      set({ data: closed });
+      pending = closed;
+      flushSave();
     }
     const data = get().data;
     const active = data.workouts.find((w) => w.started_at && !w.finished_at);

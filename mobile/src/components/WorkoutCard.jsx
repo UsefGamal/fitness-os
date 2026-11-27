@@ -40,8 +40,14 @@ export default function WorkoutCard({ next, day, time, todays, changed, ready, r
           </div>
         </div>
         {readyText ? <div className="muted small ready-text">{readyText}</div> : null}
+        {/* Trained anyway on a rest day: show it, or let it go on (audit UX-2). */}
+        {todays?.finished_at ? (
+          <Link className="btn secondary" to={`/history/${todays.id}`}><Icon name="check" /> {t(todays.sets.length === 1 ? 'home.doneSetOne' : 'home.doneSets', { n: todays.sets.length })}</Link>
+        ) : todays ? (
+          <button type="button" className="btn hero" onClick={onStart}><Icon name="play" /> {t('home.resume')}</button>
+        ) : null}
         {/* Rest is the plan today: training is a quiet link, not the biggest button. */}
-        {links(true, 'home.trainToday')}
+        {links(!todays, 'home.trainToday')}
       </section>
     );
   }
