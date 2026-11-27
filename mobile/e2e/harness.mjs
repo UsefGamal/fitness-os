@@ -65,7 +65,8 @@ const flatWeeks = (d) => {
   const day = (i) => new Date(Date.UTC(2026, 10, 6 - i)).toISOString().slice(0, 10);
   const logs = Array.from({ length: 28 }, (_, i) => ({ id: 9000 + i, log_date: day(i), weight_kg: 95 }));
   const meals = Array.from({ length: 21 }, (_, i) => slots.map((s, j) => ({ id: 9100 + i * 10 + j, log_date: day(i), meal_slot: s, option_key: 'option_a', completed: true }))).flat();
-  return { ...d, body_logs: logs, meal_logs: meals, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, set_on: '2026-09-01' })) };
+  // A slower goal than the fixture's own, so the target is under the 25% cap and a cut can still be offered.
+  return { ...d, body_logs: logs, meal_logs: meals, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, set_on: '2026-09-01', target_date: '2028-06-01' })) };
 };
 const adjusted = (d) => ({ ...d, goals: d.goals.map((g) => (g.ended_on ? g : { ...g, kcal_adjust: [{ on: '2026-11-01', kcal: -150 }] })) });
 const lightTheme = (d) => ({ ...d, settings: { ...d.settings, theme: 'light' } });
@@ -193,6 +194,7 @@ export const STATES = [
   // BACK-1: the last workout 11 days ago; and the session time long gone
   // (the starting plan rests on Fridays, so a session is put on it).
   { name: 'welcome back on Home', route: '/', data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date <= '2026-10-26') }), check: (p) => p.getByText(en['back.title']).waitFor() },
+  { name: 'missed yesterday on Home', route: '/', data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-05'), session_moves: [{ from: null, to: '2026-11-05', key: 'full_a' }, { from: null, to: '2026-11-06', key: 'rest' }] }), check: (p) => p.getByRole('button', { name: en['missed.today'] }).waitFor() },
   { name: 'still time today on Home', route: '/', now: AFTERNOON, data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-06'), session_moves: [{ from: null, to: '2026-11-06', key: 'full_a' }] }), check: (p) => p.getByText(en['still.title']).first().waitFor() },
   // WRAP-1: Sunday, the week that ended on Saturday (trained Friday, so
   // it isn't a welcome back).
@@ -251,6 +253,14 @@ export const STATES = [
   { name: 'ramadan: settings', route: '/settings/times', data: fasting, check: (p) => p.getByText(en['ramadan.from']).first().waitFor() },
   { name: 'after Eid on Home', route: '/', data: afterEid, check: (p) => p.getByText(en['ramadan.afterChip']).first().waitFor() },
   { name: 'safety limits on: Meals', route: '/meals', data: gated },
+  // Audit NUT-2: calories hidden means no kcal anywhere in the full plan.
+  {
+    name: 'calories hidden: full plan',
+    route: '/meals',
+    data: (d) => ({ ...gated(d), safety: { ...gated(d).safety, hide_kcal: true } }),
+    act: toFullMeals,
+    check: async (p) => { const text = await p.locator('#root').innerText(); if (/\d\s*kcal/.test(text)) throw new Error(`kcal shown while hidden: ${text.match(/.{0,30}\d\s*kcal.{0,10}/)[0]}`); },
+  },
   { name: 'gym mode: logging a set', route: '/workout', data: gymOn, act: startSession, check: async (p) => { if (await p.locator('.tabbar').isVisible()) throw new Error('tab bar still shown in gym mode'); } },
   { name: 'goal reached on Home', route: '/', data: goalReached, check: (p) => p.getByText(en['maint.title']).waitFor() },
   { name: 'maintenance week on Meals', route: '/meals', data: maintaining, act: toFullMeals },

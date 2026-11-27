@@ -13,6 +13,49 @@ export const WHATS_NEW = [
     ],
   },
   {
+    version: '1.1.49',
+    items: [
+      { icon: 'lock', text: 'Automatic backups are now encrypted for every folder. A folder on the phone can keep plain files if you choose.' },
+      { icon: 'heart', text: 'If Health Connect permission is taken away, Settings says so. Workouts still sync when weight can\'t be read.' },
+      { icon: 'moon', text: 'Turning off Watch numbers also hides the recovery line on Home.' },
+      { icon: 'check', text: 'Data health counts automatic backups. Privacy says more about the lock screen.' },
+    ],
+  },
+  {
+    version: '1.1.48',
+    items: [
+      { icon: 'calendar', text: 'Missed a session yesterday? On a free day, Home offers to do it today, or let it go.' },
+    ],
+  },
+  {
+    version: '1.1.47',
+    items: [
+      { icon: 'dumbbell', text: 'On 2-day plans, Sunday\'s lifts go up again: a few days between sessions no longer counts as a break.' },
+      { icon: 'trend', text: 'After a long break, the second session goes back to your old weight before adding more.' },
+      { icon: 'barbell', text: 'Light dumbbells really drop when a weight is too heavy, and barbell curls go up by 2.5 kg, which you can load.' },
+      { icon: 'check', text: 'A workout left open on an earlier day is finished for you, so today\'s sets keep today\'s date.' },
+      { icon: 'heart', text: 'Swaps in a workout skip moves your injury limits rule out. "Per leg" and "per side" moves now count reps and seconds.' },
+      { icon: 'home', text: 'Trained on a rest day? Home shows it, or lets you resume.' },
+    ],
+  },
+  {
+    version: '1.1.46',
+    items: [
+      { icon: 'lock', text: 'Saving is safer: two saves at the same moment can no longer remove the copy kept in the app\'s folder.' },
+      { icon: 'undo', text: 'An import or restore stops if the phone is too full to keep a copy of what is there now, so there is always an undo.' },
+      { icon: 'star', text: 'After a long gap, What\'s new shows the latest 5 versions; the rest are in Help & about.' },
+    ],
+  },
+  {
+    version: '1.1.45',
+    items: [
+      { icon: 'check', text: 'If your safety answers say no calorie deficit, the slow step back up after a goal stops: you eat at maintenance straight away.' },
+      { icon: 'check', text: 'With calories hidden, the full meal plan shows no calories either, only protein, carbs and fat.' },
+      { icon: 'check', text: 'With protein capped, the meal plan gives smaller meat, fish and egg portions, and says so if a day is still over.' },
+      { icon: 'flame', text: 'Weekly calorie cuts now stop at the safe limit (25%, or the Ramadan limit), and a new goal direction starts fresh.' },
+    ],
+  },
+  {
     version: '1.1.44',
     items: [
       { icon: 'calendar', text: 'A shorter Plan header: the plan, days a week, minutes and time on one line. Tempo is in the terms sheet (⋯) and the workout.' },

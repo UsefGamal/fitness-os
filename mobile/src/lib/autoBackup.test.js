@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { bigFixture } from '../../e2e/bigFixture.mjs';
-import { autoState, backupDueNow, backupHealthy, backupName, backupStatus, backupText, dateRange, ERRORS, fakeFolder, isOurs, KEEP_DAILY, newestBackup, OURS, provesBackup, runBackup, toPrune, withAutoState } from './autoBackup.js';
+import { autoState, backupDueNow, backupHealthy, backupName, backupStatus, backupText, canEncryptLater, dateRange, ERRORS, fakeFolder, isOurs, KEEP_DAILY, newestBackup, OURS, provesBackup, runBackup, toPrune, wantsEncryption, withAutoState } from './autoBackup.js';
 import { decryptWithPassphrase, isEncrypted, makeRecovery, newDataKey } from './backupCrypto.js';
 import { dataHash } from './dataCheck.js';
 import { parseDataFile, summarize, toDataFile } from './dataFile.js';
@@ -16,6 +16,8 @@ const v1 = () => JSON.parse(readFileSync(new URL('./fixtures/v1-yusuf-like.json'
 const yusuf = () => migrate(v1(), content);
 const NOW = new Date(2026, 10, 13, 8, 14);
 const TODAY = '2026-11-13';
+// The plain-file mechanics; encryption is the default (audit DEC-4), tested below.
+const PLAIN = { on: true, plain: true };
 
 test('names: only dated backups of ours match, nothing else in a folder does', () => {
   assert.equal(backupName(TODAY), 'fitness-os-backup-2026-11-13.json');
@@ -28,14 +30,14 @@ test('the saved state is read with safe defaults and never trusts odd values', (
   assert.deepEqual(autoState({ settings: {} }), { on: false });
   assert.deepEqual(autoState({ settings: { auto_backup: [] } }), { on: false });
   const s = autoState({ settings: { auto_backup: { on: 'yes', last_name: '../../x', last_error: 'boom', last_checked_at: 'x', uri: 'content://secret' } } });
-  assert.deepEqual(s, { on: false, folder: null, last_checked_at: null, last_name: null, last_hash: null, last_error: null });
+  assert.deepEqual(s, { on: false, folder: null, last_checked_at: null, last_name: null, last_hash: null, last_error: null, synced: false });
   assert.ok(!('uri' in s));
 });
 
 test('a normal day: one checked file, compact, restores to the same data', async () => {
   const data = yusuf();
   const folder = fakeFolder({ 'holiday.jpg': 'JPEG' });
-  const state = await runBackup(folder, data, content, { now: NOW, state: { on: true } });
+  const state = await runBackup(folder, data, content, { now: NOW, state: PLAIN });
   assert.equal(state.last_error, null);
   assert.equal(state.last_name, backupName(TODAY));
   assert.equal(state.last_checked_at, NOW.getTime());
@@ -51,7 +53,7 @@ test('a normal day: one checked file, compact, restores to the same data', async
 
 test('a second run the same day does nothing; a change the next day is due', async () => {
   const data = yusuf();
-  const state = await runBackup(fakeFolder(), data, content, { now: NOW, state: { on: true } });
+  const state = await runBackup(fakeFolder(), data, content, { now: NOW, state: PLAIN });
   const saved = withAutoState(data, state);
   assert.equal(dataHash(saved), dataHash(data), 'recording the backup is not a change');
   assert.equal(backupDueNow(autoState(saved), saved, NOW), false);
@@ -77,7 +79,7 @@ test('folder revoked: an error to show, nothing written', async () => {
 
 test('a cloud-synced folder without a key waits for the passphrase: no plain file leaves the phone', async () => {
   const folder = fakeFolder({}, { fault: 'synced' });
-  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true } });
+  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: PLAIN });
   assert.equal(state.last_error, 'needs_passphrase');
   assert.deepEqual(folder.files, {});
   assert.equal(backupStatus(state, NOW).fix, 'passphrase');
@@ -114,7 +116,7 @@ test('a cloud-synced folder: a read-back that does not decrypt is thrown away', 
 test('disk full on write: the earlier good backup stays, no .tmp is left', async () => {
   const data = yusuf();
   const folder = fakeFolder();
-  const first = await runBackup(folder, data, content, { now: new Date(2026, 10, 12, 9), state: { on: true } });
+  const first = await runBackup(folder, data, content, { now: new Date(2026, 10, 12, 9), state: PLAIN });
   folder.fault = 'full';
   const state = await runBackup(folder, data, content, { now: NOW, state: first });
   assert.equal(state.last_error, 'no_space');
@@ -129,7 +131,7 @@ test('the write succeeds but reads back different: refused, bad file removed, ol
   const files = { 'fitness-os-backup-notes.txt': 'mine' };
   for (let i = 1; i <= 12; i += 1) files[backupName(addDays(TODAY, -i))] = 'old';
   const folder = fakeFolder(files, { fault: 'corrupt' });
-  const state = await runBackup(folder, data, content, { now: NOW, state: { on: true } });
+  const state = await runBackup(folder, data, content, { now: NOW, state: PLAIN });
   assert.equal(state.last_error, 'check_failed');
   assert.equal(Object.keys(folder.files).length, 13, 'nothing pruned after a failed check');
   assert.ok(!(backupName(TODAY) in folder.files));
@@ -138,7 +140,7 @@ test('the write succeeds but reads back different: refused, bad file removed, ol
 
 test('a rename that fails is a failed backup, and today is not recorded', async () => {
   const folder = fakeFolder({}, { fault: 'rename' });
-  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true } });
+  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: PLAIN });
   assert.equal(state.last_error, 'write_failed');
   assert.deepEqual(folder.files, {});
 });
@@ -175,7 +177,7 @@ test('rotation runs after a good backup and leaves other files in the folder alo
   const files = { 'holiday.jpg': 'JPEG', 'fitness-os-backup-notes.txt': 'mine' };
   for (let i = 1; i <= 59; i += 1) files[backupName(addDays(TODAY, -i))] = 'old';
   const folder = fakeFolder(files);
-  const state = await runBackup(folder, data, content, { now: NOW, state: { on: true } });
+  const state = await runBackup(folder, data, content, { now: NOW, state: PLAIN });
   assert.equal(state.last_error, null);
   const left = Object.keys(folder.files);
   assert.ok(left.includes('holiday.jpg') && left.includes('fitness-os-backup-notes.txt'));
@@ -223,7 +225,7 @@ test('size and speed guard: three years fit in 3 MB and restore fast', async () 
   // point is to notice a tenfold regression, not to time a phone.
   assert.ok(ms < 1500, `${Math.round(ms)} ms`);
   assert.equal(dataHash(back), dataHash(big));
-  const state = await runBackup(fakeFolder(), big, content, { now: NOW, state: { on: true } });
+  const state = await runBackup(fakeFolder(), big, content, { now: NOW, state: PLAIN });
   assert.equal(state.last_error, null);
 });
 
@@ -246,4 +248,41 @@ test('a cloud-synced folder: a key that cannot encrypt writes nothing and says w
   const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true }, keys });
   assert.equal(state.last_error, 'write_failed');
   assert.deepEqual(folder.files, {});
+});
+
+test('every folder is encrypted by default (audit DEC-4): a phone folder without a key waits too', async () => {
+  const folder = fakeFolder({});
+  const waiting = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true } });
+  assert.equal(waiting.last_error, 'needs_passphrase');
+  assert.equal(waiting.synced, false);
+  assert.deepEqual(folder.files, {}, 'nothing plain written');
+  const { key, kid } = newDataKey();
+  const recovery = await makeRecovery(key, 'correct horse battery', { rounds: 1000 });
+  const done = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true }, keys: { key, kid, recovery } });
+  assert.equal(done.last_name, 'fitness-os-backup-2026-11-13.json.enc');
+  assert.ok(!canEncryptLater(done));
+});
+
+test('plain files only by choice, never for a syncing folder; old plain setups keep going', () => {
+  const keys = { hasKeys: true };
+  assert.equal(wantsEncryption({ on: true }), true);
+  assert.equal(wantsEncryption({ on: true, plain: true }), false);
+  assert.equal(wantsEncryption({ on: true, plain: true }, { synced: true }), true);
+  assert.equal(wantsEncryption({ on: true, plain: false }), true);
+  // Set up plain before the default: no sudden stop, until a passphrase is set.
+  const old = { on: true, last_name: 'fitness-os-backup-2026-11-12.json' };
+  assert.equal(wantsEncryption(old), false);
+  assert.equal(wantsEncryption(old, keys), true);
+  assert.equal(wantsEncryption({ ...old, plain: true }, keys), false);
+  assert.ok(canEncryptLater(old));
+  assert.ok(!canEncryptLater({ ...old, last_error: 'write_failed' }));
+  assert.equal(autoState({ settings: { auto_backup: { on: true, plain: 'yes' } } }).plain, undefined);
+  assert.equal(autoState({ settings: { auto_backup: { on: true, plain: true, synced: 1 } } }).synced, false);
+});
+
+test('an old plain setup keeps writing plain files after the update', async () => {
+  const folder = fakeFolder({});
+  const state = await runBackup(folder, yusuf(), content, { now: NOW, state: { on: true, last_name: 'fitness-os-backup-2026-11-12.json' } });
+  assert.equal(state.last_error, null);
+  assert.equal(state.last_name, backupName(TODAY));
 });

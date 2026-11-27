@@ -138,9 +138,15 @@ export async function pickBackupFolder() {
     picked = { granted: false };
   }
   if (picked?.cancelled) return null;
-  useData.getState().update((d) => withAutoState(d, { ...autoState(d), on: true, folder: picked?.name || null, last_error: null, last_hash: null }));
-  // A cloud folder with no key yet: nothing is written until the person
-  // sets a recovery passphrase (runBackup records needs_passphrase).
+  // A new folder starts encrypted (audit DEC-4): an earlier "plain" choice
+  // and an old plain backup's name don't carry over.
+  useData.getState().update((d) => {
+    const { plain: _plain, ...was } = autoState(d);
+    return withAutoState(d, { ...was, on: true, folder: picked?.name || null, last_name: null, last_error: null, last_hash: null });
+  });
+  // No key yet: nothing is written until the person sets a recovery
+  // passphrase (runBackup records needs_passphrase), or chooses plain files
+  // for a folder on the phone (backUpPlain).
   return once();
 }
 
@@ -162,6 +168,7 @@ export async function setRecoveryPassphrase(passphrase) {
     useData.getState().update((d) => withAutoState(d, bad));
     return { ok: false, ms, state: bad };
   };
+  useData.getState().update((d) => withAutoState(d, { ...autoState(d), plain: false }));
   try {
     await keyStore.store({ ...fresh, recovery });
   } catch {
@@ -177,6 +184,16 @@ export async function setRecoveryPassphrase(passphrase) {
     return failed(state);
   }
   return { ok: true, ms, state };
+}
+
+/** "Back up without encryption", offered only for a folder on the phone
+ * (one Android doesn't report as syncing). runBackup still refuses plain
+ * files for a folder that syncs. */
+export async function backUpPlain() {
+  if (!canAutoBackup()) return null;
+  if (running) await running.catch(() => {});
+  useData.getState().update((d) => withAutoState(d, { ...autoState(d), plain: true, last_error: null }));
+  return once();
 }
 
 /** A backup's plain text. Plain files come back as they are. An encrypted

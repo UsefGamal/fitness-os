@@ -16,7 +16,9 @@ import { loadNewest, parseCopy, stamp, unreadable } from '../lib/durable.js';
 import { backfillEaten } from '../lib/meals.js';
 import { migrate, NewerSchemaError } from '../lib/migrate.js';
 import { keepPhotoLock } from '../lib/photoLock.js';
-import { cancelMirror, hasMirror, lastSaveMs, onMirrorResult, readMirror, writeMirror } from './mirror.js';
+import { todayISO } from '../lib/dates.js';
+import { closeStaleWorkouts } from '../lib/training.js';
+import { cancelMirror, hasMirror, lastSaveMs, mirrorIdle, onMirrorResult, readMirror, writeMirror } from './mirror.js';
 import { logStart } from './native.js';
 import { APP } from '../lib/version.js';
 import { SAVE_OK, recordSave } from '../lib/saveHealth.js';
@@ -51,7 +53,11 @@ export function stopSaving() {
 export function flushSave(hidden = false) {
   if (timer) clearTimeout(timer);
   timer = null;
-  if (!pending || blocked) return;
+  if (!pending || blocked) {
+    // A mirror write may still be waiting on its 300 ms timer (audit DATA-9).
+    if (hidden && !blocked) mirrorIdle();
+    return;
+  }
   const data = stamp(pending);
   pending = null;
   report('local', saveLocal(data));
@@ -137,6 +143,8 @@ export const useData = create((set, get) => ({
     set({ data, startError: null });
     pending = data;
     flushSave();
+    // The caller reloads next: wait for the file copy too (audit DATA-3).
+    await mirrorIdle();
   },
 
   /** True while no copy could be written (storage full): the data is only in memory. */
@@ -185,6 +193,14 @@ export const useData = create((set, get) => ({
       logStart(startLine({ version: APP.version, error: err instanceof NewerSchemaError ? 'newer' : 'failed' }));
       return;
     }
+    // A workout left open on an earlier day is finished, not reopened as
+    // today's (audit UX-1).
+    const closed = closeStaleWorkouts(get().data, todayISO());
+    if (closed !== get().data) {
+      set({ data: closed });
+      pending = closed;
+      flushSave();
+    }
     const data = get().data;
     const active = data.workouts.find((w) => w.started_at && !w.finished_at);
     set({ ready: true, activeWorkoutId: active ? active.id : null });
@@ -201,14 +217,18 @@ export const useData = create((set, get) => ({
   },
 
   /** Replace everything (import, restore, reset), after a snapshot of what
-   * is there now. Written at once. */
+   * is there now. Written at once. False, with nothing replaced, when the
+   * snapshot couldn't be saved (a full phone): there would be no undo
+   * (audit DATA-2). */
   async replaceAll(data, reason = 'import') {
-    if (blocked) return;
-    await snapshot(JSON.stringify(stamp(get().data)), reason);
+    if (blocked) return false;
+    const kept = await snapshot(JSON.stringify(stamp(get().data)), reason);
+    if (hasMirror && !kept) return false;
     data = backfillEaten(keepPhotoLock(get().data, data), content.nutrition);
     set({ data, activeWorkoutId: null });
     pending = data;
     flushSave();
+    return true;
   },
 
   setActiveWorkout(id) {

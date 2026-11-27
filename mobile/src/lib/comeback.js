@@ -1,7 +1,8 @@
 // An easy way back after a gap (BACK-1). The biggest quit point is coming
 // back: so a returning person gets a welcome, no lapsed streak, and a
 // lighter first session instead of last month's loads. Pure; comeback.test.js.
-import { daysBetween } from './dates.js';
+import { addDays, daysBetween } from './dates.js';
+import { sessionKeyOn } from './schedule.js';
 import { holdRange, repRange } from './progression.js';
 
 /** The gap (days since the last workout) where each level starts.
@@ -10,7 +11,9 @@ export const LEVELS = [
   [63, 'fresh'], // 8+ weeks: start fresh, no prefilled weight
   [28, 'easy80'], // 4 to 8 weeks: 80% of last time
   [14, 'easy90'], // 2 to 3 weeks: 90%
-  [4, 'short'], // a few days: last time's weights, nothing added
+  // A week or more: last time's weights, nothing added. Not 4 days, which
+  // is the normal Wednesday-to-Sunday gap of a 2-day plan (audit TRN-1).
+  [7, 'short'],
 ];
 const SHARE = { easy90: 0.9, easy80: 0.8 };
 
@@ -73,8 +76,21 @@ export function comebackTarget(target, level, { planReps, sessions = [], step = 
   }
   const share = SHARE[level];
   if (!share || top <= 0) return { ...target, kind: target.kind === 'add' ? 'repeat' : target.kind, weightKg: target.kind === 'add' ? top : target.weightKg };
-  const kg = Math.max(0, Math.round(roundTo(top * share, step) * 100) / 100);
+  // Always at least one step lighter, even on light weights (audit TRN-2).
+  const kg = Math.max(0, Math.round(Math.min(roundTo(top * share, step), top - step) * 100) / 100);
   return { weightKg: kg, reps: lo, kind: 'easy', reason: `Welcome back: ${kg} kg today, a little lighter than last time.` };
+}
+
+/** The session after the easy one back (audit TRN-4): the easy session is
+ * kept out of progression, so the plain target reads the last session
+ * before the break and could add weight on top of it. Hold at that
+ * weight until it is lifted again. `easyJustBefore`: the newest session of
+ * this exercise was the easy one back. */
+export function afterComeback(target, sessions, easyJustBefore) {
+  if (!easyJustBefore || !target || target.kind !== 'add' || !sessions?.[0]?.length) return target;
+  const top = Math.max(...sessions[0].map(kgOf));
+  if (!(top > 0)) return target;
+  return { ...target, weightKg: top, kind: 'repeat', reason: `Back to ${top} kg, your weight before the break. Add again once it feels solid.` };
 }
 
 // ── "Still time today?" ───────────────────────────────────────────────
@@ -105,4 +121,30 @@ export function stillTime({ data, today, nowMinutes, sessionTime, scheduled, rec
 /** "Skip today": the question goes away for today. Nothing else is kept. */
 export function skipToday(data, today) {
   return { ...data, settings: { ...data.settings, still_skip: today } };
+}
+
+// ── "Missed yesterday? Do it today" (audit DEC-5) ────────────────────
+
+const isGym = (w) => (w.workout_type || 'gym') === 'gym';
+
+/** Yesterday had a session and no gym workout, and today is free: offer
+ * to move it to today. null, or { from, key }. Never for someone who has
+ * never trained before yesterday, in a recovery week, while the
+ * welcome-back card is due, once a workout is logged today, or once
+ * dismissed for the day. `moves` is data.session_moves. */
+export function missedYesterday({ data, today, training, moves = [], recovery = false }) {
+  if (recovery || data?.settings?.missed_skip === today) return null;
+  const from = addDays(today, -1);
+  const key = sessionKeyOn(from, training, moves);
+  if (key === 'rest' || sessionKeyOn(today, training, moves) !== 'rest') return null;
+  const workouts = data?.workouts || [];
+  if (workouts.some((w) => isGym(w) && (w.log_date === from || w.log_date === today))) return null;
+  if (!workouts.some((w) => w.log_date < from)) return null;
+  if (comeback(data, today)) return null;
+  return { from, key };
+}
+
+/** "Not this time": the offer goes away for today. */
+export function skipMissed(data, today) {
+  return { ...data, settings: { ...data.settings, missed_skip: today } };
 }

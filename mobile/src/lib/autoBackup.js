@@ -13,10 +13,13 @@
 // fakeFolder(). No file that is not the app's own is ever read, replaced
 // or deleted, and the folder grant itself never enters the data file.
 //
-// A folder that syncs off the phone gets an encrypted file (.json.enc,
-// lib/backupCrypto.js) and never a plain one. Its data key comes in as
-// `keys` ({ key, kid, recovery }) from the phone's Keystore; without it
-// the backup waits for the person to set a recovery passphrase.
+// Every folder gets an encrypted file (.json.enc, lib/backupCrypto.js) by
+// default (audit DEC-4): Android can't always tell that a folder syncs off
+// the phone. Its data key comes in as `keys` ({ key, kid, recovery }) from
+// the phone's Keystore; without it the backup waits for the person to set
+// a recovery passphrase. A folder on the phone may stay plain only when the
+// person chose that (`plain`), or when it was set up plain before this
+// default and no passphrase is set yet. A folder known to sync never does.
 import { decryptWithKey, encryptBackup } from './backupCrypto.js';
 import { dataHash } from './dataCheck.js';
 import { parseDataFile, summarize, toDataFile } from './dataFile.js';
@@ -59,7 +62,25 @@ export function autoState(data) {
     last_name: isOurs(a.last_name) ? a.last_name : null,
     last_hash: typeof a.last_hash === 'string' ? a.last_hash.slice(0, 20) : null,
     last_error: ERRORS.includes(a.last_error) ? a.last_error : null,
+    // true: the person chose plain files; false: chose encryption; absent: never asked.
+    ...(typeof a.plain === 'boolean' ? { plain: a.plain } : {}),
+    synced: a.synced === true,
   };
+}
+
+/** Write this backup encrypted? See the top of the file. */
+export function wantsEncryption(state, { synced = false, hasKeys = false } = {}) {
+  if (synced) return true;
+  if (state?.plain === true) return false;
+  if (state?.plain === false || hasKeys) return true;
+  // Set up plain before encryption was the default: keep writing until a passphrase is set.
+  return !(typeof state?.last_name === 'string' && state.last_name.endsWith('.json'));
+}
+
+/** Offer "Encrypt these backups" (a plain folder on the phone, set up before
+ * the default, or chosen plain). */
+export function canEncryptLater(state) {
+  return Boolean(state?.on && !state.last_error && state.last_name && !state.last_name.endsWith('.enc'));
 }
 
 export function withAutoState(data, state) {
@@ -143,11 +164,14 @@ export async function runBackup(folder, data, content, { now = new Date(), state
     return fail('folder_gone');
   }
   if (!status?.granted) return fail('folder_gone');
-  const named = { folder: status.name || state.folder || null };
-  // A folder that syncs to a cloud never gets a plain file: health data
-  // would leave the phone readable. Without the data key, nothing is written.
-  const encrypted = Boolean(status.synced);
-  if (encrypted && !(keys?.key && keys.kid && keys.recovery)) return fail('needs_passphrase', named);
+  const synced = Boolean(status.synced);
+  const named = { folder: status.name || state.folder || null, synced, ...('plain' in state ? { plain: state.plain } : {}) };
+  // Encrypted unless the person chose plain for a folder on the phone. A
+  // folder that syncs to a cloud never gets a plain file. Without the data
+  // key, nothing is written.
+  const hasKeys = Boolean(keys?.key && keys.kid && keys.recovery);
+  const encrypted = wantsEncryption(state, { synced, hasKeys });
+  if (encrypted && !hasKeys) return fail('needs_passphrase', named);
 
   const today = todayISO(now);
   const name = backupFileName(today, encrypted);

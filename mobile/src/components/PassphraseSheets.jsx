@@ -15,10 +15,11 @@ function PassField({ label, value, onChange, show, autoComplete }) {
   );
 }
 
-/** BAK-1: set the recovery passphrase for a cloud folder. Saving makes the
- * first encrypted backup and opens it again with the passphrase alone;
- * only a match leaves backup on. */
-export function SetPassphraseSheet({ onClose, onMsg }) {
+/** BAK-1: set the recovery passphrase for automatic backups (encrypted by
+ * default, audit DEC-4). Saving makes the first encrypted backup and opens
+ * it again with the passphrase alone; only a match leaves backup on.
+ * `onPlain`, for a folder on the phone only, keeps the files unencrypted. */
+export function SetPassphraseSheet({ onClose, onMsg, onPlain = null }) {
   const [pass, setPass] = useState('');
   const [again, setAgain] = useState('');
   const [show, setShow] = useState(false);
@@ -48,6 +49,7 @@ export function SetPassphraseSheet({ onClose, onMsg }) {
         <div className="muted small">{t('pass.hint')}</div>
         {tried && problem ? <div className="warn" role="alert">{t(`pass.${problem}`, { n: MIN_PASSPHRASE })}</div> : null}
         <button type="button" className="btn" onClick={save} disabled={busy}>{busy ? t('pass.working') : t('pass.save')}</button>
+        {onPlain ? <button type="button" className="btn secondary" onClick={onPlain} disabled={busy}>{t('pass.plain')}</button> : null}
         <button type="button" className="btn ghost" onClick={onClose} disabled={busy}>{t('pass.cancel')}</button>
       </div>
     </Sheet>

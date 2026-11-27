@@ -51,8 +51,8 @@ Play asks for a reason per data type. Tafra only uses the data inside the app to
 | Write exercise | Finished workouts are saved to Health Connect so other fitness apps can see them. |
 | Read steps | Optional. Daily steps show on the Today card and, if the user turns it on, adjust the calorie target to their real activity. |
 | Read active calories burned | Optional. Same as steps: activity-based calorie target, off by default. |
-| Read sleep | Optional. A recovery hint on the Today card compares last night's sleep with the user's usual. |
-| Read resting heart rate | Optional. Part of the same recovery hint (a raised resting heart rate suggests an easier day). |
+| Read sleep | Optional. A recovery hint on the Today card: under 6 hours, or 90 minutes under the user's usual (the median of the last 14 days), suggests an easier day. After a poor night the Stats body map keeps muscles "recovering" one extra day. Advice only: it never changes weights or the plan. |
+| Read resting heart rate | Optional. Part of the same recovery hint: 5 beats a minute or more above the user's usual (the median of the last 14 days) suggests an easier day. Advice only. |
 
 Each read is optional and the app works fully without Health Connect. The in-app explanation is the "Tafra and Health Connect" screen (`HealthPrivacyActivity`), linked from Health Connect's own settings.
 

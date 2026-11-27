@@ -169,3 +169,25 @@ export function shouldStayAwake(lastActivityAt, restRunning, now) {
   if (restRunning) return true;
   return lastActivityAt != null && now - lastActivityAt < AWAKE_IDLE_MS;
 }
+
+/** A workout left open on an earlier day (audit UX-1). Without this the
+ * app reopens it as today's session, and today's sets get the old date.
+ * At start, each one started more than STALE_AFTER_H hours ago on an
+ * earlier day is finished: about 3 minutes a set, at most
+ * MAX_WORKOUT_MIN. One with no sets had nothing logged and is dropped.
+ * The finished ones are marked `auto_closed`. */
+export const STALE_AFTER_H = 4;
+
+export function closeStaleWorkouts(data, today, now = Date.now()) {
+  const stale = (w) => w.started_at && !w.finished_at && w.log_date < today && now - w.started_at > STALE_AFTER_H * 3600000;
+  if (!data?.workouts?.some(stale)) return data;
+  const workouts = [];
+  for (const w of data.workouts) {
+    if (!stale(w)) { workouts.push(w); continue; }
+    if (!w.sets?.length && !w.pain_note) continue;
+    const minutes = Math.min(MAX_WORKOUT_MIN, Math.max(10, (w.sets?.length || 0) * 3));
+    const end = w.started_at + (w.paused_ms || 0) + minutes * 60000;
+    workouts.push({ ...w, finished_at: end, paused_at: null, duration_min: minutes, auto_closed: true });
+  }
+  return { ...data, workouts };
+}

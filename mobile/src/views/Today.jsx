@@ -41,7 +41,7 @@ import { useToday } from '../store/today.js';
 import { kcalHidden, markClearanceSeen } from '../lib/safety.js';
 import { homeCard } from '../lib/homeCard.js';
 import { homeLine, homeOrder, whatsNewMode } from '../lib/interrupts.js';
-import { comeback, hideBack, showBack, skipToday, stillTime } from '../lib/comeback.js';
+import { comeback, hideBack, missedYesterday, showBack, skipMissed, skipToday, stillTime } from '../lib/comeback.js';
 import { dismissWrap, weekShortLine, weekStats, wrapWeek } from '../lib/weekStats.js';
 import { WrapCard, WrapSheet } from '../components/WrapUp.jsx';
 import FirstWeekCard from '../components/FirstWeekCard.jsx';
@@ -80,7 +80,8 @@ export default function Today() {
   const questsDone = dailyQuests.filter((q) => doneKeys(data, today, content.quests).has(q.key)).length;
   const otherToday = data.workouts.filter((w) => w.log_date === today && w.workout_type !== 'gym');
   const healthOn = data.settings?.health?.enabled;
-  const ready = healthOn ? readiness(data.health_daily, today) : null;
+  // The watch-numbers module hides the recovery line too (audit AND-2).
+  const ready = healthOn && D.moduleOn(data, 'activity') ? readiness(data.health_daily, today) : null;
   const moved = healthOn ? data.health_daily?.[today] : null;
   // Watch numbers (optional): steps join the Today tiles, active kcal and
   // sleep stay one quiet line (Home simplify). The module hides them all.
@@ -130,6 +131,9 @@ export default function Today() {
   const nowMin = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
   const moveTo = moveTargets(today, T, moves)[0] || null;
   const still = stillTime({ data, today, nowMinutes: nowMin, sessionTime: sessionAt(times), scheduled: sessionKeyOn(today, T, moves), recovery: isRecoveryWeek(data, today), moveTo });
+  // "Missed yesterday? Do it today" on a free day (audit DEC-5).
+  const missed = missedYesterday({ data, today, training: T, moves, recovery: isRecoveryWeek(data, today) });
+  const missedLabel = missed ? programDayFor(missed.from, T, moves)?.label : null;
   const wrapFor = card === 'wrapup' ? wrapWeek(today, data) : null;
   const [wrapOpen, setWrapOpen] = useState(false);
   // What's new (E1-S6): every version since the notes this phone last saw.
@@ -241,6 +245,13 @@ export default function Today() {
           <button type="button" className="btn small" style={{ width: 'auto' }} onClick={() => navigate('/workout')}>{t('still.start')}</button>
           {still.moveTo ? <button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => update((d) => moveSession(d, T, today, still.moveTo))}>{still.moveTo === addDays(today, 1) ? t('still.tomorrow') : t('still.moveTo', { day: longWeekday(still.moveTo) })}</button> : null}
           <button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => update((d) => skipToday(d, today))}>{t('still.skip')}</button>
+        </div>
+      ) : null}
+      {missed ? (
+        <div className="still-row" role="group" aria-label={t('missed.title', { label: missedLabel })}>
+          <span className="grow small"><strong>{t('missed.title', { label: missedLabel })}</strong></span>
+          <button type="button" className="btn small" style={{ width: 'auto' }} onClick={() => { update((d) => moveSession(d, T, missed.from, today)); announce(t('missed.moved')); }}>{t('missed.today')}</button>
+          <button type="button" className="btn ghost small" style={{ width: 'auto' }} onClick={() => update((d) => skipMissed(d, today))}>{t('missed.skip')}</button>
         </div>
       ) : null}
       {card === 'back' ? (

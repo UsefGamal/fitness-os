@@ -6,6 +6,7 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 
 import { healthIdsToDelete } from '../lib/privacy.js';
 import { turnOffBackup } from './autoBackup.js';
+import { mirrorIdle } from './mirror.js';
 import { isNative, Health, RestTimer } from './native.js';
 import { scheduleReminders } from './notify.js';
 import { content, stopSaving, useData } from './useData.js';
@@ -37,6 +38,9 @@ export async function deleteEverything({ health = false, backups = true } = {}) 
   if (data.settings?.auto_backup?.on) await turnOffBackup({ keepFiles: !backups }).catch(() => {});
   // Nothing may write a copy back from here on.
   stopSaving();
+  // A mirror write already running would land after the folder is emptied
+  // and bring the data back (audit DATA-7).
+  await mirrorIdle().catch(() => {});
   await scheduleReminders(content, false).catch(() => {});
   if (isNative()) {
     await RestTimer.stop().catch(() => {});

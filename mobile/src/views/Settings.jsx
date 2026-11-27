@@ -93,9 +93,11 @@ export default function Settings() {
   const health = healthSettings(data);
   const [hcStatus, setHcStatus] = useState(isNative() ? 'checking' : 'unavailable');
   const [hcExtras, setHcExtras] = useState([]); // allowed optional reads: steps, active_kcal, sleep, resting_hr
+  // The two needed permissions, read again here: removed in Health Connect, they would look on (audit AND-1).
+  const [hcGranted, setHcGranted] = useState(null);
   useEffect(() => {
     if (!isNative()) return;
-    Health.status().then((r) => { setHcStatus(r.status); setHcExtras(r.extras || []); }, () => setHcStatus('unavailable'));
+    Health.status().then((r) => { setHcStatus(r.status); setHcExtras(r.extras || []); setHcGranted(r.granted !== false); }, () => setHcStatus('unavailable'));
   }, []);
 
   const setHealth = (changes) => update((d) => ({ ...d, settings: { ...d.settings, health: { ...healthSettings(d), ...changes } } }));
@@ -108,6 +110,7 @@ export default function Settings() {
     try {
       const { granted, extras } = await Health.connect({ extras: false });
       setHcExtras(extras || []);
+      setHcGranted(Boolean(granted));
       if (!granted) {
         setMsg('Health Connect needs both permissions: read weight and write exercise.');
         return;
@@ -117,6 +120,21 @@ export default function Settings() {
       setMsg(r ? `Health Connect on. Added ${n(r.weighIns, 'weigh-in')} and shared ${n(r.workouts, 'workout')}.` : 'Health Connect on.');
     } catch (err) {
       setMsg(err?.message || 'Could not connect to Health Connect.');
+    }
+  };
+  const allowAgain = async () => {
+    try {
+      const { granted, extras } = await Health.connect({ extras: false });
+      setHcExtras(extras || []);
+      setHcGranted(Boolean(granted));
+      if (!granted) {
+        setMsg(t('health.stillOff'));
+        return;
+      }
+      const r = await syncHealth();
+      setMsg(r ? `Synced: ${n(r.weighIns, 'new weigh-in')}, ${n(r.workouts, 'workout')} shared.` : t('health.back'));
+    } catch (err) {
+      setMsg(err?.message || 'Could not open Health Connect.');
     }
   };
   const allowActivity = async () => {
@@ -193,8 +211,9 @@ export default function Settings() {
   const loosened = pendingImport ? loosenedGates(data, pendingImport) : [];
   const confirmImport = async (keep = false) => {
     const t = summarize(pendingImport);
-    await replaceAll(keep ? keepSafety(data, pendingImport) : pendingImport, 'import');
+    const done = await replaceAll(keep ? keepSafety(data, pendingImport) : pendingImport, 'import');
     setPendingImport(null);
+    if (!done) { setMsg(t('snap.noRoom')); return; }
     setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}. What was here before is kept in Snapshots.`);
   };
 
@@ -284,7 +303,7 @@ export default function Settings() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{page ? t(page.title) : t('settings.title')}</h1>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
       {report ? <ReportSheet onClose={() => setReport(false)} /> : null}
-      {news ? <WhatsNewSheet notes={notesUpTo(APP.version, WHATS_NEW)} onClose={() => setNews(false)} /> : null}
+      {news ? <WhatsNewSheet notes={notesUpTo(APP.version, WHATS_NEW)} max={Infinity} onClose={() => setNews(false)} /> : null}
 
       {!page ? <Hub navigate={navigate} /> : null}
 
@@ -388,6 +407,13 @@ export default function Settings() {
               <div className="grow"><div>Sync with Health Connect</div><div className="meta">Read weigh-ins from your scale, share finished workouts</div></div>
               <span className={`check${health.enabled ? ' on' : ''}`}>{health.enabled ? <Icon name="check" /> : null}</span>
             </button>
+            {health.enabled && hcGranted === false ? (
+              <button type="button" className="list-row" onClick={allowAgain}>
+                <Icon name="alert" className="icon" style={{ color: 'var(--warn)' }} />
+                <div className="grow"><div>{t('health.removed')}</div><div className="meta">{t('health.removedNote')}</div></div>
+                <Icon name="chev" className="icon chev" />
+              </button>
+            ) : null}
             {health.enabled ? (
               <>
                 <button type="button" className="list-row" onClick={allowActivity}>

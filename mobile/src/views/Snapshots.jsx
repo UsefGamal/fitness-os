@@ -45,8 +45,9 @@ export default function Snapshots() {
 
   const restore = async () => {
     const c = summarize(picked.data);
-    await replaceAll(picked.data, 'restore');
+    const done = await replaceAll(picked.data, 'restore');
     setPicked(null);
+    if (!done) { setMsg(t('snap.noRoom')); return; }
     setMsg(t('snap.restored', { workouts: n(c.workouts, 'workout'), weighIns: n(c.weighIns, 'weighIn') }));
     setList(await listSnapshots());
   };

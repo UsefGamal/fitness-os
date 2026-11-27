@@ -52,3 +52,11 @@ test('dataHealth: counts, suspect sets, watch and backup age', () => {
   assert.equal(never.find((x) => x.key === 'backup').value, null);
   assert.ok(!never.some((x) => x.key === 'watch'));
 });
+
+test('dataHealth: a checked automatic backup counts; a failing one does not (audit DATA-4)', () => {
+  const base = emptyData(content);
+  const backupOf = (auto) => dataHealth({ ...base, settings: { ...base.settings, auto_backup: auto } }, activePlan(base, content), SLOTS, TODAY, NOW).find((x) => x.key === 'backup');
+  assert.deepEqual([backupOf({ on: true, last_checked_at: NOW - 86400000, last_error: null }).value, backupOf({ on: true, last_checked_at: NOW - 86400000 }).ok], [1, true]);
+  assert.equal(backupOf({ on: true, last_checked_at: NOW - 86400000, last_error: 'write_failed' }).value, null);
+  assert.equal(backupOf({ on: false, last_checked_at: NOW - 86400000 }).value, null);
+});

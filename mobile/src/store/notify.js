@@ -19,9 +19,9 @@ export async function enableReminders() {
   return perm.display === 'granted';
 }
 
-// P14-12: reminders post on their own channel, private on the lock screen
-// (Android shows "Tafra" and hides the text until the phone is
-// unlocked).
+// P14-12: reminders post on their own channel, marked private on the lock
+// screen. Android hides the text only when the phone is set to hide
+// sensitive content; otherwise it shows (audit DOC-2).
 const CHANNEL = 'reminders';
 let channelReady = false;
 async function ensureChannel() {

@@ -73,6 +73,8 @@ export function targetCheckDue(data, { targets, slots, minKcal, today }) {
   if (last && daysBetween(last, today) < WINDOW_DAYS) return null;
   if (!trendFlat(data.body_logs, today)) return null;
   if (mealsShare(data, slots, today) < MEALS_SHARE) return null;
+  // Already at the safe deficit (the 25% cap): a cut would do nothing.
+  if ((targets.reasons || []).includes('capped')) return null;
   const step = stepFor(targets.tdee);
   if (targets.kcal - step < minKcal) return null;
   return { step };
