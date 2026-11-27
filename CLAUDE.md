@@ -27,7 +27,7 @@ npm ci
 npm run check          # eslint + i18n lint + tsc + unit tests (store tests too)
 npm run coverage       # fails below coverage-baseline.json
 node --test src/lib/foo.test.js   # one file, after npm run content
-npm run e2e            # screen harness: every route at 360/390/412, LTR + RTL; axe, <44px taps, sideways scroll
+npm run e2e            # screen harness: every route at 360/390/412, LTR + RTL, with a phone's status bar (32px) and nav bar (48px); axe, <44px taps, sideways scroll, text under the bars, controls over an outline
 node e2e/harness.mjs --shots      # also save screenshots to e2e/out/
 node e2e/harness.mjs --update     # re-record e2e/baseline.json (counts may only go down)
 npm run e2e:device     # setup, speed, midnight, file mirror (VITE_FAKE_FS build)
@@ -56,6 +56,17 @@ Python: `pip install -r requirements-dev.txt && pytest && ruff check .` (repo ro
 - Dependencies: React, react-router, Zustand, Capacitor official plugins. Anything else needs a reason in the PR.
 - The phone holds the user's only copy: never ship a change that can drop data; a data format change needs a version bump and an upgrade path.
 - openGym (AGPL) is a reference for ideas only: don't copy its code or its Gym visual media.
+
+## Before a PR is offered for merge
+
+Bugs have reached the phone that a look at the right screen would have caught (v1.1.50 crashed at every rest; v1.1.51 had text under the clock and buttons over the set outline). So, for every app PR:
+
+1. `npm run check`, `npm run e2e` and `pytest` pass in the session, not only in CI. `node e2e/harness.mjs --update` only when counts went down.
+2. Every screen, sheet or state the PR touches has a harness `STATES` entry, so the bars / ring / taps / axe checks cover it. A new sheet or overlay gets one in the same PR.
+3. Look at it: screenshots at 360 and 412 px with the phone bars in place (the `tafra-phone-screenshots` skill, `--sat: 32px; --sab: 48px`), dark and light, scrolled, plus the open sheet or timer. Check them yourself for clipping, overlap and cut text, then attach them to the PR.
+4. Native code (`mobile/android/`): notification and widget layouts pass `tests/test_remote_views.py`. CI can't run native code on a phone, so say plainly in the PR what was not run on a phone.
+5. Review panel: before saying a PR is ready, run specialist reviewer subagents on the diff and the screenshots (phone UI, Android native when `mobile/android/` changed, data safety when the store or a data format changed, and the domain skill the feature touches), let each read the others' findings, then fix what they find or list it in the PR.
+6. The PR body ends with a **Phone check**: the few taps to do on the phone, naming the screen and what should show.
 
 ## PRs
 

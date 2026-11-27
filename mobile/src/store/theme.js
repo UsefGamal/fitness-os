@@ -1,6 +1,6 @@
 // Draws the app in the chosen theme (lib/theme.js): data-theme on <html>,
 // the browser bar colour and, on the phone, the status bar icons.
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
 import { resolveTheme, THEME_BG } from '../lib/theme.js';
@@ -14,8 +14,11 @@ export function applyTheme(choice) {
   else delete root.dataset.theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_BG[theme]);
   if (Capacitor.isNativePlatform()) {
-    // Dark icons on the light page, light icons on the dark one.
+    // Dark icons on the light page, light icons on the dark one, on both
+    // the status bar and the nav bar (StatusBar.setStyle alone left the nav
+    // buttons light on the light page).
     StatusBar.setStyle({ style: theme === 'light' ? Style.Light : Style.Dark }).catch(() => {});
+    SystemBars.setStyle({ style: theme === 'light' ? SystemBarsStyle.Light : SystemBarsStyle.Dark }).catch(() => {});
     StatusBar.setBackgroundColor({ color: THEME_BG[theme] }).catch(() => {});
   }
   return theme;

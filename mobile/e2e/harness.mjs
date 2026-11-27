@@ -43,6 +43,16 @@ export const ROUTES = ['/', '/plan', '/plan/routines', '/plan/mine', '/workout',
 export const WIDTHS = [360, 390, 412];
 export const DIRS = ['ltr', 'rtl'];
 export const MIN_TAP = 44;
+// A Samsung A55 on Android 15+ draws edge to edge: about 32 px of status bar
+// and 48 px of 3-button nav bar sit over the page. Chromium reports 0 for
+// env(safe-area-inset-*), so every screen runs with these insets put in
+// --sat / --sab instead, and the `bars` check looks at what lands under them.
+export const INSETS = { top: 32, bottom: 48 };
+const INSET_CSS = `:root{--sat:${INSETS.top}px!important;--sab:${INSETS.bottom}px!important}`;
+const withInsets = (ctx) => ctx.addInitScript((css) => {
+  const put = () => { const s = document.createElement('style'); s.dataset.insets = ''; s.textContent = css; document.head.append(s); };
+  if (document.head) put(); else document.addEventListener('DOMContentLoaded', put);
+}, INSET_CSS);
 export const STATE_WIDTHS = [360, 412];
 
 const btnNamed = (page, name) => page.getByRole('button', { name, exact: typeof name === 'string' });
@@ -54,6 +64,9 @@ const firstWeek = (d) => ({ ...d, setup: { ...(d.setup || {}), done_on: '2026-11
 // UIUX-2: the biggest text size.
 const bigText = (d) => ({ ...d, settings: { ...d.settings, text_size: 130 } });
 // UIUX-4: gym mode switched on.
+// A finished session two days back with every exercise in it, so the set
+// table shows its "last: 50 × 6" line under each row (the 27 Nov screenshot).
+const doneBefore = (d) => ({ ...d, workouts: [...d.workouts, { id: 9001, log_date: '2026-11-04', workout_type: 'strength', duration_min: 60, notes: 'Earlier', session_rpe: 7, is_deload: false, pain_note: null, result: null, session_key: null, started_at: null, finished_at: Date.parse('2026-11-04T08:00:00Z'), checklist_items: [], sets: d.exercises.flatMap((x, i) => [1, 2, 3].map((n) => ({ id: 90000 + i * 3 + n, exercise_id: x.id, set_number: n, reps: 6, weight_kg: 50, rpe: 8 }))) }] });
 const gymOn = (d) => ({ ...d, settings: { ...d.settings, training: { ...d.settings?.training, gym_mode: true } } });
 // MAINT-1: the goal range is where the weight already is; then the second
 // week of maintenance after it.
@@ -179,6 +192,29 @@ export const STATES = [
       await p.locator('.log-bar').waitFor({ timeout: 5000 }).catch(() => {});
     },
   },
+  // The rest after a set, in gym mode (no tab bar, so the nav bar sits right
+  // under the timer), as the bar and opened full screen.
+  {
+    name: 'gym mode: resting after a set',
+    route: '/workout',
+    data: (d) => gymOn(doneBefore(d)),
+    act: async (p) => {
+      await startSession(p);
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await p.locator('.timer, .timer-pill').first().waitFor({ timeout: 5000 });
+    },
+  },
+  {
+    name: 'gym mode: rest full screen',
+    route: '/workout',
+    data: (d) => gymOn(doneBefore(d)),
+    act: async (p) => {
+      await startSession(p);
+      await btnNamed(p, en['workout.logSet'].replace('{n}', 1)).click();
+      await p.locator('.timer-open').click({ timeout: 5000 });
+      await p.locator('.timer-full').waitFor();
+    },
+  },
   {
     name: 'sheet: finish a workout',
     route: '/workout',
@@ -261,6 +297,7 @@ export const STATES = [
     act: toFullMeals,
     check: async (p) => { const text = await p.locator('#root').innerText(); if (/\d\s*kcal/.test(text)) throw new Error(`kcal shown while hidden: ${text.match(/.{0,30}\d\s*kcal.{0,10}/)[0]}`); },
   },
+  { name: 'gym mode: last time under each set', route: '/workout', data: (d) => gymOn(doneBefore(d)), act: startSession },
   { name: 'gym mode: logging a set', route: '/workout', data: gymOn, act: startSession, check: async (p) => { if (await p.locator('.tabbar').isVisible()) throw new Error('tab bar still shown in gym mode'); } },
   { name: 'goal reached on Home', route: '/', data: goalReached, check: (p) => p.getByText(en['maint.title']).waitFor() },
   { name: 'maintenance week on Meals', route: '/meals', data: maintaining, act: toFullMeals },
@@ -298,6 +335,94 @@ function smallTaps(arg) {
   return detail ? found : n;
 }
 
+/** Text or controls drawn over the status bar or nav bar. body::before and
+ * body::after are opaque strips under the bars (styles.css); anything in a
+ * layer stacked above a strip, while inside its band, collides with the
+ * clock or the nav buttons. Also counts a missing strip. */
+function barClashes({ top, bottom, detail }) {
+  const found = [];
+  const strip = (pseudo) => getComputedStyle(document.body, pseudo);
+  const before = strip('::before');
+  const after = strip('::after');
+  if (before.position !== 'fixed' || parseFloat(before.height) < top - 0.5) found.push('no status bar strip');
+  if (after.position !== 'fixed' || parseFloat(after.height) < bottom - 0.5) found.push('no nav bar strip');
+  const zTop = Number(before.zIndex) || 0;
+  const zBottom = Number(after.zIndex) || 0;
+  const H = window.innerHeight;
+  // The z-index of the outermost positioned ancestor: the layer the element
+  // paints in, compared with the strips' layer (both are children of body).
+  const layer = (el) => {
+    let z = 0;
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      if (cs.position !== 'static' && cs.zIndex !== 'auto') z = Number(cs.zIndex);
+    }
+    return z;
+  };
+  const seen = new Set();
+  const sel = 'button, a[href], input, select, textarea, [role=button], img, svg';
+  const items = [...document.querySelectorAll(sel)];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: (t) => (/\S/.test(t.data) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+  for (let t = walker.nextNode(); t; t = walker.nextNode()) items.push(t.parentElement);
+  for (const el of items) {
+    if (!el || seen.has(el)) continue;
+    seen.add(el);
+    if (el.closest('.sr-only')) continue;
+    // Only the part a scrolling box (a sheet's list) actually shows.
+    const b = el.getBoundingClientRect();
+    const r = { top: b.top, bottom: b.bottom, width: b.width, height: b.height };
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      const o = getComputedStyle(n);
+      if (o.overflowY === 'visible' && o.overflowX === 'visible') continue;
+      const c = n.getBoundingClientRect();
+      r.top = Math.max(r.top, c.top);
+      r.bottom = Math.min(r.bottom, c.bottom);
+    }
+    r.height = r.bottom - r.top;
+    // Full-screen layers (a sheet's dim backdrop) are meant to run under the bars.
+    if (r.width < 1 || r.height < 1 || r.bottom <= 0 || r.top >= H || r.height >= H * 0.9) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue;
+    const inTop = r.top < top - 0.5;
+    const inBottom = r.bottom > H - bottom + 0.5;
+    if (!inTop && !inBottom) continue;
+    const z = layer(el);
+    if ((inTop && z >= zTop) || (inBottom && z > zBottom)) {
+      found.push(`${inTop ? 'status' : 'nav'} bar: ${el.tagName.toLowerCase()}.${String(el.className.baseVal ?? el.className).split(' ')[0]} "${(el.getAttribute('aria-label') || el.textContent).trim().slice(0, 30)}"`);
+    }
+  }
+  return detail ? found : found.length;
+}
+
+/** Controls painting over an outline: a box with an inset ring (box-shadow
+ * inset or a border) whose descendants with a background reach into the
+ * ring, like the set pickers over the next set's green outline (27 Nov). */
+function ringOverlaps(detail) {
+  const found = [];
+  const opaque = (cs) => cs.backgroundImage !== 'none' || !/[/,]\s*0(\.0+)?\)$|transparent/.test(cs.backgroundColor);
+  // The spread (4th length) of each inset shadow; blur is not a ring.
+  const spread = (shadow) => Math.max(0, ...shadow.split(/,(?![^(]*\))/).filter((x) => x.includes('inset')).map((x) => Number((x.replace(/rgba?\([^)]*\)|color\([^)]*\)/g, '').match(/-?[\d.]+px/g) || [])[3]?.slice(0, -2) || 0)));
+  for (const box of document.querySelectorAll('body *')) {
+    const cs = getComputedStyle(box);
+    const inset = cs.boxShadow.includes('inset') ? spread(cs.boxShadow) : 0;
+    const border = Math.min(...['Top', 'Right', 'Bottom', 'Left'].map((k) => parseFloat(cs[`border${k}Width`]) || 0));
+    const ring = Math.max(inset, border);
+    if (ring < 1 || cs.display === 'none') continue;
+    const r = box.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    for (const kid of box.querySelectorAll('*')) {
+      const k = getComputedStyle(kid);
+      if (!opaque(k) || k.visibility === 'hidden' || Number(k.opacity) === 0 || k.position === 'fixed') continue;
+      if (k.position === 'absolute' && !box.contains(kid.offsetParent)) continue;
+      const q = kid.getBoundingClientRect();
+      if (q.width < 1 || q.height < 1) continue;
+      const into = q.top < r.top + ring - 0.5 || q.bottom > r.bottom - ring + 0.5 || q.left < r.left + ring - 0.5 || q.right > r.right - ring + 0.5;
+      if (into) found.push(`${box.tagName.toLowerCase()}.${String(box.className.baseVal ?? box.className).split(' ').join('.')} > ${kid.tagName.toLowerCase()}.${String(kid.className.baseVal ?? kid.className).split(' ')[0]}`);
+    }
+  }
+  return detail ? found : found.length;
+}
+
 function stop(child) {
   try { process.kill(-child.pid, 'SIGTERM'); } catch { child.kill(); }
 }
@@ -325,10 +450,26 @@ async function measure(page, errors, key, shot, floor) {
   // A stricter floor for some controls (a state's `floor`), counted as taps.
   if (floor) taps += await page.evaluate(({ sel, min }) => [...document.querySelectorAll(sel)].filter((el) => { const r = el.getBoundingClientRect(); return r.width && (r.width < min || r.height < min); }).length, floor);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  // The bars check at the top and scrolled halfway, where sticky headers stick.
+  let bars = await page.evaluate(barClashes, INSETS);
+  const tall = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  if (tall > 100) {
+    await page.evaluate((y) => window.scrollTo(0, y), Math.round(tall / 2));
+    await page.waitForTimeout(150);
+    bars += await page.evaluate(barClashes, INSETS);
+    // And at the very end, where the last control must clear the nav bar.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(150);
+    bars += await page.evaluate(barClashes, INSETS);
+    await page.evaluate(() => window.scrollTo(0, 0));
+  }
+  const ring = await page.evaluate(ringOverlaps, false);
   const errs = errors.splice(0);
   if (process.env.E2E_VERBOSE) {
     console.log(key, errs.join(' | '));
     if (process.env.E2E_VERBOSE === '2') {
+      if (bars) console.log('  bars:', (await page.evaluate(barClashes, { ...INSETS, detail: true })).join('; '));
+      if (ring) console.log('  ring:', (await page.evaluate(ringOverlaps, true)).join('; '));
       if (taps) console.log('  taps:', (await page.evaluate(smallTaps, { min: MIN_TAP, detail: true })).join('; '));
       const nodes = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2aa'] } })).violations.flatMap((v) => v.nodes.map((n) => `${v.id} ${n.target.join(' ')} ${n.any[0]?.message?.slice(0, 90) || ''}`)));
       if (nodes.length) console.log('  axe:', nodes.join('\n       '));
@@ -343,6 +484,8 @@ async function measure(page, errors, key, shot, floor) {
     rules: Object.fromEntries(axe.map((v) => [v.id, v.nodes])),
     taps,
     overflow: overflow ? 1 : 0,
+    bars,
+    ring,
     errors: errs.length,
   };
 }
@@ -383,6 +526,7 @@ export async function run({ shots = false } = {}) {
         raw.safety = SCREENED;
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
         await ctx.clock.setFixedTime(NOW);
+        await withInsets(ctx);
         await ctx.addInitScript(([k, d]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, d); } catch { /* fresh */ } }, [KEY, JSON.stringify(raw)]);
         const page = await ctx.newPage();
         const errors = [];
@@ -408,6 +552,7 @@ export async function run({ shots = false } = {}) {
         const data = state.data ? state.data(raw) : raw;
         const ctx = await browser.newContext({ viewport: { width, height: 800 }, reducedMotion: 'reduce', colorScheme: 'dark', bypassCSP: true });
         await ctx.clock.setFixedTime(state.now || NOW);
+        await withInsets(ctx);
         await ctx.addInitScript(([k, d]) => { try { if (!localStorage.getItem(k)) localStorage.setItem(k, d); } catch { /* fresh */ } }, [KEY, JSON.stringify(data)]);
         const page = await ctx.newPage();
         const errors = [];
@@ -448,7 +593,7 @@ export async function run({ shots = false } = {}) {
   }
 }
 
-const CHECKS = ['axe', 'taps', 'overflow', 'errors'];
+const CHECKS = ['axe', 'taps', 'overflow', 'bars', 'ring', 'errors'];
 
 export function compare(now, base) {
   const worse = [];
