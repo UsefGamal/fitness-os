@@ -29,6 +29,7 @@ import { mealWeek } from '../lib/mealWeek.js';
 import { clearAdjustments } from '../lib/targetCheck.js';
 import { announce, mealTickLine } from '../lib/announce.js';
 import { useToday } from '../store/today.js';
+import useViewState from '../components/useViewState.js';
 
 const pad2 = (n) => String(n).padStart(2, '0');
 const clock = () => { const n = new Date(); return `${pad2(n.getHours())}:${pad2(n.getMinutes())}`; };
@@ -171,7 +172,8 @@ function MealPlan() {
   // Back from a library swap: open on the day that was swapped.
   const [params] = useSearchParams();
   const asked = params.get('date');
-  const [date, setDate] = useState(/^\d{4}-\d{2}-\d{2}$/.test(asked || '') ? asked : opensOn);
+  // The day you were on comes back the same day (lib/viewMemory.js).
+  const [date, setDate] = useViewState('date', opensOn, { day: today, prefer: /^\d{4}-\d{2}-\d{2}$/.test(asked || '') ? asked : undefined });
   // Looking at today when midnight passes: follow the new day.
   const shownToday = useRef(opensOn);
   useEffect(() => {

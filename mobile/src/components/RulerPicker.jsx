@@ -10,8 +10,10 @@ const TICK = 12; // px between two small ticks
 /** A ruler you drag sideways (height, weight), with the value big above it.
  * The big number is a real input, so it can also be typed, and -/+ step by
  * `nudge` for TalkBack and one-handed use. Left to right in both
- * directions, like a tape measure. */
-export default function RulerPicker({ value, onChange, min, max, step = 1, major = 10, nudge = step, unit, label, decimals = 0 }) {
+ * directions, like a tape measure. With `precise`, a typed or -/+ value
+ * keeps up to 2 decimals (21.25 kg) instead of snapping to the ticks;
+ * `compact` is the smaller look for two rulers in one sheet. */
+export default function RulerPicker({ value, onChange, min, max, step = 1, major = 10, nudge = step, unit, label, decimals = 0, precise = false, compact = false }) {
   const box = useRef(null);
   const busy = useRef(false); // the person is dragging: don't scroll under them
   const last = useRef(value);
@@ -54,7 +56,8 @@ export default function RulerPicker({ value, onChange, min, max, step = 1, major
 
   useEffect(() => { last.current = value; }, [value]);
 
-  const set = (v) => { const n = snap(v, { min, max, step }); last.current = n; onChange(n); };
+  const fix = (v) => (precise ? Math.min(max, Math.max(min, Math.round(v * 100) / 100)) : snap(v, { min, max, step }));
+  const set = (v) => { const n = fix(v); last.current = n; onChange(n); };
   // While typing, the field shows what is typed (80 goes through 8 first,
   // which is out of range); a value in range moves the ruler at once.
   const [draft, setDraft] = useState(null);
@@ -73,11 +76,11 @@ export default function RulerPicker({ value, onChange, min, max, step = 1, major
   for (let i = 0; i <= count; i += every) labels.push(<span key={i} className="ruler-num" style={{ left: i * TICK }}>{Math.round(min + i * step)}</span>);
 
   return (
-    <div className="ruler-picker">
+    <div className={`ruler-picker${compact ? ' compact' : ''}`}>
       <div className="ruler-value">
         <button type="button" className="ruler-nudge" aria-label={t('aria.less', { label })} onClick={less}><Icon name="minus" /></button>
         <label className="ruler-read">
-          <input type="number" inputMode="decimal" aria-label={label} min={min} max={max} step={step} value={draft ?? Number(value).toFixed(decimals)} onChange={typed} onFocus={focus} onBlur={blur} />
+          <input type="number" inputMode="decimal" aria-label={label} min={min} max={max} step={step} value={draft ?? (precise ? String(+Number(value).toFixed(2)) : Number(value).toFixed(decimals))} onChange={typed} onFocus={focus} onBlur={blur} />
           <span className="ruler-unit">{unit}</span>
         </label>
         <button type="button" className="ruler-nudge" aria-label={t('aria.more', { label })} onClick={more}><Icon name="plus" /></button>

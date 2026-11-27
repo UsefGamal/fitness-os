@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import ExercisePhotos from '../components/ExercisePhotos.jsx';
 import Sheet from '../components/Sheet.jsx';
+import SetPicker from '../components/SetPicker.jsx';
 import SwipeRow from '../components/SwipeRow.jsx';
 import ConfirmSheet from '../components/ConfirmSheet.jsx';
 import EquipmentSheet from '../components/EquipmentPicker.jsx';
@@ -230,6 +231,8 @@ export default function Workout() {
   const [dropFor, setDropFor] = useState(null); // { name, backKg }: the next set of this exercise is a drop set
   const [showPhoto, setShowPhoto] = useState(false); // the big moving photo, opened from the thumbnail
   const openSwap = () => { setSwapGroup(null); setSheet('swap'); };
+  // The rulers for the next set's weight and reps (SetPicker).
+  const openPick = () => { setSheet('pick'); };
   const [noteText, setNoteText] = useState('');
   const settings = trainingSettings(data);
   const [useBuild, setUseBuild] = useState(true);
@@ -290,6 +293,16 @@ export default function Workout() {
     return active.easy ? comebackTarget(plain, back?.level, { planReps: ex.reps, sessions, step }) : plain;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, ex?.name, exRow?.id, catalogue]);
+
+  // The weight or reps changed with -/+ in the notification: the set table
+  // shows the same numbers, so logging here logs what the shade showed.
+  const shadeAdj = useTimer((s) => s.adjusted);
+  useEffect(() => {
+    if (!shadeAdj || !active || !exRow || shadeAdj.workoutId !== active.id || shadeAdj.exerciseId !== exRow.id) return;
+    if (!holdRange(ex.reps)) setWeight(shadeAdj.weightKg);
+    setReps(shadeAdj.reps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shadeAdj]);
 
   // Prefill weight and reps whenever the exercise changes: the last set of
   // today, else the progression target, else last time's first set.
@@ -534,6 +547,7 @@ export default function Workout() {
         chain: shadeLogChain({
           workoutId: active.id, exerciseId: exRow.id, logged: nxSets.length, workDone: nxWork, setsPlanned: nx.sets,
           reps: r, weightKg: w, timed, workout: day.label, done: after.sets.filter(D.isWorkSet).length, planned: totalTarget,
+          step: stepFor(entry, { barbell }),
         }),
       } : null);
     }
@@ -813,10 +827,10 @@ export default function Workout() {
                     <div key={`open-${r.n}`} className={`st-row open${r.next ? ' next' : ''}`}>
                       <span className="set-n">{r.n}</span>
                       {r.next
-                        ? <NumBox value={reps} onChange={setReps} whole max={timed ? 600 : 100} label={t(timed ? 'workout.editSecs' : 'workout.editReps', { n: r.n })} />
+                        ? <button type="button" className="st-input st-pick" aria-haspopup="dialog" aria-label={timed ? t('workout.pickSecs', { n: r.n, secs: reps }) : t('workout.pickReps', { n: r.n, reps })} onClick={openPick}>{reps}</button>
                         : <span>{reps}</span>}
                       {timed ? null : r.next
-                        ? <NumBox value={weight} onChange={setWeight} max={500} label={t('workout.editKg', { n: r.n })} />
+                        ? <button type="button" className="st-input st-pick" aria-haspopup="dialog" aria-label={t('workout.pickKg', { n: r.n, kg: weight })} onClick={openPick}>{weight}</button>
                         : <span>{weight}</span>}
                       {r.next
                         ? <button type="button" className="st-tick next" disabled={noWeight(weight)} aria-label={t('workout.logSet', { n: r.n })} onClick={() => logSet()}><Icon name="check" /></button>
@@ -853,7 +867,7 @@ export default function Workout() {
       {barMode === 'log' ? (
         <div className="log-bar">
           {noWeight(weight) ? (
-            <button type="button" className="btn secondary" onClick={() => document.querySelector(`input[aria-label="${t('workout.editKg', { n: curWork + 1 })}"]`)?.focus()}>{t('workout.needWeightBar')}</button>
+            <button type="button" className="btn secondary" onClick={openPick}>{t('workout.needWeightBar')}</button>
           ) : (
             <button type="button" className="btn" onClick={() => logSet()}><Icon name="check" /> {timed ? t('workout.logBarSecs', { n: curWork + 1, secs: reps }) : t('workout.logBar', { n: curWork + 1, kg: weight, reps })}</button>
           )}
@@ -887,6 +901,13 @@ export default function Workout() {
           </div>
           <button type="button" className="btn danger" style={{ marginTop: 16 }} onClick={() => { removeSet(typingSet); setTyping(null); }}><Icon name="trash" /> {t('setEdit.delete')}</button>
         </Sheet>
+      ) : null}
+      {sheet === 'pick' && ex && exRow ? (
+        <SetPicker
+          setNo={curWork + 1} weight={weight} reps={reps} onWeight={setWeight} onReps={setReps}
+          kgStep={stepFor(entry, { barbell })} timed={timed} canLog={!noWeight(weight)}
+          onLog={() => logSet()} onClose={() => setSheet(null)}
+        />
       ) : null}
       {sheet === 'exmore' && ex ? (
         <Sheet title={ex.name} onClose={() => setSheet(null)}>

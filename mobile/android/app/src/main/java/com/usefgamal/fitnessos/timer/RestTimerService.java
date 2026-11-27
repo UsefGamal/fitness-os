@@ -63,10 +63,15 @@ public class RestTimerService extends Service {
     /** "Done set": log the set (as "Log set & rest") and start the rest after it. */
     public static final String ACTION_DONE_SET = "com.usefgamal.fitnessos.timer.DONE_SET";
     public static final String EXTRA_KG_TENTHS = "kgTenths";
+    /** Change the reps of the sets still to log (EXTRA_REPS, e.g. -1). */
+    public static final String ACTION_REPS = "com.usefgamal.fitnessos.timer.REPS";
+    public static final String EXTRA_REPS = "reps";
     public static final String EXTRA_PHOTO = "photo";
     private static final String SET_STARTED = "setStartedAt";
-    /** The weight step of the -/+ buttons, in tenths of a kg (2.5 kg, one small plate a side). */
+    /** The weight step of the -/+ buttons, in tenths of a kg (2.5 kg, one small plate a side),
+     * when the app didn't send the exercise's own step. */
     static final int KG_STEP_TENTHS = 25;
+    static final int MAX_REPS = 100;
     public static final String EXTRA_ENDS_AT = "endsAt";
     public static final String EXTRA_PAUSED_LEFT = "pausedLeft";
     public static final String EXTRA_TOTAL = "total";
@@ -101,6 +106,8 @@ public class RestTimerService extends Service {
         void onStopped(boolean finished);
         /** A set was logged with "Log set & rest": the app takes it with takeLogs(). */
         void onLogged();
+        /** The weight or reps of the next set were changed in the shade: the set as JSON. */
+        void onAdjusted(String setJson);
     }
 
     static volatile Listener listener;
@@ -260,7 +267,9 @@ public class RestTimerService extends Service {
             setStartedAt = 0;
             logFromShade(now);
         } else if (ACTION_KG.equals(action)) {
-            changeKg(intent.getIntExtra(EXTRA_KG_TENTHS, 0));
+            adjust(intent.getIntExtra(EXTRA_KG_TENTHS, 0), 0);
+        } else if (ACTION_REPS.equals(action)) {
+            adjust(0, intent.getIntExtra(EXTRA_REPS, 0));
         } else if (ACTION_START_SET.equals(action)) {
             startSet(now);
         } else if (ACTION_STOP.equals(action)) {
@@ -329,18 +338,20 @@ public class RestTimerService extends Service {
     }
 
     /**
-     * The -/+ weight buttons on Rest done: every set still to log moves by
-     * `tenths` (tenths of a kg), never below 0, and its line is rewritten
-     * ("Set 2 of 3 · 62.5 kg × 8"). The notification is posted again quietly.
+     * The -/+ weight and reps buttons (rest running, Rest done, set going):
+     * every set still to log moves by `tenths` (tenths of a kg, never below
+     * 0) and `reps` (1 to MAX_REPS), and its line is rewritten ("Set 2 of 3 ·
+     * 62.5 kg × 8"). The card is posted again quietly and the app is told,
+     * so the workout screen shows the same numbers.
      */
-    private void changeKg(int tenths) {
+    private void adjust(int tenths, int reps) {
         // A new process: a set clock that was going comes back, else the last card's sets.
         if (!active() && setStartedAt == 0 && !restoreSet(this)) restoreLast(this);
         org.json.JSONArray chain = parse(logs);
         org.json.JSONObject head = chain.optJSONObject(0);
-        if (head == null || head.optJSONObject("set") == null || tenths == 0) {
-            if (head != null && setStartedAt == 0) postDone(false, true);
-            if (!active() && setStartedAt == 0) stopSelf();
+        if (head == null || head.optJSONObject("set") == null || head.optBoolean("timed", false) || (tenths == 0 && reps == 0)) {
+            if (head != null) refreshCard();
+            else if (!active() && setStartedAt == 0) stopSelf();
             return;
         }
         try {
@@ -349,10 +360,11 @@ public class RestTimerService extends Service {
                 org.json.JSONObject set = e == null ? null : e.optJSONObject("set");
                 if (set == null || e.optBoolean("timed", false)) continue;
                 double kg = Math.round(Math.max(0, Math.min(1000, set.optDouble("kg", 0) + tenths / 10.0)) * 100) / 100.0;
+                int r = Math.max(1, Math.min(MAX_REPS, set.optInt("r", 1) + reps));
                 set.put("kg", kg);
+                set.put("r", r);
                 String h = e.optString("head", "");
-                int reps = set.optInt("r", 0);
-                if (!h.isEmpty() && reps > 0) e.put("detail", kg > 0 ? h + " · " + kgText(kg) + " kg × " + reps : h + " · " + reps + " reps");
+                if (!h.isEmpty()) e.put("detail", kg > 0 ? h + " · " + kgText(kg) + " kg × " + r : h + " · " + r + " reps");
             }
         } catch (org.json.JSONException ignored) {
             // A key we just read: can't happen.
@@ -361,11 +373,20 @@ public class RestTimerService extends Service {
         org.json.JSONObject first = chain.optJSONObject(0);
         if (first != null && !first.optString("detail", "").isEmpty()) detail = first.optString("detail", "");
         save(this);
+        refreshCard();
+        Listener ls = listener;
+        if (ls != null && first != null && first.optJSONObject("set") != null) ls.onAdjusted(first.optJSONObject("set").toString());
+    }
+
+    /** Post the card that is showing again, with the new numbers. */
+    private void refreshCard() {
         if (setStartedAt > 0) {
             showSet(false);
+        } else if (active()) {
+            show(false);
         } else {
             postDone(false, true);
-            if (!active()) stopSelf(); // only the card changed: nothing to keep running for
+            stopSelf(); // only the card changed: nothing to keep running for
         }
     }
 
@@ -412,7 +433,7 @@ public class RestTimerService extends Service {
         setPhoto(big, R.id.s_photo);
         big.setTextViewText(R.id.s_progress, workout);
         big.setViewVisibility(R.id.s_progress, workout.isEmpty() ? View.GONE : View.VISIBLE);
-        kgRow(big, R.id.s_kg_less, R.id.s_kg, R.id.s_kg_more, 20);
+        adjustRows(big, 20);
         big.setTextViewText(R.id.s_open, tx("openWorkout", "Open workout"));
         big.setTextViewText(R.id.s_done, tx("doneSet", "Done set"));
         big.setOnClickPendingIntent(R.id.s_open, openApp());
@@ -440,23 +461,43 @@ public class RestTimerService extends Service {
     }
 
     /**
-     * The weight row: "−2.5 · 60 kg · +2.5" for the next set to log, hidden
-     * for a timed hold or a set with no weight (bodyweight).
+     * The weight row ("−2.5 · 60 kg · +2.5") and the reps row ("−1 · 8 reps ·
+     * +1") for the next set to log. Both hide for a timed hold or when there
+     * is no set to log; the weight row also hides for a set with no weight
+     * (bodyweight). The views are notif_adjust.xml's; request codes are
+     * codeBase to codeBase + 3. True when the row shows.
      */
-    private void kgRow(RemoteViews v, int less, int text, int more, int codeBase) {
+    private boolean adjustRows(RemoteViews v, int codeBase) {
+        int[] ids = {R.id.a_kg_row, R.id.a_kg_less, R.id.a_kg, R.id.a_kg_more, R.id.a_reps_row, R.id.a_reps_less, R.id.a_reps, R.id.a_reps_more};
         org.json.JSONObject head = parse(logs).optJSONObject(0);
         org.json.JSONObject set = head == null ? null : head.optJSONObject("set");
+        boolean can = set != null && !head.optBoolean("timed", false) && set.optInt("r", 0) > 0;
         double kg = set == null ? 0 : set.optDouble("kg", 0);
-        boolean show = set != null && !head.optBoolean("timed", false) && kg > 0;
-        int row = text == R.id.d_kg ? R.id.d_kg_row : R.id.s_kg_row;
-        v.setViewVisibility(row, show ? View.VISIBLE : View.GONE);
-        if (!show) return;
-        String step = kgText(KG_STEP_TENTHS / 10.0);
-        v.setTextViewText(less, "−" + step);
-        v.setTextViewText(more, "+" + step);
-        v.setTextViewText(text, kgText(kg) + " kg × " + set.optInt("r", 0));
-        v.setOnClickPendingIntent(less, self(ACTION_KG, codeBase).putExtra(EXTRA_KG_TENTHS, -KG_STEP_TENTHS).let());
-        v.setOnClickPendingIntent(more, self(ACTION_KG, codeBase + 1).putExtra(EXTRA_KG_TENTHS, KG_STEP_TENTHS).let());
+        boolean showKg = can && kg > 0;
+        v.setViewVisibility(R.id.a_row, can ? View.VISIBLE : View.GONE);
+        v.setViewVisibility(ids[0], showKg ? View.VISIBLE : View.GONE);
+        if (!can) return false;
+        if (showKg) {
+            double stepKg = head.optDouble("step", KG_STEP_TENTHS / 10.0);
+            int tenths = (int) Math.round(Math.max(0.5, Math.min(10, stepKg)) * 10);
+            String step = kgText(tenths / 10.0);
+            v.setTextViewText(ids[1], "−" + step);
+            v.setTextViewText(ids[3], "+" + step);
+            v.setContentDescription(ids[1], tx("kgLess", "Less weight") + " " + step + " kg");
+            v.setContentDescription(ids[3], tx("kgMore", "More weight") + " " + step + " kg");
+            v.setTextViewText(ids[2], kgText(kg) + " kg");
+            v.setOnClickPendingIntent(ids[1], self(ACTION_KG, codeBase).putExtra(EXTRA_KG_TENTHS, -tenths).let());
+            v.setOnClickPendingIntent(ids[3], self(ACTION_KG, codeBase + 1).putExtra(EXTRA_KG_TENTHS, tenths).let());
+        }
+        int r = set.optInt("r", 0);
+        v.setTextViewText(ids[5], "−1");
+        v.setTextViewText(ids[7], "+1");
+        v.setContentDescription(ids[5], tx("repsLess", "One rep less"));
+        v.setContentDescription(ids[7], tx("repsMore", "One rep more"));
+        v.setTextViewText(ids[6], r + " " + (r == 1 ? tx("rep", "rep") : tx("repsWord", "reps")));
+        v.setOnClickPendingIntent(ids[5], self(ACTION_REPS, codeBase + 2).putExtra(EXTRA_REPS, -1).let());
+        v.setOnClickPendingIntent(ids[7], self(ACTION_REPS, codeBase + 3).putExtra(EXTRA_REPS, 1).let());
+        return true;
     }
 
     /** The exercise photo, if it was sent and is in the app's files. */
@@ -586,10 +627,13 @@ public class RestTimerService extends Service {
             v.setTextViewText(R.id.n_detail, sub);
         }
         big.setProgressBar(R.id.n_bar, max, leftS, false);
-        setPhoto(big, R.id.n_photo);
         String prog = workout.isEmpty() ? "" : workout;
         big.setTextViewText(R.id.n_progress, prog);
         big.setViewVisibility(R.id.n_progress, prog.isEmpty() ? View.GONE : View.VISIBLE);
+        // Another set of the same lift: its weight and reps can be changed
+        // while resting, in place of the photo (the card has no room for both).
+        if (adjustRows(big, 30)) big.setViewVisibility(R.id.n_photo, View.GONE);
+        else setPhoto(big, R.id.n_photo);
         big.setTextViewText(R.id.n_pause, paused ? tx("resume", "Resume") : tx("pause", "Pause"));
         big.setTextViewText(R.id.n_skip, tx("skip", "Skip"));
         big.setOnClickPendingIntent(R.id.n_less, self(ACTION_ADD, 4).putExtra(EXTRA_SECONDS, -15).let());
@@ -712,7 +756,7 @@ public class RestTimerService extends Service {
         dBig.setViewVisibility(R.id.d_open, canLog ? View.GONE : View.VISIBLE);
         dBig.setTextViewText(R.id.d_log, tx("startSet", "Start set"));
         dBig.setOnClickPendingIntent(R.id.d_log, self(ACTION_START_SET, 6).let());
-        kgRow(dBig, R.id.d_kg_less, R.id.d_kg, R.id.d_kg_more, 7);
+        adjustRows(dBig, 40);
         Notification done = new NotificationCompat.Builder(this, sound && loud ? CHANNEL_DONE : CHANNEL_DONE_SILENT)
             .setSmallIcon(R.drawable.ic_stat_bolt)
             .setColor(Color.parseColor("#30d158"))

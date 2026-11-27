@@ -23,6 +23,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 import en from '../src/i18n/en.js';
+import { fillSet, nextKg } from './setPick.mjs';
 
 const PORT = 4183;
 const URL0 = `http://localhost:${PORT}/`;
@@ -160,7 +161,7 @@ async function startAndLog(page, n) {
   await tab(page, 'Start').click();
   await page.getByRole('button', { name: /^Start / }).first().click();
   for (let i = 1; i <= n; i += 1) {
-    await page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).fill('20');
+    await fillSet(page, 20);
     await btn(page, en['workout.logSet'].replace('{n}', i)).click();
     await settle(page, 300);
   }
@@ -171,8 +172,7 @@ async function workout(page) {
   await tab(page, 'Start').click();
   await page.getByRole('button', { name: /^Start / }).first().click();
   // Set 1: tap the kg cell of the set table and type a weight (B1).
-  const weight = page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ });
-  await weight.fill('22,5');
+  await fillSet(page, 22.5);
   const held = 22.5;
   await btn(page, en['workout.logSet'].replace('{n}', 1)).click();
   await settle(page, 300);
@@ -346,9 +346,7 @@ async function setkinds(page) {
   await setUp(page);
   await tab(page, 'Start').click();
   await page.getByRole('button', { name: /^Start / }).first().click();
-  const weight = page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ });
-  await weight.fill('40');
-  await weight.blur();
+  await fillSet(page, 40);
   // The day's first lift: warm-up sets, logged with one tap.
   await page.locator('.warm-card').waitFor({ timeout: 3000 });
   if (process.env.E2E_SHOTS) await page.screenshot({ path: new URL('setkinds-1-warmup.png', OUT).pathname });
@@ -366,7 +364,7 @@ async function setkinds(page) {
   await page.getByRole('button', { name: en['drop.aria'] }).click();
   await page.locator('.drop-note').waitFor();
   await page.waitForTimeout(100);
-  const dropped = Number(await weight.inputValue());
+  const dropped = await nextKg(page);
   if (!(dropped < 40 && dropped >= 30)) throw new Error(`drop weight ${dropped}`);
   if (process.env.E2E_SHOTS) await page.screenshot({ path: new URL('setkinds-2-drop.png', OUT).pathname, fullPage: true });
   await btn(page, en['workout.logSet'].replace('{n}', 2)).click();
@@ -374,7 +372,7 @@ async function setkinds(page) {
   d = await read(page);
   const last = d.workouts[0].sets.at(-1);
   if (last.set_type !== 'drop' || last.weight_kg !== dropped) throw new Error(`the drop set was saved as ${JSON.stringify(last)}`);
-  if (Number(await weight.inputValue()) !== 40) throw new Error('the weight did not go back after the drop set');
+  if ((await nextKg(page)) !== 40) throw new Error('the weight did not go back after the drop set');
   await btn(page, en['workout.logSet'].replace('{n}', 2)).waitFor();
   // A superset with the next exercise, for today only.
   await page.locator('.ex-card.current .tool-row').getByRole('button', { name: new RegExp(en['workout.moreShort']) }).click();

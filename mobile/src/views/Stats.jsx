@@ -38,6 +38,7 @@ import PullRefresh from '../components/PullRefresh.jsx';
 import { healthSettings, syncHealth } from '../store/phoneSync.js';
 import { isNative } from '../store/native.js';
 import { useToday } from '../store/today.js';
+import useViewState from '../components/useViewState.js';
 
 // Body map volume shades, matched to the 10-20 guide (BI-17): fainter is
 // fewer sets; the legend names each step, so shade is never the only cue.
@@ -126,8 +127,8 @@ function Legend({ mode }) {
 }
 
 function Muscles({ data, today }) {
-  const [mode, setMode] = useState('volume');
-  const [group, setGroup] = useState(null);
+  const [mode, setMode] = useViewState('muscle-mode', 'volume');
+  const [group, setGroup] = useViewState('muscle-group', null);
   // The 16 groups (BeFit item 17), read from every set logged: an
   // exercise's main muscles count in full, its helpers by half.
   const groupsOf = useGroupsOf(data);
@@ -359,8 +360,8 @@ function GroupExercises({ data, group, groupsOf }) {
 
 function Strength({ data, today }) {
   const tracked = useMemo(() => trackedExercises(data), [data]);
-  const [pick, setPick] = useState(null);
-  const id = pick ?? tracked[0]?.id;
+  const [pick, setPick] = useViewState('strength', null);
+  const id = (tracked.some((x) => x.id === pick) ? pick : null) ?? tracked[0]?.id;
   const series = id ? e1rmSeries(data, id) : [];
   const bests = [...D.personalBests(data).values()]
     .map((b) => ({ ...b, name: data.exercises.find((e) => e.id === b.exercise_id)?.name || 'Exercise' }))
@@ -460,8 +461,8 @@ function Badges({ data, today }) {
   const all = badges(data, today);
   const counts = badgeCounts(all);
   const latest = latestBadge(all);
-  const [filter, setFilter] = useState('all');
-  const [openBy, setOpenBy] = useState({}); // category -> open, once tapped
+  const [filter, setFilter] = useViewState('badge-filter', 'all');
+  const [openBy, setOpenBy] = useViewState('badge-open', {}); // category -> open, once tapped
   const [info, setInfo] = useState(null); // the badge whose sheet is open
   const sections = badgeSections(all, filter);
   const next = all.filter((b) => badgeState(b) === 'progress').sort((a, b) => b.fraction - a.fraction)[0];
@@ -598,7 +599,7 @@ function BurnBlock({ data, today }) {
  * number a week, which a salty day can't swing), the older weeks one tap
  * away, then measured burn. Thin weeks are faint. */
 function Consistency({ data, today, good }) {
-  const [all, setAll] = useState(false);
+  const [all, setAll] = useViewState('weeks-all', false);
   const weeks = weeklyAverages(data.body_logs, today, data);
   const pair = lastTwoWeeks(weeks);
   return (
@@ -649,7 +650,7 @@ const METRICS = [
  * when Health Connect is off (watch data is always optional). */
 function Activity({ data, today }) {
   const tr = watchTrends(data.health_daily, today);
-  const [pick, setPick] = useState(() => (METRICS.find(([k]) => tr[k]) || METRICS[0])[0]);
+  const [pick, setPick] = useViewState('activity', () => (METRICS.find(([k]) => tr[k]) || METRICS[0])[0]);
   if (!data.settings?.health?.enabled) return null;
   const [, labelKey, subKey, , unit] = METRICS.find(([k]) => k === pick);
   const s = tr[pick];
@@ -749,8 +750,10 @@ export default function Stats() {
   // screen (UX-21). ?tab=body opens straight on the weigh-ins (UX-03).
   const [params, setParams] = useSearchParams();
   const tabs = statsTabs(weightOn);
-  const tab = tabs.includes(params.get('tab')) ? params.get('tab') : tabs[0];
-  const setTab = (k) => setParams(k === tabs[0] ? {} : { tab: k }, { replace: true });
+  // Opened from the tab bar (no ?tab): the tab you were on last (Yusuf, 27 Nov).
+  const [lastTab, setLastTab] = useViewState('tab', tabs[0]);
+  const tab = tabs.includes(params.get('tab')) ? params.get('tab') : tabs.includes(lastTab) ? lastTab : tabs[0];
+  const setTab = (k) => { setLastTab(k); setParams(k === tabs[0] ? {} : { tab: k }, { replace: true }); };
   // Pull to refresh reads Health Connect again, so only on the phone with it on.
   const pullOn = useData((s) => isNative() && healthSettings(s.data).enabled);
   const refresh = useCallback(() => syncHealth().catch(() => null), []);

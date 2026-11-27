@@ -35,6 +35,17 @@ public class RestTimerPlugin extends Plugin {
             public void onLogged() {
                 notifyListeners("logged", new JSObject(), true);
             }
+
+            @Override
+            public void onAdjusted(String setJson) {
+                try {
+                    JSObject o = new JSObject();
+                    o.put("set", new JSObject(setJson));
+                    notifyListeners("adjusted", o, true);
+                } catch (org.json.JSONException ignored) {
+                    // Our own JSON: can't happen.
+                }
+            }
         };
     }
 

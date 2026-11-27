@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { DONE_GRACE_MS, SHADE_LOG_MAX, shadeLines, shadePhoto, shadeLogChain, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
+import { DONE_GRACE_MS, SHADE_LOG_MAX, chainAdjusted, shadeAdjust, shadeLines, shadePhoto, shadeLogChain, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from './restTimer.js';
 
 const now = 1_000_000;
 const running = { endsAt: now + 60_000, total: 90, label: 'Squat', pausedLeft: null };
@@ -123,4 +123,28 @@ test('shade logs are added once each, in order, only to the workout under way', 
   assert.deepEqual(shadeLogsToAdd(data, ['{bad', null, { w: 3, e: 7, n: 3, r: -1 }, { w: 3, e: 7, n: 3, r: 5000 }]), []);
   assert.deepEqual(shadeLogsToAdd(data, [{ w: 3, e: 8, n: 1, r: 40, kg: 0, s: 40 }]), [{ workoutId: 3, exerciseId: 8, reps: 40, weightKg: 0, seconds: 40 }]);
   assert.deepEqual(shadeLogsToAdd(data, 'nope'), []);
+});
+
+test('the shade sends each set the exercise weight step for its -/+ buttons', () => {
+  const [a] = shadeLogChain({ workoutId: 1, exerciseId: 2, logged: 0, workDone: 0, setsPlanned: 2, reps: 10, weightKg: 12, step: 2 });
+  assert.equal(a.step, 2);
+  const [b] = shadeLogChain({ workoutId: 1, exerciseId: 2, logged: 0, workDone: 0, setsPlanned: 2, reps: 10, weightKg: 60 });
+  assert.equal(b.step, 2.5);
+});
+
+test('weight and reps changed in the shade reach the workout screen', () => {
+  assert.deepEqual(shadeAdjust({ w: 3, e: 7, n: 3, r: 9, kg: 62.5 }), { workoutId: 3, exerciseId: 7, setNumber: 3, weightKg: 62.5, reps: 9 });
+  for (const bad of [null, 'x', { w: 3, e: 7, n: 3, r: 0, kg: 60 }, { w: 3, e: 7, n: 1.5, r: 8, kg: 60 }, { w: 3, e: 7, n: 3, r: 5000, kg: 60 }]) {
+    assert.equal(shadeAdjust(bad), null, JSON.stringify(bad));
+  }
+  assert.equal(shadeAdjust({ w: 3, e: 7, n: 3, r: 8, kg: -5 }).weightKg, 0);
+});
+
+test('the app copy of the chain moves every set the way the shade did', () => {
+  const chain = shadeLogChain({ workoutId: 3, exerciseId: 7, logged: 2, workDone: 1, setsPlanned: 3, reps: 8, weightKg: 60 });
+  const moved = chainAdjusted(chain, { weightKg: 62.5, reps: 7 });
+  assert.deepEqual(moved.map((c) => [c.set.kg, c.set.r]), [[62.5, 7], [62.5, 7]]);
+  assert.equal(moved[1].detail, 'Set 3 of 3 · 62.5 kg × 7');
+  assert.equal(chain[0].set.kg, 60); // not changed in place
+  assert.deepEqual(chainAdjusted([], { weightKg: 1, reps: 1 }), []);
 });

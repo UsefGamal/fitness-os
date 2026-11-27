@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import EmptyState from '../components/EmptyState.jsx';
@@ -14,6 +14,7 @@ import { ramadanActive } from '../lib/ramadan.js';
 import { kcalHidden, safeMode } from '../lib/safety.js';
 import { useToday } from '../store/today.js';
 import { content, useData } from '../store/useData.js';
+import useViewState from '../components/useViewState.js';
 
 const N = content.nutrition;
 const KINDS = ['breakfast', 'lunch', 'dinner', 'snack', 'suhoor', 'iftar'];
@@ -31,10 +32,12 @@ function LibraryScreen({ params }) {
   const today = useToday();
   const swap = swapTarget(params, today, N.meal_slots);
   const fasting = swap ? ramadanActive(data, swap.date) : false;
-  const [query, setQuery] = useState('');
-  const [kind, setKind] = useState(swap ? kindsFor(swap.slot, N, fasting)[0] : null);
-  const [tags, setTags] = useState([]);
-  const [byGoal, setByGoal] = useState(true);
+  // Kept for coming back from a meal; a swap keeps its own per meal slot.
+  const keep = swap ? `swap-${swap.slot}` : 'browse';
+  const [query, setQuery] = useViewState(`${keep}-q`, '');
+  const [kind, setKind] = useViewState(`${keep}-kind`, swap ? kindsFor(swap.slot, N, fasting)[0] : null);
+  const [tags, setTags] = useViewState(`${keep}-tags`, []);
+  const [byGoal, setByGoal] = useViewState(`${keep}-goal`, true);
   const fit = useMemo(() => planFit(data, N, today), [data, today]);
   const goal = safeMode(data, goalDirection(data), today);
   const hideKcal = kcalHidden(data);

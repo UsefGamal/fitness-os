@@ -23,6 +23,7 @@ import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
 
 import { bigFixture } from './bigFixture.mjs';
+import { fillSet, nextKg } from './setPick.mjs';
 
 const PORT = 4181;
 const URL0 = `http://localhost:${PORT}/`;
@@ -148,10 +149,9 @@ async function measureSetLog(browser) {
   await page.goto(`${URL0}#/workout`);
   await page.addStyleTag({ content: '.fanfare,.intro,.toast{display:none!important}' });
   await page.getByRole('button', { name: /^Start / }).first().click({ timeout: 20000 });
-  const weight = page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ });
   // Let the prefill settle first, or it can overwrite the typed weight.
   await page.waitForTimeout(1500);
-  await weight.fill('20');
+  await fillSet(page, 20);
   await page.waitForTimeout(500);
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
@@ -247,7 +247,7 @@ async function comebackDay(browser) {
   await page.getByRole('button', { name: /^Start / }).first().click({ timeout: 20000 });
   await page.waitForTimeout(1500);
   const reason = (await page.locator('.ex-card.current .reason').first().textContent().catch(() => '')) || '';
-  const kg = Number(await page.getByRole('textbox', { name: /^Weight for set \d+, in kg$/ }).inputValue());
+  const kg = await nextKg(page);
   // 90% of 60 kg (all sets at the top of the range would otherwise add).
   check('back: the first session back is 90% of last time, never "add"', /^Welcome back: [\d.]+ kg today, a little lighter/.test(reason) && kg > 50 && kg < 60, `${kg} kg, "${reason}"`);
   await page.getByRole('button', { name: 'Log set 1', exact: true }).click();

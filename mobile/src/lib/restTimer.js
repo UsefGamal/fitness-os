@@ -103,9 +103,11 @@ export const SHADE_LOG_MAX = 10;
  * seconds for a timed hold or null }) and `detail`/`progress` the lines the
  * shade shows while that set is the next one. Empty when nothing is left
  * to log, or the reps or a needed weight aren't known.
- * @param {{ workoutId: number, exerciseId: number, logged: number, workDone: number, setsPlanned: number, reps: number, weightKg?: number, timed?: boolean, workout?: string, done?: number, planned?: number }} p
+ * `step` is the exercise's weight step, the size of the shade's -/+ kg
+ * buttons (2.5 for a barbell, 2 for dumbbells, 1 for isolation moves).
+ * @param {{ workoutId: number, exerciseId: number, logged: number, workDone: number, setsPlanned: number, reps: number, weightKg?: number, timed?: boolean, workout?: string, done?: number, planned?: number, step?: number }} p
  */
-export function shadeLogChain({ workoutId, exerciseId, logged, workDone, setsPlanned, reps, weightKg = 0, timed = false, workout = '', done = 0, planned = 0 }) {
+export function shadeLogChain({ workoutId, exerciseId, logged, workDone, setsPlanned, reps, weightKg = 0, timed = false, workout = '', done = 0, planned = 0, step = 2.5 }) {
   if (!(workoutId > 0) || !(exerciseId > 0) || !(reps >= 1) || !(setsPlanned > 0)) return [];
   const kg = Number(weightKg) > 0 ? Number(weightKg) : 0;
   const out = [];
@@ -114,9 +116,43 @@ export function shadeLogChain({ workoutId, exerciseId, logged, workDone, setsPla
     if (timed) lines.detail += ` · ${Math.round(reps)}s`;
     // `head` lets the shade rewrite the line when the weight is changed there.
     const head = `Set ${Math.min(workDone + i + 1, 99)} of ${setsPlanned}`;
-    out.push({ head, timed, set: { w: workoutId, e: exerciseId, n: logged + i + 1, r: Math.round(reps), kg: timed ? 0 : kg, s: timed ? Math.round(reps) : null }, ...lines });
+    out.push({ head, timed, step: Number(step) > 0 ? Math.min(10, Number(step)) : 2.5, set: { w: workoutId, e: exerciseId, n: logged + i + 1, r: Math.round(reps), kg: timed ? 0 : kg, s: timed ? Math.round(reps) : null }, ...lines });
   }
   return out;
+}
+
+/**
+ * The weight and reps changed with the shade's -/+ buttons, for the workout
+ * screen: { exerciseId, workoutId, setNumber, weightKg, reps }, or null when
+ * what came from the shade isn't a whole set (an old build, a bad value).
+ * @param {unknown} raw the `set` of the shade's "adjusted" event
+ */
+export function shadeAdjust(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const { w, e, n, r, kg } = /** @type {Record<string, unknown>} */ (raw);
+  if (![w, e, n, r].every((v) => Number.isInteger(v) && Number(v) > 0) || Number(r) > 1000) return null;
+  const weightKg = Number.isFinite(kg) && Number(kg) >= 0 ? Math.min(Number(kg), 1000) : 0;
+  return { workoutId: /** @type {number} */ (w), exerciseId: /** @type {number} */ (e), setNumber: /** @type {number} */ (n), weightKg, reps: /** @type {number} */ (r) };
+}
+
+/**
+ * The app's copy of the shade's chain after the shade changed the weight
+ * and reps (every set still to log moves the same way there), so a rest
+ * sent to the shade again doesn't bring the old numbers back.
+ * @param {{ set: { kg: number, r: number }, timed?: boolean, head?: string, detail?: string }[]} chain
+ * @param {{ weightKg: number, reps: number }} adj the new numbers of the first set
+ */
+export function chainAdjusted(chain, adj) {
+  if (!Array.isArray(chain) || !chain.length || !adj) return chain;
+  const dKg = adj.weightKg - (Number(chain[0].set?.kg) || 0);
+  const dR = adj.reps - (Number(chain[0].set?.r) || 0);
+  return chain.map((c) => {
+    if (c.timed || !c.set) return c;
+    const kg = Math.max(0, Math.round(((Number(c.set.kg) || 0) + dKg) * 100) / 100);
+    const r = Math.max(1, Math.min(100, (Number(c.set.r) || 0) + dR));
+    const detail = c.head ? (kg > 0 ? `${c.head} · ${+kg.toFixed(2)} kg × ${r}` : `${c.head} · ${r} reps`) : c.detail;
+    return { ...c, set: { ...c.set, kg, r }, detail };
+  });
 }
 
 /**

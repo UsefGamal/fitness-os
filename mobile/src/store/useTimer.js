@@ -9,7 +9,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { create } from 'zustand';
 
 import { t } from '../lib/i18n.js';
-import { shadePhoto, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
+import { chainAdjusted, shadeAdjust, shadePhoto, shadeLogsToAdd, syncFromShade, timerToRestore, timerToSave } from '../lib/restTimer.js';
 import { addSet } from '../lib/data.js';
 import { trainingSettings } from '../lib/training.js';
 import { recordError } from './errors.js';
@@ -78,6 +78,7 @@ async function toShade() {
       paused: t('shade.paused'), pause: t('shade.pause'), resume: t('shade.resume'), left: t('shade.left'), sets: t('shade.sets'),
       next: t('shade.next'), go: t('shade.go'), moreRest: t('shade.moreRest'), openWorkout: t('shade.openWorkout'),
       logSet: t('shade.logSet'), startSet: t('shade.startSet'), doneSet: t('shade.doneSet'), setGoing: t('shade.setGoing'),
+      kgLess: t('shade.kgLess'), kgMore: t('shade.kgMore'), repsLess: t('shade.repsLess'), repsMore: t('shade.repsMore'), rep: t('shade.rep'), repsWord: t('shade.repsWord'),
     };
     const w = currentWorkout();
     await RestTimer.start({
@@ -139,6 +140,7 @@ export const useTimer = create((set, get) => ({
   lines: null, // { detail, progress, photo } for the notification (lib/restTimer.js shadeLines)
   logs: null, // { chain, restS } for "Log set & rest" in the shade (lib/restTimer.js shadeLogChain)
   pausedLeft: null, // ms left while paused, else null
+  adjusted: null, // the next set's weight and reps after -/+ in the shade (lib/restTimer.js shadeAdjust)
   inShade: false, // the countdown also runs in the notification shade, which chimes at the end
   shadeBlocked: false, // notifications are off, so the countdown can't show in the shade
   /** Start a rest before `label` (the next exercise); `lines` are the
@@ -226,6 +228,14 @@ if (isNative()) {
   // "Log set & rest" in the shade: add the set now (the shade runs the rest).
   RestTimer.addListener('logged', () => {
     if (restOwnsShade()) useTimer.getState().sync();
+  });
+  // -/+ weight or reps in the shade: the workout screen and the app's copy
+  // of the sets to log take the new numbers.
+  RestTimer.addListener('adjusted', ({ set }) => {
+    const adj = shadeAdjust(set);
+    if (!adj) return;
+    const { logs } = useTimer.getState();
+    useTimer.setState({ adjusted: { ...adj, at: Date.now() }, ...(logs ? { logs: { ...logs, chain: chainAdjusted(logs.chain, adj) } } : {}) });
   });
   // Skip in the shade ends it here too; at the end the app shows "Rest done".
   RestTimer.addListener('stopped', ({ finished }) => {

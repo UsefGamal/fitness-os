@@ -10,6 +10,7 @@ import { routinesOf, startRoutine, trainingDays } from '../lib/routines.js';
 import { DAY_CHOICES } from '../lib/setup.js';
 import { bestFit, daysAWeek, isBestFit, isExperienced, setTrainingDays } from '../lib/splitFit.js';
 import { content, useData } from '../store/useData.js';
+import useViewState from '../components/useViewState.js';
 
 const SHORT = { sunday: 'short.sun', monday: 'short.mon', tuesday: 'short.tue', wednesday: 'short.wed', thursday: 'short.thu', friday: 'short.fri', saturday: 'short.sat' };
 
@@ -18,7 +19,7 @@ export default function Routines() {
   const data = useData((s) => s.data);
   const update = useData((s) => s.update);
   const navigate = useNavigate();
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useViewState('open', null);
   const [confirm, setConfirm] = useState(null);
   const running = activeBlock(data)?.template_id;
   const list = routinesOf(content);
