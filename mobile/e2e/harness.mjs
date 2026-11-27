@@ -183,6 +183,7 @@ export const STATES = [
   // BACK-1: the last workout 11 days ago; and the session time long gone
   // (the starting plan rests on Fridays, so a session is put on it).
   { name: 'welcome back on Home', route: '/', data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date <= '2026-10-26') }), check: (p) => p.getByText(en['back.title']).waitFor() },
+  { name: 'missed yesterday on Home', route: '/', data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-05'), session_moves: [{ from: null, to: '2026-11-05', key: 'full_a' }, { from: null, to: '2026-11-06', key: 'rest' }] }), check: (p) => p.getByRole('button', { name: en['missed.today'] }).waitFor() },
   { name: 'still time today on Home', route: '/', now: AFTERNOON, data: (d) => ({ ...d, workouts: d.workouts.filter((w) => w.log_date < '2026-11-06'), session_moves: [{ from: null, to: '2026-11-06', key: 'full_a' }] }), check: (p) => p.getByText(en['still.title']).first().waitFor() },
   // WRAP-1: Sunday, the week that ended on Saturday (trained Friday, so
   // it isn't a welcome back).
