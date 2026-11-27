@@ -36,7 +36,11 @@ export const privateFs = import.meta.env.VITE_FAKE_FS ? fakeFs() : Capacitor.isN
       async rename(from, to) {
         try {
           await Filesystem.rename({ from, to, directory: D, toDirectory: D });
-        } catch {
+        } catch (err) {
+          // Never delete the good file when there is nothing to put in its
+          // place (audit DATA-1).
+          const has = await Filesystem.stat({ path: from, directory: D }).then(() => true, () => false);
+          if (!has) throw err;
           await Filesystem.deleteFile({ path: to, directory: D }).catch(() => {});
           await Filesystem.rename({ from, to, directory: D, toDirectory: D });
         }

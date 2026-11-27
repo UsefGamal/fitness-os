@@ -46,6 +46,38 @@ export async function atomicWrite(fs, path, text) {
   await fs.rename(tmp, path);
 }
 
+/** One write at a time to `path` (audit DATA-1). Two atomicWrite calls
+ * that overlap share one .tmp file, and on Android a failed rename then
+ * deletes the good file. Here a write asked for while another runs waits
+ * for it, and only the newest text is written. `done(ok, ms)` hears each
+ * write. `idle()` resolves once nothing is running or waiting.
+ * @param {(ok: boolean, ms: number, err?: unknown) => void} [done]
+ * @param {() => number} [now] */
+export function serialWriter(fs, path, done = (_ok, _ms, _err) => {}, now = () => Date.now()) {
+  let chain = Promise.resolve();
+  let next = null;
+  const run = async () => {
+    const text = next;
+    next = null;
+    if (text == null) return;
+    const t0 = now();
+    try {
+      await atomicWrite(fs, path, text);
+      done(true, now() - t0);
+    } catch (err) {
+      done(false, now() - t0, err);
+    }
+  };
+  return {
+    write(text) {
+      next = text;
+      chain = chain.then(run);
+      return chain;
+    },
+    idle: () => chain,
+  };
+}
+
 // ── Snapshots ─────────────────────────────────────────────────────────
 
 const REASONS = { migrate: 'Before an app update', update: 'Before an app update', import: 'Before an import', restore: 'Before a restore', manual: 'Saved by hand', unreadable: 'Data that could not be read' };

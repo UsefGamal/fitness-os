@@ -193,8 +193,9 @@ export default function Settings() {
   const loosened = pendingImport ? loosenedGates(data, pendingImport) : [];
   const confirmImport = async (keep = false) => {
     const t = summarize(pendingImport);
-    await replaceAll(keep ? keepSafety(data, pendingImport) : pendingImport, 'import');
+    const done = await replaceAll(keep ? keepSafety(data, pendingImport) : pendingImport, 'import');
     setPendingImport(null);
+    if (!done) { setMsg(t('snap.noRoom')); return; }
     setMsg(`Imported ${n(t.workouts, 'workout')}, ${n(t.sets, 'set')}, ${n(t.weighIns, 'weigh-in')} and ${n(t.meals, 'meal')}. What was here before is kept in Snapshots.`);
   };
 
@@ -284,7 +285,7 @@ export default function Settings() {
       <h1 className="page-title" style={{ marginTop: 4 }}>{page ? t(page.title) : t('settings.title')}</h1>
       {msg ? <div className="card small" role="status">{msg}</div> : null}
       {report ? <ReportSheet onClose={() => setReport(false)} /> : null}
-      {news ? <WhatsNewSheet notes={notesUpTo(APP.version, WHATS_NEW)} onClose={() => setNews(false)} /> : null}
+      {news ? <WhatsNewSheet notes={notesUpTo(APP.version, WHATS_NEW)} max={Infinity} onClose={() => setNews(false)} /> : null}
 
       {!page ? <Hub navigate={navigate} /> : null}
 

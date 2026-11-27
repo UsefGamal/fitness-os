@@ -4,7 +4,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 
-import { atomicWrite, parseCopy } from '../lib/durable.js';
+import { parseCopy, serialWriter } from '../lib/durable.js';
 import { alternateName } from '../lib/fileNames.js';
 import { privateFs } from './fs.js';
 
@@ -52,19 +52,27 @@ export function writeMirror(data, now = false) {
   else timer = setTimeout(flush, 300);
 }
 
-async function flush() {
+// Writes run one at a time (audit DATA-1).
+const writer = privateFs ? serialWriter(privateFs, PATH, (ok, ms, err) => {
+  if (ok) lastMs = Math.round(ms);
+  else console.error('Could not write the data mirror', err);
+  onResult(ok);
+}, () => performance.now()) : null;
+
+function flush() {
   const data = pending;
   pending = null;
-  if (!data) return;
-  try {
-    const t0 = performance.now();
-    await atomicWrite(privateFs, PATH, JSON.stringify(data));
-    lastMs = Math.round(performance.now() - t0);
-    onResult(true);
-  } catch (err) {
-    console.error('Could not write the data mirror', err);
-    onResult(false);
-  }
+  if (!data || !writer) return Promise.resolve();
+  return writer.write(JSON.stringify(data));
+}
+
+/** Write anything still waiting now, and resolve once every mirror write
+ * has landed (a restore before it reloads, Delete everything before it
+ * empties the folder: audit DATA-3, DATA-7). */
+export function mirrorIdle() {
+  clearTimeout(timer);
+  if (pending) flush();
+  return writer ? writer.idle() : Promise.resolve();
 }
 
 /** Save a file the person can find (Documents), or download it in a browser.
