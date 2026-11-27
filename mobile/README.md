@@ -46,7 +46,10 @@ Settings, Profile and the rest open from Home's menu.
   new, signing code, bug report).
 - **Phone extras:** the **Tafra** home-screen widget shows today's session,
   streak and meals. Health Connect (optional) brings in weigh-ins, steps,
-  sleep and resting heart rate, and saves finished workouts.
+  sleep and resting heart rate, and saves finished workouts. Sleep and
+  resting heart rate give a recovery hint on Today (Ready, Go steady, Take
+  it easy) and keep muscles "recovering" a day longer on Stats after a poor
+  night. It is advice only: it never changes weights or the plan.
 
 ## Your data
 

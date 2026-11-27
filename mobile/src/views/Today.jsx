@@ -80,7 +80,8 @@ export default function Today() {
   const questsDone = dailyQuests.filter((q) => doneKeys(data, today, content.quests).has(q.key)).length;
   const otherToday = data.workouts.filter((w) => w.log_date === today && w.workout_type !== 'gym');
   const healthOn = data.settings?.health?.enabled;
-  const ready = healthOn ? readiness(data.health_daily, today) : null;
+  // The watch-numbers module hides the recovery line too (audit AND-2).
+  const ready = healthOn && D.moduleOn(data, 'activity') ? readiness(data.health_daily, today) : null;
   const moved = healthOn ? data.health_daily?.[today] : null;
   // Watch numbers (optional): steps join the Today tiles, active kcal and
   // sleep stay one quiet line (Home simplify). The module hides them all.

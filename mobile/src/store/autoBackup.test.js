@@ -23,9 +23,14 @@ test('nothing runs before the store is ready, or while it is off', async () => {
   assert.equal(await AB.readNewestBackup(), null);
 });
 
-test('turning it on writes one checked file, today; a second try today does nothing', async () => {
-  const out = await AB.pickBackupFolder();
+test('turning it on asks for a passphrase first; plain by choice writes one checked file, today; a second try today does nothing', async () => {
+  // Encrypted by default (audit DEC-4): nothing is written without a key.
+  const asked = await AB.pickBackupFolder();
+  assert.equal(asked.last_error, 'needs_passphrase');
+  assert.deepEqual(Object.keys(folder()), ['holiday.jpg']);
+  const out = await AB.backUpPlain();
   assert.equal(out.last_error, null);
+  assert.equal(state().plain, true);
   const names = Object.keys(folder()).sort();
   assert.equal(names.length, 2);
   assert.match(names[0], /^fitness-os-backup-\d{4}-\d{2}-\d{2}\.json$/);

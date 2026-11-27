@@ -323,6 +323,12 @@ async function autoBackup(browser) {
   const box = page.getByTestId('auto-backup');
   await box.waitFor({ timeout: 10000 });
   await box.getByRole('button', { name: /Turn on automatic backup/ }).click();
+  // Encrypted by default (audit DEC-4): the passphrase sheet first, and a
+  // folder on the phone may choose plain files.
+  const ask = page.getByRole('dialog');
+  await ask.getByText(/Recovery passphrase/).first().waitFor({ timeout: 10000 });
+  check('auto-backup: a phone folder asks for a passphrase before writing anything', (await files(page)).length === 1);
+  await ask.getByRole('button', { name: /Keep backups unencrypted/ }).click();
   await box.getByText(/Last backup checked: today/).waitFor({ timeout: 10000 });
   const first = await files(page);
   check('auto-backup: turning it on writes one checked file and leaves other files alone', first.length === 2 && first[0] === 'fitness-os-backup-2026-11-06.json' && first[1] === 'holiday.jpg' && !errors.length, first.join(', '));
@@ -362,7 +368,8 @@ async function encryptedBackup(browser) {
   const sheet = page.getByRole('dialog');
   await sheet.getByText(/Recovery passphrase/).first().waitFor({ timeout: 10000 });
   const none = await page.evaluate((k) => Object.keys(JSON.parse(localStorage.getItem(k) || '{}')), FOLDER);
-  check('encrypted: a cloud folder asks for a passphrase before writing anything', none.length === 0, none.join(', '));
+  const plainOffer = await sheet.getByRole('button', { name: /Keep backups unencrypted/ }).isVisible().catch(() => false);
+  check('encrypted: a cloud folder asks for a passphrase before writing anything, with no plain option', none.length === 0 && !plainOffer, none.join(', '));
   await sheet.getByLabel(/Passphrase \(at least/).fill('short');
   await sheet.getByLabel(/Type it again/).fill('short');
   await sheet.getByRole('button', { name: /Save and test/ }).click();

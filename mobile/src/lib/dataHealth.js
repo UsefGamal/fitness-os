@@ -87,7 +87,10 @@ export function dataHealth(data, training, slots, today, now = Date.now()) {
   let suspect = 0;
   for (const w of data.workouts || []) for (const s of w.sets || []) if (isWorkSet(s) && ((s.reps || 0) > 50 || (s.weight_kg || 0) > 500)) suspect += 1;
   rows.push({ key: 'suspect', ...countOk(suspect) });
-  const at = data.settings?.last_backup_at;
+  // A checked automatic backup counts as much as an export (audit DATA-4).
+  const auto = data.settings?.auto_backup;
+  const autoAt = auto?.on === true && !auto.last_error && Number.isFinite(auto.last_checked_at) ? auto.last_checked_at : null;
+  const at = Math.max(data.settings?.last_backup_at || 0, autoAt || 0) || null;
   const ago = at ? Math.max(0, Math.floor((now - at) / 86400000)) : null;
   rows.push({ key: 'backup', ok: ago != null && ago < BACKUP_OLD_DAYS, value: ago });
   return rows;

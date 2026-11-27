@@ -5,6 +5,15 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.49',
+    items: [
+      { icon: 'lock', text: 'Automatic backups are now encrypted for every folder. A folder on the phone can keep plain files if you choose.' },
+      { icon: 'heart', text: 'If Health Connect permission is taken away, Settings says so. Workouts still sync when weight can\'t be read.' },
+      { icon: 'moon', text: 'Turning off Watch numbers also hides the recovery line on Home.' },
+      { icon: 'check', text: 'Data health counts automatic backups. Privacy says more about the lock screen.' },
+    ],
+  },
+  {
     version: '1.1.48',
     items: [
       { icon: 'calendar', text: 'Missed a session yesterday? On a free day, Home offers to do it today, or let it go.' },
