@@ -74,9 +74,15 @@ export function saveProfile(data, form, today) {
   const goalFields = { ...(direction ? { direction } : {}), start_weight_kg: start_weight_kg ?? null, target_low_kg: goal_weight_low_kg ?? null, target_high_kg: goal_weight_high_kg ?? null, target_date: goal_date ?? null };
   const goals = Array.isArray(data.goals) ? data.goals : [];
   const g = currentGoal(data);
-  const nextGoals = g
-    ? goals.map((x) => (x === g ? { ...x, ...goalFields } : x))
-    : [...goals, { id: `g${goals.length + 1}`, set_on: today, direction: 'lose', rate_pct_bw_wk: null, ended_on: null, ...goalFields }];
+  // A new direction is a new goal (audit UX-3): the old one ends today, and
+  // its weekly kcal cuts and start date don't carry over to the new one.
+  const turned = g && direction && direction !== (g.direction || 'lose');
+  const fresh = (list) => [...list, { id: `g${list.length + 1}`, set_on: today, direction: 'lose', rate_pct_bw_wk: g?.rate_pct_bw_wk ?? null, ended_on: null, ...goalFields }];
+  const nextGoals = !g
+    ? fresh(goals)
+    : turned
+      ? fresh(goals.map((x) => (x === g ? { ...x, ended_on: today } : x)))
+      : goals.map((x) => (x === g ? { ...x, ...goalFields } : x));
   return { ...data, profile: { ...(data.profile || {}), ...body }, goals: nextGoals };
 }
 
@@ -202,15 +208,22 @@ export function macroTargets(data, nutrition, today) {
   const share = deficitShare(data, today, nutrition.max_deficit_share ?? MAX_DEFICIT_SHARE);
   const plain = energyTarget({ tdee: t, rate, weight, mode, gender: p.gender, share });
   // After a reached goal (MAINT-1): maintenance comes in weekly steps.
-  const rev = mode === 'maintain' && currentGoal(data)?.reverse ? reverseStatus(currentGoal(data).reverse, logs, t, today) : null;
+  // Not while a gate asks for no deficit at all (audit NUT-1): then it is
+  // maintenance from today, not a step-up from the cut's kcal.
+  const noCut = gateOn(data, 'no_deficit', today) || share === 0;
+  const rev = mode === 'maintain' && !noCut && currentGoal(data)?.reverse ? reverseStatus(currentGoal(data).reverse, logs, t, today) : null;
   let energy = rev && !rev.done ? { kcal: rev.kcal, deficit: Math.max(0, pyRound(t) - rev.kcal), reasons: ['reverse'] } : plain;
   // The weekly target check's confirmed adjustments (TARGET-1), on a cut
-  // only, and never under the floor.
+  // only, never under the floor, and never past the safe deficit: the 25%
+  // cap, or Ramadan's limit (audit NUT-4, decided 27 Nov 2026).
   const adjust = mode === 'lose' || mode === 'recomp' ? adjustTotal(data) : 0;
   if (adjust) {
     const floor = MIN_KCAL[p.gender] ?? MIN_KCAL.female;
-    const kcal = Math.max(floor, plain.kcal + adjust);
-    energy = { kcal, deficit: Math.max(0, pyRound(t) - kcal), reasons: [...new Set([...plain.reasons, ...(kcal === floor ? ['floor'] : []), 'adjusted'])] };
+    const limit = pyRound(t - maxDeficit(t, weight, share));
+    const wanted = plain.kcal + adjust;
+    const kcal = Math.max(floor, limit, wanted);
+    const held = kcal > wanted && kcal === limit && limit > floor;
+    energy = { kcal, deficit: Math.max(0, pyRound(t) - kcal), reasons: [...new Set([...plain.reasons, ...(kcal === floor ? ['floor'] : []), ...(held ? ['capped'] : []), 'adjusted'])] };
   }
   // Breastfeeding (SAFE-2): milk takes about 400 kcal a day on top.
   const nursing = gateOn(data, 'nursing_extra', today);

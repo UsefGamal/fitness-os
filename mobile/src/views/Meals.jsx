@@ -195,6 +195,8 @@ function MealPlan() {
   // The note is for before the session: gone once that day's workout is saved (UX-19).
   const trained = Boolean(D.workoutOn(data, date)?.finished_at);
   const target = macroTargets(data, N, today);
+  // Calories hidden (an eating answer, or a skipped check): no kcal anywhere in the plan (audit NUT-2).
+  const hideKcal = kcalHidden(data);
   const eatenSlots = new Set(N.meal_slots.filter((s) => D.mealLog(data, date, s)?.completed));
   const done = eatenSlots.size;
   const eaten = dayTotals(day, picks, eatenSlots, custom, frozen);
@@ -226,12 +228,12 @@ function MealPlan() {
       </div>
 
       <div className="tile-grid">
-        <div className="stat-tile macro">
+        {hideKcal ? null : <div className="stat-tile macro">
           <div className="stat-tile-label">{t('meals.kcalEaten')}</div>
           <div className="macro-value"><CountUp value={eaten.kcal} /></div>
           <div className="stat-tile-label">/ {target.kcal} kcal</div>
           <div className={`progress ${fillTone(eaten.kcal, target.kcal)}`} style={{ marginTop: 10 }}><span style={{ transform: `scaleX(${pct(eaten.kcal, target.kcal)})` }} /></div>
-        </div>
+        </div>}
         <div className="stat-tile macro">
           <div className="stat-tile-label">{t('meals.proteinEaten')}</div>
           <div className="macro-value"><CountUp value={eaten.protein} /></div>
@@ -245,7 +247,7 @@ function MealPlan() {
           <Icon name="chev" className="icon chev" />
         </summary>
         <div className="muted small" style={{ padding: '4px 0 8px' }}>
-          {t('meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
+          {t(hideKcal ? 'meals.summaryNoKcal' : 'meals.summary', { carbs: eaten.carbs, tc: target.carbs, fat: eaten.fat, tf: target.fat, done, all: N.meal_slots.length, kcal: totals.kcal, protein: totals.protein })} <Link to="/profile">{target.source === 'profile' ? t('meals.yourTargets') : t('meals.setTargets')}</Link>
         </div>
       </details>
       <MealWeek data={data} today={today} protein={target.protein} date={date} onPick={setDate} />
@@ -260,11 +262,12 @@ function MealPlan() {
       {gateOn(data, 'nursing_extra', today) && !kcalHidden(data) ? <p className="muted small safety-food" role="note">{t('safety.food.nursing')}</p> : null}
       {gateOn(data, 'protein_cap', today) ? <p className="muted small safety-food" role="note">{t('safety.food.kidney')}</p> : null}
       {gateOn(data, 'steady_carbs', today) ? <p className="muted small safety-food" role="note">{t('safety.food.diabetes')}</p> : null}
-      {fit.state === 'far' ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
-      {(fit.state === 'far' ? [] : dayDrift(totals, target)).map((r) => (
+      {fit.state === 'far' || fit.kcalFar ? <p className="muted small" role="note">{t(kcalHidden(data) ? 'meals.farPlanNoKcal' : 'meals.farPlan', { plan: fit.plan })}</p> : null}
+      {dayDrift(totals, target, undefined, { proteinCap: gateOn(data, 'protein_cap', today) }).filter((r) => !(hideKcal && r.key === 'kcal') && (fit.state !== 'far' || (r.key === 'protein' && r.over))).map((r) => (
         <div key={r.key} className="warn" role="note">
           {r.label} with these picks: {r.total} {r.unit}, {Math.round(Math.abs(r.diff) * 100)}% {r.over ? 'over' : 'under'} your {r.target} {r.unit} target.
           {day.is_refeed && r.key === 'kcal' && r.over ? ' It is a refeed day, so a little over is planned.' : r.key === 'protein' && !r.over ? ' Swap a meal for a higher-protein one from the library, or add a protein snack.' : ''}
+          {r.key === 'protein' && r.over ? ` ${t('meals.proteinOverCap')}` : ''}
         </div>
       ))}
       {fasting ? <div className="card small"><span className="chip accent">{t('ramadan.chip')}</span> <span className="muted">{t('ramadan.mealsNote')}</span></div>
@@ -297,7 +300,7 @@ function MealPlan() {
               <div className="ate-else">
                 <div className="grow">
                   <div>{log.custom.name || t('other.unnamed')}</div>
-                  <div className="muted small" style={{ marginTop: 2 }}>{t('meals.kcalProtein', { kcal: log.custom.kcal, protein: log.custom.protein })}</div>
+                  <div className="muted small" style={{ marginTop: 2 }}>{t(hideKcal ? 'meals.proteinOnly' : 'meals.kcalProtein', { kcal: log.custom.kcal, protein: log.custom.protein })}</div>
                 </div>
                 <button type="button" className="btn ghost small" onClick={() => setOtherFor(meal.slot)}>{t('other.change')}</button>
               </div>
@@ -314,7 +317,7 @@ function MealPlan() {
               <details className="meal-more">
                 <summary>
                   <div className="grow">
-                    <div className="muted small">{t('meals.kcalProtein', { kcal: Math.round(opt.kcal), protein: Math.round(opt.protein) })}</div>
+                    <div className="muted small">{t(hideKcal ? 'meals.proteinOnly' : 'meals.kcalProtein', { kcal: Math.round(opt.kcal), protein: Math.round(opt.protein) })}</div>
                   </div>
                   <Icon name="chev" className="icon chev" />
                 </summary>
@@ -325,11 +328,11 @@ function MealPlan() {
                     return (
                       <div key={key} className="row between small">
                         <span className="grow">{nm.charAt(0).toUpperCase() + nm.slice(1)}{n !== 1 ? ` ×${n}` : ''}</span>
-                        {m ? <span className="muted">{t('meals.itemMacros', { kcal: Math.round(m[0] * n), protein: Math.round(m[1] * n * 10) / 10 })}</span> : null}
+                        {m ? <span className="muted">{t(hideKcal ? 'meals.itemProtein' : 'meals.itemMacros', { kcal: Math.round(m[0] * n), protein: Math.round(m[1] * n * 10) / 10 })}</span> : null}
                       </div>
                     );
                   })}
-                  <div className="muted small" style={{ marginTop: 6 }}>{t('meals.fullMacros', { kcal: opt.kcal, protein: opt.protein, carbs: opt.carbs, fat: opt.fat })}</div>
+                  <div className="muted small" style={{ marginTop: 6 }}>{t(hideKcal ? 'meals.fullMacrosNoKcal' : 'meals.fullMacros', { kcal: opt.kcal, protein: opt.protein, carbs: opt.carbs, fat: opt.fat })}</div>
                 </div>
               </details>
                 <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
