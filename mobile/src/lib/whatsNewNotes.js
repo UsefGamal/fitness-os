@@ -5,6 +5,13 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.52',
+    items: [
+      { icon: 'check', text: 'Fixed: text no longer scrolls under the clock at the top or the buttons at the bottom of the screen.' },
+      { icon: 'check', text: 'Fixed: the reps and kg buttons on the next set sit inside its green outline.' },
+    ],
+  },
+  {
     version: '1.1.51',
     items: [
       { icon: 'check', text: 'Fixed: the app closed when the rest started after a set, since the new weight and reps buttons in the notification.' },
