@@ -42,25 +42,46 @@ export async function syncHealth({ all = false } = {}) {
   const h = healthSettings(useData.getState().data);
   if (!isNative() || !h.enabled) return null;
   const startedAt = Date.now();
-  // Look a day back so a weigh-in synced late from a scale isn't missed.
-  const { weights } = await Health.readWeights({ since: all ? 0 : Math.max(0, h.weights_since - 86400000) });
+  // Each step on its own (audit AND-1): losing "read weight" no longer
+  // stops workouts from being shared. A step that fails keeps its "since",
+  // so the next sync tries it again; nothing is marked done that wasn't.
+  const failed = [];
   let added = 0;
-  useData.getState().update((d) => {
-    const r = mergeWeighIns(d, weights);
-    added = r.added;
-    return r.data;
-  });
+  try {
+    // Look a day back so a weigh-in synced late from a scale isn't missed.
+    const { weights } = await Health.readWeights({ since: all ? 0 : Math.max(0, h.weights_since - 86400000) });
+    useData.getState().update((d) => {
+      const r = mergeWeighIns(d, weights);
+      added = r.added;
+      return r.data;
+    });
+  } catch {
+    failed.push('weights');
+  }
   const since = all ? 0 : h.workouts_since;
   const workouts = healthWorkouts(useData.getState().data, timesOf(useData.getState().data, content).session_time).filter((w) => w.version > since);
-  if (workouts.length) await Health.writeWorkouts({ workouts });
+  try {
+    if (workouts.length) await Health.writeWorkouts({ workouts });
+  } catch {
+    failed.push('workouts');
+  }
   // Workouts deleted in the app leave Health Connect too (DA-5).
   const gone = pendingHealthDeletes(useData.getState().data);
   if (gone.length) {
-    await Health.deleteWorkouts({ ids: gone });
-    useData.getState().update((d) => clearHealthDeletes(d, gone));
+    try {
+      await Health.deleteWorkouts({ ids: gone });
+      useData.getState().update((d) => clearHealthDeletes(d, gone));
+    } catch {
+      failed.push('deletes');
+    }
   }
-  setHealth({ weights_since: startedAt, workouts_since: startedAt });
+  setHealth({
+    ...(failed.includes('weights') ? {} : { weights_since: startedAt }),
+    ...(failed.includes('workouts') ? {} : { workouts_since: startedAt }),
+  });
   const days = await readDaily(all ? 60 : 15);
+  // What worked is kept; a failed step is said, not swallowed (most likely a removed permission).
+  if (failed.length) throw new Error(failed.includes('weights') ? 'Health Connect didn’t let Tafra read weight. Check its permissions.' : 'Health Connect didn’t take the workouts. Check its permissions.');
   return { weighIns: added, workouts: workouts.length, days };
 }
 

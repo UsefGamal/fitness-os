@@ -25,17 +25,19 @@ This data is used only inside the app on your phone, to show your own progress a
 Only when you choose it:
 
 - **Backups and CSV files you export** go wherever you save or send them.
-- **Automatic backup**, if you turn it on, writes a copy to a folder you pick. If that folder syncs to a cloud service, the copy is encrypted with a passphrase you set.
+- **Automatic backup**, if you turn it on, writes a copy to a folder you pick. The copy is encrypted with a passphrase you set, because Android can't always tell whether a folder syncs to a cloud service. For a folder on the phone you can choose plain files instead; a folder Android reports as syncing always gets the encrypted copy.
 - **Share a copy** sends a reduced copy of your plan to whoever you pick. It leaves out weigh-ins, body numbers, health data and photos.
-- **Bug reports** are a text you see in full before you send it yourself (app version, counts and recent error messages; no personal entries).
+- **Bug reports** are a text you see in full before you send it yourself (app version, phone model, Android version, screen size, counts and recent error messages; no personal entries).
 - **Android's own backup** to your Google account may include the app's data, if you have it on. Android only does this with a screen lock set, and encrypts it with it.
 
-Reminders and the home-screen widget can show session and meal names on your lock screen or home screen.
+Reminders and the home-screen widget can show session and meal names on your lock screen or home screen. Reminders are marked private, so Android hides their text on the lock screen when the phone is set to hide sensitive content. During a workout, the rest timer in the notification shade and on the lock screen shows the exercise and the weight in kg.
 
 ## Permissions
 
 - **Notifications and alarms:** workout, meal and rest-timer reminders.
 - **Foreground service:** keeps the rest timer running in the notification shade during a workout you started.
+- **Wake lock and vibrate:** the rest timer can buzz when it ends, even with the screen off.
+- **Run at startup:** puts your planned reminders back after the phone restarts.
 - **Health Connect:** as above, each one optional.
 - **Internet:** the app sends nothing. "Check for updates" only opens a web page in your browser.
 

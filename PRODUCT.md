@@ -40,4 +40,4 @@ These stay out of v1. Each one either needs a server, puts health data at risk, 
 
 ## Could, after v1
 
-Graduation from the app, a co-op challenge, one points currency, accessory refreshes, a HIIT limit, a readiness hint, refeed copy, vegetarian plans, a session-count rotation, a biometric lock, an APK size guard, and Health Connect IDs.
+Graduation from the app, a co-op challenge, one points currency, accessory refreshes, a HIIT limit, refeed copy, vegetarian plans, a session-count rotation, a biometric lock, an APK size guard, and Health Connect IDs.
