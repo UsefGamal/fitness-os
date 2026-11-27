@@ -130,6 +130,15 @@ export function safeDay(data, day, today, swaps) {
   return changes.length ? { ...gentle, exercises, safety_changes: changes } : gentle;
 }
 
+/** Does this exercise load a limit that is on (pregnancy, an injury
+ * area)? The limit's name, or null. For swaps picked during a workout,
+ * which come after safeDay (audit TRN-8). */
+export function unsafeFor(data, name, today, swaps) {
+  if (!swaps || !name) return null;
+  for (const why of swapLimits(data, today)) if (swaps[why]?.[name]) return why;
+  return null;
+}
+
 /** After the sex in Profile changes from male: the check answered as a man
  * never asked about pregnancy, so it is asked again on the next open. */
 export function recheckForSex(data) {

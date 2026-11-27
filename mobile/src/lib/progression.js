@@ -4,7 +4,8 @@
 
 /** "8-10" -> [8, 10], "12" -> [12, 12], "30s" -> null (timed, no reps). */
 export function repRange(reps) {
-  const m = /^\s*(\d+)(?:\s*-\s*(\d+))?\s*$/.exec(String(reps ?? ''));
+  // "8-12 per leg", "10 each side" count the same (audit TRN-3).
+  const m = /^\s*(\d+)(?:\s*-\s*(\d+))?\s*(?:(?:per|each|\/)\s*(?:side|leg|arm))?\s*$/i.exec(String(reps ?? ''));
   if (!m) return null;
   const lo = Number(m[1]);
   return [lo, m[2] ? Number(m[2]) : lo];
@@ -13,7 +14,7 @@ export function repRange(reps) {
 /** A timed hold: "30-45s" -> [30, 45], "60s" -> [60, 60], "30-45s/side"
  * -> [30, 45]; null for anything counted in reps. */
 export function holdRange(reps) {
-  const m = /^\s*(\d+)(?:\s*-\s*(\d+))?\s*(?:s|sec|secs|seconds)\b\s*(?:\/\s*side|each side)?\s*$/i.exec(String(reps ?? ''));
+  const m = /^\s*(\d+)(?:\s*-\s*(\d+))?\s*(?:s|sec|secs|seconds)\b\s*(?:(?:per|each|\/)\s*(?:side|leg|arm))?\s*$/i.exec(String(reps ?? ''));
   if (!m) return null;
   const lo = Number(m[1]);
   return [lo, m[2] ? Number(m[2]) : lo];
@@ -37,10 +38,12 @@ const roundTo = (kg, step) => Math.round(kg / step) * step;
 
 /** The usual weight jump for a move (TRAIN-1): 1 kg for isolation moves,
  * 2 kg for dumbbells and kettlebells (the next pair up), 2.5 kg for
- * barbells and machines. `entry` is the exercise library's entry; without
+ * barbells and machines. A barbell or EZ bar is 2.5 kg even for an
+ * isolation move: with 1.25 kg plates it can't change by less (audit TRN-5). `entry` is the exercise library's entry; without
  * one, `barbell` decides as before (2.5 kg for a barbell, else 1 kg). */
 export function stepFor(entry, { barbell = false } = {}) {
   if (!entry) return barbell ? 2.5 : 1;
+  if (entry.equipment === 'barbell' || entry.equipment === 'e-z curl bar') return 2.5;
   if (entry.mechanic === 'isolation') return 1;
   if (entry.equipment === 'dumbbell' || entry.equipment === 'kettlebells') return 2;
   return 2.5;
@@ -54,8 +57,9 @@ export function isBodyweight(entry) {
 /** The jump to add on top of `top` kg: the move's step, but never much
  * more than 10% of the load and never under 1 kg. A 12 kg dumbbell goes
  * up 1 kg, not 2; a barbell from 20 kg up keeps its 2.5 kg plates. */
-export function jumpFor(top, step = 2.5) {
-  if (step === 2.5 && top >= 20) return 2.5;
+export function jumpFor(top, step = 2.5, bar = false) {
+  // A barbell or EZ bar only changes by a pair of the smallest plates.
+  if (bar || (step === 2.5 && top >= 20)) return step;
   return Math.min(step, Math.max(1, Math.round(top * 0.1)));
 }
 
@@ -64,13 +68,14 @@ export function jumpFor(top, step = 2.5) {
  *   planReps: the plan's reps ("8-10"); plannedSets: how many work sets
  *   sessions: earlier sessions' sets for this exercise, newest first
  *   step: the usual weight jump (stepFor); the real jump is jumpFor's
+ *   bar: a barbell or EZ bar, so the jump is always `step` (audit TRN-5)
  *   bodyweight: true for a bodyweight move, false for one that takes
  *     weight, null when unknown (then a move only ever logged at 0 kg
  *     counts as bodyweight). A bodyweight move done without added weight
  *     never gets "add kg": it progresses by reps, then a harder version.
  * Returns { weightKg, reps, reason, kind: 'start'|'add'|'repeat'|'deload'|'harder' }.
  */
-export function progressionTarget(planReps, plannedSets, sessions, { step = 2.5, bodyweight = null } = {}) {
+export function progressionTarget(planReps, plannedSets, sessions, { step = 2.5, bodyweight = null, bar = false } = {}) {
   const hold = holdRange(planReps);
   if (hold) return holdTarget(hold, plannedSets, sessions);
   const range = repRange(planReps);
@@ -90,12 +95,13 @@ export function progressionTarget(planReps, plannedSets, sessions, { step = 2.5,
     return sets.filter((s) => kgOf(s) === t).some((s) => s.reps < lo);
   };
   if (top > 0 && missed(sessions[0]) && missed(sessions[1])) {
-    const kg = Math.max(0, roundTo(top * 0.9, step));
+    // At least one step down, so a light weight drops too (audit TRN-2).
+    const kg = Math.max(0, Math.min(roundTo(top * 0.9, step), top - step));
     return { weightKg: kg, reps: hi, kind: 'deload', reason: `Missed ${lo} reps two sessions running: drop 10% to ${kg} kg and build back up.` };
   }
   if (atTop.length >= plannedSets && atTop.every((s) => s.reps >= hi)) {
     if (noLoad) return { weightKg: 0, reps: hi, kind: 'harder', reason: `Last time ${fmt(last)}, all at the top of ${lo}-${hi}: try a harder version, or add a rep.` };
-    const add = jumpFor(top, step);
+    const add = jumpFor(top, step, bar);
     const kg = Math.round((top + add) * 100) / 100;
     return { weightKg: kg, reps: lo, kind: 'add', reason: `Last time ${fmt(last)}, all at the top of ${lo}-${hi}: add ${add} kg.` };
   }

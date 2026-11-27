@@ -16,7 +16,7 @@ import * as D from '../lib/data.js';
 import { safeVideo } from '../lib/links.js';
 import { effectiveDay } from '../lib/planEdit.js';
 import { isRecoveryWeek, recoveryDay, withoutRecovery } from '../lib/recovery.js';
-import { comeback, comebackTarget } from '../lib/comeback.js';
+import { afterComeback, comeback, comebackTarget } from '../lib/comeback.js';
 import { activePlan } from '../lib/plan.js';
 import { BARS, isBarbell, plateText, platesPerSide, warmupSets } from '../lib/plates.js';
 import { holdRange, isBodyweight, progressionTarget, stepFor } from '../lib/progression.js';
@@ -43,7 +43,7 @@ import { t } from '../lib/i18n.js';
 import { announce, setLoggedLine } from '../lib/announce.js';
 import { isShortSession } from '../lib/summary.js';
 import { setChange, setsText as lastText } from '../lib/lastTime.js';
-import { gateOn, safeDay } from '../lib/safety.js';
+import { gateOn, safeDay, unsafeFor } from '../lib/safety.js';
 import SafetyChanges from '../components/SafetyChanges.jsx';
 import { setFields, setLabel, TYPE_LETTER, typeChoices, withType } from '../lib/sets.js';
 import { EFFORT, logBarMode, startMode } from '../lib/workoutFlow.js';
@@ -283,11 +283,17 @@ export default function Workout() {
   const target = useMemo(() => {
     if (!active || !ex || !exRow) return null;
     if (recovery) return null; // same loads as last time: no progression in a recovery week
-    const sessions = withoutRecovery(D.exerciseHistory(data, exRow.id), data.workouts).filter((h) => h.workoutId !== active.id).map((h) => h.sets.filter(D.isWorkSet)).filter((s) => s.length);
+    const history = D.exerciseHistory(data, exRow.id).filter((h) => h.workoutId !== active.id);
+    const sessions = withoutRecovery(history, data.workouts).map((h) => h.sets.filter(D.isWorkSet)).filter((s) => s.length);
     const step = stepFor(entry, { barbell });
-    const plain = progressionTarget(ex.reps, ex.sets, sessions, { step, bodyweight: entry ? isBodyweight(entry) : null });
-    // The first session back after a gap is lighter (BACK-1).
-    return active.easy ? comebackTarget(plain, back?.level, { planReps: ex.reps, sessions, step }) : plain;
+    const plain = progressionTarget(ex.reps, ex.sets, sessions, { step, bodyweight: entry ? isBodyweight(entry) : null, bar: barbell });
+    // The first session back after a gap is lighter (BACK-1); a short gap
+    // only holds the weight (audit TRN-1).
+    const level = active.comeback || (active.easy ? back?.level : null);
+    if (level) return comebackTarget(plain, level, { planReps: ex.reps, sessions, step });
+    // The session after the easy one back holds the old weight (audit TRN-4).
+    const easyBefore = Boolean(history[0] && data.workouts.find((w) => w.id === history[0].workoutId)?.easy);
+    return afterComeback(plain, sessions, easyBefore);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, ex?.name, exRow?.id, catalogue]);
 
@@ -353,7 +359,10 @@ export default function Workout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, dayNames, data.workouts.length, data.exercises]);
   // Easier and harder versions of a bodyweight move (content/progressions.py).
-  const ladderSteps = ex ? neighbours(ex.name, content.training.progressions) : null;
+  // Steps that load a limit that is on are left out (audit TRN-8).
+  const unsafe = (name) => Boolean(unsafeFor(data, name, today, content.training.safety_swaps?.swaps));
+  const ladderAll = ex ? neighbours(ex.name, content.training.progressions) : null;
+  const ladderSteps = ladderAll ? { ...ladderAll, easier: ladderAll.easier && !unsafe(ladderAll.easier.name) ? ladderAll.easier : null, harder: ladderAll.harder && !unsafe(ladderAll.harder.name) ? ladderAll.harder : null } : null;
   // Swap (BeFit item 10): the closest matches, or any of the 16 groups,
   // never an exercise already in today's session.
   const swapOptions = useMemo(() => {
@@ -412,7 +421,8 @@ export default function Workout() {
       id = r.workoutId;
       // Back after a gap: this session is the easy one (BACK-1), kept out
       // of the progression that follows it.
-      if (back) r.data = { ...r.data, workouts: r.data.workouts.map((w) => (w.id === id ? { ...w, easy: true } : w)) };
+      // A short gap (a week) only holds the weights: it still counts for progression (audit TRN-1).
+      if (back) r.data = { ...r.data, workouts: r.data.workouts.map((w) => (w.id === id ? { ...w, comeback: back.level, ...(back.level === 'short' ? {} : { easy: true }) } : w)) };
       return Object.keys(swaps).length ? setTweaks(r.data, id, { ...emptyTweaks(day.exercises.length), swaps }) : r.data;
     });
     setActiveWorkout(id);
@@ -953,13 +963,13 @@ export default function Workout() {
                 </button>
               ) : null;
             })}
-            {ex.alternative ? (
+            {ex.alternative && !unsafe(ex.alternative) ? (
               <button type="button" className="list-row" onClick={() => swapToName(ex.alternative)}>
                 <div className="grow"><div>{t('workout.planBackup')}</div><div className="meta">{ex.alternative}</div></div>
                 <Icon name="chev" className="icon chev" />
               </button>
             ) : null}
-            {swapOptions.map((o) => (
+            {swapOptions.filter((o) => !unsafe(o.name)).map((o) => (
               <button key={o.id} type="button" className="list-row" onClick={() => swapTo(o)}>
                 <div className="grow"><div>{o.name}</div><div className="meta">{swapGroup ? `${targetText(o)} · ${o.equipment || 'body only'}` : o.equipment || 'body only'}</div></div>
                 <Icon name="chev" className="icon chev" />

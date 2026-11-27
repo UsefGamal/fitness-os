@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { awayDays, comeback, comebackTarget, hideBack, showBack, skipToday, stillTime } from './comeback.js';
+import { afterComeback, awayDays, comeback, comebackTarget, hideBack, showBack, skipToday, stillTime } from './comeback.js';
 import { addDays } from './dates.js';
 import { withoutRecovery } from './recovery.js';
 
@@ -13,7 +13,10 @@ test('levels at every edge of the table', () => {
   const at = (n) => comeback(ago(n), TODAY)?.level ?? null;
   assert.equal(at(0), null);
   assert.equal(at(3), null);
-  assert.equal(at(4), 'short');
+  // 4-6 days is a normal gap on a 2-day or 3-day plan (audit TRN-1).
+  assert.equal(at(4), null);
+  assert.equal(at(6), null);
+  assert.equal(at(7), 'short');
   assert.equal(at(13), 'short');
   assert.equal(at(14), 'easy90');
   assert.equal(at(27), 'easy90');
@@ -97,4 +100,19 @@ test('a timed hold back after a gap: the bottom of its range, in seconds', () =>
   const t = comebackTarget({ weightKg: 0, reps: 40, kind: 'repeat', timed: true, reason: '' }, 'fresh', { planReps: '30-45s', sessions: [] });
   assert.deepEqual([t.reps, t.kind], [30, 'easy']);
   assert.doesNotMatch(t.reason, /weight/);
+});
+
+test('TRN-2: the lighter first session back is lighter even on a light dumbbell', () => {
+  const t = comebackTarget({ weightKg: 10, reps: 8, kind: 'repeat' }, 'easy90', { planReps: '8-12', sessions: [[{ weight_kg: 10, reps: 10 }]], step: 2 });
+  assert.equal(t.weightKg, 8);
+});
+
+test('TRN-4: the session after the easy one back holds the weight from before the break', () => {
+  const before = [[{ weight_kg: 40, reps: 12 }, { weight_kg: 40, reps: 12 }, { weight_kg: 40, reps: 12 }]];
+  const plain = { weightKg: 42.5, reps: 8, kind: 'add', reason: 'add' };
+  const held = afterComeback(plain, before, true);
+  assert.deepEqual([held.weightKg, held.kind], [40, 'repeat']);
+  assert.equal(afterComeback(plain, before, false), plain);
+  const repeat = { weightKg: 40, reps: 10, kind: 'repeat' };
+  assert.equal(afterComeback(repeat, before, true), repeat);
 });

@@ -10,7 +10,9 @@ export const LEVELS = [
   [63, 'fresh'], // 8+ weeks: start fresh, no prefilled weight
   [28, 'easy80'], // 4 to 8 weeks: 80% of last time
   [14, 'easy90'], // 2 to 3 weeks: 90%
-  [4, 'short'], // a few days: last time's weights, nothing added
+  // A week or more: last time's weights, nothing added. Not 4 days, which
+  // is the normal Wednesday-to-Sunday gap of a 2-day plan (audit TRN-1).
+  [7, 'short'],
 ];
 const SHARE = { easy90: 0.9, easy80: 0.8 };
 
@@ -73,8 +75,21 @@ export function comebackTarget(target, level, { planReps, sessions = [], step = 
   }
   const share = SHARE[level];
   if (!share || top <= 0) return { ...target, kind: target.kind === 'add' ? 'repeat' : target.kind, weightKg: target.kind === 'add' ? top : target.weightKg };
-  const kg = Math.max(0, Math.round(roundTo(top * share, step) * 100) / 100);
+  // Always at least one step lighter, even on light weights (audit TRN-2).
+  const kg = Math.max(0, Math.round(Math.min(roundTo(top * share, step), top - step) * 100) / 100);
   return { weightKg: kg, reps: lo, kind: 'easy', reason: `Welcome back: ${kg} kg today, a little lighter than last time.` };
+}
+
+/** The session after the easy one back (audit TRN-4): the easy session is
+ * kept out of progression, so the plain target reads the last session
+ * before the break and could add weight on top of it. Hold at that
+ * weight until it is lifted again. `easyJustBefore`: the newest session of
+ * this exercise was the easy one back. */
+export function afterComeback(target, sessions, easyJustBefore) {
+  if (!easyJustBefore || !target || target.kind !== 'add' || !sessions?.[0]?.length) return target;
+  const top = Math.max(...sessions[0].map(kgOf));
+  if (!(top > 0)) return target;
+  return { ...target, weightKg: top, kind: 'repeat', reason: `Back to ${top} kg, your weight before the break. Add again once it feels solid.` };
 }
 
 // ── "Still time today?" ───────────────────────────────────────────────
