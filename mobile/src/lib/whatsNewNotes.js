@@ -5,6 +5,12 @@
 // of these a phone still has to see.
 export const WHATS_NEW = [
   {
+    version: '1.1.48',
+    items: [
+      { icon: 'calendar', text: 'Missed a session yesterday? On a free day, Home offers to do it today, or let it go.' },
+    ],
+  },
+  {
     version: '1.1.47',
     items: [
       { icon: 'dumbbell', text: 'On 2-day plans, Sunday\'s lifts go up again: a few days between sessions no longer counts as a break.' },

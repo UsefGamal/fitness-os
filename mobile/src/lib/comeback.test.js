@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { afterComeback, awayDays, comeback, comebackTarget, hideBack, showBack, skipToday, stillTime } from './comeback.js';
+import { afterComeback, awayDays, comeback, comebackTarget, hideBack, missedYesterday, showBack, skipMissed, skipToday, stillTime } from './comeback.js';
 import { addDays } from './dates.js';
 import { withoutRecovery } from './recovery.js';
 
@@ -115,4 +115,33 @@ test('TRN-4: the session after the easy one back holds the weight from before th
   assert.equal(afterComeback(plain, before, false), plain);
   const repeat = { weightKg: 40, reps: 10, kind: 'repeat' };
   assert.equal(afterComeback(repeat, before, true), repeat);
+});
+
+test('missed yesterday: offered on a free day after a skipped session', () => {
+  // 20 Nov 2026 is a Friday: Thursday has a session, Friday is free.
+  const T = { program: [{ key: 'upper', name: 'Upper' }, { key: 'lower', name: 'Lower' }], trainer_plan: { schedule: [{ day: 'thursday', session: 'upper' }, { day: 'saturday', session: 'lower' }] } };
+  const data = ago(3); // trained Tuesday
+  const base = { data, today: TODAY, training: T };
+  assert.deepEqual(missedYesterday(base), { from: addDays(TODAY, -1), key: 'upper' });
+  // Done yesterday, or something logged today: nothing to catch up.
+  assert.equal(missedYesterday({ ...base, data: { ...data, workouts: [...data.workouts, gym(addDays(TODAY, -1))] } }), null);
+  assert.equal(missedYesterday({ ...base, data: { ...data, workouts: [...data.workouts, gym(TODAY, { finished_at: null })] } }), null);
+  // A run yesterday doesn't count as the gym session.
+  assert.ok(missedYesterday({ ...base, data: { ...data, workouts: [...data.workouts, gym(addDays(TODAY, -1), { workout_type: 'run' })] } }));
+  // Today has its own session: never two in a day.
+  const busy = { ...T, trainer_plan: { schedule: [...T.trainer_plan.schedule, { day: 'friday', session: 'lower' }] } };
+  assert.equal(missedYesterday({ ...base, training: busy }), null);
+  // Yesterday (Sunday) was rest.
+  assert.equal(missedYesterday({ ...base, data: ago(1), today: addDays(TODAY, 3) }), null);
+  // Never trained before: a new person hasn't "missed" anything.
+  assert.equal(missedYesterday({ ...base, data: { workouts: [], settings: {} } }), null);
+  // A week or more away: the welcome-back card covers it.
+  assert.equal(missedYesterday({ ...base, data: ago(9) }), null);
+  // Recovery week, or dismissed for today.
+  assert.equal(missedYesterday({ ...base, recovery: true }), null);
+  assert.equal(missedYesterday({ ...base, data: skipMissed(data, TODAY) }), null);
+  assert.ok(missedYesterday({ ...base, today: TODAY, data: skipMissed(data, addDays(TODAY, -7)) }));
+  // A session moved onto yesterday counts; one moved away from it doesn't.
+  assert.ok(missedYesterday({ ...base, moves: [{ from: '2026-11-17', to: addDays(TODAY, -1), key: 'lower' }] }));
+  assert.equal(missedYesterday({ ...base, moves: [{ from: addDays(TODAY, -1), to: addDays(TODAY, 3), key: 'upper' }] }), null);
 });

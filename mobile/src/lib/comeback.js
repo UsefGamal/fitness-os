@@ -1,7 +1,8 @@
 // An easy way back after a gap (BACK-1). The biggest quit point is coming
 // back: so a returning person gets a welcome, no lapsed streak, and a
 // lighter first session instead of last month's loads. Pure; comeback.test.js.
-import { daysBetween } from './dates.js';
+import { addDays, daysBetween } from './dates.js';
+import { sessionKeyOn } from './schedule.js';
 import { holdRange, repRange } from './progression.js';
 
 /** The gap (days since the last workout) where each level starts.
@@ -120,4 +121,30 @@ export function stillTime({ data, today, nowMinutes, sessionTime, scheduled, rec
 /** "Skip today": the question goes away for today. Nothing else is kept. */
 export function skipToday(data, today) {
   return { ...data, settings: { ...data.settings, still_skip: today } };
+}
+
+// ── "Missed yesterday? Do it today" (audit DEC-5) ────────────────────
+
+const isGym = (w) => (w.workout_type || 'gym') === 'gym';
+
+/** Yesterday had a session and no gym workout, and today is free: offer
+ * to move it to today. null, or { from, key }. Never for someone who has
+ * never trained before yesterday, in a recovery week, while the
+ * welcome-back card is due, once a workout is logged today, or once
+ * dismissed for the day. `moves` is data.session_moves. */
+export function missedYesterday({ data, today, training, moves = [], recovery = false }) {
+  if (recovery || data?.settings?.missed_skip === today) return null;
+  const from = addDays(today, -1);
+  const key = sessionKeyOn(from, training, moves);
+  if (key === 'rest' || sessionKeyOn(today, training, moves) !== 'rest') return null;
+  const workouts = data?.workouts || [];
+  if (workouts.some((w) => isGym(w) && (w.log_date === from || w.log_date === today))) return null;
+  if (!workouts.some((w) => w.log_date < from)) return null;
+  if (comeback(data, today)) return null;
+  return { from, key };
+}
+
+/** "Not this time": the offer goes away for today. */
+export function skipMissed(data, today) {
+  return { ...data, settings: { ...data.settings, missed_skip: today } };
 }
